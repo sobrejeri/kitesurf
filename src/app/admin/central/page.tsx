@@ -1,24 +1,36 @@
 import type { Metadata } from 'next';
 
-import { Hub } from '@/components/shared';
-import { DEMO_NOTICE } from '@/data/demo';
+import { AdminTitle, QuickTile, type Tone } from '@/components/admin/kit';
+import { type IconName } from '@/components/icon';
+import { requireRole } from '@/lib/auth';
 
-export const metadata: Metadata = { title: 'Central de operação' };
+export const metadata: Metadata = { title: 'Mais opções' };
 
-const ITEMS = [
-  { title: 'Pousadas afiliadas', body: 'Aprovação, indicações e comissões.', href: '/admin/afiliados' },
-  { title: 'Transporte de apoio', body: 'Frota, capacidade, tarifa e apoio por encontro.', href: '/admin/transporte' },
-  { title: 'Agenda de aulas', body: 'Dia, semana, mês e lista com filtros.', href: '/admin/agenda' },
-  { title: 'Analisar ocorrências', body: 'Liberar saldo ou registrar reembolso de teste.', href: '/admin/ocorrencias' },
-  { title: 'Validar documentos', body: 'Aprovar ou pedir correções.', href: '/admin/documentos' },
-  { title: 'Praias', body: 'Cadastro das praias e quem atende em cada uma.', href: '/admin/praias' },
-  { title: 'Pontos de encontro', body: 'Referência e endereço do mapa.', href: '/admin/pontos' },
-  { title: 'Políticas comerciais', body: 'Rascunho das decisões da operação.', href: '/admin/politicas' },
-  { title: 'Atendimento', body: 'Acompanhar conversas por encontro.', href: '/admin/atendimento' },
-  { title: 'Avisos da operação', body: 'Eventos compartilhados.', href: '/admin/avisos' },
-  { title: 'Estrutura da plataforma', body: 'Mapa do que é simulável e do que depende de integração.', href: '/admin/estrutura' },
-] as const;
+const OPTIONS: readonly { label: string; href: string; icon: IconName; tone: Tone }[] = [
+  { label: 'Agenda de aulas', href: '/admin/agenda', icon: 'calendar', tone: 'blue' },
+  { label: 'Fila e distribuição', href: '/admin/distribuicao', icon: 'list', tone: 'purple' },
+  { label: 'Praias e localizações', href: '/admin/praias', icon: 'pin', tone: 'blue' },
+  { label: 'Pousadas afiliadas', href: '/admin/afiliados', icon: 'home', tone: 'orange' },
+  { label: 'Transporte de apoio', href: '/admin/transporte', icon: 'car', tone: 'blue' },
+  { label: 'Regras da operação', href: '/admin/regras', icon: 'sliders', tone: 'purple' },
+  { label: 'Analisar ocorrências', href: '/admin/ocorrencias', icon: 'wind', tone: 'orange' },
+  { label: 'Documentos', href: '/admin/documentos', icon: 'file', tone: 'blue' },
+  { label: 'Políticas comerciais', href: '/admin/politicas', icon: 'shield', tone: 'orange' },
+  { label: 'Atendimento', href: '/admin/atendimento', icon: 'chat', tone: 'purple' },
+  { label: 'Avisos da operação', href: '/admin/avisos', icon: 'bell', tone: 'purple' },
+  { label: 'Configurações', href: '/admin/configuracoes', icon: 'settings', tone: 'green' },
+];
 
-export default function AdminHubPage() {
-  return <Hub title="Central de operação" items={ITEMS} notice={DEMO_NOTICE} />;
+export default async function AdminMorePage() {
+  await requireRole(['admin'], '/admin/central');
+  return (
+    <>
+      <AdminTitle title="Mais opções" subtitle="Tudo da operação em um só lugar." />
+      <div className="grid grid-cols-3 gap-2.5 sm:grid-cols-4 lg:grid-cols-6">
+        {OPTIONS.map((option) => (
+          <QuickTile key={option.href} {...option} />
+        ))}
+      </div>
+    </>
+  );
 }

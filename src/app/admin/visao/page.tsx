@@ -1,96 +1,67 @@
 import type { Metadata } from 'next';
-import Link from 'next/link';
 
-import { AdminBookingsTable } from '@/components/admin-tables';
+import { AdminTitle, LineChart, Metric, Panel, PanelLink, QuickTile } from '@/components/admin/kit';
 import { Icon } from '@/components/icon';
-import { SectionTitle } from '@/components/shared';
-import { Avatar, Badge, Card, EmptyState, StatCard } from '@/components/ui';
 import { requireRole } from '@/lib/auth';
-import { listAllBookings, listAllInstructors, listAllPartners } from '@/lib/data';
-import { formatMoney } from '@/lib/format';
-import { initials } from '@/lib/people';
+import { listAllBookings, listAllInstructors } from '@/lib/data';
+import { dayKey, lastDays } from '@/lib/dates';
+import { formatDateLong, formatMoney } from '@/lib/format';
 
 export const metadata: Metadata = { title: 'Visão geral' };
 
+/**
+ * Operation at a glance. Every money figure is a sum of bookings' frozen
+ * snapshots, computed when each booking was created.
+ */
 export default async function OverviewPage() {
   await requireRole(['admin'], '/admin/visao');
-  const [bookings, instructors, partners] = await Promise.all([listAllBookings(), listAllInstructors(), listAllPartners()]);
-  const approved = instructors.filter((i) => i.status === 'approved').sort((a, b) => (a.queue_position ?? 0) - (b.queue_position ?? 0));
-  const pending = instructors.filter((i) => i.status === 'pending');
-  const pendingPartners = partners.filter((p) => p.status === 'pending');
+  const [bookings, instructors] = await Promise.all([listAllBookings(500), listAllInstructors()]);
+
+  const approved = instructors.filter((i) => i.status === 'approved').length;
+  const pendingInstructors = instructors.filter((i) => i.status === 'pending').length;
   const paid = bookings.filter((b) => b.status === 'confirmed' || b.status === 'completed');
+  const awaiting = bookings.filter((b) => b.status === 'awaiting_payment');
   const volume = paid.reduce((sum, b) => sum + b.total_cents, 0);
+  const awaitingValue = awaiting.reduce((sum, b) => sum + b.total_cents, 0);
+
+  const days = lastDays(7);
+  const perDay = days.map((day) => ({
+    label: day.label.slice(0, 5),
+    value: bookings.filter((b) => dayKey(b.created_at) === day.key).length,
+  }));
 
   return (
     <>
-      <h1 className="mb-6 text-[28px] tracking-[-0.9px] sm:text-[32px]">Visão geral</h1>
+      <AdminTitle title="Visão geral" subtitle="Acompanhe a operação em tempo real." />
+
+      <div className="mb-4 flex items-center gap-2">
+        <span className="flex h-12 flex-1 items-center gap-3 rounded-[14px] border border-line bg-surface px-4 text-[14px] text-ink">
+          <Icon name="calendar" className="!h-5 !w-5 text-label" />
+          Hoje, {formatDateLong(new Date().toISOString())}
+        </span>
+      </div>
+
       <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
-        <StatCard highlight label="Instrutores ativos" value={String(approved.length)} hint={`${pending.length} aguardando análise`} icon="users" />
-        <StatCard label="Reservas" value={String(bookings.length)} hint={`${paid.length} pagas`} icon="calendar" />
-        <StatCard label="Volume confirmado" value={formatMoney(volume)} hint="Pagamentos de teste" icon="wallet" />
-        <StatCard label="Aguardando pagamento" value={String(bookings.filter((b) => b.status === 'awaiting_payment').length)} hint="Instrutor reservado" icon="clock" />
+        <Metric label="Instrutores ativos" value={String(approved)} hint={pendingInstructors ? `${pendingInstructors} em análise` : 'Nenhum em análise'} hintTone={pendingInstructors ? 'brand' : 'muted'} icon="users" tone="blue" />
+        <Metric label="Reservas" value={String(bookings.length)} hint={`${awaiting.length} pendentes`} hintTone={awaiting.length ? 'brand' : 'muted'} icon="calendar" tone="orange" />
+        <Metric label="Volume confirmado" value={formatMoney(volume)} hint={`${paid.length} pagas`} hintTone="success" icon="wallet" tone="green" />
+        <Metric label="Aguardando pagamento" value={String(awaiting.length)} hint={formatMoney(awaitingValue)} hintTone="brand" icon="clock" tone="purple" />
       </div>
 
-      <div className="mt-5 grid gap-5 lg:grid-cols-[1.4fr_1fr]">
-        <Card>
-          <SectionTitle title="Fila de instrutores" action={{ label: 'Ver instrutores', href: '/admin/instrutores' }} />
-          {approved.length === 0 ? (
-            <EmptyState>Nenhum instrutor aprovado. Aprove cadastros em Instrutores.</EmptyState>
-          ) : (
-            <ol className="divide-y divide-line">
-              {approved.map((row, index) => (
-                <li key={row.id} className="flex items-center gap-3 py-3">
-                  <span className="tabular w-6 text-[13px] font-[550] text-muted">{index + 1}º</span>
-                  <Avatar initials={initials(row.profile?.full_name)} size={32} />
-                  <div className="min-w-0 flex-1">
-                    <p className="truncate text-[13px] font-[550]">{row.profile?.full_name}</p>
-                    <p className="text-[11px] text-muted">{row.beaches.map((b) => b.name).join(' e ') || 'Sem praia'}</p>
-                  </div>
-                  <Badge>Disponível</Badge>
-                </li>
-              ))}
-            </ol>
-          )}
-        </Card>
-        <Card className="self-start">
-          <div className="flex items-center justify-between">
-            <h2 className="text-[16px]">Precisa da sua atenção</h2>
-            <Badge tone={pending.length + pendingPartners.length ? 'warning' : 'success'}>
-              {pending.length + pendingPartners.length} pendente(s)
-            </Badge>
+      <div className="mt-4 grid gap-4 lg:grid-cols-[1.4fr_1fr]">
+        <Panel title="Reservas nos últimos 7 dias" action={<PanelLink href="/admin/reservas" label="Ver tudo" />}>
+          <LineChart points={perDay} unit="reservas" />
+        </Panel>
+
+        <Panel title="Acesso rápido">
+          <div className="grid grid-cols-4 gap-2 lg:grid-cols-2">
+            <QuickTile href="/admin/instrutores" label="Instrutores" icon="users" tone="orange" />
+            <QuickTile href="/admin/reservas" label="Reservas" icon="calendar" tone="blue" />
+            <QuickTile href="/admin/financeiro" label="Financeiro" icon="wallet" tone="green" />
+            <QuickTile href="/admin/praias" label="Praias" icon="pin" tone="blue" />
           </div>
-          <ul className="mt-4 grid gap-3">
-            {pending.map((row) => (
-              <li key={row.id} className="flex items-center gap-3">
-                <Avatar initials={initials(row.profile?.full_name)} tone="a2" />
-                <div className="flex-1">
-                  <p className="text-[13px] font-[550]">{row.profile?.full_name}</p>
-                  <p className="text-[11px] text-muted">Instrutor aguardando análise</p>
-                </div>
-                <Link href="/admin/instrutores" className="flex items-center gap-1 text-[13px] font-[550] text-brand"><Icon name="arrow" className="!h-4 !w-4" /> Analisar</Link>
-              </li>
-            ))}
-            {pendingPartners.map((row) => (
-              <li key={row.id} className="flex items-center gap-3">
-                <Avatar initials={initials(row.name)} tone="a4" />
-                <div className="flex-1">
-                  <p className="text-[13px] font-[550]">{row.name}</p>
-                  <p className="text-[11px] text-muted">Pousada aguardando aprovação</p>
-                </div>
-                <Link href="/admin/afiliados" className="flex items-center gap-1 text-[13px] font-[550] text-brand"><Icon name="arrow" className="!h-4 !w-4" /> Analisar</Link>
-              </li>
-            ))}
-            {pending.length + pendingPartners.length === 0 ? <li className="text-[12px] text-muted">Nada pendente.</li> : null}
-          </ul>
-        </Card>
+        </Panel>
       </div>
-
-      <section className="mt-8">
-        <SectionTitle title="Reservas recentes" action={{ label: 'Todas as reservas', href: '/admin/reservas' }} />
-        <Card className="!p-2">
-          <AdminBookingsTable bookings={bookings.slice(0, 8)} />
-        </Card>
-      </section>
     </>
   );
 }

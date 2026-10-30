@@ -57,6 +57,7 @@ export interface Booking {
   created_at: string;
   student_id: string;
   instructor_id: string | null;
+  partner_id: string | null;
   booking_meetings: Meeting[];
   student: { full_name: string } | null;
   instructor: { full_name: string } | null;
@@ -65,7 +66,7 @@ export interface Booking {
 const BOOKING_COLUMNS = `
   id, code, status, beach_id, level, language, total_hours, hourly_rate_cents, total_cents,
   partner_cents, platform_cents, instructor_net_cents, presence_code, created_at,
-  student_id, instructor_id,
+  student_id, instructor_id, partner_id,
   booking_meetings ( id, position, starts_at, minutes, status, done_minutes, note ),
   beach:beaches ( name ),
   student:profiles!bookings_student_id_fkey ( full_name ),
@@ -326,4 +327,36 @@ export async function listAllBeaches(): Promise<Beach[]> {
     .returns<Beach[]>();
   if (error) throw error;
   return data ?? [];
+}
+
+export interface AuditEntry {
+  id: number;
+  action: string;
+  entity: string;
+  entity_id: string;
+  reason: string | null;
+  created_at: string;
+  actor: { full_name: string } | null;
+}
+
+/** Admin only: RLS returns nothing to anyone else. */
+export async function listAuditLogs(limit = 100): Promise<AuditEntry[]> {
+  const supabase = await createSupabaseServerClient();
+  const { data, error } = await supabase
+    .from('audit_logs')
+    .select('id, action, entity, entity_id, reason, created_at, actor_id')
+    .order('id', { ascending: false })
+    .limit(limit)
+    .returns<(Omit<AuditEntry, 'actor'> & { actor_id: string | null })[]>();
+  if (error) throw error;
+  const rows = data ?? [];
+  // audit_logs has no foreign key to profiles (a log outlives its actor), so
+  // names are looked up separately.
+  const ids = [...new Set(rows.map((row) => row.actor_id).filter((id): id is string => Boolean(id)))];
+  const names = new Map<string, string>();
+  if (ids.length > 0) {
+    const { data: people } = await supabase.from('profiles').select('id, full_name').in('id', ids).returns<{ id: string; full_name: string }[]>();
+    for (const person of people ?? []) names.set(person.id, person.full_name);
+  }
+  return rows.map(({ actor_id, ...row }) => ({ ...row, actor: actor_id ? { full_name: names.get(actor_id) ?? '' } : null }));
 }

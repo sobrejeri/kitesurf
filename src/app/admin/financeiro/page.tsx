@@ -1,64 +1,71 @@
 import type { Metadata } from 'next';
 
-import { Badge, Card, EmptyState, Note, PageHeader, StatCard } from '@/components/ui';
+import { AdminTitle, BarChart, Metric, Panel } from '@/components/admin/kit';
+import { BOOKING_STATUS } from '@/components/admin/labels';
+import { Badge, EmptyState, Note } from '@/components/ui';
 import { requireRole } from '@/lib/auth';
-import { BOOKING_STATUS_LABELS, listAllBookings } from '@/lib/data';
-import { formatMoney } from '@/lib/format';
+import { listAllBookings } from '@/lib/data';
+import { dayKey, lastDays } from '@/lib/dates';
+import { formatBps, formatMoney } from '@/lib/format';
 
 export const metadata: Metadata = { title: 'Financeiro' };
 
-/** Sums of each booking's frozen split. Nothing is recomputed here. */
+/** Sums of each paid booking's frozen split; nothing is recomputed here. */
 export default async function AdminFinancePage() {
   await requireRole(['admin'], '/admin/financeiro');
-  const bookings = (await listAllBookings(500)).filter((b) => b.status === 'confirmed' || b.status === 'completed');
-  const sum = (pick: (b: (typeof bookings)[number]) => number) => bookings.reduce((total, b) => total + pick(b), 0);
+  const paid = (await listAllBookings(500)).filter((b) => b.status === 'confirmed' || b.status === 'completed');
+  const sum = (pick: (b: (typeof paid)[number]) => number) => paid.reduce((total, b) => total + pick(b), 0);
+  const volume = sum((b) => b.total_cents);
+  const platform = sum((b) => b.platform_cents);
+  const instructors = sum((b) => b.instructor_net_cents);
+  const partners = sum((b) => b.partner_cents);
+  // Share of the volume, in basis points, from integer sums.
+  const share = (part: number) => (volume > 0 ? Math.round((part * 10000) / volume) : 0);
+
+  const perDay = lastDays(7).map((day) => ({
+    label: day.label.slice(0, 5),
+    value: paid.filter((b) => dayKey(b.created_at) === day.key).reduce((total, b) => total + b.total_cents, 0),
+  }));
+
   return (
     <>
-      <PageHeader title="Pagamentos e repasses" />
+      <AdminTitle title="Financeiro" subtitle="Pagamentos de teste — nenhum dinheiro é movimentado." />
       <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
-        <StatCard highlight label="Volume confirmado" value={formatMoney(sum((b) => b.total_cents))} hint="Pagamentos de teste" icon="wallet" />
-        <StatCard label="Parcela plataforma" value={formatMoney(sum((b) => b.platform_cents))} hint="Após comissão das pousadas" icon="chart" />
-        <StatCard label="Líquido dos instrutores" value={formatMoney(sum((b) => b.instructor_net_cents))} hint="A repassar" icon="users" />
-        <StatCard label="Comissões de pousadas" value={formatMoney(sum((b) => b.partner_cents))} hint="Sobre aulas indicadas" icon="home" />
+        <Metric label="Volume confirmado" value={formatMoney(volume)} hint={`${paid.length} reservas pagas`} hintTone="success" icon="wallet" tone="green" />
+        <Metric label="Parcela plataforma" value={formatMoney(platform)} hint={formatBps(share(platform))} hintTone="muted" icon="chart" tone="purple" />
+        <Metric label="Líquido instrutores" value={formatMoney(instructors)} hint={formatBps(share(instructors))} hintTone="muted" icon="users" tone="blue" />
+        <Metric label="Comissões pousadas" value={formatMoney(partners)} hint={formatBps(share(partners))} hintTone="brand" icon="home" tone="orange" />
       </div>
-      <Card className="mt-5 !p-0">
-        <div className="flex flex-wrap items-center justify-between gap-3 px-5 pt-5 sm:px-6">
-          <div>
-            <h2 className="text-[16px]">Distribuição por reserva</h2>
-            <p className="text-[11px] text-muted">A divisão é fixada no momento da reserva.</p>
-          </div>
-          <Badge tone="quiet">Sem cobrança real</Badge>
-        </div>
-        {bookings.length === 0 ? (
-          <div className="p-5"><EmptyState>Nenhuma reserva paga ainda.</EmptyState></div>
+
+      <Panel title="Evolução de pagamentos" action={<span className="text-[12px] text-muted">Últimos 7 dias</span>} className="mt-4">
+        <BarChart points={perDay} describe={formatMoney} />
+      </Panel>
+
+      <Panel title="Distribuição por reserva" className="mt-4">
+        {paid.length === 0 ? (
+          <EmptyState>Nenhuma reserva paga ainda.</EmptyState>
         ) : (
-          <div className="relative mt-4 overflow-x-auto">
-            <table className="tabular w-full min-w-[760px] text-left">
-              <thead>
-                <tr className="bg-[#fafbfe] text-[10px] uppercase tracking-[.5px] text-quiet">
-                  {['Reserva', 'Instrutor', 'Total', 'Pousada', 'Plataforma', 'Instrutor (líquido)', 'Situação'].map((head) => (
-                    <th key={head} className="px-4 py-3 font-medium">{head}</th>
-                  ))}
-                </tr>
-              </thead>
-              <tbody className="text-[12px] text-[#596b87]">
-                {bookings.map((b) => (
-                  <tr key={b.id} className="border-t border-[#eef1f6]">
-                    <td className="px-4 py-4 font-[550] text-brand">{b.code}</td>
-                    <td className="px-4 py-4">{b.instructor?.full_name}</td>
-                    <td className="px-4 py-4">{formatMoney(b.total_cents)}</td>
-                    <td className="px-4 py-4">{formatMoney(b.partner_cents)}</td>
-                    <td className="px-4 py-4">{formatMoney(b.platform_cents)}</td>
-                    <td className="px-4 py-4">{formatMoney(b.instructor_net_cents)}</td>
-                    <td className="px-4 py-4">{BOOKING_STATUS_LABELS[b.status]}</td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
+          <ul className="grid gap-2">
+            {paid.map((b) => (
+              <li key={b.id} className="rounded-[14px] border border-line px-4 py-3">
+                <div className="flex items-center justify-between gap-2">
+                  <span className="text-[14px] font-semibold text-ink">#{b.code.replace('VNT-', '')} · {b.instructor?.full_name ?? '—'}</span>
+                  <Badge tone={BOOKING_STATUS[b.status].tone}>{BOOKING_STATUS[b.status].label}</Badge>
+                </div>
+                <dl className="tabular mt-2 grid grid-cols-2 gap-x-4 gap-y-1 text-[12px] sm:grid-cols-4">
+                  <div><dt className="text-muted">Total</dt><dd className="font-semibold text-ink">{formatMoney(b.total_cents)}</dd></div>
+                  <div><dt className="text-muted">Instrutor</dt><dd className="text-ink">{formatMoney(b.instructor_net_cents)}</dd></div>
+                  <div><dt className="text-muted">Plataforma</dt><dd className="text-ink">{formatMoney(b.platform_cents)}</dd></div>
+                  <div><dt className="text-muted">Pousada</dt><dd className="text-ink">{formatMoney(b.partner_cents)}</dd></div>
+                </dl>
+              </li>
+            ))}
+          </ul>
         )}
-      </Card>
-      <Note tone="warning" className="mt-5">Taxas do provedor, reembolsos e repasses ainda dependem da integração de pagamento. Nada aqui movimenta dinheiro.</Note>
+      </Panel>
+      <Note tone="warning" className="mt-4">
+        Taxas do provedor, reembolsos e repasses dependem da integração de pagamento.
+      </Note>
     </>
   );
 }

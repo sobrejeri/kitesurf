@@ -2,7 +2,9 @@ import type { Metadata } from 'next';
 
 import { createBeach, updateBeach } from '@/app/actions/admin';
 import { ActionForm } from '@/components/action-form';
-import { Badge, Card, EmptyState, Field, Note, PageHeader, inputClass } from '@/components/ui';
+import { AdminTitle, BeachTile, Panel } from '@/components/admin/kit';
+import { Icon } from '@/components/icon';
+import { Badge, EmptyState, Field, Note, inputClass } from '@/components/ui';
 import { requireRole } from '@/lib/auth';
 import { listAllBeaches, listAllInstructors } from '@/lib/data';
 
@@ -16,39 +18,36 @@ export default async function BeachesAdminPage() {
 
   return (
     <>
-      <PageHeader
-        eyebrow="Onde as aulas acontecem"
-        title="Praias"
-        lead="Cadastre as praias atendidas. Os instrutores marcam em quais conseguem dar aula, e o aluno só encontra instrutores da praia escolhida."
+      <AdminTitle
+        title="Praias e localizações"
+        subtitle={`${beaches.length} localizações`}
+        action={
+          <a href="#nova-praia" className="btn-primary press inline-flex items-center gap-1.5 rounded-full px-4 py-2.5 !text-[13px] text-white">
+            <Icon name="plus" className="!h-4 !w-4" /> Nova praia
+          </a>
+        }
       />
-      <div className="grid gap-5 lg:grid-cols-[1fr_1.4fr]">
-        <Card className="self-start">
-          <h2 className="text-[16px]">Nova praia</h2>
-          <ActionForm action={createBeach} submitLabel="Cadastrar praia" className="mt-4 grid gap-4">
-            <Field label="Nome">
-              <input name="name" required minLength={2} maxLength={60} placeholder="Ex.: Praia do Guriú" className={inputClass} />
-            </Field>
-            <Field label="Região" hint="Opcional. Aparece como referência para o aluno.">
-              <input name="region" maxLength={60} placeholder="Ex.: Ceará" className={inputClass} />
-            </Field>
-          </ActionForm>
-        </Card>
 
-        <div className="grid content-start gap-3">
+      <div className="grid gap-4 lg:grid-cols-[1.4fr_1fr]">
+        <ul className="grid content-start gap-3">
           {beaches.length === 0 ? <EmptyState>Nenhuma praia cadastrada.</EmptyState> : null}
           {beaches.map((beach) => (
-            <Card key={beach.id} className="!p-4 sm:!p-5">
-              <div className="flex flex-wrap items-center justify-between gap-3">
-                <div>
-                  <p className="text-[15px] font-[550]">{beach.name}</p>
-                  <p className="text-[12px] text-muted">
-                    {beach.region || 'Sem região'} · {servedBy(beach.id)} instrutor(es) aprovado(s)
+            <li key={beach.id} className="rounded-[18px] border border-line bg-surface p-3">
+              <div className="flex items-center gap-3">
+                <BeachTile size={72} />
+                <div className="min-w-0 flex-1">
+                  <div className="flex items-start justify-between gap-2">
+                    <p className="truncate text-[16px] font-semibold text-ink">{beach.name}</p>
+                    <Badge tone={beach.active ? 'success' : 'quiet'}>{beach.active ? 'Ativa' : 'Inativa'}</Badge>
+                  </div>
+                  <p className="text-[12px] text-muted">{beach.region || 'Sem região'}</p>
+                  <p className="mt-1.5 flex items-center gap-1.5 text-[12px] text-label">
+                    <Icon name="users" className="!h-4 !w-4" /> {servedBy(beach.id)} instrutor(es)
                   </p>
                 </div>
-                <Badge tone={beach.active ? 'success' : 'quiet'}>{beach.active ? 'Ativa' : 'Inativa'}</Badge>
               </div>
-              <details className="mt-3 border-t border-line pt-3">
-                <summary className="cursor-pointer text-[12px] font-[550] text-brand">Editar</summary>
+              <details className="mt-2 border-t border-line pt-2">
+                <summary className="cursor-pointer px-1 text-[12px] font-medium text-brand">Editar</summary>
                 <ActionForm action={updateBeach} submitLabel="Salvar" className="mt-3 grid gap-3 sm:grid-cols-2">
                   <input type="hidden" name="beachId" value={beach.id} />
                   <Field label="Nome">
@@ -59,18 +58,30 @@ export default async function BeachesAdminPage() {
                   </Field>
                   <Field label="Situação">
                     <select name="active" defaultValue={String(beach.active)} className={inputClass}>
-                      <option value="true">Ativa — aparece para alunos e instrutores</option>
-                      <option value="false">Inativa — não recebe novas reservas</option>
+                      <option value="true">Ativa</option>
+                      <option value="false">Inativa</option>
                     </select>
                   </Field>
                 </ActionForm>
               </details>
-            </Card>
+            </li>
           ))}
-        </div>
+        </ul>
+
+        <Panel title="Nova praia" className="self-start scroll-mt-24">
+          <div id="nova-praia" />
+          <ActionForm action={createBeach} submitLabel="Cadastrar praia" className="grid gap-4">
+            <Field label="Nome">
+              <input name="name" required minLength={2} maxLength={60} placeholder="Ex.: Praia do Guriú" className={inputClass} />
+            </Field>
+            <Field label="Região" hint="Opcional, ex.: Cruz, Ceará.">
+              <input name="region" maxLength={60} className={inputClass} />
+            </Field>
+          </ActionForm>
+        </Panel>
       </div>
-      <Note className="mt-5">
-        Desativar uma praia não apaga nada: reservas existentes continuam como estão, e ela só deixa de aparecer para novas reservas. Toda mudança fica no histórico de auditoria.
+      <Note className="mt-4">
+        Desativar uma praia não apaga nada: reservas existentes continuam, e ela só sai das novas buscas. Toda mudança fica na auditoria.
       </Note>
     </>
   );
