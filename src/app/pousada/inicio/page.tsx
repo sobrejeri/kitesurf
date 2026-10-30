@@ -2,7 +2,8 @@ import type { Metadata } from 'next';
 import { redirect } from 'next/navigation';
 
 import { PartnerFootnote, PartnerHeading } from '@/components/partner-info';
-import { Badge, ButtonLink, Card, StatCard } from '@/components/ui';
+import { Metric } from '@/components/admin/kit';
+import { Badge, ButtonLink, Card } from '@/components/ui';
 import { requireRole } from '@/lib/auth';
 import { getOwnPartner, getPartnerSummary } from '@/lib/data';
 import { formatBps, formatMoney } from '@/lib/format';
@@ -27,9 +28,11 @@ export default async function PartnerHomePage() {
         <Badge tone={partner.status === 'approved' ? 'success' : 'warning'}>{partner.status === 'approved' ? 'Aprovada' : 'Em análise'}</Badge>
       </Card>
       <div className="mt-4 grid grid-cols-2 gap-3 lg:grid-cols-3">
-        <StatCard highlight label="Liberado" value={formatMoney(summary.released_cents)} hint="Aulas realizadas" icon="check" />
-        <StatCard label="Pendente" value={formatMoney(summary.pending_cents)} hint="Depende da realização das aulas" icon="clock" />
-        <StatCard label="Contratações" value={String(summary.bookings)} hint="Reservas pelo seu link" icon="users" />
+        <Metric label="Liberado" value={formatMoney(summary.released_cents)} hint="Aulas realizadas" hintTone="success" icon="check" tone="green" />
+        <Metric label="Pendente" value={formatMoney(summary.pending_cents)} hint="Aguarda a realização" hintTone="brand" icon="clock" tone="orange" />
+        <div className="col-span-2 lg:col-span-1">
+          <Metric label="Contratações" value={String(summary.bookings)} hint="Reservas pelo seu link" icon="users" tone="blue" />
+        </div>
       </div>
       <Card tone="tinted" className="mt-5 flex flex-wrap items-center justify-between gap-4">
         <div>

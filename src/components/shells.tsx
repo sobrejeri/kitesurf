@@ -420,20 +420,16 @@ export function PartnerShell({
   areas?: readonly { label: string; href: string }[];
 }) {
   const pathname = usePathname();
-  const current = PARTNER_NAV.find((item) => isActive(pathname, item));
   return (
-    <>
-      <header className="hidden border-b border-line bg-surface md:block">
+    <div className="theme-sunset min-h-dvh bg-canvas text-ink">
+      <header className="hidden border-b border-line bg-chrome md:block">
         <div className="mx-auto flex max-w-6xl items-center justify-between gap-4 px-8 py-4">
-          <div className="flex items-center gap-4">
-            <Logo />
-            <span className="text-[10px] font-[550] uppercase tracking-[1px] text-brand">Pousada parceira</span>
-          </div>
+          <StudentBrand subtitle="Pousada parceira" />
           <div className="flex items-center gap-2.5">
-            <Avatar initials={partner.initials} tone="a4" size={36} />
+            <Avatar initials={partner.initials} size={36} />
             <span className="text-[12px] leading-tight">
-              <strong className="block font-[550] text-[#4f5e77]">{partner.name}</strong>
-              <span className="text-[11px] text-subtle">Pousada parceira</span>
+              <strong className="block font-[550] text-ink">{partner.name}</strong>
+              <span className="text-[11px] text-muted">Pousada parceira</span>
             </span>
           </div>
         </div>
@@ -445,7 +441,7 @@ export function PartnerShell({
                 key={item.href}
                 href={item.href}
                 aria-current={active ? 'page' : undefined}
-                className={`shrink-0 border-b-2 pb-3 text-[13px] ${active ? 'border-brand font-[550] text-brand' : 'border-transparent text-[#8993a2] hover:text-brand'}`}
+                className={`shrink-0 border-b-2 pb-3 text-[14px] ${active ? 'border-brand font-[550] text-brand' : 'border-transparent text-muted hover:text-ink'}`}
               >
                 {item.label}
               </Link>
@@ -453,19 +449,19 @@ export function PartnerShell({
           })}
         </nav>
       </header>
-      <MobileHeader leading={<LogoMark />} title={current?.label ?? 'Pousada parceira'} />
-      <section className="hidden border-b border-line bg-brand-tint md:block">
-        <div className="mx-auto max-w-6xl px-8 py-5">
-          <p className="text-[17px] font-semibold tracking-[-0.45px]">Indique bons momentos no mar</p>
-          <p className="mt-1 text-[12px] text-muted">
-            Comissões sobre aulas realizadas. O preço do hóspede e o líquido do instrutor são preservados.
-          </p>
-        </div>
-      </section>
-      <main className="mx-auto max-w-6xl px-4 pb-tabbar pt-5 md:px-8 md:pb-0 md:pt-7">{children}</main>
+      <MobileHeader
+        leading={<StudentBrand subtitle="Pousada" />}
+        trailing={
+          <span className="grid h-10 w-10 place-items-center rounded-full border border-line-ghost bg-sand text-[13px] font-[550] text-ink" aria-hidden="true">
+            {partner.initials}
+          </span>
+        }
+      />
+      <main className="mx-auto max-w-6xl px-4 pb-tabbar pt-4 md:px-8 md:pb-0 md:pt-7">{children}</main>
       <SiteFooter />
       <TabBar
         label="Área da pousada"
+        variant="underline"
         items={PARTNER_NAV.slice(0, 3)}
         more={{
           title: 'Pousada parceira',
@@ -473,6 +469,6 @@ export function PartnerShell({
           footer: <SheetAccount name={partner.name} subtitle="Pousada parceira" initials={partner.initials} signOut={signOut} areas={areas} />,
         }}
       />
-    </>
+    </div>
   );
 }

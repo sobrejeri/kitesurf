@@ -17,10 +17,10 @@ export function PartnerFootnote() {
 
 export function PartnerHeading({ title, lead }: { title: string; lead: string }) {
   return (
-    <header className="mb-6 flex flex-wrap items-end justify-between gap-3">
+    <header className="mb-5 flex flex-wrap items-end justify-between gap-3">
       <div>
-        <h1 className="text-[26px] tracking-[-0.9px] sm:text-[30px]">{title}</h1>
-        <p className="mt-1 text-[13px] text-muted">{lead}</p>
+        <h1 className="text-[30px] font-bold leading-tight tracking-[-0.8px] text-ink md:text-[34px]">{title}</h1>
+        <p className="mt-1 text-[14px] text-label">{lead}</p>
       </div>
     </header>
   );
