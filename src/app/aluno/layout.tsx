@@ -1,14 +1,18 @@
-import { signOut } from '@/app/actions/auth';
-import { StudentShell } from '@/components/shells';
-import { getViewer } from '@/lib/auth';
-import { initials } from '@/lib/people';
+import type { Metadata, Viewport } from 'next';
 
-/** Explore and policies are public; every other student page calls requireRole. */
-export default async function StudentLayout({ children }: { children: React.ReactNode }) {
-  const viewer = await getViewer();
-  return (
-    <StudentShell name={viewer?.fullName || 'Visitante'} initials={initials(viewer?.fullName)} signedIn={Boolean(viewer)} signOut={signOut}>
-      {children}
-    </StudentShell>
-  );
+/**
+ * Vento as its own installable app: its own manifest (scope /aluno/), icon
+ * and home-screen name. Pages that need a signed-in user live in (app).
+ */
+export const metadata: Metadata = {
+  manifest: '/apps/aluno.webmanifest',
+  applicationName: 'Vento',
+  appleWebApp: { capable: true, title: 'Vento', statusBarStyle: 'black-translucent' },
+  icons: { icon: '/apps/aluno-192.png', apple: '/apps/aluno-192.png' },
+};
+
+export const viewport: Viewport = { themeColor: '#08101e' };
+
+export default function AlunoAppLayout({ children }: { children: React.ReactNode }) {
+  return children;
 }

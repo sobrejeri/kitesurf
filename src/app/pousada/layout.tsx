@@ -1,21 +1,18 @@
-import { signOut } from '@/app/actions/auth';
-import { PartnerShell } from '@/components/shells';
-import { areaLinksFor } from '@/lib/areas';
-import { requireRole } from '@/lib/auth';
-import { getOwnPartner } from '@/lib/data';
-import { initials } from '@/lib/people';
+import type { Metadata, Viewport } from 'next';
 
-export default async function PartnerLayout({ children }: { children: React.ReactNode }) {
-  const viewer = await requireRole(['partner'], '/pousada/inicio');
-  const partner = await getOwnPartner(viewer.id);
-  const name = partner?.name ?? viewer.fullName;
-  return (
-    <PartnerShell
-      partner={{ name, initials: initials(name) }}
-      signOut={signOut}
-      areas={areaLinksFor(viewer.role)}
-    >
-      {children}
-    </PartnerShell>
-  );
+/**
+ * Vento Pousada as its own installable app: its own manifest (scope /pousada/), icon
+ * and home-screen name. Pages that need a signed-in user live in (app).
+ */
+export const metadata: Metadata = {
+  manifest: '/apps/pousada.webmanifest',
+  applicationName: 'Vento Pousada',
+  appleWebApp: { capable: true, title: 'Vento Pousada', statusBarStyle: 'black-translucent' },
+  icons: { icon: '/apps/pousada-192.png', apple: '/apps/pousada-192.png' },
+};
+
+export const viewport: Viewport = { themeColor: '#08101e' };
+
+export default function PousadaAppLayout({ children }: { children: React.ReactNode }) {
+  return children;
 }

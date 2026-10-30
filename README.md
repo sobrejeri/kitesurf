@@ -22,7 +22,8 @@ parceiras indicam hóspedes em troca de comissão.
    Render (ex.: `https://vento.onrender.com`) e adicione
    `https://vento.onrender.com/**` em *Redirect URLs*.
 3. **Authentication → Email Templates → Confirm signup**: troque o link por
-   `{{ .SiteURL }}/auth/confirm?token_hash={{ .TokenHash }}&type=email`.
+   `{{ .RedirectTo }}&token_hash={{ .TokenHash }}&type=email`
+   (o app manda `RedirectTo` com o app certo, ex.: `…/auth/confirm?area=instrutor`).
 4. **Project Settings → API**: copie a *Project URL* e a chave *anon* /
    *publishable*. Só essas duas — o app não usa a `service_role`.
 
@@ -52,6 +53,22 @@ admin aprova instrutores e pousadas e publica preços pelo próprio app.
 4. O **instrutor** vê o encontro em *Meu dia*, inicia com o código de presença
    do aluno e registra os minutos em *Realizar e registrar aula*.
 5. O aluno acompanha em *Evolução*; o admin vê valores em *Financeiro*.
+
+## Quatro apps, quatro logins
+
+Cada perfil instala o seu próprio app (PWA), com nome, ícone e login próprios:
+
+| App | Instalar a partir de | Login |
+| --- | --- | --- |
+| Vento (aluno) | `/aluno/inicio` | `/aluno/entrar` |
+| Vento Instrutor | `/instrutor/entrar` | `/instrutor/entrar` |
+| Vento Admin | `/admin/entrar` | `/admin/entrar` |
+| Vento Pousada | `/pousada/entrar` | `/pousada/entrar` |
+
+Cada app guarda a sessão num cookie próprio (`vento-<app>-auth`), então o
+mesmo celular pode estar logado como aluno no Vento e como admin no Vento
+Admin. Um app só aceita contas do seu tipo (ou admin). `/entrar` mostra a
+escolha entre os quatro.
 
 ## Desenvolvimento
 

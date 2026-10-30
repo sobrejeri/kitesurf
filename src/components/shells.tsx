@@ -6,6 +6,7 @@ import { usePathname } from 'next/navigation';
 import { Icon, type IconName } from './icon';
 import { MenuButton, MobileHeader, SheetAccount, TabBar, isActive, type SheetLink, type TabItem } from './mobile';
 import { StudentBrand } from './student/sunset';
+import { areaFromPath } from '@/lib/app-areas';
 import { AREAS } from '@/lib/areas';
 
 import { Avatar } from './ui';
@@ -47,6 +48,9 @@ export interface TopBarViewer {
 export function TopBar({ viewer, signOut }: { viewer: TopBarViewer | null; signOut: () => Promise<void> }) {
   const pathname = usePathname();
   const areas = viewer ? AREAS.filter((area) => viewer.role === 'admin' || area.role === viewer.role) : [];
+  const app = areaFromPath(pathname);
+  // The login screens are full-screen app screens of their own.
+  if (pathname === '/entrar' || /^\/[a-z]+\/(entrar|criar-conta)/.test(pathname)) return null;
   return (
     <div className="sticky top-0 z-40 hidden h-14 items-center justify-between gap-3 border-b border-line bg-chrome px-6 text-[12px] text-label lg:flex">
       {areas.length > 1 ? (
@@ -82,10 +86,10 @@ export function TopBar({ viewer, signOut }: { viewer: TopBarViewer | null; signO
         </div>
       ) : (
         <div className="flex items-center gap-2">
-          <Link href="/entrar" className="rounded-full px-3 py-1.5 font-[550] text-brand">
+          <Link href={`/${app}/entrar`} className="rounded-full px-3 py-1.5 font-[550] text-brand">
             Entrar
           </Link>
-          <Link href="/cadastro" className="rounded-full bg-brand px-3 py-1.5 font-[550] text-white">
+          <Link href={app === 'admin' ? '/entrar' : `/${app}/criar-conta`} className="rounded-full bg-brand px-3 py-1.5 font-[550] text-white">
             Criar conta
           </Link>
         </div>
@@ -99,7 +103,7 @@ function SiteFooter() {
     <footer className="mx-auto mt-14 hidden max-w-6xl flex-wrap items-center justify-between gap-3 px-8 pb-10 text-[11px] text-subtle md:flex">
       <Logo size="sm" />
       <p>Feito de mar, vento e boas histórias.</p>
-      <Link href="/cadastro?perfil=partner" className="font-[550] text-brand">
+      <Link href="/pousada/criar-conta" className="font-[550] text-brand">
         É pousada? Seja parceira
       </Link>
     </footer>
@@ -165,7 +169,7 @@ export function StudentShell({
   const subpage = STUDENT_SUBPAGES.some((route) => pathname.startsWith(route));
   const tabs = signedIn
     ? STUDENT_TABS
-    : STUDENT_TABS.map((tab) => (tab.href === '/aluno/conta' ? { ...tab, label: 'Entrar', href: '/entrar' } : tab));
+    : STUDENT_TABS.map((tab) => (tab.href === '/aluno/conta' ? { ...tab, label: 'Entrar', href: '/aluno/entrar' } : tab));
 
   return (
     <div className="theme-sunset min-h-dvh bg-canvas text-ink">
@@ -202,7 +206,7 @@ export function StudentShell({
                 </span>
               </Link>
             ) : (
-              <Link href="/entrar" className="btn-primary press rounded-full px-5 py-2 text-[13px] font-[650] text-white">
+              <Link href="/aluno/entrar" className="btn-primary press rounded-full px-5 py-2 text-[13px] font-[650] text-white">
                 Entrar
               </Link>
             )}
@@ -235,8 +239,8 @@ export function StudentShell({
                 <SheetAccount name={name} subtitle="Aluno" initials={initials} signOut={signOut} />
               ) : (
                 <div className="grid grid-cols-2 gap-2">
-                  <Link href="/entrar" className="press rounded-full border border-line py-3 text-center text-[14px] font-[550] text-ink">Entrar</Link>
-                  <Link href="/cadastro" className="btn-primary press rounded-full py-3 text-center text-white">Criar conta</Link>
+                  <Link href="/aluno/entrar" className="press rounded-full border border-line py-3 text-center text-[14px] font-[550] text-ink">Entrar</Link>
+                  <Link href="/aluno/criar-conta" className="btn-primary press rounded-full py-3 text-center text-white">Criar conta</Link>
                 </div>
               )
             }
