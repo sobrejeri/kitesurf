@@ -15,26 +15,38 @@ export function WaveMark({ className = '' }: { className?: string }) {
   );
 }
 
-export function StudentBrand({ subtitle = 'Aulas de kitesurf' }: { subtitle?: string }) {
+export function StudentBrand({ subtitle = 'Aulas de kitesurf', onPhoto = false }: { subtitle?: string; onPhoto?: boolean }) {
   return (
     <span className="flex items-center gap-2.5">
       <WaveMark className="h-9 w-14" />
       <span className="leading-none">
-        <span className="block text-[24px] font-bold tracking-[-0.6px] text-logo-ink">Vento</span>
-        <span className="mt-0.5 block text-[9px] font-medium uppercase tracking-[2px] text-label">{subtitle}</span>
+        <span className={`block text-[24px] font-bold tracking-[-0.6px] ${onPhoto ? 'text-white' : 'text-logo-ink'}`}>Vento</span>
+        <span className={`mt-0.5 block text-[9px] font-medium uppercase tracking-[2px] ${onPhoto ? 'text-white/85' : 'text-label'}`}>{subtitle}</span>
       </span>
     </span>
   );
 }
 
 /** "Minhas aulas" with the last word in orange, as the reference does. */
-export function HighlightTitle({ text, highlight, as: Tag = 'h1', className = '' }: { text: string; highlight?: string; as?: 'h1' | 'h2'; className?: string }) {
+export function HighlightTitle({
+  text,
+  highlight,
+  as: Tag = 'h1',
+  className = '',
+  highlightClass = 'text-brand',
+}: {
+  text: string;
+  highlight?: string;
+  as?: 'h1' | 'h2';
+  className?: string;
+  highlightClass?: string;
+}) {
   if (!highlight || !text.includes(highlight)) return <Tag className={className}>{text}</Tag>;
   const at = text.lastIndexOf(highlight);
   return (
     <Tag className={className}>
       {text.slice(0, at)}
-      <span className="text-brand">{highlight}</span>
+      <span className={highlightClass}>{highlight}</span>
       {text.slice(at + highlight.length)}
     </Tag>
   );
@@ -59,9 +71,12 @@ export function StudentHero({
   lead,
   image = 'coast',
   compact = false,
+  script = false,
   top,
   children,
 }: {
+  /** Set the highlighted word in the handwritten face (home hero only). */
+  script?: boolean;
   /** Shown above the eyebrow, e.g. the location pill on Explorar. */
   top?: React.ReactNode;
   eyebrow?: string;
@@ -89,7 +104,7 @@ export function StudentHero({
       >
         {top ? <div className="mb-6">{top}</div> : null}
         {eyebrow ? (
-          <p className="flex items-center gap-2 text-[11px] font-semibold uppercase tracking-[2px] text-brand">
+          <p className="text-sunrise flex items-center gap-2 text-[11px] font-semibold uppercase tracking-[2px]">
             {eyebrowIcon ? <Icon name={eyebrowIcon} className="!h-4 !w-4" /> : null}
             {eyebrow}
           </p>
@@ -97,6 +112,7 @@ export function StudentHero({
         <HighlightTitle
           text={title}
           highlight={highlight}
+          highlightClass={script ? 'text-sunrise font-script text-[1.35em] font-bold leading-[0.8] tracking-normal' : 'text-sunrise'}
           className={`mt-2 max-w-[13ch] font-bold leading-[1.05] tracking-[-1.2px] text-white ${compact ? 'text-[34px] md:text-[40px]' : 'text-[40px] md:text-[52px]'}`}
         />
         {lead ? <p className="mt-3 max-w-[30ch] text-[15px] leading-snug text-[#dfe5ee]">{lead}</p> : null}

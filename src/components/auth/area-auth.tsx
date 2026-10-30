@@ -16,19 +16,19 @@ function AuthFrame({ area, title, highlight, lead, children }: { area: AppArea; 
   const info = APP_AREAS[area];
   const at = title.lastIndexOf(highlight);
   return (
-    <div className="theme-sunset relative min-h-dvh overflow-hidden bg-canvas text-ink">
+    <div className={`${area === 'aluno' ? 'theme-beach' : 'theme-sunset'} relative min-h-dvh overflow-hidden bg-canvas text-ink`}>
       <img src={area === 'aluno' ? '/images/prea-coast.webp' : '/images/kite-lesson.webp'} alt="" className="sunset-photo absolute inset-x-0 top-0 h-[46dvh] w-full object-cover" />
       <div className="sunset-veil absolute inset-x-0 top-0 h-[46dvh]" aria-hidden="true" />
       <main className="pt-safe pb-safe relative mx-auto flex min-h-dvh max-w-md flex-col px-5">
         <div className="pt-6">
-          <StudentBrand subtitle={info.subtitle} />
+          <StudentBrand subtitle={info.subtitle} onPhoto />
         </div>
         <div className="mt-[14dvh]">
           <h1 className="text-[36px] font-bold leading-[1.05] tracking-[-1px] text-white">
             {at >= 0 ? (
               <>
                 {title.slice(0, at)}
-                <span className="text-brand">{highlight}</span>
+                <span className="text-sunrise">{highlight}</span>
                 {title.slice(at + highlight.length)}
               </>
             ) : (

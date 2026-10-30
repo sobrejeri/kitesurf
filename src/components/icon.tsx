@@ -8,6 +8,16 @@ const PATHS = {
   arrow: <path d="M5 12h14M13 6l6 6-6 6" />,
   back: <path d="M19 12H5M11 6l-6 6 6 6" />,
   menu: <path d="M4 7h16M4 12h16M4 17h16" />,
+  chevronDown: <path d="m6 9 6 6 6-6" />,
+  sprout: <path d="M12 21v-9M12 12c0-4-3-6-7-6 0 4 3 6 7 6zM12 12c0-4 3-6 7-6 0 4-3 6-7 6z" />,
+  bars: <path d="M6 20v-5M10 20v-8M14 20v-11M18 20V5" />,
+  crown: <path d="M4 18h16M5 18 3 7l5 4 4-6 4 6 5-4-2 11" />,
+  help: (
+    <>
+      <circle cx="12" cy="12" r="9" />
+      <path d="M9.5 9.5a2.5 2.5 0 0 1 4.8 1c0 1.7-2.3 2-2.3 3.5M12 17h.01" />
+    </>
+  ),
   logout: <path d="M14 4h4a2 2 0 0 1 2 2v12a2 2 0 0 1-2 2h-4M9 16l-4-4 4-4M5 12h11" />,
   mail: (
     <>

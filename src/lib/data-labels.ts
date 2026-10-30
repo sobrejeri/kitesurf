@@ -15,8 +15,8 @@ export type LessonLevel = 'first_time' | 'returning' | 'improving';
 
 export const LEVEL_LABELS: Readonly<Record<LessonLevel, string>> = {
   first_time: 'Primeira vez',
-  returning: 'Já fiz aulas',
-  improving: 'Quero evoluir',
+  returning: 'Intermediário',
+  improving: 'Avançado',
 };
 
 export interface QuoteRow {

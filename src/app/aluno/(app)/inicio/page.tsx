@@ -70,9 +70,11 @@ export default async function StudentHomePage() {
   return (
     <>
       <StudentHero
+        eyebrow="Liberdade em cada rajada"
         title="Seu próximo bordo começa aqui."
         highlight="aqui."
-        lead={firstName ? `${firstName}, escolha suas horas e encontre o instrutor ideal.` : 'Escolha suas horas e encontre o instrutor ideal.'}
+        script
+        lead={`${firstName ? `${firstName}, aulas` : 'Aulas'} de kitesurf para todos os níveis, no seu ritmo, com instrutores experientes.`}
       />
 
       <LessonSearch defaultDate={lessonDate(1)} quotes={quotes} beaches={beaches} />
@@ -96,7 +98,7 @@ export default async function StudentHomePage() {
           {STEPS.map((step, index) => (
             <li key={step.title} className="flex items-start gap-3 sm:block sm:px-4 sm:first:pl-0">
               <span className="flex items-center gap-3">
-                <span className="grid h-10 w-10 shrink-0 place-items-center rounded-full bg-brand-soft text-[16px] font-semibold text-white">{index + 1}</span>
+                <span className="grid h-10 w-10 shrink-0 place-items-center rounded-full bg-brand-soft text-[16px] font-semibold text-brand">{index + 1}</span>
                 <Icon name={step.icon} className="hidden !h-7 !w-7 text-ink sm:block" />
               </span>
               <span className="sm:mt-3 sm:block">

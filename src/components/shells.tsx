@@ -172,7 +172,7 @@ export function StudentShell({
     : STUDENT_TABS.map((tab) => (tab.href === '/aluno/conta' ? { ...tab, label: 'Entrar', href: '/aluno/entrar' } : tab));
 
   return (
-    <div className="theme-sunset min-h-dvh bg-canvas text-ink">
+    <div className="theme-beach min-h-dvh bg-canvas text-ink">
       <header className="hidden border-b border-line bg-chrome md:block">
         <div className="mx-auto flex h-[76px] max-w-6xl items-center justify-between gap-6 px-8">
           <Link href="/aluno/inicio" aria-label="Vento — início">
@@ -223,15 +223,16 @@ export function StudentShell({
             </button>
           ) : null}
           <Link href="/aluno/inicio" aria-label="Vento — início" className="press">
-            <StudentBrand />
+            <StudentBrand onPhoto />
           </Link>
           <span className="flex-1" />
           {signedIn ? (
-            <Link href="/aluno/avisos" aria-label="Avisos" className="press grid h-10 w-10 place-items-center rounded-full text-white">
+            <Link href="/aluno/avisos" aria-label="Avisos" className="press grid h-11 w-11 place-items-center rounded-full bg-[#0b2a4a]/45 text-white backdrop-blur">
               <Icon name="bell" className="!h-6 !w-6" />
             </Link>
           ) : null}
           <MenuButton
+            onPhoto
             title="Menu"
             links={STUDENT_MENU}
             footer={

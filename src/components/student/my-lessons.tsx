@@ -48,7 +48,7 @@ export function MyLessons({ lessons }: { lessons: readonly LessonCard[] }) {
             role="tab"
             aria-selected={tab === index}
             onClick={() => setTab(index)}
-            className={`press flex h-12 flex-1 items-center justify-center gap-2 rounded-full border text-[14px] ${tab === index ? 'border-brand/60 bg-brand-soft font-semibold text-white' : 'border-transparent text-label'}`}
+            className={`press flex h-12 flex-1 items-center justify-center gap-2 rounded-full border text-[14px] ${tab === index ? 'border-brand/60 bg-brand-soft font-semibold text-ink' : 'border-transparent text-label'}`}
           >
             <Icon name={item.icon} className={`!h-5 !w-5 ${tab === index ? 'text-brand' : ''}`} />
             {item.label}
