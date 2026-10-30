@@ -1,7 +1,9 @@
 import type { Metadata, Viewport } from 'next';
 import { DM_Sans } from 'next/font/google';
 
-import { DemoBar } from '@/components/shells';
+import { signOut } from '@/app/actions/auth';
+import { TopBar } from '@/components/shells';
+import { getViewer } from '@/lib/auth';
 
 import './globals.css';
 
@@ -10,10 +12,9 @@ const dmSans = DM_Sans({ subsets: ['latin'], variable: '--font-dm-sans', display
 export const metadata: Metadata = {
   title: { default: 'Vento · Aulas de kitesurf', template: '%s · Vento' },
   description:
-    'Esboço navegável de uma plataforma de aulas de kitesurf em Preá e Jericoacoara. Aluno, instrutor, administração e pousada parceira.',
+    'Aulas de kitesurf em Preá e Jericoacoara com instrutores independentes.',
   applicationName: 'Vento',
   icons: { icon: '/icon.svg' },
-  robots: { index: false, follow: false },
 };
 
 export const viewport: Viewport = {
@@ -24,11 +25,12 @@ export const viewport: Viewport = {
   maximumScale: 5,
 };
 
-export default function RootLayout({ children }: { children: React.ReactNode }) {
+export default async function RootLayout({ children }: { children: React.ReactNode }) {
+  const viewer = await getViewer();
   return (
     <html lang="pt-BR" className={dmSans.variable}>
       <body className="min-h-dvh font-sans antialiased">
-        <DemoBar />
+        <TopBar viewer={viewer ? { name: viewer.fullName || viewer.email || '', role: viewer.role } : null} signOut={signOut} />
         {children}
       </body>
     </html>

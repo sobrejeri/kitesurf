@@ -29,39 +29,68 @@ export function Logo({ size = 'md' }: { size?: 'md' | 'sm' }) {
   );
 }
 
-const ROLES = [
-  { label: 'Aluno', href: '/aluno/inicio', prefix: '/aluno' },
-  { label: 'Instrutor', href: '/instrutor/central', prefix: '/instrutor' },
-  { label: 'Admin', href: '/admin/central', prefix: '/admin' },
-  { label: 'Pousada', href: '/pousada/inicio', prefix: '/pousada' },
+const AREAS = [
+  { label: 'Aluno', href: '/aluno/aulas', prefix: '/aluno', role: 'student' },
+  { label: 'Instrutor', href: '/instrutor/hoje', prefix: '/instrutor', role: 'instructor' },
+  { label: 'Admin', href: '/admin/visao', prefix: '/admin', role: 'admin' },
+  { label: 'Pousada', href: '/pousada/inicio', prefix: '/pousada', role: 'partner' },
 ] as const;
 
-/** The "navigable sketch" bar: switches between the four perspectives. */
-export function DemoBar() {
+export interface TopBarViewer {
+  name: string;
+  role: 'student' | 'instructor' | 'admin' | 'partner';
+}
+
+/**
+ * Account bar. An admin can open every area; everyone else sees their own.
+ * Showing a link is presentation only — each page checks the role again.
+ */
+export function TopBar({ viewer, signOut }: { viewer: TopBarViewer | null; signOut: () => Promise<void> }) {
   const pathname = usePathname();
+  const areas = viewer ? AREAS.filter((area) => viewer.role === 'admin' || area.role === viewer.role) : [];
   return (
     <div className="sticky top-0 z-40 flex h-14 items-center justify-between gap-3 border-b border-[#e5eaf5] bg-surface px-4 text-[12px] text-[#43547a] sm:px-6">
-      <p className="hidden items-center gap-2 font-[550] sm:flex">
-        <span className="h-1.5 w-1.5 rounded-full bg-brand" aria-hidden="true" />
-        Esboço navegável
-        <span className="font-normal text-subtle">Nome provisório · dados fictícios</span>
-      </p>
-      <nav aria-label="Perfis da demonstração" className="flex rounded-[13px] bg-[#f2f4fa] p-1">
-        {ROLES.map((role) => {
-          const active = pathname.startsWith(role.prefix);
-          return (
-            <Link
-              key={role.href}
-              href={role.href}
-              aria-current={active ? 'page' : undefined}
-              className={`rounded-[10px] px-3 py-1.5 sm:px-4 ${active ? 'bg-brand font-[550] text-white' : 'text-[#6e7889] hover:text-brand'}`}
-            >
-              {role.label}
-            </Link>
-          );
-        })}
-      </nav>
-      <span className="hidden w-40 sm:block" aria-hidden="true" />
+      {areas.length > 1 ? (
+        <nav aria-label="Áreas" className="flex rounded-[13px] bg-[#f2f4fa] p-1">
+          {areas.map((area) => {
+            const active = pathname.startsWith(area.prefix);
+            return (
+              <Link
+                key={area.href}
+                href={area.href}
+                aria-current={active ? 'page' : undefined}
+                className={`rounded-[10px] px-3 py-1.5 sm:px-4 ${active ? 'bg-brand font-[550] text-white' : 'text-[#6e7889] hover:text-brand'}`}
+              >
+                {area.label}
+              </Link>
+            );
+          })}
+        </nav>
+      ) : (
+        <Link href={areas[0]?.href ?? '/aluno/inicio'} className="flex items-center gap-2 font-[550]">
+          <span className="h-1.5 w-1.5 rounded-full bg-brand" aria-hidden="true" />
+          Vento · aulas de kitesurf
+        </Link>
+      )}
+      {viewer ? (
+        <div className="flex items-center gap-3">
+          <span className="hidden text-subtle sm:inline">{viewer.name}</span>
+          <form action={signOut}>
+            <button type="submit" className="rounded-full border border-line px-3 py-1.5 font-[550] text-brand hover:bg-brand-wash">
+              Sair
+            </button>
+          </form>
+        </div>
+      ) : (
+        <div className="flex items-center gap-2">
+          <Link href="/entrar" className="rounded-full px-3 py-1.5 font-[550] text-brand">
+            Entrar
+          </Link>
+          <Link href="/cadastro" className="rounded-full bg-brand px-3 py-1.5 font-[550] text-white">
+            Criar conta
+          </Link>
+        </div>
+      )}
     </div>
   );
 }
@@ -71,7 +100,7 @@ function SiteFooter() {
     <footer className="mx-auto mt-14 flex max-w-6xl flex-wrap items-center justify-between gap-3 px-4 pb-28 text-[11px] text-subtle sm:px-8 sm:pb-10">
       <Logo size="sm" />
       <p>Feito de mar, vento e boas histórias.</p>
-      <Link href="/pousada/cadastro" className="font-[550] text-brand">
+      <Link href="/cadastro?perfil=partner" className="font-[550] text-brand">
         É pousada? Seja parceira
       </Link>
     </footer>
