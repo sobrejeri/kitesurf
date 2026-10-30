@@ -1,9 +1,12 @@
 import { StudentShell } from '@/components/shells';
-import { STUDENT } from '@/data/demo';
+import { getViewer } from '@/lib/auth';
+import { initials } from '@/lib/people';
 
-export default function StudentLayout({ children }: { children: React.ReactNode }) {
+/** Explore and policies are public; every other student page calls requireRole. */
+export default async function StudentLayout({ children }: { children: React.ReactNode }) {
+  const viewer = await getViewer();
   return (
-    <StudentShell name={STUDENT.name} initials={STUDENT.initials}>
+    <StudentShell name={viewer?.fullName || 'Visitante'} initials={initials(viewer?.fullName)}>
       {children}
     </StudentShell>
   );

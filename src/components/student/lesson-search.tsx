@@ -3,7 +3,8 @@
 import Link from 'next/link';
 import { useState } from 'react';
 
-import { BEACHES, HOURLY_RATE_CENTS, LANGUAGES, LEVELS, MAX_HOURS, MIN_HOURS, QUOTE_PREVIEW_CENTS } from '@/data/demo';
+import { LANGUAGES, MAX_HOURS, MIN_HOURS } from '@/data/demo';
+import { BEACH_LABELS, LEVEL_LABELS, type QuoteRow } from '@/lib/data-labels';
 import { formatMoney } from '@/lib/format';
 
 import { Icon, type IconName } from '../icon';
@@ -27,11 +28,11 @@ const selectClass =
 
 /**
  * The home search. The total shown under it is looked up from the server's
- * quote preview for the chosen hours — the component never multiplies.
+ * quote table for the chosen hours — the component never multiplies.
  */
-export function LessonSearch({ defaultDate }: { defaultDate: string }) {
+export function LessonSearch({ defaultDate, quotes }: { defaultDate: string; quotes: readonly QuoteRow[] }) {
   const [hours, setHours] = useState(2);
-  const total = QUOTE_PREVIEW_CENTS[hours];
+  const quote = quotes.find((row) => row.hours === hours);
 
   return (
     <>
@@ -41,7 +42,7 @@ export function LessonSearch({ defaultDate }: { defaultDate: string }) {
       >
         <SearchField label="Sua praia" icon="pin">
           <select name="praia" className={selectClass} defaultValue="prea">
-            {Object.entries(BEACHES).map(([id, label]) => (
+            {Object.entries(BEACH_LABELS).map(([id, label]) => (
               <option key={id} value={id}>
                 {label}
               </option>
@@ -52,9 +53,11 @@ export function LessonSearch({ defaultDate }: { defaultDate: string }) {
           <input name="dia" type="date" defaultValue={defaultDate} className="w-full bg-transparent py-1 text-[14px] font-[550] focus:outline-none" />
         </SearchField>
         <SearchField label="Seu momento no kite" icon="kite">
-          <select name="nivel" className={selectClass} defaultValue={LEVELS[0]}>
-            {LEVELS.map((level) => (
-              <option key={level}>{level}</option>
+          <select name="nivel" className={selectClass} defaultValue="first_time">
+            {Object.entries(LEVEL_LABELS).map(([id, label]) => (
+              <option key={id} value={id}>
+                {label}
+              </option>
             ))}
           </select>
         </SearchField>
@@ -83,7 +86,7 @@ export function LessonSearch({ defaultDate }: { defaultDate: string }) {
         <Icon name="clock" className="!h-[18px] !w-[18px] text-[#7b8ec7]" />
         <p className="text-muted">
           <strong className="tabular block font-[550] text-brand">
-            {hours}h × {formatMoney(HOURLY_RATE_CENTS)}/hora = {total === undefined ? '—' : formatMoney(total)}
+            {quote ? `${hours}h × ${formatMoney(quote.hourly_rate_cents)}/hora = ${formatMoney(quote.total_cents)}` : 'Valores indisponíveis no momento'}
           </strong>
           Você escolhe as horas. O total é calculado automaticamente.
         </p>

@@ -4,7 +4,10 @@ import { Icon } from '@/components/icon';
 import { SectionTitle } from '@/components/shared';
 import { LessonSearch, PathCard } from '@/components/student/lesson-search';
 import { Card } from '@/components/ui';
-import { STUDENT } from '@/data/demo';
+import { getViewer } from '@/lib/auth';
+import { getQuoteTable, type QuoteRow } from '@/lib/data';
+import { lessonDate } from '@/lib/dates';
+import { supabaseConfig } from '@/lib/env';
 
 export const metadata: Metadata = { title: 'Explorar' };
 
@@ -35,20 +38,32 @@ const STEPS = [
   ['Viva e acompanhe', 'Suas aulas, seu saldo e cada nova conquista.'],
 ] as const;
 
-export default function StudentHomePage() {
+async function loadQuotes(): Promise<QuoteRow[]> {
+  if (!supabaseConfig) return [];
+  try {
+    return await getQuoteTable();
+  } catch {
+    // The page still works without prices; the line under the search says so.
+    return [];
+  }
+}
+
+export default async function StudentHomePage() {
+  const [quotes, viewer] = await Promise.all([loadQuotes(), getViewer()]);
+  const firstName = viewer?.fullName.split(' ')[0];
   return (
     <>
       <div className="mb-4 flex items-start justify-between gap-4">
         <div>
           <p className="flex items-center gap-2 text-[17px] font-[550] text-[#374967]">
-            Olá, {STUDENT.name}! <Icon name="sun" className="text-[#e8a23d]" />
+            {firstName ? `Olá, ${firstName}!` : 'Olá!'} <Icon name="sun" className="text-[#e8a23d]" />
           </p>
           <p className="mt-1 flex items-center gap-1 text-[11px] text-muted">
-            <Icon name="pin" className="!h-3.5 !w-3.5" /> {STUDENT.beaches}
+            <Icon name="pin" className="!h-3.5 !w-3.5" /> Preá e Jericoacoara
           </p>
         </div>
         <span className="flex items-center gap-1.5 rounded-input border border-[#e6eaf5] bg-[#f1f4fd] px-3 py-2 text-[10px] text-[#7a8da9]">
-          <Icon name="wind" className="!h-3.5 !w-3.5" /> {STUDENT.region}
+          <Icon name="wind" className="!h-3.5 !w-3.5" /> Ceará, Brasil
         </span>
       </div>
 
@@ -62,7 +77,7 @@ export default function StudentHomePage() {
         </div>
       </section>
 
-      <LessonSearch defaultDate="2026-10-31" />
+      <LessonSearch defaultDate={lessonDate(1)} quotes={quotes} />
 
       <section className="mt-12">
         <p className="text-[10px] font-[550] uppercase tracking-[1px] text-brand">Um mar de possibilidades</p>

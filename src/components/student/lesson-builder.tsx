@@ -1,14 +1,13 @@
 'use client';
 
-import Link from 'next/link';
-import { useState } from 'react';
+import { useActionState, useState } from 'react';
 
-import { HOURLY_RATE_CENTS, MAX_HOURS, MIN_HOURS, QUOTE_PREVIEW_CENTS } from '@/data/demo';
+import { createBooking } from '@/app/actions/booking';
+import { LANGUAGES, MAX_HOURS } from '@/data/demo';
+import { BEACH_LABELS, LEVEL_LABELS, type Beach, type LessonLevel, type QuoteRow } from '@/lib/data-labels';
 import { formatMoney } from '@/lib/format';
 
-import { Icon } from '../icon';
-import { HoursStepper } from '../interactive';
-import { Button, ButtonLink, Card, Field, Note, inputClass } from '../ui';
+import { Button, Card, Field, Note, inputClass } from '../ui';
 
 interface Meeting {
   id: number;
@@ -17,29 +16,47 @@ interface Meeting {
   hours: number;
 }
 
+export interface BuilderDefaults {
+  beach: Beach;
+  level: LessonLevel;
+  language: string;
+  hours: number;
+  date: string;
+}
+
 /**
- * "Monte sua aula": the student picks a number of hours and spreads them over
- * one or more meetings with the same instructor. The estimate is the server's
- * quote preview for the total hours; the support vehicle is priced at review,
- * never summed here.
+ * "Monte sua aula": the student spreads hours over one or more meetings with
+ * the same instructor. The estimate is looked up in the server's quote table;
+ * the form submits choices only, and create_booking derives the price.
  */
-export function LessonBuilder() {
+export function LessonBuilder({ quotes, defaults }: { quotes: readonly QuoteRow[]; defaults: BuilderDefaults }) {
+  const [state, formAction, pending] = useActionState(createBooking, {});
   const [step, setStep] = useState<1 | 2>(1);
-  const [hours, setHours] = useState(2);
-  const [transport, setTransport] = useState(false);
-  const [meetings, setMeetings] = useState<Meeting[]>([{ id: 1, date: '2026-10-31', start: '09:00', hours: 2 }]);
+  const [beach, setBeach] = useState<Beach>(defaults.beach);
+  const [level, setLevel] = useState<LessonLevel>(defaults.level);
+  const [language, setLanguage] = useState(defaults.language);
+  const [meetings, setMeetings] = useState<Meeting[]>([
+    { id: 1, date: defaults.date, start: '09:00', hours: defaults.hours },
+  ]);
   const [open, setOpen] = useState(1);
 
-  const distributed = meetings.reduce((sum, meeting) => sum + meeting.hours, 0);
-  const estimate = QUOTE_PREVIEW_CENTS[hours];
-  const balanced = distributed === hours;
+  const totalHours = meetings.reduce((sum, meeting) => sum + meeting.hours, 0);
+  const quote = quotes.find((row) => row.hours === totalHours);
+  const valid = totalHours >= 1 && totalHours <= MAX_HOURS;
 
   function update(id: number, patch: Partial<Meeting>) {
     setMeetings((current) => current.map((meeting) => (meeting.id === id ? { ...meeting, ...patch } : meeting)));
   }
 
+  const payload = JSON.stringify(meetings.map(({ date, start, hours }) => ({ date, start, hours })));
+
   return (
-    <>
+    <form action={formAction}>
+      <input type="hidden" name="beach" value={beach} />
+      <input type="hidden" name="level" value={level} />
+      <input type="hidden" name="language" value={language} />
+      <input type="hidden" name="meetings" value={payload} />
+
       <ol className="mb-6 flex gap-3 text-[12px]">
         {['1. Sua aula', '2. Revisar e buscar'].map((label, index) => (
           <li
@@ -55,38 +72,34 @@ export function LessonBuilder() {
         {step === 1 ? (
           <div className="grid gap-5">
             <Card>
-              <div className="flex flex-wrap items-center justify-between gap-4">
-                <div>
-                  <h2 className="text-[16px]">Total de horas</h2>
-                  <p className="tabular mt-1 text-[12px] text-muted">{formatMoney(HOURLY_RATE_CENTS)}/hora</p>
-                </div>
-                <HoursStepper value={hours} onChange={setHours} min={MIN_HOURS} max={MAX_HOURS} />
+              <h2 className="text-[16px]">Idioma, nível e praia</h2>
+              <div className="mt-4 grid gap-4 sm:grid-cols-3">
+                <Field label="Praia" icon="pin">
+                  <select className={inputClass} value={beach} onChange={(e) => setBeach(e.target.value as Beach)}>
+                    {Object.entries(BEACH_LABELS).map(([id, label]) => (
+                      <option key={id} value={id}>{label}</option>
+                    ))}
+                  </select>
+                </Field>
+                <Field label="Seu momento no kite" icon="kite">
+                  <select className={inputClass} value={level} onChange={(e) => setLevel(e.target.value as LessonLevel)}>
+                    {Object.entries(LEVEL_LABELS).map(([id, label]) => (
+                      <option key={id} value={id}>{label}</option>
+                    ))}
+                  </select>
+                </Field>
+                <Field label="Idioma" icon="globe">
+                  <select className={inputClass} value={language} onChange={(e) => setLanguage(e.target.value)}>
+                    {LANGUAGES.map((item) => (
+                      <option key={item}>{item}</option>
+                    ))}
+                  </select>
+                </Field>
               </div>
-              <div className="mt-5 grid gap-3 border-t border-line pt-5">
-                <Link href="/aluno/inicio" className="flex items-center justify-between rounded-search border border-line px-4 py-3.5">
-                  <span>
-                    <span className="block text-[11px] text-muted">Idioma, nível e praia</span>
-                    <span className="text-[13px] font-[550]">Português · Primeira vez · Preá</span>
-                  </span>
-                  <Icon name="chevron" className="!h-4 !w-4 text-subtle" />
-                </Link>
-                <div className="rounded-search border border-line px-4 py-3.5">
-                  <span className="block text-[11px] text-muted">Com quem quer fazer a aula?</span>
-                  <span className="text-[13px] font-[550]">Buscar um instrutor pela fila</span>
-                </div>
-                <label className="flex cursor-pointer items-center justify-between gap-3 rounded-search border border-line px-4 py-3.5">
-                  <span>
-                    <span className="block text-[13px] font-[550]">Transporte de apoio</span>
-                    <span className="text-[11px] text-muted">Opcional · acompanha você durante a aula</span>
-                  </span>
-                  <input
-                    type="checkbox"
-                    checked={transport}
-                    onChange={(event) => setTransport(event.target.checked)}
-                    className="h-5 w-5 accent-brand"
-                  />
-                </label>
-              </div>
+              <p className="mt-4 rounded-search border border-line px-4 py-3 text-[12px] text-muted">
+                <strong className="block text-[13px] font-[550] text-ink">Buscar um instrutor pela fila</strong>
+                O primeiro instrutor compatível e livre nos seus horários recebe a aula.
+              </p>
             </Card>
 
             <Card>
@@ -114,10 +127,10 @@ export function LessonBuilder() {
                     {open === meeting.id ? (
                       <div className="grid gap-3 border-t border-line p-4 sm:grid-cols-3">
                         <Field label="Data">
-                          <input type="date" className={inputClass} value={meeting.date} onChange={(e) => update(meeting.id, { date: e.target.value })} />
+                          <input type="date" required className={inputClass} value={meeting.date} onChange={(e) => update(meeting.id, { date: e.target.value })} />
                         </Field>
                         <Field label="Início">
-                          <input type="time" className={inputClass} value={meeting.start} onChange={(e) => update(meeting.id, { start: e.target.value })} />
+                          <input type="time" required step={1800} className={inputClass} value={meeting.start} onChange={(e) => update(meeting.id, { start: e.target.value })} />
                         </Field>
                         <Field label="Horas">
                           <select className={inputClass} value={meeting.hours} onChange={(e) => update(meeting.id, { hours: Number(e.target.value) })}>
@@ -144,17 +157,19 @@ export function LessonBuilder() {
                 variant="soft"
                 icon="plus"
                 className="mt-4"
+                disabled={totalHours >= MAX_HOURS}
                 onClick={() => {
                   const id = Math.max(...meetings.map((meeting) => meeting.id)) + 1;
-                  setMeetings((current) => [...current, { id, date: '2026-11-01', start: '09:00', hours: 1 }]);
+                  const last = meetings[meetings.length - 1];
+                  setMeetings((current) => [...current, { id, date: last?.date ?? defaults.date, start: '09:00', hours: 1 }]);
                   setOpen(id);
                 }}
               >
                 Adicionar encontro
               </Button>
-              <p className={`mt-3 text-[12px] ${balanced ? 'text-muted' : 'text-warning'}`}>
-                {distributed}h distribuídas em {meetings.length} encontro(s).
-                {balanced ? '' : ` Ajuste para somar ${hours}h.`}
+              <p className={`mt-3 text-[12px] ${valid ? 'text-muted' : 'text-warning'}`}>
+                {totalHours}h distribuídas em {meetings.length} encontro(s).
+                {valid ? '' : ` O máximo por reserva é ${MAX_HOURS}h.`}
               </p>
             </Card>
           </div>
@@ -162,17 +177,24 @@ export function LessonBuilder() {
           <Card>
             <h2 className="text-[16px]">Revise antes de buscar</h2>
             <dl className="mt-4 grid gap-3 text-[13px]">
-              <div className="flex justify-between border-b border-line pb-3"><dt className="text-muted">Aula</dt><dd className="font-[550]">Aula particular · {hours}h</dd></div>
-              <div className="flex justify-between border-b border-line pb-3"><dt className="text-muted">Preferências</dt><dd className="font-[550]">Português · Primeira vez · Preá</dd></div>
-              <div className="flex justify-between border-b border-line pb-3"><dt className="text-muted">Encontros</dt><dd className="font-[550]">{meetings.length}</dd></div>
-              <div className="flex justify-between"><dt className="text-muted">Transporte de apoio</dt><dd className="font-[550]">{transport ? 'Incluído na revisão' : 'Não'}</dd></div>
+              <div className="flex justify-between border-b border-line pb-3"><dt className="text-muted">Aula</dt><dd className="font-[550]">Aula particular · {totalHours}h</dd></div>
+              <div className="flex justify-between gap-3 border-b border-line pb-3"><dt className="text-muted">Preferências</dt><dd className="text-right font-[550]">{language} · {LEVEL_LABELS[level]} · {BEACH_LABELS[beach]}</dd></div>
+              {meetings.map((meeting, index) => (
+                <div key={meeting.id} className="flex justify-between border-b border-line pb-3 last:border-0">
+                  <dt className="text-muted">Encontro {index + 1}</dt>
+                  <dd className="font-[550]">{meeting.date.split('-').reverse().join('/')} · {meeting.start} · {meeting.hours}h</dd>
+                </div>
+              ))}
             </dl>
             <Note className="mt-5">
-              Na demonstração, a busca encontra {`Rafael Lima`}, o primeiro instrutor compatível da fila. O pagamento de teste confirma a reserva.
+              Ao buscar, o Vento reserva o primeiro instrutor compatível da fila e calcula o total no servidor. O pagamento confirma a aula.
             </Note>
+            {state.error ? <Note tone="warning" className="mt-3">{state.error}</Note> : null}
             <div className="mt-5 flex flex-wrap gap-2">
               <Button variant="ghost" icon="back" onClick={() => setStep(1)}>Editar aula</Button>
-              <ButtonLink href="/aluno/reserva" trailingIcon="arrow">Buscar instrutor</ButtonLink>
+              <Button type="submit" trailingIcon="arrow" disabled={pending || !valid}>
+                {pending ? 'Buscando instrutor…' : 'Buscar instrutor'}
+              </Button>
             </div>
           </Card>
         )}
@@ -180,19 +202,19 @@ export function LessonBuilder() {
         <Card className="self-start lg:sticky lg:top-24">
           <p className="text-[12px] text-muted">Total estimado</p>
           <p className="tabular mt-1 text-[32px] font-semibold tracking-[-0.7px] text-brand">
-            {estimate === undefined ? '—' : formatMoney(estimate)}
+            {quote ? formatMoney(quote.total_cents) : '—'}
           </p>
           <p className="tabular text-[11px] text-muted">
-            {hours}h × {formatMoney(HOURLY_RATE_CENTS)}/hora{transport ? ' · transporte calculado na revisão' : ''}
+            {quote ? `${totalHours}h × ${formatMoney(quote.hourly_rate_cents)}/hora` : 'Valor confirmado na reserva'}
           </p>
           {step === 1 ? (
-            <Button className="mt-5 w-full" trailingIcon="arrow" disabled={!balanced} onClick={() => setStep(2)}>
+            <Button className="mt-5 w-full" trailingIcon="arrow" disabled={!valid} onClick={() => setStep(2)}>
               Continuar
             </Button>
           ) : null}
           <p className="mt-3 text-[11px] text-muted">Você revisa tudo antes de buscar o instrutor.</p>
         </Card>
       </div>
-    </>
+    </form>
   );
 }
