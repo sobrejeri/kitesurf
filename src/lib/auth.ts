@@ -4,8 +4,9 @@ import { redirect } from 'next/navigation';
 import { connection } from 'next/server';
 import { cache } from 'react';
 
+import { APP_AREAS, loginPath } from './app-areas';
 import { supabaseConfig } from './env';
-import { createSupabaseServerClient } from './supabase/server';
+import { createSupabaseServerClient, currentArea } from './supabase/server';
 
 export type AppRole = 'student' | 'instructor' | 'admin' | 'partner';
 
@@ -60,7 +61,12 @@ export async function requireRole(roles: readonly AppRole[], next?: string): Pro
   await connection();
   if (!supabaseConfig) redirect('/configuracao');
   const viewer = await getViewer();
-  if (!viewer) redirect(next ? `/entrar?next=${encodeURIComponent(next)}` : '/entrar');
-  if (viewer.role !== 'admin' && !roles.includes(viewer.role)) redirect(ROLE_HOME[viewer.role]);
+  const area = await currentArea();
+  if (!viewer) redirect(loginPath(area, next));
+  // Each app has its own session, so a wrong role here means someone signed
+  // in to this app with another kind of account: back to its login.
+  if (viewer.role !== 'admin' && !roles.includes(viewer.role)) {
+    redirect(viewer.role === APP_AREAS[area].role ? ROLE_HOME[viewer.role] : `/${area}/entrar?erro=conta`);
+  }
   return viewer;
 }
