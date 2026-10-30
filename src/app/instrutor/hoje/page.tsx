@@ -5,7 +5,7 @@ import { Icon } from '@/components/icon';
 import { SectionTitle } from '@/components/shared';
 import { Badge, ButtonLink, DateTile, EmptyState, Note, StatCard } from '@/components/ui';
 import { requireRole } from '@/lib/auth';
-import { BEACH_LABELS, getOwnInstructor, listBookingsForInstructor, listQueue } from '@/lib/data';
+import { getOwnInstructor, listBookingsForInstructor, listQueue } from '@/lib/data';
 import { formatDay, formatMinutes, formatMoney, formatMonthTag, formatTime } from '@/lib/format';
 
 export const metadata: Metadata = { title: 'Meu dia' };
@@ -67,7 +67,7 @@ export default async function InstructorTodayPage() {
                   <Badge>{meeting.status === 'in_progress' ? 'Em aula' : 'Confirmada'}</Badge>
                   <p className="mt-1.5 text-[15px] font-[550]">Aula particular de kitesurf · {formatMinutes(meeting.minutes)}</p>
                   <p className="text-[11px] text-muted">
-                    {booking.student?.full_name ?? 'Aluno'} · {BEACH_LABELS[booking.beach]} · {formatTime(meeting.starts_at)} · {booking.code}
+                    {booking.student?.full_name ?? 'Aluno'} · {(booking.beach?.name ?? '—')} · {formatTime(meeting.starts_at)} · {booking.code}
                   </p>
                 </div>
                 <ButtonLink href="/instrutor/aula" variant="ghost" size="sm" trailingIcon="arrow">Ver aula</ButtonLink>

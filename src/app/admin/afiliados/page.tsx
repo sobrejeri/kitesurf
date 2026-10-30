@@ -4,7 +4,7 @@ import { approvePartner } from '@/app/actions/admin';
 import { ActionForm } from '@/components/action-form';
 import { Badge, Card, EmptyState, Note, PageHeader, inputClass } from '@/components/ui';
 import { requireRole } from '@/lib/auth';
-import { BEACH_LABELS, listAllPartners } from '@/lib/data';
+import { listAllPartners } from '@/lib/data';
 import { formatBps } from '@/lib/format';
 
 export const metadata: Metadata = { title: 'Pousadas afiliadas' };
@@ -24,7 +24,7 @@ export default async function PartnersAdminPage() {
               <div className="flex flex-wrap items-center justify-between gap-3">
                 <div>
                   <p className="text-[14px] font-[550]">{partner.name}</p>
-                  <p className="text-[11px] text-muted">{partner.code} · {BEACH_LABELS[partner.beach]} · {formatBps(partner.commission_bps)}</p>
+                  <p className="text-[11px] text-muted">{partner.code} · {(partner.beach?.name ?? '—')} · {formatBps(partner.commission_bps)}</p>
                 </div>
                 <Badge tone={partner.status === 'approved' ? 'success' : 'warning'}>{partner.status === 'approved' ? 'Aprovada' : 'Em análise'}</Badge>
               </div>

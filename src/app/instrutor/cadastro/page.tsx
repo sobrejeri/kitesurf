@@ -5,7 +5,7 @@ import { ActionForm } from '@/components/action-form';
 import { Badge, Card, Eyebrow, Field, Note, inputClass } from '@/components/ui';
 import { LANGUAGES } from '@/data/demo';
 import { requireRole } from '@/lib/auth';
-import { BEACH_LABELS, getOwnInstructor } from '@/lib/data';
+import { getOwnInstructor, listActiveBeaches } from '@/lib/data';
 
 export const metadata: Metadata = { title: 'Perfil profissional' };
 
@@ -13,7 +13,10 @@ const STATUS = { pending: 'Em análise', approved: 'Aprovado', paused: 'Pausado'
 
 export default async function InstructorProfileFormPage() {
   const viewer = await requireRole(['instructor'], '/instrutor/cadastro');
-  const me = await getOwnInstructor(viewer.id);
+  const [me, active] = await Promise.all([getOwnInstructor(viewer.id), listActiveBeaches()]);
+  // Active beaches, plus any deactivated one the instructor still lists.
+  const mine = new Set(me?.beaches.map((beach) => beach.id));
+  const options = [...active, ...(me?.beaches.filter((beach) => !active.some((a) => a.id === beach.id)) ?? [])];
   return (
     <>
       <Eyebrow>Faça parte da rede</Eyebrow>
@@ -29,12 +32,13 @@ export default async function InstructorProfileFormPage() {
               <input name="years" type="number" min={0} max={60} defaultValue={me?.years_experience ?? 0} className={inputClass} />
             </Field>
             <fieldset className="grid gap-2">
-              <legend className="mb-1 text-[12px] font-medium text-label">Praias</legend>
+              <legend className="mb-1 text-[12px] font-medium text-label">Praias onde você atende</legend>
               <div className="flex flex-wrap gap-2">
-                {Object.entries(BEACH_LABELS).map(([id, label]) => (
-                  <label key={id} className="flex items-center gap-2 rounded-full border border-line-input px-3.5 py-2 text-[12px] has-[:checked]:border-brand has-[:checked]:bg-brand-soft has-[:checked]:text-brand">
-                    <input type="checkbox" name="beaches" value={id} defaultChecked={me?.beaches.includes(id as 'prea' | 'jeri')} className="accent-brand" />
-                    {label}
+                {options.length === 0 ? <p className="text-[12px] text-muted">Nenhuma praia cadastrada pela operação ainda.</p> : null}
+                {options.map((beach) => (
+                  <label key={beach.id} className="flex items-center gap-2 rounded-full border border-line-input px-3.5 py-2 text-[12px] has-[:checked]:border-brand has-[:checked]:bg-brand-soft has-[:checked]:text-brand">
+                    <input type="checkbox" name="beachIds" value={beach.id} defaultChecked={mine.has(beach.id)} className="accent-brand" />
+                    {beach.name}
                   </label>
                 ))}
               </div>

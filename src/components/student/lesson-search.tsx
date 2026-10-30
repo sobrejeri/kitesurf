@@ -4,7 +4,7 @@ import Link from 'next/link';
 import { useState } from 'react';
 
 import { LANGUAGES, MAX_HOURS, MIN_HOURS } from '@/data/demo';
-import { BEACH_LABELS, LEVEL_LABELS, type QuoteRow } from '@/lib/data-labels';
+import { LEVEL_LABELS, type Beach, type QuoteRow } from '@/lib/data-labels';
 import { formatMoney } from '@/lib/format';
 
 import { Icon, type IconName } from '../icon';
@@ -31,7 +31,15 @@ const controlClass =
  * The Explorar search. The total under it is looked up in the server's quote
  * table for the chosen hours — the component never multiplies.
  */
-export function LessonSearch({ defaultDate, quotes }: { defaultDate: string; quotes: readonly QuoteRow[] }) {
+export function LessonSearch({
+  defaultDate,
+  quotes,
+  beaches,
+}: {
+  defaultDate: string;
+  quotes: readonly QuoteRow[];
+  beaches: readonly Beach[];
+}) {
   const [hours, setHours] = useState(2);
   const quote = quotes.find((row) => row.hours === hours);
 
@@ -42,9 +50,10 @@ export function LessonSearch({ defaultDate, quotes }: { defaultDate: string; quo
         className="glass relative z-10 -mt-4 rounded-[26px] border border-line px-4 pb-4 pt-1 shadow-search lg:mt-6 lg:grid lg:grid-cols-[1fr_1fr_1.1fr_1fr_auto] lg:items-center lg:p-3"
       >
         <SearchRow label="Sua praia" icon="pin">
-          <select name="praia" className={controlClass} defaultValue="prea">
-            {Object.entries(BEACH_LABELS).map(([id, label]) => (
-              <option key={id} value={id}>{label}</option>
+          <select name="praia" className={controlClass} defaultValue={beaches[0]?.id}>
+            {beaches.length === 0 ? <option value="">Nenhuma praia disponível</option> : null}
+            {beaches.map((beach) => (
+              <option key={beach.id} value={beach.id}>{beach.name}</option>
             ))}
           </select>
         </SearchRow>

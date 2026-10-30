@@ -2,11 +2,14 @@ import type { Metadata } from 'next';
 
 import { DemoForm } from '@/components/interactive';
 import { Button, Card, Field, PageHeader, inputClass } from '@/components/ui';
-import { BEACHES } from '@/data/demo';
+import { requireRole } from '@/lib/auth';
+import { listActiveBeaches } from '@/lib/data';
 
 export const metadata: Metadata = { title: 'Pontos de encontro' };
 
-export default function MeetingPointsPage() {
+export default async function MeetingPointsPage() {
+  await requireRole(['admin'], '/admin/pontos');
+  const beaches = await listActiveBeaches();
   return (
     <>
       <PageHeader
@@ -16,9 +19,9 @@ export default function MeetingPointsPage() {
       />
       <DemoForm confirmation="Pontos de encontro salvos na demonstração." className="grid gap-5">
         <div className="grid gap-5 lg:grid-cols-2">
-          {Object.values(BEACHES).map((beach) => (
-            <Card key={beach}>
-              <h2 className="text-[16px]">{beach}</h2>
+          {beaches.map((beach) => (
+            <Card key={beach.id}>
+              <h2 className="text-[16px]">{beach.name}</h2>
               <div className="mt-4 grid gap-4">
                 <Field label="Referência do ponto de encontro"><input className={inputClass} /></Field>
                 <Field label="Link do mapa confirmado pela operação"><input className={inputClass} type="url" placeholder="https://" /></Field>

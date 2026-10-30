@@ -4,7 +4,7 @@ import { recordMeeting, startMeeting } from '@/app/actions/instructor';
 import { ActionForm } from '@/components/action-form';
 import { Avatar, Badge, Card, EmptyState, Eyebrow, Field, Note, inputClass, textareaClass } from '@/components/ui';
 import { requireRole } from '@/lib/auth';
-import { BEACH_LABELS, LEVEL_LABELS, MEETING_STATUS_LABELS, listBookingsForInstructor } from '@/lib/data';
+import { LEVEL_LABELS, MEETING_STATUS_LABELS, listBookingsForInstructor } from '@/lib/data';
 import { formatDateLong, formatMinutes, formatTime } from '@/lib/format';
 import { initials } from '@/lib/people';
 
@@ -34,7 +34,7 @@ export default async function RunLessonPage() {
                 <div>
                   <p className="font-[550]">{booking.student?.full_name ?? 'Aluno'}</p>
                   <p className="text-[11px] text-muted">
-                    {LEVEL_LABELS[booking.level]} · {booking.language} · {BEACH_LABELS[booking.beach]}
+                    {LEVEL_LABELS[booking.level]} · {booking.language} · {(booking.beach?.name ?? '—')}
                   </p>
                 </div>
               </div>

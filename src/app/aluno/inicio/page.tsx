@@ -5,7 +5,7 @@ import { Icon, type IconName } from '@/components/icon';
 import { LessonSearch, PathRail, type PathItem } from '@/components/student/lesson-search';
 import { HighlightTitle, StudentHero } from '@/components/student/sunset';
 import { getViewer } from '@/lib/auth';
-import { getQuoteTable, type QuoteRow } from '@/lib/data';
+import { getQuoteTable, listActiveBeaches, type Beach, type QuoteRow } from '@/lib/data';
 import { lessonDate } from '@/lib/dates';
 import { supabaseConfig } from '@/lib/env';
 
@@ -54,8 +54,17 @@ async function loadQuotes(): Promise<QuoteRow[]> {
   }
 }
 
+async function loadBeaches(): Promise<Beach[]> {
+  if (!supabaseConfig) return [];
+  try {
+    return await listActiveBeaches();
+  } catch {
+    return [];
+  }
+}
+
 export default async function StudentHomePage() {
-  const [quotes, viewer] = await Promise.all([loadQuotes(), getViewer()]);
+  const [quotes, beaches, viewer] = await Promise.all([loadQuotes(), loadBeaches(), getViewer()]);
   const firstName = viewer?.fullName.split(' ')[0];
 
   return (
@@ -64,18 +73,9 @@ export default async function StudentHomePage() {
         title="Seu próximo bordo começa aqui."
         highlight="aqui."
         lead={firstName ? `${firstName}, escolha suas horas e encontre o instrutor ideal.` : 'Escolha suas horas e encontre o instrutor ideal.'}
-        top={
-          <span className="glass inline-flex items-center gap-3 rounded-[18px] border border-line px-4 py-2.5">
-            <Icon name="pin" className="!h-6 !w-6 text-brand" />
-            <span className="leading-tight">
-              <strong className="block text-[14px] font-semibold text-white">Preá e Jericoacoara</strong>
-              <span className="text-[12px] text-label">Ceará, Brasil</span>
-            </span>
-          </span>
-        }
       />
 
-      <LessonSearch defaultDate={lessonDate(1)} quotes={quotes} />
+      <LessonSearch defaultDate={lessonDate(1)} quotes={quotes} beaches={beaches} />
 
       <section className="mt-10">
         <p className="text-[11px] font-semibold uppercase tracking-[2px] text-brand">Um mar de possibilidades</p>

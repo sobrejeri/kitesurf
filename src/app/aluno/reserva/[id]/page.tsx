@@ -8,7 +8,7 @@ import { Icon } from '@/components/icon';
 import { StudentHero } from '@/components/student/sunset';
 import { Avatar, Badge, ButtonLink, Card, Eyebrow, KeyValue, Note, ProgressBar } from '@/components/ui';
 import { requireRole } from '@/lib/auth';
-import { BEACH_LABELS, BOOKING_STATUS_LABELS, LEVEL_LABELS, MEETING_STATUS_LABELS, getBookingForViewer, learningBalance } from '@/lib/data';
+import { BOOKING_STATUS_LABELS, LEVEL_LABELS, MEETING_STATUS_LABELS, getBookingForViewer, learningBalance } from '@/lib/data';
 import { formatDateLong, formatMinutes, formatMoney, formatTime } from '@/lib/format';
 import { initials } from '@/lib/people';
 
@@ -60,7 +60,7 @@ export default async function BookingPage({ params }: { params: Promise<{ id: st
               </div>
             </div>
             <dl className="mt-5 grid gap-4 sm:grid-cols-2">
-              <KeyValue label="Praia" value={BEACH_LABELS[booking.beach]} icon="pin" />
+              <KeyValue label="Praia" value={(booking.beach?.name ?? '—')} icon="pin" />
               <KeyValue label="Seu momento" value={LEVEL_LABELS[booking.level]} icon="kite" />
               <KeyValue label="Total de horas" value={`${booking.total_hours}h`} icon="clock" />
               <KeyValue label="Equipamentos" value="Incluídos na sua aula" icon="shield" />

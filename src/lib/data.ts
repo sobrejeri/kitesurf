@@ -11,7 +11,7 @@ import { createSupabaseServerClient } from './supabase/server';
 
 import { type Beach, type LessonLevel, type QuoteRow } from './data-labels';
 
-export { BEACH_LABELS, LEVEL_LABELS, type Beach, type LessonLevel, type QuoteRow } from './data-labels';
+export { LEVEL_LABELS, type Beach, type LessonLevel, type QuoteRow } from './data-labels';
 export type BookingStatus = 'awaiting_payment' | 'confirmed' | 'cancelled' | 'completed';
 export type MeetingStatus = 'scheduled' | 'in_progress' | 'done' | 'cancelled';
 export type InstructorStatus = 'pending' | 'approved' | 'paused';
@@ -43,7 +43,8 @@ export interface Booking {
   id: string;
   code: string;
   status: BookingStatus;
-  beach: Beach;
+  beach_id: string;
+  beach: { name: string } | null;
   level: LessonLevel;
   language: string;
   total_hours: number;
@@ -62,10 +63,11 @@ export interface Booking {
 }
 
 const BOOKING_COLUMNS = `
-  id, code, status, beach, level, language, total_hours, hourly_rate_cents, total_cents,
+  id, code, status, beach_id, level, language, total_hours, hourly_rate_cents, total_cents,
   partner_cents, platform_cents, instructor_net_cents, presence_code, created_at,
   student_id, instructor_id,
   booking_meetings ( id, position, starts_at, minutes, status, done_minutes, note ),
+  beach:beaches ( name ),
   student:profiles!bookings_student_id_fkey ( full_name ),
   instructor:instructors ( profile:profiles ( full_name ) )
 `;
@@ -171,7 +173,7 @@ export interface InstructorRow {
   id: string;
   status: InstructorStatus;
   years_experience: number;
-  beaches: Beach[];
+  beaches: { id: string; name: string }[];
   languages: string[];
   has_equipment: boolean;
   queue_position: number | null;
@@ -179,7 +181,21 @@ export interface InstructorRow {
 }
 
 const INSTRUCTOR_COLUMNS =
-  'id, status, years_experience, beaches, languages, has_equipment, queue_position, profile:profiles ( full_name )';
+  'id, status, years_experience, languages, has_equipment, queue_position, profile:profiles ( full_name ), instructor_beaches ( beach:beaches ( id, name ) )';
+
+interface RawInstructor extends Omit<InstructorRow, 'beaches'> {
+  instructor_beaches: { beach: { id: string; name: string } | null }[];
+}
+
+function normaliseInstructor({ instructor_beaches, ...row }: RawInstructor): InstructorRow {
+  return {
+    ...row,
+    beaches: instructor_beaches
+      .map((link) => link.beach)
+      .filter((beach): beach is { id: string; name: string } => beach !== null)
+      .sort((a, b) => a.name.localeCompare(b.name, 'pt-BR')),
+  };
+}
 
 /** Approved instructors in queue order. */
 export async function listQueue(): Promise<InstructorRow[]> {
@@ -189,9 +205,9 @@ export async function listQueue(): Promise<InstructorRow[]> {
     .select(INSTRUCTOR_COLUMNS)
     .eq('status', 'approved')
     .order('queue_position', { ascending: true })
-    .returns<InstructorRow[]>();
+    .returns<RawInstructor[]>();
   if (error) throw error;
-  return data ?? [];
+  return (data ?? []).map(normaliseInstructor);
 }
 
 /** Admin only: pending and paused instructors are hidden from everyone else by RLS. */
@@ -201,9 +217,9 @@ export async function listAllInstructors(): Promise<InstructorRow[]> {
     .from('instructors')
     .select(INSTRUCTOR_COLUMNS)
     .order('created_at', { ascending: true })
-    .returns<InstructorRow[]>();
+    .returns<RawInstructor[]>();
   if (error) throw error;
-  return data ?? [];
+  return (data ?? []).map(normaliseInstructor);
 }
 
 export async function getOwnInstructor(instructorId: string): Promise<InstructorRow | null> {
@@ -212,22 +228,23 @@ export async function getOwnInstructor(instructorId: string): Promise<Instructor
     .from('instructors')
     .select(INSTRUCTOR_COLUMNS)
     .eq('id', instructorId)
-    .maybeSingle<InstructorRow>();
+    .maybeSingle<RawInstructor>();
   if (error) throw error;
-  return data;
+  return data ? normaliseInstructor(data) : null;
 }
 
 export interface PartnerRow {
   id: string;
   name: string;
   code: string;
-  beach: Beach;
+  beach_id: string;
+  beach: { name: string } | null;
   commission_bps: number;
   status: 'pending' | 'approved';
   created_at: string;
 }
 
-const PARTNER_COLUMNS = 'id, name, code, beach, commission_bps, status, created_at';
+const PARTNER_COLUMNS = 'id, name, code, beach_id, beach:beaches ( name ), commission_bps, status, created_at';
 
 export async function getOwnPartner(ownerId: string): Promise<PartnerRow | null> {
   const supabase = await createSupabaseServerClient();
@@ -283,4 +300,30 @@ export function learningBalance(bookings: readonly Booking[]) {
     }
   }
   return { contracted, done, scheduled, available: Math.max(contracted - done - scheduled, 0) };
+}
+
+/** Active beaches, for students, instructors and partner inns to choose from. */
+export async function listActiveBeaches(): Promise<Beach[]> {
+  const supabase = await createSupabaseServerClient();
+  const { data, error } = await supabase
+    .from('beaches')
+    .select('id, name, region, active')
+    .eq('active', true)
+    .order('name', { ascending: true })
+    .returns<Beach[]>();
+  if (error) throw error;
+  return data ?? [];
+}
+
+/** Every beach including inactive ones. RLS shows inactive rows to admins only. */
+export async function listAllBeaches(): Promise<Beach[]> {
+  const supabase = await createSupabaseServerClient();
+  const { data, error } = await supabase
+    .from('beaches')
+    .select('id, name, region, active')
+    .order('active', { ascending: false })
+    .order('name', { ascending: true })
+    .returns<Beach[]>();
+  if (error) throw error;
+  return data ?? [];
 }

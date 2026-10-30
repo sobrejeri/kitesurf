@@ -6,7 +6,7 @@ import { Icon } from '@/components/icon';
 import { SectionTitle } from '@/components/shared';
 import { Avatar, Badge, Card, EmptyState, StatCard } from '@/components/ui';
 import { requireRole } from '@/lib/auth';
-import { BEACH_LABELS, listAllBookings, listAllInstructors, listAllPartners } from '@/lib/data';
+import { listAllBookings, listAllInstructors, listAllPartners } from '@/lib/data';
 import { formatMoney } from '@/lib/format';
 import { initials } from '@/lib/people';
 
@@ -44,7 +44,7 @@ export default async function OverviewPage() {
                   <Avatar initials={initials(row.profile?.full_name)} size={32} />
                   <div className="min-w-0 flex-1">
                     <p className="truncate text-[13px] font-[550]">{row.profile?.full_name}</p>
-                    <p className="text-[11px] text-muted">{row.beaches.map((b) => BEACH_LABELS[b]).join(' e ') || 'Sem praia'}</p>
+                    <p className="text-[11px] text-muted">{row.beaches.map((b) => b.name).join(' e ') || 'Sem praia'}</p>
                   </div>
                   <Badge>Disponível</Badge>
                 </li>

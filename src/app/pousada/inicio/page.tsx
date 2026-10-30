@@ -4,7 +4,7 @@ import { redirect } from 'next/navigation';
 import { PartnerFootnote, PartnerHeading } from '@/components/partner-info';
 import { Badge, ButtonLink, Card, StatCard } from '@/components/ui';
 import { requireRole } from '@/lib/auth';
-import { BEACH_LABELS, getOwnPartner, getPartnerSummary } from '@/lib/data';
+import { getOwnPartner, getPartnerSummary } from '@/lib/data';
 import { formatBps, formatMoney } from '@/lib/format';
 
 export const metadata: Metadata = { title: 'Área da pousada' };
@@ -22,7 +22,7 @@ export default async function PartnerHomePage() {
       <Card className="flex flex-wrap items-center justify-between gap-3">
         <div>
           <p className="text-[16px] font-semibold">{partner.name}</p>
-          <p className="text-[12px] text-muted">{BEACH_LABELS[partner.beach]} · código {partner.code}</p>
+          <p className="text-[12px] text-muted">{(partner.beach?.name ?? '—')} · código {partner.code}</p>
         </div>
         <Badge tone={partner.status === 'approved' ? 'success' : 'warning'}>{partner.status === 'approved' ? 'Aprovada' : 'Em análise'}</Badge>
       </Card>

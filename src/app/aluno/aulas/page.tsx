@@ -4,7 +4,7 @@ import { MyLessons, type LessonCard } from '@/components/student/my-lessons';
 import { StudentHero } from '@/components/student/sunset';
 import { ButtonLink } from '@/components/ui';
 import { requireRole } from '@/lib/auth';
-import { BEACH_LABELS, BOOKING_STATUS_LABELS, MEETING_STATUS_LABELS, listBookingsForStudent } from '@/lib/data';
+import { BOOKING_STATUS_LABELS, MEETING_STATUS_LABELS, listBookingsForStudent } from '@/lib/data';
 import { formatDateShort, formatDay, formatMinutes, formatMonthTag, formatTime } from '@/lib/format';
 import { initials } from '@/lib/people';
 
@@ -28,7 +28,7 @@ export default async function MyLessonsPage() {
           statusTone: awaiting ? 'warning' : meeting.status === 'done' ? 'quiet' : 'success',
           day: formatDay(meeting.starts_at),
           month: formatMonthTag(meeting.starts_at),
-          beach: BEACH_LABELS[booking.beach],
+          beach: (booking.beach?.name ?? '—'),
           time: formatTime(meeting.starts_at),
           dateShort: formatDateShort(meeting.starts_at),
           durationLabel: formatMinutes(meeting.minutes),

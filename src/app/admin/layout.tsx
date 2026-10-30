@@ -11,6 +11,7 @@ const NAV: readonly WorkspaceNavItem[] = [
   { label: 'Instrutores', href: '/admin/instrutores', icon: 'users', tab: true },
   { label: 'Reservas', href: '/admin/reservas', icon: 'book', tab: true },
   { label: 'Financeiro', href: '/admin/financeiro', icon: 'wallet', tab: true },
+  { label: 'Praias', href: '/admin/praias', icon: 'pin' },
   { label: 'Regras da operação', href: '/admin/regras', icon: 'sliders' },
   { label: 'Pousadas afiliadas', href: '/admin/afiliados', icon: 'home', secondary: true },
   { label: 'Transporte de apoio', href: '/admin/transporte', icon: 'car', secondary: true },

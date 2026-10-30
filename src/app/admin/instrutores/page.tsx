@@ -4,7 +4,7 @@ import { setInstructorStatus } from '@/app/actions/admin';
 import { ActionForm } from '@/components/action-form';
 import { Avatar, Badge, Card, EmptyState, Note, PageHeader, inputClass } from '@/components/ui';
 import { requireRole } from '@/lib/auth';
-import { BEACH_LABELS, listAllInstructors, type InstructorRow } from '@/lib/data';
+import { listAllInstructors, type InstructorRow } from '@/lib/data';
 import { initials } from '@/lib/people';
 
 export const metadata: Metadata = { title: 'Instrutores' };
@@ -49,7 +49,7 @@ export default async function InstructorsPage() {
                 <div className="min-w-[200px] flex-1">
                   <p className="text-[14px] font-[550]">{row.profile?.full_name || 'Sem nome'}</p>
                   <p className="text-[11px] text-muted">
-                    {row.years_experience} anos · {row.beaches.map((b) => BEACH_LABELS[b]).join(', ') || 'sem praia'} · {row.languages.join(', ')}
+                    {row.years_experience} anos · {row.beaches.map((b) => b.name).join(', ') || 'sem praia'} · {row.languages.join(', ')}
                     {row.has_equipment ? ' · com equipamento' : ''}
                   </p>
                 </div>

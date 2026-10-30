@@ -24,7 +24,7 @@ const Meeting = z.strictObject({
 });
 
 const CreateBooking = z.strictObject({
-  beach: z.enum(['prea', 'jeri']),
+  beachId: z.uuid(),
   level: z.enum(['first_time', 'returning', 'improving']),
   language: z.enum(['Português', 'Inglês', 'Espanhol', 'Francês', 'Alemão', 'Italiano']),
   meetings: z.array(Meeting).min(1).max(8),
@@ -40,7 +40,7 @@ export async function createBooking(_prev: ActionState, form: FormData): Promise
     return { error: 'Encontros inválidos.' };
   }
   const parsed = CreateBooking.safeParse({
-    beach: form.get('beach'),
+    beachId: form.get('beachId'),
     level: form.get('level'),
     language: form.get('language'),
     meetings,
@@ -54,7 +54,7 @@ export async function createBooking(_prev: ActionState, form: FormData): Promise
 
   const supabase = await createSupabaseServerClient();
   const { data, error } = await supabase.rpc('create_booking', {
-    p_beach: parsed.data.beach,
+    p_beach_id: parsed.data.beachId,
     p_level: parsed.data.level,
     p_language: parsed.data.language,
     p_meetings: parsed.data.meetings.map((meeting) => ({

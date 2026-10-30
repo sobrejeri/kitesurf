@@ -4,7 +4,7 @@ import { useActionState, useState } from 'react';
 
 import { createBooking } from '@/app/actions/booking';
 import { LANGUAGES, MAX_HOURS } from '@/data/demo';
-import { BEACH_LABELS, LEVEL_LABELS, type Beach, type LessonLevel, type QuoteRow } from '@/lib/data-labels';
+import { LEVEL_LABELS, type Beach, type LessonLevel, type QuoteRow } from '@/lib/data-labels';
 import { formatMoney } from '@/lib/format';
 
 import { Button, Card, Field, Note, inputClass } from '../ui';
@@ -17,7 +17,7 @@ interface Meeting {
 }
 
 export interface BuilderDefaults {
-  beach: Beach;
+  beachId: string;
   level: LessonLevel;
   language: string;
   hours: number;
@@ -29,10 +29,19 @@ export interface BuilderDefaults {
  * the same instructor. The estimate is looked up in the server's quote table;
  * the form submits choices only, and create_booking derives the price.
  */
-export function LessonBuilder({ quotes, defaults }: { quotes: readonly QuoteRow[]; defaults: BuilderDefaults }) {
+export function LessonBuilder({
+  quotes,
+  beaches,
+  defaults,
+}: {
+  quotes: readonly QuoteRow[];
+  beaches: readonly Beach[];
+  defaults: BuilderDefaults;
+}) {
   const [state, formAction, pending] = useActionState(createBooking, {});
   const [step, setStep] = useState<1 | 2>(1);
-  const [beach, setBeach] = useState<Beach>(defaults.beach);
+  const [beachId, setBeachId] = useState(defaults.beachId);
+  const beachName = beaches.find((beach) => beach.id === beachId)?.name ?? '—';
   const [level, setLevel] = useState<LessonLevel>(defaults.level);
   const [language, setLanguage] = useState(defaults.language);
   const [meetings, setMeetings] = useState<Meeting[]>([
@@ -42,7 +51,7 @@ export function LessonBuilder({ quotes, defaults }: { quotes: readonly QuoteRow[
 
   const totalHours = meetings.reduce((sum, meeting) => sum + meeting.hours, 0);
   const quote = quotes.find((row) => row.hours === totalHours);
-  const valid = totalHours >= 1 && totalHours <= MAX_HOURS;
+  const valid = totalHours >= 1 && totalHours <= MAX_HOURS && Boolean(beachId);
 
   function update(id: number, patch: Partial<Meeting>) {
     setMeetings((current) => current.map((meeting) => (meeting.id === id ? { ...meeting, ...patch } : meeting)));
@@ -52,7 +61,7 @@ export function LessonBuilder({ quotes, defaults }: { quotes: readonly QuoteRow[
 
   return (
     <form action={formAction}>
-      <input type="hidden" name="beach" value={beach} />
+      <input type="hidden" name="beachId" value={beachId} />
       <input type="hidden" name="level" value={level} />
       <input type="hidden" name="language" value={language} />
       <input type="hidden" name="meetings" value={payload} />
@@ -75,9 +84,9 @@ export function LessonBuilder({ quotes, defaults }: { quotes: readonly QuoteRow[
               <h2 className="text-[16px]">Idioma, nível e praia</h2>
               <div className="mt-4 grid gap-4 sm:grid-cols-3">
                 <Field label="Praia" icon="pin">
-                  <select className={inputClass} value={beach} onChange={(e) => setBeach(e.target.value as Beach)}>
-                    {Object.entries(BEACH_LABELS).map(([id, label]) => (
-                      <option key={id} value={id}>{label}</option>
+                  <select className={inputClass} value={beachId} onChange={(e) => setBeachId(e.target.value)}>
+                    {beaches.map((beach) => (
+                      <option key={beach.id} value={beach.id}>{beach.name}</option>
                     ))}
                   </select>
                 </Field>
@@ -178,7 +187,7 @@ export function LessonBuilder({ quotes, defaults }: { quotes: readonly QuoteRow[
             <h2 className="text-[16px]">Revise antes de buscar</h2>
             <dl className="mt-4 grid gap-3 text-[13px]">
               <div className="flex justify-between border-b border-line pb-3"><dt className="text-muted">Aula</dt><dd className="font-[550]">Aula particular · {totalHours}h</dd></div>
-              <div className="flex justify-between gap-3 border-b border-line pb-3"><dt className="text-muted">Preferências</dt><dd className="text-right font-[550]">{language} · {LEVEL_LABELS[level]} · {BEACH_LABELS[beach]}</dd></div>
+              <div className="flex justify-between gap-3 border-b border-line pb-3"><dt className="text-muted">Preferências</dt><dd className="text-right font-[550]">{language} · {LEVEL_LABELS[level]} · {beachName}</dd></div>
               {meetings.map((meeting, index) => (
                 <div key={meeting.id} className="flex justify-between border-b border-line pb-3 last:border-0">
                   <dt className="text-muted">Encontro {index + 1}</dt>

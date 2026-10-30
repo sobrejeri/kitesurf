@@ -2,7 +2,7 @@ import type { Metadata } from 'next';
 
 import { Avatar, Badge, Card, EmptyState, Note, PageHeader } from '@/components/ui';
 import { requireRole } from '@/lib/auth';
-import { BEACH_LABELS, listQueue } from '@/lib/data';
+import { listQueue } from '@/lib/data';
 import { initials } from '@/lib/people';
 
 export const metadata: Metadata = { title: 'Fila e distribuição' };
@@ -24,7 +24,7 @@ export default async function DistributionPage() {
                 <Avatar initials={initials(row.profile?.full_name)} size={32} />
                 <div className="min-w-0 flex-1">
                   <p className="truncate text-[13px] font-[550]">{row.profile?.full_name}</p>
-                  <p className="text-[11px] text-muted">{row.beaches.map((b) => BEACH_LABELS[b]).join(' e ')} · {row.languages.join(', ')}</p>
+                  <p className="text-[11px] text-muted">{row.beaches.map((b) => b.name).join(' e ')} · {row.languages.join(', ')}</p>
                 </div>
                 <Badge>Disponível</Badge>
               </li>

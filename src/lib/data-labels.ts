@@ -3,10 +3,16 @@
  * apart from data.ts, which is server-only.
  */
 
-export type Beach = 'prea' | 'jeri';
+/** A beach the operation offers. Created and managed by the admin. */
+export interface Beach {
+  id: string;
+  name: string;
+  region: string;
+  active: boolean;
+}
+
 export type LessonLevel = 'first_time' | 'returning' | 'improving';
 
-export const BEACH_LABELS: Readonly<Record<Beach, string>> = { prea: 'Preá', jeri: 'Jericoacoara' };
 export const LEVEL_LABELS: Readonly<Record<LessonLevel, string>> = {
   first_time: 'Primeira vez',
   returning: 'Já fiz aulas',

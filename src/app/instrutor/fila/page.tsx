@@ -3,7 +3,7 @@ import type { Metadata } from 'next';
 import { Icon } from '@/components/icon';
 import { Avatar, Badge, Card, EmptyState, PageHeader } from '@/components/ui';
 import { requireRole } from '@/lib/auth';
-import { BEACH_LABELS, listQueue } from '@/lib/data';
+import { listQueue } from '@/lib/data';
 import { initials } from '@/lib/people';
 
 export const metadata: Metadata = { title: 'Minha prioridade' };
@@ -40,7 +40,7 @@ export default async function QueuePage() {
                       {row.profile?.full_name}
                       {row.id === viewer.id ? <span className="font-normal text-muted"> · você</span> : null}
                     </p>
-                    <p className="text-[11px] text-muted">{row.beaches.map((b) => BEACH_LABELS[b]).join(' e ') || '—'}</p>
+                    <p className="text-[11px] text-muted">{row.beaches.map((b) => b.name).join(' e ') || '—'}</p>
                   </div>
                   <Badge>Disponível</Badge>
                 </li>

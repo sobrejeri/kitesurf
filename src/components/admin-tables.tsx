@@ -1,4 +1,4 @@
-import { BEACH_LABELS, BOOKING_STATUS_LABELS, type Booking } from '@/lib/data';
+import { BOOKING_STATUS_LABELS, type Booking } from '@/lib/data';
 import { formatDateShort, formatMoney, formatTime } from '@/lib/format';
 
 import { Badge, EmptyState } from './ui';
@@ -33,7 +33,7 @@ export function AdminBookingsTable({ bookings }: { bookings: readonly Booking[] 
                 <td className="px-4 py-4">
                   {first ? `${formatDateShort(first.starts_at)} · ${formatTime(first.starts_at)}` : '—'}
                   <br />
-                  {BEACH_LABELS[booking.beach]}
+                  {(booking.beach?.name ?? '—')}
                 </td>
                 <td className="tabular px-4 py-4">{formatMoney(booking.total_cents)}</td>
                 <td className="px-4 py-4"><Badge tone={TONE[booking.status]}>{BOOKING_STATUS_LABELS[booking.status]}</Badge></td>

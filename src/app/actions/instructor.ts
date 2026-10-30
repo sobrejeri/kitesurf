@@ -54,7 +54,7 @@ export async function recordMeeting(_prev: ActionState, form: FormData): Promise
 
 const Profile = z.strictObject({
   years: z.coerce.number().int().min(0).max(60),
-  beaches: z.array(z.enum(['prea', 'jeri'])).max(2),
+  beachIds: z.array(z.uuid()).max(20),
   languages: z.array(z.enum(['Português', 'Inglês', 'Espanhol', 'Francês', 'Alemão', 'Italiano'])).min(1).max(6),
   hasEquipment: z.boolean(),
 });
@@ -64,7 +64,7 @@ export async function updateInstructorProfile(_prev: ActionState, form: FormData
   const viewer = await requireRole(['instructor']);
   const parsed = Profile.safeParse({
     years: form.get('years'),
-    beaches: form.getAll('beaches'),
+    beachIds: form.getAll('beachIds'),
     languages: form.getAll('languages'),
     hasEquipment: form.get('hasEquipment') === 'on',
   });
@@ -75,12 +75,16 @@ export async function updateInstructorProfile(_prev: ActionState, form: FormData
     .from('instructors')
     .update({
       years_experience: parsed.data.years,
-      beaches: parsed.data.beaches,
       languages: parsed.data.languages,
       has_equipment: parsed.data.hasEquipment,
     })
     .eq('id', viewer.id);
   if (error) return { error: friendlyError(error) };
+
+  // Beaches go through set_my_beaches, which accepts only beaches the
+  // operation created and keeps the list to the caller's own row.
+  const { error: beachError } = await supabase.rpc('set_my_beaches', { p_beach_ids: parsed.data.beachIds });
+  if (beachError) return { error: friendlyError(beachError) };
   revalidatePath('/instrutor/cadastro');
   return { ok: 'Perfil salvo. A operação analisa seu cadastro antes de liberar pedidos.' };
 }

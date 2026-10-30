@@ -83,3 +83,49 @@ export async function approvePartner(_prev: ActionState, form: FormData): Promis
   revalidatePath('/admin/afiliados');
   return { ok: 'Pousada aprovada.' };
 }
+
+const NewBeach = z.strictObject({
+  name: z.string().trim().min(2).max(60),
+  region: z.string().trim().max(60),
+});
+
+export async function createBeach(_prev: ActionState, form: FormData): Promise<ActionState> {
+  await requireRole(['admin']);
+  const parsed = NewBeach.safeParse({ name: form.get('name'), region: form.get('region') ?? '' });
+  if (!parsed.success) return { error: 'O nome da praia precisa ter de 2 a 60 letras.' };
+
+  const supabase = await createSupabaseServerClient();
+  const { error } = await supabase.rpc('create_beach', { p_name: parsed.data.name, p_region: parsed.data.region });
+  if (error) return { error: friendlyError(error) };
+  revalidatePath('/admin/praias');
+  return { ok: `${parsed.data.name} cadastrada. Os instrutores já podem marcá-la no perfil.` };
+}
+
+const EditBeach = z.strictObject({
+  beachId: z.uuid(),
+  name: z.string().trim().min(2).max(60),
+  region: z.string().trim().max(60),
+  active: z.enum(['true', 'false']),
+});
+
+export async function updateBeach(_prev: ActionState, form: FormData): Promise<ActionState> {
+  await requireRole(['admin']);
+  const parsed = EditBeach.safeParse({
+    beachId: form.get('beachId'),
+    name: form.get('name'),
+    region: form.get('region') ?? '',
+    active: form.get('active'),
+  });
+  if (!parsed.success) return { error: 'Confira o nome da praia.' };
+
+  const supabase = await createSupabaseServerClient();
+  const { error } = await supabase.rpc('update_beach', {
+    p_beach_id: parsed.data.beachId,
+    p_name: parsed.data.name,
+    p_region: parsed.data.region,
+    p_active: parsed.data.active === 'true',
+  });
+  if (error) return { error: friendlyError(error) };
+  revalidatePath('/admin/praias');
+  return { ok: parsed.data.active === 'true' ? 'Praia salva.' : 'Praia desativada. Reservas existentes não mudam.' };
+}

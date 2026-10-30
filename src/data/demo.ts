@@ -9,13 +9,6 @@
  * arithmetic in components.
  */
 
-export type BeachId = 'prea' | 'jeri';
-
-export const BEACHES: Readonly<Record<BeachId, string>> = {
-  prea: 'Preá',
-  jeri: 'Jericoacoara',
-};
-
 export const LEVELS = ['Primeira vez', 'Já fiz aulas', 'Quero evoluir'] as const;
 export const LANGUAGES = ['Português', 'Inglês', 'Espanhol', 'Francês', 'Alemão', 'Italiano'] as const;
 

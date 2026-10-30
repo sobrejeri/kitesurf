@@ -11,6 +11,7 @@ const ITEMS = [
   { title: 'Agenda de aulas', body: 'Dia, semana, mês e lista com filtros.', href: '/admin/agenda' },
   { title: 'Analisar ocorrências', body: 'Liberar saldo ou registrar reembolso de teste.', href: '/admin/ocorrencias' },
   { title: 'Validar documentos', body: 'Aprovar ou pedir correções.', href: '/admin/documentos' },
+  { title: 'Praias', body: 'Cadastro das praias e quem atende em cada uma.', href: '/admin/praias' },
   { title: 'Pontos de encontro', body: 'Referência e endereço do mapa.', href: '/admin/pontos' },
   { title: 'Políticas comerciais', body: 'Rascunho das decisões da operação.', href: '/admin/politicas' },
   { title: 'Atendimento', body: 'Acompanhar conversas por encontro.', href: '/admin/atendimento' },
