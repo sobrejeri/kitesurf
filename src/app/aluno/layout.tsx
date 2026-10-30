@@ -6,7 +6,7 @@ import { initials } from '@/lib/people';
 export default async function StudentLayout({ children }: { children: React.ReactNode }) {
   const viewer = await getViewer();
   return (
-    <StudentShell name={viewer?.fullName || 'Visitante'} initials={initials(viewer?.fullName)}>
+    <StudentShell name={viewer?.fullName || 'Visitante'} initials={initials(viewer?.fullName)} signedIn={Boolean(viewer)}>
       {children}
     </StudentShell>
   );

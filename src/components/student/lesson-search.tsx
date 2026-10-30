@@ -13,7 +13,7 @@ import { buttonClass } from '../ui';
 
 function SearchField({ label, icon, children }: { label: string; icon: IconName; children: React.ReactNode }) {
   return (
-    <label className="flex min-w-0 flex-col gap-1 border-line px-1 py-2 lg:border-r lg:px-4 lg:last-of-type:border-r-0">
+    <label className="flex min-w-0 flex-col gap-1 rounded-input bg-canvas px-3 py-2.5 lg:rounded-none lg:border-r lg:border-line lg:bg-transparent lg:px-4 lg:py-2 lg:last-of-type:border-r-0">
       <span className="flex items-center gap-1.5 text-[9px] font-medium uppercase tracking-[1px] text-muted">
         <Icon name={icon} className="!h-3.5 !w-3.5 text-brand" />
         {label}
@@ -24,7 +24,7 @@ function SearchField({ label, icon, children }: { label: string; icon: IconName;
 }
 
 const selectClass =
-  'w-full appearance-none bg-transparent py-1 text-[14px] font-[550] text-ink focus:outline-none bg-[url("data:image/svg+xml,%3Csvg xmlns=%27http://www.w3.org/2000/svg%27 viewBox=%270 0 24 24%27 fill=%27none%27 stroke=%27%23283340%27 stroke-width=%272%27%3E%3Cpath d=%27m6 9 6 6 6-6%27/%3E%3C/svg%3E")] bg-[length:16px] bg-[right_center] bg-no-repeat pr-6';
+  'w-full appearance-none bg-transparent py-1 text-base md:text-[14px] font-[550] text-ink focus:outline-none bg-[url("data:image/svg+xml,%3Csvg xmlns=%27http://www.w3.org/2000/svg%27 viewBox=%270 0 24 24%27 fill=%27none%27 stroke=%27%23283340%27 stroke-width=%272%27%3E%3Cpath d=%27m6 9 6 6 6-6%27/%3E%3C/svg%3E")] bg-[length:16px] bg-[right_center] bg-no-repeat pr-6';
 
 /**
  * The home search. The total shown under it is looked up from the server's
@@ -38,7 +38,7 @@ export function LessonSearch({ defaultDate, quotes }: { defaultDate: string; quo
     <>
       <form
         action="/aluno/reservar"
-        className="relative z-10 -mt-2 grid gap-1 rounded-search border border-[#ecf0f7] bg-surface p-4 shadow-search sm:grid-cols-2 lg:mt-4 lg:grid-cols-[1fr_1fr_1.1fr_1fr_auto_auto] lg:items-center lg:p-3"
+        className="relative z-10 -mt-6 mx-2 grid grid-cols-2 gap-2 rounded-search border border-[#ecf0f7] bg-surface p-3 shadow-search lg:mx-0 lg:mt-4 lg:grid-cols-[1fr_1fr_1.1fr_1fr_auto_auto] lg:items-center lg:gap-1 lg:p-3"
       >
         <SearchField label="Sua praia" icon="pin">
           <select name="praia" className={selectClass} defaultValue="prea">
@@ -50,7 +50,7 @@ export function LessonSearch({ defaultDate, quotes }: { defaultDate: string; quo
           </select>
         </SearchField>
         <SearchField label="Qual dia?" icon="calendar">
-          <input name="dia" type="date" defaultValue={defaultDate} className="w-full bg-transparent py-1 text-[14px] font-[550] focus:outline-none" />
+          <input name="dia" type="date" defaultValue={defaultDate} className="w-full bg-transparent py-1 text-base font-[550] focus:outline-none md:text-[14px]" />
         </SearchField>
         <SearchField label="Seu momento no kite" icon="kite">
           <select name="nivel" className={selectClass} defaultValue="first_time">
@@ -68,7 +68,7 @@ export function LessonSearch({ defaultDate, quotes }: { defaultDate: string; quo
             ))}
           </select>
         </SearchField>
-        <div className="flex flex-col gap-1 px-1 py-2 lg:px-4">
+        <div className="col-span-2 flex items-center justify-between gap-1 px-1 py-1 lg:col-span-1 lg:flex-col lg:items-start lg:px-4 lg:py-2">
           <span className="flex items-center gap-1.5 text-[9px] font-medium uppercase tracking-[1px] text-muted">
             <Icon name="clock" className="!h-3.5 !w-3.5 text-brand" />
             Quantas horas
@@ -76,7 +76,7 @@ export function LessonSearch({ defaultDate, quotes }: { defaultDate: string; quo
           <HoursStepper value={hours} onChange={setHours} min={MIN_HOURS} max={MAX_HOURS} />
           <input type="hidden" name="horas" value={hours} />
         </div>
-        <button type="submit" className={buttonClass('primary', 'md', 'mt-2 !rounded-[13px] sm:col-span-2 lg:col-span-1 lg:mt-0 lg:ml-2')}>
+        <button type="submit" className={buttonClass('primary', 'md', 'col-span-2 !rounded-[13px] lg:col-span-1 lg:ml-2')}>
           Encontrar minha aula
           <Icon name="arrow" className="!h-[18px] !w-[18px]" />
         </button>

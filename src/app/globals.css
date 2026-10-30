@@ -111,3 +111,66 @@ h3 {
     transition-duration: 0.01ms !important;
   }
 }
+
+/* ---------------------------------------------------------------------------
+ * App feel on phones
+ * ------------------------------------------------------------------------- */
+
+html {
+  -webkit-tap-highlight-color: transparent;
+  -webkit-text-size-adjust: 100%;
+}
+
+body {
+  /* No rubber-band reveal of the page behind the fixed bars. */
+  overscroll-behavior-y: none;
+}
+
+a,
+button,
+label,
+summary {
+  touch-action: manipulation;
+}
+
+/* Notch and home-indicator insets (viewport-fit=cover). */
+@utility pt-safe {
+  padding-top: env(safe-area-inset-top);
+}
+
+@utility pb-safe {
+  padding-bottom: max(env(safe-area-inset-bottom), 8px);
+}
+
+/* Room for the fixed tab bar under the last card. */
+@utility pb-tabbar {
+  padding-bottom: calc(96px + env(safe-area-inset-bottom));
+}
+
+/* Touch feedback: a quick press-in, like a native control. */
+@utility press {
+  transition: transform 0.12s ease, background-color 0.15s ease;
+  &:active {
+    transform: scale(0.96);
+  }
+}
+
+@keyframes sheet-in {
+  from {
+    transform: translateY(100%);
+  }
+}
+
+@keyframes fade-in {
+  from {
+    opacity: 0;
+  }
+}
+
+.sheet-panel {
+  animation: sheet-in 0.26s cubic-bezier(0.2, 0.8, 0.2, 1);
+}
+
+.sheet-backdrop {
+  animation: fade-in 0.2s ease;
+}

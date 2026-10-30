@@ -1,0 +1,238 @@
+'use client';
+
+import Link from 'next/link';
+import { usePathname } from 'next/navigation';
+import { useCallback, useEffect, useId, useRef, useState } from 'react';
+
+import { Icon, type IconName } from './icon';
+
+/**
+ * Phone chrome: a compact header, a tab bar and a "Mais" sheet. Shown below
+ * the desktop breakpoint of each shell; the desktop layout stays as it was.
+ */
+
+export interface TabItem {
+  label: string;
+  href: string;
+  icon: IconName;
+  /** Other routes that keep this tab highlighted. */
+  match?: readonly string[];
+}
+
+export interface SheetLink {
+  label: string;
+  href: string;
+  icon: IconName;
+}
+
+export function isActive(pathname: string, item: { href: string; match?: readonly string[] }): boolean {
+  return [item.href, ...(item.match ?? [])].some((route) => pathname === route || pathname.startsWith(`${route}/`));
+}
+
+export function MobileHeader({
+  title,
+  leading,
+  trailing,
+  breakpoint = 'md',
+}: {
+  title?: string;
+  leading?: React.ReactNode;
+  trailing?: React.ReactNode;
+  breakpoint?: 'md' | 'lg';
+}) {
+  return (
+    <header
+      className={`pt-safe sticky top-0 z-30 border-b border-line/80 bg-white/90 backdrop-blur-xl ${breakpoint === 'md' ? 'md:hidden' : 'lg:hidden'}`}
+    >
+      <div className="flex h-14 items-center gap-3 px-4">
+        {leading}
+        {title ? <p className="min-w-0 flex-1 truncate text-[16px] font-semibold tracking-[-0.3px]">{title}</p> : <span className="flex-1" />}
+        {trailing}
+      </div>
+    </header>
+  );
+}
+
+export function TabBar({
+  items,
+  more,
+  breakpoint = 'md',
+  label,
+}: {
+  items: readonly TabItem[];
+  more?: { links: readonly SheetLink[]; footer?: React.ReactNode; title: string };
+  breakpoint?: 'md' | 'lg';
+  label: string;
+}) {
+  const pathname = usePathname();
+  // The sheet belongs to the page it was opened on: navigating closes it.
+  const [openAt, setOpenAt] = useState<string | null>(null);
+  const open = openAt === pathname;
+  const closeSheet = useCallback(() => setOpenAt(null), []);
+  const moreActive = more ? !items.some((item) => isActive(pathname, item)) : false;
+
+  return (
+    <>
+      <nav
+        aria-label={label}
+        className={`pb-safe fixed inset-x-0 bottom-0 z-40 border-t border-line/80 bg-white/92 backdrop-blur-xl ${breakpoint === 'md' ? 'md:hidden' : 'lg:hidden'}`}
+      >
+        <ul className="mx-auto flex max-w-lg items-stretch justify-around px-1 pt-1.5">
+          {items.map((item) => {
+            const active = isActive(pathname, item);
+            return (
+              <li key={item.href} className="flex-1">
+                <Link
+                  href={item.href}
+                  aria-current={active ? 'page' : undefined}
+                  className={`press flex flex-col items-center gap-0.5 py-1 text-[10px] ${active ? 'font-[550] text-brand' : 'text-subtle'}`}
+                >
+                  <span className={`grid h-8 w-14 place-items-center rounded-full transition-colors ${active ? 'bg-brand-soft' : ''}`}>
+                    <Icon name={item.icon} className={`!h-[22px] !w-[22px] ${active ? '[stroke-width:1.9]' : ''}`} />
+                  </span>
+                  {item.label}
+                </Link>
+              </li>
+            );
+          })}
+          {more ? (
+            <li className="flex-1">
+              <button
+                type="button"
+                onClick={() => setOpenAt(pathname)}
+                aria-haspopup="dialog"
+                aria-expanded={open}
+                className={`press flex w-full flex-col items-center gap-0.5 py-1 text-[10px] ${moreActive ? 'font-[550] text-brand' : 'text-subtle'}`}
+              >
+                <span className={`grid h-8 w-14 place-items-center rounded-full ${moreActive ? 'bg-brand-soft' : ''}`}>
+                  <Icon name="grid" className="!h-[22px] !w-[22px]" />
+                </span>
+                Mais
+              </button>
+            </li>
+          ) : null}
+        </ul>
+      </nav>
+      {more ? <MoreSheet open={open} onClose={closeSheet} {...more} /> : null}
+    </>
+  );
+}
+
+/** Bottom sheet with the rest of the menu. Closes on Esc or a backdrop tap. */
+function MoreSheet({
+  open,
+  onClose,
+  title,
+  links,
+  footer,
+}: {
+  open: boolean;
+  onClose: () => void;
+  title: string;
+  links: readonly SheetLink[];
+  footer?: React.ReactNode;
+}) {
+  const pathname = usePathname();
+  const titleId = useId();
+  const panel = useRef<HTMLDivElement>(null);
+  const opener = useRef<Element | null>(null);
+
+  useEffect(() => {
+    if (!open) return;
+    opener.current = document.activeElement;
+    panel.current?.focus();
+    const onKey = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') onClose();
+    };
+    const previous = document.body.style.overflow;
+    document.body.style.overflow = 'hidden';
+    document.addEventListener('keydown', onKey);
+    return () => {
+      document.removeEventListener('keydown', onKey);
+      document.body.style.overflow = previous;
+      if (opener.current instanceof HTMLElement) opener.current.focus();
+    };
+  }, [open, onClose]);
+
+  if (!open) return null;
+
+  return (
+    <div className="fixed inset-0 z-50 lg:hidden" role="presentation">
+      <button type="button" aria-label="Fechar menu" onClick={onClose} className="sheet-backdrop absolute inset-0 bg-[#1b2433]/40" />
+      <div
+        ref={panel}
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby={titleId}
+        tabIndex={-1}
+        className="sheet-panel pb-safe absolute inset-x-0 bottom-0 max-h-[85dvh] overflow-y-auto rounded-t-[24px] bg-surface px-4 pt-2 shadow-[0_-12px_40px_#1b243326] focus:outline-none"
+      >
+        <span className="mx-auto mb-3 block h-1 w-10 rounded-full bg-line-ghost" aria-hidden="true" />
+        <p id={titleId} className="px-1 text-[16px] font-semibold">
+          {title}
+        </p>
+        <ul className="mt-4 grid grid-cols-3 gap-2.5">
+          {links.map((link) => {
+            const active = isActive(pathname, link);
+            return (
+              <li key={link.href}>
+                <Link
+                  href={link.href}
+                  aria-current={active ? 'page' : undefined}
+                  className={`press flex h-full flex-col items-center gap-2 rounded-search border px-2 py-3.5 text-center text-[11px] leading-tight ${active ? 'border-brand-focus bg-brand-soft font-[550] text-brand' : 'border-line bg-canvas text-label'}`}
+                >
+                  <Icon name={link.icon} className="!h-[22px] !w-[22px] text-brand" />
+                  {link.label}
+                </Link>
+              </li>
+            );
+          })}
+        </ul>
+        {footer ? <div className="mt-4 border-t border-line pt-4 pb-2">{footer}</div> : <div className="h-4" />}
+      </div>
+    </div>
+  );
+}
+
+/** Account block for the bottom of the "Mais" sheet. */
+export function SheetAccount({
+  name,
+  subtitle,
+  initials,
+  signOut,
+  areas,
+}: {
+  name: string;
+  subtitle: string;
+  initials: string;
+  signOut: () => Promise<void>;
+  areas?: readonly { label: string; href: string }[];
+}) {
+  return (
+    <div className="grid gap-3">
+      {areas && areas.length > 1 ? (
+        <div className="flex gap-1 rounded-[13px] bg-[#f2f4fa] p-1 text-[12px]">
+          {areas.map((area) => (
+            <Link key={area.href} href={area.href} className="press flex-1 rounded-[10px] py-2 text-center text-label">
+              {area.label}
+            </Link>
+          ))}
+        </div>
+      ) : null}
+      <div className="flex items-center gap-3">
+        <span className="grid h-10 w-10 place-items-center rounded-full bg-[#eef1fa] text-[13px] font-[550] text-[#687da8]" aria-hidden="true">
+          {initials}
+        </span>
+        <span className="min-w-0 flex-1 text-[13px] leading-tight">
+          <strong className="block truncate font-[550]">{name}</strong>
+          <span className="text-[11px] text-muted">{subtitle}</span>
+        </span>
+        <form action={signOut}>
+          <button type="submit" className="press rounded-full border border-line px-4 py-2 text-[12px] font-[550] text-danger">
+            Sair
+          </button>
+        </form>
+      </div>
+    </div>
+  );
+}

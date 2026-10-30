@@ -11,7 +11,7 @@ import { Icon, type IconName } from './icon';
 type ButtonVariant = 'primary' | 'ghost' | 'soft' | 'danger' | 'text';
 
 const BUTTON_BASE =
-  'inline-flex items-center justify-center gap-2 rounded-full border font-[550] text-[13px] tracking-[.1px] transition-[background,box-shadow] disabled:cursor-not-allowed disabled:opacity-45';
+  'press inline-flex items-center justify-center gap-2 rounded-full border font-[550] text-[13px] tracking-[.1px] disabled:cursor-not-allowed disabled:opacity-45 disabled:active:scale-100';
 
 const BUTTON_VARIANTS: Record<ButtonVariant, string> = {
   primary: 'border-transparent bg-brand text-white hover:bg-brand-hover hover:shadow-button',
@@ -22,7 +22,8 @@ const BUTTON_VARIANTS: Record<ButtonVariant, string> = {
 };
 
 export function buttonClass(variant: ButtonVariant = 'primary', size: 'md' | 'sm' = 'md', extra = '') {
-  const sizing = size === 'sm' ? 'min-h-9 px-3.5 text-[12px]' : 'min-h-[45px] px-5';
+  // 48px is a comfortable thumb target on phones; desktop keeps the sketch's 45px.
+  const sizing = size === 'sm' ? 'min-h-10 px-4 text-[12px] md:min-h-9 md:px-3.5' : 'min-h-12 px-5 md:min-h-[45px]';
   return `${BUTTON_BASE} ${sizing} ${BUTTON_VARIANTS[variant]} ${extra}`;
 }
 
@@ -280,11 +281,12 @@ export function Field({
   );
 }
 
+// 16px text on phones: below that, iOS Safari zooms the page on focus.
 export const inputClass =
-  'h-11 w-full rounded-input border border-line-input bg-surface px-3.5 text-[13px] font-medium text-ink-strong focus:border-brand-focus focus:shadow-focus focus:outline-none';
+  'h-12 w-full rounded-input border border-line-input bg-surface px-3.5 text-base font-medium text-ink-strong focus:border-brand-focus focus:shadow-focus focus:outline-none md:h-11 md:text-[13px]';
 
 export const textareaClass =
-  'min-h-24 w-full rounded-input border border-line-input bg-surface px-3.5 py-3 text-[13px] text-ink-strong focus:border-brand-focus focus:shadow-focus focus:outline-none';
+  'min-h-24 w-full rounded-input border border-line-input bg-surface px-3.5 py-3 text-base text-ink-strong focus:border-brand-focus focus:shadow-focus focus:outline-none md:text-[13px]';
 
 export function EmptyState({ children, action }: { children: React.ReactNode; action?: React.ReactNode }) {
   return (

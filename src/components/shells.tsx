@@ -4,6 +4,9 @@ import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 
 import { Icon, type IconName } from './icon';
+import { MobileHeader, SheetAccount, TabBar, isActive, type SheetLink, type TabItem } from './mobile';
+import { AREAS } from '@/lib/areas';
+
 import { Avatar } from './ui';
 
 /**
@@ -29,12 +32,6 @@ export function Logo({ size = 'md' }: { size?: 'md' | 'sm' }) {
   );
 }
 
-const AREAS = [
-  { label: 'Aluno', href: '/aluno/aulas', prefix: '/aluno', role: 'student' },
-  { label: 'Instrutor', href: '/instrutor/hoje', prefix: '/instrutor', role: 'instructor' },
-  { label: 'Admin', href: '/admin/visao', prefix: '/admin', role: 'admin' },
-  { label: 'Pousada', href: '/pousada/inicio', prefix: '/pousada', role: 'partner' },
-] as const;
 
 export interface TopBarViewer {
   name: string;
@@ -42,14 +39,15 @@ export interface TopBarViewer {
 }
 
 /**
- * Account bar. An admin can open every area; everyone else sees their own.
- * Showing a link is presentation only — each page checks the role again.
+ * Desktop account bar. An admin can open every area; everyone else sees their
+ * own. On phones the same choices live in each shell's "Mais" sheet. Showing a
+ * link is presentation only — each page checks the role again.
  */
 export function TopBar({ viewer, signOut }: { viewer: TopBarViewer | null; signOut: () => Promise<void> }) {
   const pathname = usePathname();
   const areas = viewer ? AREAS.filter((area) => viewer.role === 'admin' || area.role === viewer.role) : [];
   return (
-    <div className="sticky top-0 z-40 flex h-14 items-center justify-between gap-3 border-b border-[#e5eaf5] bg-surface px-4 text-[12px] text-[#43547a] sm:px-6">
+    <div className="sticky top-0 z-40 hidden h-14 items-center justify-between gap-3 border-b border-[#e5eaf5] bg-surface px-6 text-[12px] text-[#43547a] lg:flex">
       {areas.length > 1 ? (
         <nav aria-label="Áreas" className="flex rounded-[13px] bg-[#f2f4fa] p-1">
           {areas.map((area) => {
@@ -97,7 +95,7 @@ export function TopBar({ viewer, signOut }: { viewer: TopBarViewer | null; signO
 
 function SiteFooter() {
   return (
-    <footer className="mx-auto mt-14 flex max-w-6xl flex-wrap items-center justify-between gap-3 px-4 pb-28 text-[11px] text-subtle sm:px-8 sm:pb-10">
+    <footer className="mx-auto mt-14 hidden max-w-6xl flex-wrap items-center justify-between gap-3 px-8 pb-10 text-[11px] text-subtle md:flex">
       <Logo size="sm" />
       <p>Feito de mar, vento e boas histórias.</p>
       <Link href="/cadastro?perfil=partner" className="font-[550] text-brand">
@@ -107,35 +105,67 @@ function SiteFooter() {
   );
 }
 
-const STUDENT_NAV: readonly { label: string; href: string; icon: IconName }[] = [
-  { label: 'Explorar', href: '/aluno/inicio', icon: 'search' },
-  { label: 'Minhas aulas', href: '/aluno/aulas', icon: 'book' },
-  { label: 'Evolução', href: '/aluno/evolucao', icon: 'chart' },
-  { label: 'Meu perfil', href: '/aluno/conta', icon: 'user' },
-];
-
-/** Routes that belong to "Minhas aulas" for the purpose of the active tab. */
-const LESSON_ROUTES = ['/aluno/aulas', '/aluno/reserva', '/aluno/reservar', '/aluno/atendimento', '/aluno/ocorrencias'];
-
-function studentActive(pathname: string, href: string): boolean {
-  if (href === '/aluno/aulas') return LESSON_ROUTES.some((route) => pathname.startsWith(route));
-  if (href === '/aluno/conta')
-    return ['/aluno/conta', '/aluno/central', '/aluno/avisos', '/aluno/politicas', '/aluno/acesso'].some((route) =>
-      pathname.startsWith(route),
-    );
-  return pathname.startsWith(href);
+/** The app icon alone, for the compact phone header. */
+function LogoMark() {
+  return (
+    <Link href="/" aria-label="Vento — início" className="press shrink-0">
+      {/* Static SVG mark; nothing for next/image to optimise. */}
+      <img src="/icon.svg" alt="" width={30} height={30} className="rounded-[9px]" />
+    </Link>
+  );
 }
 
-export function StudentShell({ children, name, initials }: { children: React.ReactNode; name: string; initials: string }) {
+function HeaderIconLink({ href, icon, label }: { href: string; icon: IconName; label: string }) {
+  return (
+    <Link href={href} aria-label={label} className="press grid h-10 w-10 place-items-center rounded-full text-[#5f6c80] active:bg-sand">
+      <Icon name={icon} />
+    </Link>
+  );
+}
+
+const STUDENT_TABS: readonly TabItem[] = [
+  { label: 'Explorar', href: '/aluno/inicio', icon: 'search', match: ['/aluno/reservar'] },
+  { label: 'Minhas aulas', href: '/aluno/aulas', icon: 'book', match: ['/aluno/reserva', '/aluno/atendimento', '/aluno/ocorrencias'] },
+  { label: 'Evolução', href: '/aluno/evolucao', icon: 'chart' },
+  { label: 'Perfil', href: '/aluno/conta', icon: 'user', match: ['/aluno/central', '/aluno/avisos', '/aluno/politicas', '/aluno/acesso'] },
+];
+
+const STUDENT_TITLES: Readonly<Record<string, string>> = {
+  '/aluno/reservar': 'Monte sua aula',
+  '/aluno/reserva': 'Sua reserva',
+  '/aluno/central': 'Central de aulas',
+  '/aluno/avisos': 'Avisos',
+  '/aluno/politicas': 'Políticas das aulas',
+  '/aluno/acesso': 'Conta e acesso',
+  '/aluno/atendimento': 'Conversa',
+  '/aluno/ocorrencias': 'Imprevistos',
+};
+
+export function StudentShell({
+  children,
+  name,
+  initials,
+  signedIn,
+}: {
+  children: React.ReactNode;
+  name: string;
+  initials: string;
+  signedIn: boolean;
+}) {
   const pathname = usePathname();
+  const subpage = Object.entries(STUDENT_TITLES).find(([route]) => pathname.startsWith(route));
+  const tabs = signedIn
+    ? STUDENT_TABS
+    : STUDENT_TABS.map((tab) => (tab.href === '/aluno/conta' ? { ...tab, label: 'Entrar', href: '/entrar' } : tab));
+
   return (
     <>
-      <header className="border-b border-line bg-surface">
-        <div className="mx-auto flex h-[76px] max-w-6xl items-center justify-between gap-6 px-4 sm:px-8">
+      <header className="hidden border-b border-line bg-surface md:block">
+        <div className="mx-auto flex h-[76px] max-w-6xl items-center justify-between gap-6 px-8">
           <Logo />
-          <nav aria-label="Navegação do aluno" className="hidden h-full items-stretch gap-8 md:flex">
-            {STUDENT_NAV.slice(0, 3).map((item) => {
-              const active = studentActive(pathname, item.href);
+          <nav aria-label="Navegação do aluno" className="flex h-full items-stretch gap-8">
+            {STUDENT_TABS.slice(0, 3).map((item) => {
+              const active = isActive(pathname, item);
               return (
                 <Link
                   key={item.href}
@@ -149,46 +179,51 @@ export function StudentShell({ children, name, initials }: { children: React.Rea
             })}
           </nav>
           <div className="flex items-center gap-3">
-            <Link
-              href="/aluno/avisos"
-              aria-label="Avisos"
-              className="grid h-10 w-10 place-items-center rounded-full border border-line text-[#7e8999]"
-            >
+            <Link href="/aluno/avisos" aria-label="Avisos" className="grid h-10 w-10 place-items-center rounded-full border border-line text-[#7e8999]">
               <Icon name="bell" />
             </Link>
-            <Link href="/aluno/conta" className="hidden items-center gap-2.5 md:flex">
-              <Avatar initials={initials} tone="a3" size={36} />
-              <span className="text-[12px] leading-tight">
-                <strong className="block font-[550] text-[#4f5e77]">{name}</strong>
-                <span className="text-[11px] text-subtle">Seu espaço no kite</span>
-              </span>
-            </Link>
+            {signedIn ? (
+              <Link href="/aluno/conta" className="flex items-center gap-2.5">
+                <Avatar initials={initials} tone="a3" size={36} />
+                <span className="text-[12px] leading-tight">
+                  <strong className="block font-[550] text-[#4f5e77]">{name}</strong>
+                  <span className="text-[11px] text-subtle">Seu espaço no kite</span>
+                </span>
+              </Link>
+            ) : (
+              <Link href="/entrar" className="rounded-full bg-brand px-4 py-2 text-[12px] font-[550] text-white">
+                Entrar
+              </Link>
+            )}
           </div>
         </div>
       </header>
 
-      <main className="mx-auto max-w-6xl px-4 pt-6 sm:px-8 sm:pt-8">{children}</main>
-      <SiteFooter />
-
-      <nav
-        aria-label="Navegação do aluno"
-        className="fixed inset-x-0 bottom-0 z-30 flex justify-around border-t border-[#edf0f6] bg-white/95 px-2 pb-4 pt-2.5 shadow-[0_-3px_18px_#243a6503] backdrop-blur md:hidden"
-      >
-        {STUDENT_NAV.map((item) => {
-          const active = studentActive(pathname, item.href);
-          return (
-            <Link
-              key={item.href}
-              href={item.href}
-              aria-current={active ? 'page' : undefined}
-              className={`flex flex-col items-center gap-1 text-[10px] ${active ? 'font-medium text-brand' : 'text-subtle'}`}
-            >
-              <Icon name={item.icon} className="!h-[21px] !w-[21px]" />
-              {item.label}
+      <MobileHeader
+        leading={
+          subpage ? (
+            <button type="button" onClick={() => history.back()} aria-label="Voltar" className="press -ml-2 grid h-10 w-10 place-items-center rounded-full text-ink">
+              <Icon name="back" />
+            </button>
+          ) : (
+            <LogoMark />
+          )
+        }
+        title={subpage ? subpage[1] : 'vento'}
+        trailing={
+          signedIn ? (
+            <HeaderIconLink href="/aluno/avisos" icon="bell" label="Avisos" />
+          ) : (
+            <Link href="/entrar" className="press rounded-full bg-brand px-4 py-2 text-[12px] font-[550] text-white">
+              Entrar
             </Link>
-          );
-        })}
-      </nav>
+          )
+        }
+      />
+
+      <main className="mx-auto max-w-6xl px-4 pb-tabbar pt-5 md:px-8 md:pb-0 md:pt-8">{children}</main>
+      <SiteFooter />
+      <TabBar items={tabs} label="Navegação do aluno" />
     </>
   );
 }
@@ -199,6 +234,8 @@ export interface WorkspaceNavItem {
   icon: IconName;
   /** Reached from the central hub; named in the breadcrumb but not in the sidebar. */
   secondary?: boolean;
+  /** One of the four tabs of the phone tab bar. */
+  tab?: boolean;
 }
 
 export function WorkspaceShell({
@@ -207,26 +244,31 @@ export function WorkspaceShell({
   nav,
   tip,
   person,
+  signOut,
+  areas,
 }: {
   children: React.ReactNode;
   workspace: string;
   nav: readonly WorkspaceNavItem[];
   tip: { title: string; body: string; icon: IconName };
   person: { name: string; initials: string; role: string };
+  signOut: () => Promise<void>;
+  areas?: readonly { label: string; href: string }[];
 }) {
   const pathname = usePathname();
   const current = nav.find((item) => pathname.startsWith(item.href));
+  const workspaceTitle = workspace.charAt(0) + workspace.slice(1).toLowerCase();
+  const tabs = nav.filter((item) => item.tab).map(({ label, href, icon }) => ({ label: shortLabel(label), href, icon }));
+  const sheetLinks: SheetLink[] = nav.filter((item) => !item.tab).map(({ label, href, icon }) => ({ label, href, icon }));
 
   return (
-    <div className="flex min-h-[calc(100dvh-56px)] flex-col lg:flex-row">
-      <aside className="shrink-0 border-b border-[#e8ecf4] bg-surface lg:sticky lg:top-14 lg:flex lg:h-[calc(100dvh-56px)] lg:w-[228px] lg:flex-col lg:border-b-0 lg:border-r">
-        <div className="hidden px-5 pb-6 pt-6 lg:block">
+    <div className="flex min-h-dvh flex-col lg:min-h-[calc(100dvh-56px)] lg:flex-row">
+      <aside className="hidden shrink-0 border-r border-[#e8ecf4] bg-surface lg:sticky lg:top-14 lg:flex lg:h-[calc(100dvh-56px)] lg:w-[228px] lg:flex-col">
+        <div className="px-5 pb-6 pt-6">
           <Logo />
         </div>
-        <p className="hidden px-8 pb-2 text-[9px] font-[550] uppercase tracking-[1px] text-[#9aa5b4] lg:block">
-          {workspace}
-        </p>
-        <nav aria-label={workspace} className="flex gap-1 overflow-x-auto px-3 py-2 lg:flex-col lg:overflow-visible lg:px-5 lg:py-0">
+        <p className="px-8 pb-2 text-[9px] font-[550] uppercase tracking-[1px] text-[#9aa5b4]">{workspace}</p>
+        <nav aria-label={workspace} className="flex flex-col gap-1 overflow-y-auto px-5">
           {nav.filter((item) => !item.secondary).map((item) => {
             const active = pathname.startsWith(item.href);
             return (
@@ -234,7 +276,7 @@ export function WorkspaceShell({
                 key={item.href}
                 href={item.href}
                 aria-current={active ? 'page' : undefined}
-                className={`flex shrink-0 items-center gap-3 whitespace-nowrap rounded-input px-3 py-2.5 text-[13px] font-medium lg:whitespace-normal ${active ? 'bg-brand-soft text-brand' : 'text-subtle hover:bg-[#f5f7fc] hover:text-brand'}`}
+                className={`flex items-center gap-3 rounded-input px-3 py-2.5 text-[13px] font-medium ${active ? 'bg-brand-soft text-brand' : 'text-subtle hover:bg-[#f5f7fc] hover:text-brand'}`}
               >
                 <Icon name={item.icon} className="!h-[18px] !w-[18px]" />
                 {item.label}
@@ -242,7 +284,7 @@ export function WorkspaceShell({
             );
           })}
         </nav>
-        <div className="mt-auto hidden p-5 lg:block">
+        <div className="mt-auto p-5">
           <div className="rounded-[13px] border border-[#edf0f6] bg-[#f8f9fd] p-4 text-[11px] leading-relaxed text-muted">
             <Icon name={tip.icon} className="text-[#8498dc]" />
             <strong className="mt-3 block text-[12px] font-[550] text-[#61718c]">{tip.title}</strong>
@@ -258,15 +300,22 @@ export function WorkspaceShell({
         </div>
       </aside>
 
+      <MobileHeader
+        breakpoint="lg"
+        leading={<LogoMark />}
+        title={current?.label ?? workspaceTitle}
+        trailing={<span className="grid h-9 w-9 place-items-center rounded-full bg-[#eef1fa] text-[12px] font-[550] text-[#687da8]" aria-hidden="true">{person.initials}</span>}
+      />
+
       <div className="min-w-0 flex-1">
-        <div className="flex h-[76px] items-center justify-between border-b border-line bg-surface px-4 sm:px-9">
+        <div className="hidden h-[76px] items-center justify-between border-b border-line bg-surface px-9 lg:flex">
           <p className="flex items-center gap-2 text-[11px] text-[#8c97a8]">
-            <span className="hidden sm:inline">{workspace.charAt(0) + workspace.slice(1).toLowerCase()}</span>
-            <Icon name="chevron" className="hidden !h-3.5 !w-3.5 sm:inline" />
+            <span>{workspaceTitle}</span>
+            <Icon name="chevron" className="!h-3.5 !w-3.5" />
             <strong className="font-[550] text-[#4d5d76]">{current?.label ?? ''}</strong>
           </p>
           <div className="flex items-center gap-3">
-            <span className="hidden items-center gap-1.5 text-[11px] text-[#8a98a9] sm:flex">
+            <span className="flex items-center gap-1.5 text-[11px] text-[#8a98a9]">
               <Icon name="pin" className="!h-4 !w-4" /> Preá, Ceará
             </span>
             <span className="grid h-10 w-10 place-items-center rounded-full border border-line text-[#7e8999]" aria-hidden="true">
@@ -275,36 +324,62 @@ export function WorkspaceShell({
             <Avatar initials={person.initials} size={36} />
           </div>
         </div>
-        <main className="mx-auto max-w-6xl px-4 py-7 sm:px-9 sm:py-9">{children}</main>
+        <main className="mx-auto max-w-6xl px-4 pb-tabbar pt-5 sm:px-6 lg:px-9 lg:py-9">{children}</main>
       </div>
+
+      <TabBar
+        breakpoint="lg"
+        label={workspace}
+        items={tabs}
+        more={{
+          title: workspaceTitle,
+          links: sheetLinks,
+          footer: <SheetAccount name={person.name} subtitle={person.role} initials={person.initials} signOut={signOut} areas={areas} />,
+        }}
+      />
     </div>
   );
 }
 
+/** Tab labels have room for one or two short words. */
+function shortLabel(label: string): string {
+  const SHORT: Readonly<Record<string, string>> = {
+    'Realizar e registrar aula': 'Aula',
+    'Minha prioridade': 'Fila',
+    'Meu financeiro': 'Financeiro',
+    'Fila e distribuição': 'Fila',
+    'Visão geral': 'Visão geral',
+  };
+  return SHORT[label] ?? label;
+}
+
 const PARTNER_NAV = [
-  { label: 'Início', href: '/pousada/inicio' },
-  { label: 'Indicações', href: '/pousada/indicacoes' },
-  { label: 'Divulgação', href: '/pousada/divulgacao' },
-  { label: 'Cadastro', href: '/pousada/cadastro' },
-] as const;
+  { label: 'Início', href: '/pousada/inicio', icon: 'home' },
+  { label: 'Indicações', href: '/pousada/indicacoes', icon: 'users' },
+  { label: 'Divulgação', href: '/pousada/divulgacao', icon: 'link' },
+  { label: 'Cadastro', href: '/pousada/cadastro', icon: 'file' },
+] as const satisfies readonly TabItem[];
 
 export function PartnerShell({
   children,
   partner,
+  signOut,
+  areas,
 }: {
   children: React.ReactNode;
   partner: { name: string; initials: string };
+  signOut: () => Promise<void>;
+  areas?: readonly { label: string; href: string }[];
 }) {
   const pathname = usePathname();
+  const current = PARTNER_NAV.find((item) => isActive(pathname, item));
   return (
     <>
-      <header className="border-b border-line bg-surface">
-        <div className="mx-auto flex max-w-6xl flex-wrap items-center justify-between gap-4 px-4 py-4 sm:px-8">
+      <header className="hidden border-b border-line bg-surface md:block">
+        <div className="mx-auto flex max-w-6xl items-center justify-between gap-4 px-8 py-4">
           <div className="flex items-center gap-4">
             <Logo />
-            <span className="hidden text-[10px] font-[550] uppercase tracking-[1px] text-brand sm:inline">
-              Pousada parceira
-            </span>
+            <span className="text-[10px] font-[550] uppercase tracking-[1px] text-brand">Pousada parceira</span>
           </div>
           <div className="flex items-center gap-2.5">
             <Avatar initials={partner.initials} tone="a4" size={36} />
@@ -314,9 +389,9 @@ export function PartnerShell({
             </span>
           </div>
         </div>
-        <nav aria-label="Área da pousada" className="mx-auto flex max-w-6xl gap-6 overflow-x-auto px-4 sm:px-8">
+        <nav aria-label="Área da pousada" className="mx-auto flex max-w-6xl gap-6 px-8">
           {PARTNER_NAV.map((item) => {
-            const active = pathname.startsWith(item.href);
+            const active = isActive(pathname, item);
             return (
               <Link
                 key={item.href}
@@ -330,16 +405,26 @@ export function PartnerShell({
           })}
         </nav>
       </header>
-      <section className="border-b border-line bg-brand-tint">
-        <div className="mx-auto max-w-6xl px-4 py-5 sm:px-8">
+      <MobileHeader leading={<LogoMark />} title={current?.label ?? 'Pousada parceira'} />
+      <section className="hidden border-b border-line bg-brand-tint md:block">
+        <div className="mx-auto max-w-6xl px-8 py-5">
           <p className="text-[17px] font-semibold tracking-[-0.45px]">Indique bons momentos no mar</p>
           <p className="mt-1 text-[12px] text-muted">
             Comissões sobre aulas realizadas. O preço do hóspede e o líquido do instrutor são preservados.
           </p>
         </div>
       </section>
-      <main className="mx-auto max-w-6xl px-4 pt-7 sm:px-8">{children}</main>
+      <main className="mx-auto max-w-6xl px-4 pb-tabbar pt-5 md:px-8 md:pb-0 md:pt-7">{children}</main>
       <SiteFooter />
+      <TabBar
+        label="Área da pousada"
+        items={PARTNER_NAV.slice(0, 3)}
+        more={{
+          title: 'Pousada parceira',
+          links: PARTNER_NAV.slice(3),
+          footer: <SheetAccount name={partner.name} subtitle="Pousada parceira" initials={partner.initials} signOut={signOut} areas={areas} />,
+        }}
+      />
     </>
   );
 }

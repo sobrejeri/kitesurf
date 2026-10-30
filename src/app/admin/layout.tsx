@@ -1,14 +1,16 @@
+import { signOut } from '@/app/actions/auth';
 import { WorkspaceShell, type WorkspaceNavItem } from '@/components/shells';
+import { areaLinksFor } from '@/lib/areas';
 import { requireRole } from '@/lib/auth';
 
 const NAV: readonly WorkspaceNavItem[] = [
   { label: 'Central de operação', href: '/admin/central', icon: 'grid' },
   { label: 'Agenda de aulas', href: '/admin/agenda', icon: 'calendar' },
-  { label: 'Visão geral', href: '/admin/visao', icon: 'chart' },
+  { label: 'Visão geral', href: '/admin/visao', icon: 'chart', tab: true },
   { label: 'Fila e distribuição', href: '/admin/distribuicao', icon: 'list' },
-  { label: 'Instrutores', href: '/admin/instrutores', icon: 'users' },
-  { label: 'Reservas', href: '/admin/reservas', icon: 'book' },
-  { label: 'Financeiro', href: '/admin/financeiro', icon: 'wallet' },
+  { label: 'Instrutores', href: '/admin/instrutores', icon: 'users', tab: true },
+  { label: 'Reservas', href: '/admin/reservas', icon: 'book', tab: true },
+  { label: 'Financeiro', href: '/admin/financeiro', icon: 'wallet', tab: true },
   { label: 'Regras da operação', href: '/admin/regras', icon: 'sliders' },
   { label: 'Pousadas afiliadas', href: '/admin/afiliados', icon: 'home', secondary: true },
   { label: 'Transporte de apoio', href: '/admin/transporte', icon: 'car', secondary: true },
@@ -25,6 +27,8 @@ export default async function AdminLayout({ children }: { children: React.ReactN
   const viewer = await requireRole(['admin'], '/admin/visao');
   return (
     <WorkspaceShell
+      signOut={signOut}
+      areas={areaLinksFor(viewer.role)}
       workspace="ADMINISTRAÇÃO"
       nav={NAV}
       tip={{

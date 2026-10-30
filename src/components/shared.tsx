@@ -26,16 +26,20 @@ export function Hub({ title, items, notice }: { title: string; items: readonly H
         title={title}
         lead="Tudo organizado por etapa, sem perder os dados já preenchidos."
       />
-      <ul className="grid gap-4 md:grid-cols-2">
+      {/* A list of rows on phones, a grid of cards from md up. */}
+      <ul className="overflow-hidden rounded-card border border-line bg-surface shadow-card md:grid md:grid-cols-2 md:gap-4 md:overflow-visible md:border-0 md:bg-transparent md:shadow-none">
         {items.map((item) => (
-          <li key={item.href}>
+          <li key={item.href} className="border-b border-line last:border-b-0 md:border-0">
             <Link
               href={item.href}
-              className="block h-full rounded-card border border-line bg-surface p-6 shadow-card transition hover:border-brand-focus"
+              className="flex h-full items-center gap-3 px-4 py-4 active:bg-sand md:block md:rounded-card md:border md:border-line md:bg-surface md:p-6 md:shadow-card md:transition md:hover:border-brand-focus"
             >
-              <h2 className="text-[16px]">{item.title}</h2>
-              <p className="mt-2 text-[13px] text-muted">{item.body}</p>
-              <span className="mt-4 inline-block text-[12px] font-[550] text-brand">Abrir →</span>
+              <span className="min-w-0 flex-1">
+                <h2 className="text-[15px] md:text-[16px]">{item.title}</h2>
+                <p className="mt-0.5 text-[12px] text-muted md:mt-2 md:text-[13px]">{item.body}</p>
+              </span>
+              <Icon name="chevron" className="!h-4 !w-4 text-faint md:hidden" />
+              <span className="mt-4 hidden text-[12px] font-[550] text-brand md:inline-block">Abrir →</span>
             </Link>
           </li>
         ))}

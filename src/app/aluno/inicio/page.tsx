@@ -68,11 +68,11 @@ export default async function StudentHomePage() {
       </div>
 
       <section
-        className="relative flex min-h-[150px] items-center overflow-hidden rounded-hero bg-cover bg-center px-5 py-8 sm:min-h-[220px] sm:px-10"
+        className="relative flex min-h-[170px] items-end overflow-hidden rounded-hero bg-cover bg-center px-5 pb-10 pt-8 sm:min-h-[220px] sm:items-center sm:px-10 sm:pb-8"
         style={{ backgroundImage: 'linear-gradient(90deg, #0d2b4ab3, #0d2b4a20 70%), url(/images/prea-coast.webp)' }}
       >
         <div className="max-w-md text-white">
-          <h1 className="text-[24px] leading-tight tracking-[-0.6px] sm:text-[32px]">Seu próximo bordo começa aqui.</h1>
+          <h1 className="text-[24px] leading-[1.15] tracking-[-0.6px] sm:text-[32px]">Seu próximo bordo começa aqui.</h1>
           <p className="mt-2 text-[12px] text-[#f0f5ff]">Escolha suas horas e encontre seu instrutor.</p>
         </div>
       </section>
