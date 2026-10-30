@@ -4,7 +4,7 @@ import { areaLinksFor } from '@/lib/areas';
 import { requireRole } from '@/lib/auth';
 
 const NAV: readonly WorkspaceNavItem[] = [
-  { label: 'Central de operação', href: '/admin/central', icon: 'grid' },
+  { label: 'Mais opções', href: '/admin/central', icon: 'grid' },
   { label: 'Agenda de aulas', href: '/admin/agenda', icon: 'calendar' },
   { label: 'Visão geral', href: '/admin/visao', icon: 'chart', tab: true },
   { label: 'Fila e distribuição', href: '/admin/distribuicao', icon: 'list' },
@@ -22,6 +22,8 @@ const NAV: readonly WorkspaceNavItem[] = [
   { label: 'Atendimento', href: '/admin/atendimento', icon: 'chat', secondary: true },
   { label: 'Avisos da operação', href: '/admin/avisos', icon: 'bell', secondary: true },
   { label: 'Estrutura da plataforma', href: '/admin/estrutura', icon: 'settings', secondary: true },
+  { label: 'Configurações', href: '/admin/configuracoes', icon: 'settings' },
+  { label: 'Auditoria', href: '/admin/auditoria', icon: 'list', secondary: true },
 ];
 
 export default async function AdminLayout({ children }: { children: React.ReactNode }) {
@@ -31,6 +33,8 @@ export default async function AdminLayout({ children }: { children: React.ReactN
       signOut={signOut}
       areas={areaLinksFor(viewer.role)}
       workspace="ADMINISTRAÇÃO"
+      theme="sunset"
+      brandSubtitle="Admin"
       nav={NAV}
       tip={{
         icon: 'wind',

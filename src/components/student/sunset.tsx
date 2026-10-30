@@ -15,13 +15,13 @@ export function WaveMark({ className = '' }: { className?: string }) {
   );
 }
 
-export function StudentBrand() {
+export function StudentBrand({ subtitle = 'Aulas de kitesurf' }: { subtitle?: string }) {
   return (
     <span className="flex items-center gap-2.5">
       <WaveMark className="h-9 w-14" />
       <span className="leading-none">
         <span className="block text-[24px] font-bold tracking-[-0.6px] text-logo-ink">Vento</span>
-        <span className="mt-0.5 block text-[9px] font-medium uppercase tracking-[2px] text-label">Aulas de kitesurf</span>
+        <span className="mt-0.5 block text-[9px] font-medium uppercase tracking-[2px] text-label">{subtitle}</span>
       </span>
     </span>
   );

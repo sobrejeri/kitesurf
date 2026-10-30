@@ -269,6 +269,8 @@ export function WorkspaceShell({
   person,
   signOut,
   areas,
+  theme = 'light',
+  brandSubtitle,
 }: {
   children: React.ReactNode;
   workspace: string;
@@ -277,7 +279,12 @@ export function WorkspaceShell({
   person: { name: string; initials: string; role: string };
   signOut: () => Promise<void>;
   areas?: readonly { label: string; href: string }[];
+  /** "sunset": the dark navy and orange look of the student and admin areas. */
+  theme?: 'light' | 'sunset';
+  /** Word under "Vento" in the sunset brand, e.g. "Admin". */
+  brandSubtitle?: string;
 }) {
+  const sunset = theme === 'sunset';
   const pathname = usePathname();
   const current = nav.find((item) => pathname.startsWith(item.href));
   const workspaceTitle = workspace.charAt(0) + workspace.slice(1).toLowerCase();
@@ -285,12 +292,12 @@ export function WorkspaceShell({
   const sheetLinks: SheetLink[] = nav.filter((item) => !item.tab).map(({ label, href, icon }) => ({ label, href, icon }));
 
   return (
-    <div className="flex min-h-dvh flex-col lg:min-h-[calc(100dvh-56px)] lg:flex-row">
-      <aside className="hidden shrink-0 border-r border-[#e8ecf4] bg-surface lg:sticky lg:top-14 lg:flex lg:h-[calc(100dvh-56px)] lg:w-[228px] lg:flex-col">
+    <div className={`flex min-h-dvh flex-col lg:min-h-[calc(100dvh-56px)] lg:flex-row ${sunset ? 'theme-sunset bg-canvas text-ink' : ''}`}>
+      <aside className="hidden shrink-0 border-r border-line bg-chrome lg:sticky lg:top-14 lg:flex lg:h-[calc(100dvh-56px)] lg:w-[228px] lg:flex-col">
         <div className="px-5 pb-6 pt-6">
-          <Logo />
+          {sunset ? <StudentBrand subtitle={brandSubtitle} /> : <Logo />}
         </div>
-        <p className="px-8 pb-2 text-[9px] font-[550] uppercase tracking-[1px] text-[#9aa5b4]">{workspace}</p>
+        <p className="px-8 pb-2 text-[9px] font-[550] uppercase tracking-[1px] text-faint">{workspace}</p>
         <nav aria-label={workspace} className="flex flex-col gap-1 overflow-y-auto px-5">
           {nav.filter((item) => !item.secondary).map((item) => {
             const active = pathname.startsWith(item.href);
@@ -299,7 +306,7 @@ export function WorkspaceShell({
                 key={item.href}
                 href={item.href}
                 aria-current={active ? 'page' : undefined}
-                className={`flex items-center gap-3 rounded-input px-3 py-2.5 text-[13px] font-medium ${active ? 'bg-brand-soft text-brand' : 'text-subtle hover:bg-[#f5f7fc] hover:text-brand'}`}
+                className={`flex items-center gap-3 rounded-input px-3 py-2.5 text-[13px] font-medium ${active ? 'bg-brand-soft text-brand' : 'text-subtle hover:bg-sand hover:text-brand'}`}
               >
                 <Icon name={item.icon} className="!h-[18px] !w-[18px]" />
                 {item.label}
@@ -308,51 +315,69 @@ export function WorkspaceShell({
           })}
         </nav>
         <div className="mt-auto p-5">
-          <div className="rounded-[13px] border border-[#edf0f6] bg-[#f8f9fd] p-4 text-[11px] leading-relaxed text-muted">
-            <Icon name={tip.icon} className="text-[#8498dc]" />
-            <strong className="mt-3 block text-[12px] font-[550] text-[#61718c]">{tip.title}</strong>
+          <div className="rounded-[13px] border border-line bg-canvas p-4 text-[11px] leading-relaxed text-muted">
+            <Icon name={tip.icon} className="text-stat-icon" />
+            <strong className="mt-3 block text-[12px] font-[550] text-label">{tip.title}</strong>
             {tip.body}
           </div>
           <div className="mt-4 flex items-center gap-2.5 px-1">
             <Avatar initials={person.initials} size={34} />
             <span className="text-[12px] leading-tight">
-              <strong className="block font-[550] text-[#61718c]">{person.name}</strong>
+              <strong className="block font-[550] text-label">{person.name}</strong>
               <span className="text-[11px] text-subtle">{person.role}</span>
             </span>
           </div>
         </div>
       </aside>
 
-      <MobileHeader
-        breakpoint="lg"
-        leading={<LogoMark />}
-        title={current?.label ?? workspaceTitle}
-        trailing={<span className="grid h-9 w-9 place-items-center rounded-full bg-[#eef1fa] text-[12px] font-[550] text-[#687da8]" aria-hidden="true">{person.initials}</span>}
-      />
+      {sunset ? (
+        <MobileHeader
+          breakpoint="lg"
+          leading={<StudentBrand subtitle={brandSubtitle} />}
+          trailing={
+            <span className="flex items-center gap-2">
+              <span className="grid h-10 w-10 place-items-center text-ink" aria-hidden="true">
+                <Icon name="bell" className="!h-6 !w-6" />
+              </span>
+              <span className="grid h-10 w-10 place-items-center rounded-full border border-line-ghost bg-sand text-[13px] font-[550] text-ink" aria-hidden="true">
+                {person.initials}
+              </span>
+            </span>
+          }
+        />
+      ) : (
+        <MobileHeader
+          breakpoint="lg"
+          leading={<LogoMark />}
+          title={current?.label ?? workspaceTitle}
+          trailing={<span className="grid h-9 w-9 place-items-center rounded-full bg-avatar-1 text-[12px] font-[550] text-avatar-1-ink" aria-hidden="true">{person.initials}</span>}
+        />
+      )}
 
       <div className="min-w-0 flex-1">
-        <div className="hidden h-[76px] items-center justify-between border-b border-line bg-surface px-9 lg:flex">
-          <p className="flex items-center gap-2 text-[11px] text-[#8c97a8]">
+        <div className="hidden h-[76px] items-center justify-between border-b border-line bg-chrome px-9 lg:flex">
+          <p className="flex items-center gap-2 text-[11px] text-muted">
             <span>{workspaceTitle}</span>
             <Icon name="chevron" className="!h-3.5 !w-3.5" />
-            <strong className="font-[550] text-[#4d5d76]">{current?.label ?? ''}</strong>
+            <strong className="font-[550] text-label">{current?.label ?? ''}</strong>
           </p>
           <div className="flex items-center gap-3">
-            <span className="flex items-center gap-1.5 text-[11px] text-[#8a98a9]">
+            <span className="flex items-center gap-1.5 text-[11px] text-muted">
               <Icon name="pin" className="!h-4 !w-4" /> Preá, Ceará
             </span>
-            <span className="grid h-10 w-10 place-items-center rounded-full border border-line text-[#7e8999]" aria-hidden="true">
+            <span className="grid h-10 w-10 place-items-center rounded-full border border-line text-label" aria-hidden="true">
               <Icon name="bell" />
             </span>
             <Avatar initials={person.initials} size={36} />
           </div>
         </div>
-        <main className="mx-auto max-w-6xl px-4 pb-tabbar pt-5 sm:px-6 lg:px-9 lg:py-9">{children}</main>
+        <main className="mx-auto max-w-6xl px-4 pb-tabbar pt-4 sm:px-6 lg:px-9 lg:py-9">{children}</main>
       </div>
 
       <TabBar
         breakpoint="lg"
         label={workspace}
+        variant={sunset ? 'underline' : 'pill'}
         items={tabs}
         more={{
           title: workspaceTitle,

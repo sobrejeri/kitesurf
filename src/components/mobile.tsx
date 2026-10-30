@@ -108,12 +108,15 @@ export function TabBar({
                 onClick={() => setOpenAt(pathname)}
                 aria-haspopup="dialog"
                 aria-expanded={open}
-                className={`press flex w-full flex-col items-center gap-0.5 py-1 text-[10px] ${moreActive ? 'font-[550] text-brand' : 'text-subtle'}`}
+                className={`press flex w-full flex-col items-center gap-0.5 py-1 ${variant === 'underline' ? 'text-[11px]' : 'text-[10px]'} ${moreActive ? 'font-[550] text-brand' : 'text-subtle'}`}
               >
-                <span className={`grid h-8 w-14 place-items-center rounded-full ${moreActive ? 'bg-brand-soft' : ''}`}>
+                <span className={`grid h-8 w-14 place-items-center rounded-full ${moreActive && variant === 'pill' ? 'bg-brand-soft' : ''}`}>
                   <Icon name="grid" className="!h-[22px] !w-[22px]" />
                 </span>
                 Mais
+                {variant === 'underline' ? (
+                  <span className={`mt-1 h-[3px] w-8 rounded-full ${moreActive ? 'bg-brand' : 'bg-transparent'}`} aria-hidden="true" />
+                ) : null}
               </button>
             </li>
           ) : null}
