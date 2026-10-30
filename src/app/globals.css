@@ -52,6 +52,9 @@
   /* Named so a theme can restyle them; light values are the sketch's. */
   --color-on-brand: #ffffff;
   --color-chrome: #ffffff;
+  /* The phone tab bar; defaults to the chrome, the beach theme makes it dark. */
+  --color-tabbar: #ffffff;
+  --color-tabbar-ink: #8590a3;
   --color-track: #edf0f7;
   --color-note-line: #e9edf6;
   --color-note-ink: #627295;
@@ -81,6 +84,7 @@
   --shadow-focus: 0 0 0 3px #405fd30c;
 
   --font-sans: var(--font-dm-sans), system-ui, sans-serif;
+  --font-script: var(--font-caveat), cursive;
 }
 
 :root {
@@ -236,6 +240,8 @@ body:has(.theme-sunset),
   --color-line-input: #283852;
   --color-line-ghost: #2d3d59;
   --color-chrome: #0b1424;
+  --color-tabbar: #0b1424;
+  --color-tabbar-ink: #8c97aa;
 
   --color-success: #5fd39a;
   --color-success-soft: #12301f;
@@ -311,4 +317,121 @@ body:has(.theme-sunset) {
 }
 .snap-rail > * {
   scroll-snap-align: start;
+}
+
+/* ---------------------------------------------------------------------------
+ * Beach theme — the student app ("Vento")
+ *
+ * Daylight on purpose: the staff apps (Instrutor, Admin, Pousada) are dark,
+ * so a student never mistakes one for another. Sand background, white cards,
+ * navy text, orange accent, blue-sky photography, a dark tab bar.
+ *
+ * Contrast: navy #0f1b2d on white is 17:1; muted #5f6b7d on white 5.3:1.
+ * Orange as a fill is #ff6a13; orange *text* on light surfaces is darkened
+ * to #c2410c (5.2:1) — #ff6a13 text would be 3:1. White on the orange button
+ * is 2.9:1, kept for the reference look with bold 15px+ labels.
+ * ------------------------------------------------------------------------- */
+
+body:has(.theme-beach),
+.theme-beach {
+  --color-brand: #ff6a13;
+  --color-brand-hover: #ff7d2e;
+  --color-brand-bar: #ff6a13;
+  --color-brand-reserved: #ffc9a3;
+  --color-brand-focus: #ff9a52;
+  --color-brand-soft: #ffe8d8;
+  --color-brand-tint: #fff4ec;
+  --color-brand-wash: #fff8f2;
+  --color-on-brand-muted: #ffe3cf;
+  --color-on-brand: #ffffff;
+
+  --color-ink: #0f1b2d;
+  --color-ink-strong: #0b1424;
+  --color-label: #3c4a5e;
+  --color-muted: #5f6b7d;
+  --color-subtle: #6f7a8c;
+  --color-faint: #98a1b0;
+
+  --color-surface: #ffffff;
+  --color-canvas: #f6f0e7;
+  --color-backdrop: #efe6d8;
+  --color-sand: #f4eee5;
+  --color-line: #ece4d8;
+  --color-line-input: #e3d9ca;
+  --color-line-ghost: #dccfbd;
+  --color-chrome: #ffffff;
+  --color-tabbar: #0f1b2d;
+  --color-tabbar-ink: #a3adbd;
+
+  --color-success: #1f8a5b;
+  --color-success-soft: #e3f5ec;
+  --color-warning: #9a5b0c;
+  --color-warning-soft: #fff1dc;
+  --color-danger: #b42318;
+  --color-danger-soft: #fdecea;
+  --color-danger-line: #f5c6c0;
+  --color-quiet: #5f6b7d;
+  --color-quiet-soft: #eef0f3;
+
+  --color-logo-ink: #0f1b2d;
+  --color-track: #efe6d8;
+  --color-note-line: #f0e2cf;
+  --color-note-ink: #5b4a36;
+  --color-warm-line: #f4dfc4;
+  --color-warm-note: #fff6ea;
+  --color-stat-icon: #ff6a13;
+  --color-sun: #f59e0b;
+  --color-avatar-1: #ffe8d8;
+  --color-avatar-1-ink: #b4410f;
+  --color-avatar-2: #e6efff;
+  --color-avatar-2-ink: #2f5bd3;
+  --color-avatar-3: #ffe8d8;
+  --color-avatar-3-ink: #b4410f;
+  --color-avatar-4: #e3f5ec;
+  --color-avatar-4-ink: #1f6f4a;
+
+  --shadow-card: 0 10px 30px #0f1b2d0f;
+  --shadow-search: 0 24px 50px #0f1b2d24;
+  --shadow-button: 0 12px 26px #ff6a1347;
+  --shadow-focus: 0 0 0 3px #ff6a1333;
+
+  color-scheme: light;
+}
+
+body:has(.theme-beach) {
+  background: var(--color-canvas);
+  color: var(--color-ink);
+}
+
+/* Orange text on light surfaces needs a darker orange to be readable. */
+.theme-beach .text-brand {
+  color: #c2410c;
+}
+
+.theme-beach .btn-primary {
+  background-image: linear-gradient(100deg, #ff6a13, #ff8a3d);
+  font-weight: 650;
+  font-size: 15px;
+}
+
+/* Bright, saturated daylight instead of the sunset grade. */
+.theme-beach .sunset-photo {
+  filter: saturate(1.25) contrast(1.05) brightness(1.04);
+}
+
+/* Navy shade behind the white hero copy, fading into the sand below. */
+.theme-beach .sunset-veil {
+  background:
+    linear-gradient(90deg, #0b2a4ae6 0%, #0b2a4ab3 50%, #0b2a4a33 85%, transparent 100%),
+    linear-gradient(180deg, #0b2a4a99 0%, transparent 30%, transparent 72%, var(--color-canvas) 100%);
+}
+
+/* White frosted glass for the search card. */
+.theme-beach .glass {
+  background: color-mix(in srgb, #ffffff 88%, transparent);
+}
+
+/* Bright orange that stays orange on photos (hero highlight, eyebrow). */
+.text-sunrise {
+  color: #ff8a3d;
 }

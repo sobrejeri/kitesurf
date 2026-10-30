@@ -78,7 +78,7 @@ export function TabBar({
     <>
       <nav
         aria-label={label}
-        className={`pb-safe fixed inset-x-0 bottom-0 z-40 border-t border-line/80 bg-chrome/92 backdrop-blur-xl ${variant === 'underline' ? 'rounded-t-[26px] shadow-[0_-10px_30px_#00000059]' : ''} ${breakpoint === 'md' ? 'md:hidden' : 'lg:hidden'}`}
+        className={`pb-safe fixed inset-x-0 bottom-0 z-40 border-t border-line/80 bg-tabbar/95 backdrop-blur-xl ${variant === 'underline' ? 'rounded-t-[26px] shadow-[0_-10px_30px_#00000059]' : ''} ${breakpoint === 'md' ? 'md:hidden' : 'lg:hidden'}`}
       >
         <ul className={`mx-auto flex max-w-lg items-stretch justify-around px-1 ${variant === 'underline' ? 'pt-3' : 'pt-1.5'}`}>
           {items.map((item) => {
@@ -88,7 +88,7 @@ export function TabBar({
                 <Link
                   href={item.href}
                   aria-current={active ? 'page' : undefined}
-                  className={`press flex flex-col items-center gap-0.5 py-1 ${variant === 'underline' ? 'text-[11px]' : 'text-[10px]'} ${active ? 'font-[550] text-brand' : 'text-subtle'}`}
+                  className={`press flex flex-col items-center gap-0.5 py-1 ${variant === 'underline' ? 'text-[11px]' : 'text-[10px]'} ${active ? `font-[550] ${variant === 'underline' ? 'text-sunrise' : 'text-brand'}` : 'text-tabbar-ink'}`}
                 >
                   <span className={`grid h-8 w-14 place-items-center rounded-full transition-colors ${active && variant === 'pill' ? 'bg-brand-soft' : ''}`}>
                     <Icon name={item.icon} className={`!h-[22px] !w-[22px] ${active ? '[stroke-width:1.9]' : ''}`} />
@@ -108,7 +108,7 @@ export function TabBar({
                 onClick={() => setOpenAt(pathname)}
                 aria-haspopup="dialog"
                 aria-expanded={open}
-                className={`press flex w-full flex-col items-center gap-0.5 py-1 ${variant === 'underline' ? 'text-[11px]' : 'text-[10px]'} ${moreActive ? 'font-[550] text-brand' : 'text-subtle'}`}
+                className={`press flex w-full flex-col items-center gap-0.5 py-1 ${variant === 'underline' ? 'text-[11px]' : 'text-[10px]'} ${moreActive ? `font-[550] ${variant === 'underline' ? 'text-sunrise' : 'text-brand'}` : 'text-tabbar-ink'}`}
               >
                 <span className={`grid h-8 w-14 place-items-center rounded-full ${moreActive && variant === 'pill' ? 'bg-brand-soft' : ''}`}>
                   <Icon name="grid" className="!h-[22px] !w-[22px]" />
@@ -133,11 +133,14 @@ export function MenuButton({
   links,
   footer,
   label = 'Abrir menu',
+  onPhoto = false,
 }: {
   title: string;
   links: readonly SheetLink[];
   footer?: React.ReactNode;
   label?: string;
+  /** Over a photo: white icon on a dark frosted circle. */
+  onPhoto?: boolean;
 }) {
   const pathname = usePathname();
   const [openAt, setOpenAt] = useState<string | null>(null);
@@ -151,7 +154,7 @@ export function MenuButton({
         aria-haspopup="dialog"
         aria-expanded={open}
         aria-label={label}
-        className="press grid h-10 w-10 place-items-center rounded-full text-ink"
+        className={`press grid h-11 w-11 place-items-center rounded-full ${onPhoto ? 'bg-[#0b2a4a]/45 text-white backdrop-blur' : 'text-ink'}`}
       >
         <Icon name="menu" className="!h-6 !w-6" />
       </button>

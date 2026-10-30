@@ -1,5 +1,5 @@
 import type { Metadata, Viewport } from 'next';
-import { DM_Sans } from 'next/font/google';
+import { Caveat, DM_Sans } from 'next/font/google';
 
 import { signOut } from '@/app/actions/auth';
 import { TopBar } from '@/components/shells';
@@ -8,6 +8,8 @@ import { getViewer } from '@/lib/auth';
 import './globals.css';
 
 const dmSans = DM_Sans({ subsets: ['latin'], variable: '--font-dm-sans', display: 'swap' });
+// Handwritten accent for one word in the student app's hero ("aqui.").
+const caveat = Caveat({ subsets: ['latin'], weight: '700', variable: '--font-caveat', display: 'swap' });
 
 export const metadata: Metadata = {
   title: { default: 'Vento · Aulas de kitesurf', template: '%s · Vento' },
@@ -35,7 +37,7 @@ export const viewport: Viewport = {
 export default async function RootLayout({ children }: { children: React.ReactNode }) {
   const viewer = await getViewer();
   return (
-    <html lang="pt-BR" className={dmSans.variable}>
+    <html lang="pt-BR" className={`${dmSans.variable} ${caveat.variable}`}>
       <body className="min-h-dvh font-sans antialiased">
         <TopBar viewer={viewer ? { name: viewer.fullName || viewer.email || '', role: viewer.role } : null} signOut={signOut} />
         {children}
