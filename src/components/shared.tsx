@@ -336,7 +336,7 @@ export function SectionTitle({
 /** Reservation rows shared by the admin overview and bookings screens. */
 export function BookingsTable({ totalLabel }: { totalLabel: string }) {
   return (
-    <div className="overflow-x-auto">
+    <div className="relative overflow-x-auto">
       <table className="w-full min-w-[640px] text-left">
         <thead>
           <tr className="bg-[#fafbfe] text-[10px] uppercase tracking-[.5px] text-quiet">
