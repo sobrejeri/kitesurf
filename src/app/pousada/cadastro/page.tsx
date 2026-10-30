@@ -1,40 +1,44 @@
 import type { Metadata } from 'next';
 
-import { DemoForm } from '@/components/interactive';
+import { registerPartner } from '@/app/actions/partner';
+import { ActionForm } from '@/components/action-form';
 import { PartnerFootnote, PartnerHeading } from '@/components/partner-info';
-import { Badge, Button, Card, Field, inputClass } from '@/components/ui';
-import { BEACHES, PARTNER } from '@/data/demo';
+import { Badge, Card, Field, inputClass } from '@/components/ui';
+import { requireRole } from '@/lib/auth';
+import { BEACH_LABELS, getOwnPartner } from '@/lib/data';
+import { formatBps } from '@/lib/format';
 
-export const metadata: Metadata = { title: 'Cadastro de pousadas' };
+export const metadata: Metadata = { title: 'Cadastro da pousada' };
 
-export default function PartnerSignupPage() {
+export default async function PartnerSignupPage() {
+  const viewer = await requireRole(['partner'], '/pousada/cadastro');
+  const partner = await getOwnPartner(viewer.id);
   return (
     <>
-      <PartnerHeading title="Cadastro de pousadas" lead="Cadastre sua indicação e aguarde aprovação da operação." />
-      <div className="grid gap-5 lg:grid-cols-2">
+      <PartnerHeading title="Cadastro da pousada" lead="Cadastre sua pousada e aguarde a aprovação da operação." />
+      {partner ? (
         <Card>
           <div className="flex items-start justify-between gap-3">
-            <p className="text-[16px] font-semibold">{PARTNER.name}</p>
-            <Badge>Aprovada</Badge>
+            <p className="text-[16px] font-semibold">{partner.name}</p>
+            <Badge tone={partner.status === 'approved' ? 'success' : 'warning'}>{partner.status === 'approved' ? 'Aprovada' : 'Em análise'}</Badge>
           </div>
-          <p className="mt-2 text-[12px] text-muted">{PARTNER.contact}</p>
-          <p className="text-[12px] text-muted">{PARTNER.beach} · código permanente: {PARTNER.code}</p>
-          <p className="mt-3 text-[12px] font-[550] text-brand">Comissão para novas solicitações: {PARTNER.commissionLabel}.</p>
+          <p className="mt-2 text-[12px] text-muted">{BEACH_LABELS[partner.beach]} · código permanente: {partner.code}</p>
+          <p className="mt-3 text-[12px] font-[550] text-brand">Comissão para novas reservas: {formatBps(partner.commission_bps)}.</p>
         </Card>
-        <Card>
-          <h2 className="text-[16px]">Cadastrar outra pousada de teste</h2>
-          <DemoForm confirmation="Pousada de teste enviada para aprovação. Ela aparece em Admin › Pousadas afiliadas." className="mt-4 grid gap-4">
-            <Field label="Nome da pousada"><input className={inputClass} required /></Field>
-            <Field label="E-mail de contato"><input className={inputClass} type="email" placeholder="recepcao@exemplo.com" /></Field>
+      ) : (
+        <Card className="max-w-xl">
+          <ActionForm action={registerPartner} submitLabel="Enviar para aprovação" className="grid gap-4">
+            <Field label="Nome da pousada">
+              <input name="name" required minLength={2} maxLength={120} className={inputClass} />
+            </Field>
             <Field label="Praia">
-              <select className={inputClass} defaultValue="Preá">
-                {Object.values(BEACHES).map((beach) => <option key={beach}>{beach}</option>)}
+              <select name="beach" defaultValue="prea" className={inputClass}>
+                {Object.entries(BEACH_LABELS).map(([id, label]) => <option key={id} value={id}>{label}</option>)}
               </select>
             </Field>
-            <Button type="submit" className="justify-self-start">Enviar para aprovação</Button>
-          </DemoForm>
+          </ActionForm>
         </Card>
-      </div>
+      )}
       <PartnerFootnote />
     </>
   );

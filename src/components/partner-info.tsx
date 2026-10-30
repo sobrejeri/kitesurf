@@ -6,11 +6,10 @@ export function PartnerFootnote() {
     <div className="mt-6 grid gap-3">
       <Note title="Como a indicação gera comissão">
         A pousada recebe um percentual sobre as horas de aula realizadas por hóspedes que reservaram pelo link dela.
-        Transporte não entra na base, e o preço do hóspede e o líquido do instrutor não mudam.
+        A comissão sai da parte da plataforma: o preço do hóspede e o líquido do instrutor não mudam.
       </Note>
       <p className="text-[11px] leading-relaxed text-muted">
-        Esboço local: teste o link neste navegador. Cadastros compartilhados entre dispositivos e repasses reais serão
-        integrados na versão operacional.
+        Repasses de comissão ainda não são automáticos: dependem da integração de pagamento.
       </p>
     </div>
   );
@@ -23,7 +22,6 @@ export function PartnerHeading({ title, lead }: { title: string; lead: string })
         <h1 className="text-[26px] tracking-[-0.9px] sm:text-[30px]">{title}</h1>
         <p className="mt-1 text-[13px] text-muted">{lead}</p>
       </div>
-      <span className="text-[11px] text-muted">Perfil de demonstração · Pousada Mar &amp; Vento</span>
     </header>
   );
 }
