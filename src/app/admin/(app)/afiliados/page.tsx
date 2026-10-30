@@ -23,7 +23,7 @@ export default async function PartnersAdminPage() {
     <>
       <AdminTitle title="Pousadas afiliadas" subtitle={`${partners.length} cadastradas`} />
       {partners.length === 0 ? (
-        <EmptyState>Nenhuma pousada cadastrada. Pousadas criam conta em /cadastro escolhendo “Sou pousada”.</EmptyState>
+        <EmptyState>Nenhuma pousada cadastrada. Pousadas criam conta no app Vento Pousada (/pousada/criar-conta).</EmptyState>
       ) : (
         <ul className="grid gap-3 lg:grid-cols-2">
           {partners.map((partner) => {
