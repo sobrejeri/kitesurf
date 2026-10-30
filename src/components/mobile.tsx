@@ -42,7 +42,7 @@ export function MobileHeader({
 }) {
   return (
     <header
-      className={`pt-safe sticky top-0 z-30 border-b border-line/80 bg-white/90 backdrop-blur-xl ${breakpoint === 'md' ? 'md:hidden' : 'lg:hidden'}`}
+      className={`pt-safe sticky top-0 z-30 border-b border-line/80 bg-chrome/90 backdrop-blur-xl ${breakpoint === 'md' ? 'md:hidden' : 'lg:hidden'}`}
     >
       <div className="flex h-14 items-center gap-3 px-4">
         {leading}
@@ -58,11 +58,14 @@ export function TabBar({
   more,
   breakpoint = 'md',
   label,
+  variant = 'pill',
 }: {
   items: readonly TabItem[];
   more?: { links: readonly SheetLink[]; footer?: React.ReactNode; title: string };
   breakpoint?: 'md' | 'lg';
   label: string;
+  /** "underline": rounded dark bar with an orange underline (sunset theme). */
+  variant?: 'pill' | 'underline';
 }) {
   const pathname = usePathname();
   // The sheet belongs to the page it was opened on: navigating closes it.
@@ -75,9 +78,9 @@ export function TabBar({
     <>
       <nav
         aria-label={label}
-        className={`pb-safe fixed inset-x-0 bottom-0 z-40 border-t border-line/80 bg-white/92 backdrop-blur-xl ${breakpoint === 'md' ? 'md:hidden' : 'lg:hidden'}`}
+        className={`pb-safe fixed inset-x-0 bottom-0 z-40 border-t border-line/80 bg-chrome/92 backdrop-blur-xl ${variant === 'underline' ? 'rounded-t-[26px] shadow-[0_-10px_30px_#00000059]' : ''} ${breakpoint === 'md' ? 'md:hidden' : 'lg:hidden'}`}
       >
-        <ul className="mx-auto flex max-w-lg items-stretch justify-around px-1 pt-1.5">
+        <ul className={`mx-auto flex max-w-lg items-stretch justify-around px-1 ${variant === 'underline' ? 'pt-3' : 'pt-1.5'}`}>
           {items.map((item) => {
             const active = isActive(pathname, item);
             return (
@@ -85,12 +88,15 @@ export function TabBar({
                 <Link
                   href={item.href}
                   aria-current={active ? 'page' : undefined}
-                  className={`press flex flex-col items-center gap-0.5 py-1 text-[10px] ${active ? 'font-[550] text-brand' : 'text-subtle'}`}
+                  className={`press flex flex-col items-center gap-0.5 py-1 ${variant === 'underline' ? 'text-[11px]' : 'text-[10px]'} ${active ? 'font-[550] text-brand' : 'text-subtle'}`}
                 >
-                  <span className={`grid h-8 w-14 place-items-center rounded-full transition-colors ${active ? 'bg-brand-soft' : ''}`}>
+                  <span className={`grid h-8 w-14 place-items-center rounded-full transition-colors ${active && variant === 'pill' ? 'bg-brand-soft' : ''}`}>
                     <Icon name={item.icon} className={`!h-[22px] !w-[22px] ${active ? '[stroke-width:1.9]' : ''}`} />
                   </span>
                   {item.label}
+                  {variant === 'underline' ? (
+                    <span className={`mt-1 h-[3px] w-8 rounded-full ${active ? 'bg-brand' : 'bg-transparent'}`} aria-hidden="true" />
+                  ) : null}
                 </Link>
               </li>
             );
@@ -114,6 +120,39 @@ export function TabBar({
         </ul>
       </nav>
       {more ? <MoreSheet open={open} onClose={closeSheet} {...more} /> : null}
+    </>
+  );
+}
+
+/** A header button (☰) that opens the menu sheet. */
+export function MenuButton({
+  title,
+  links,
+  footer,
+  label = 'Abrir menu',
+}: {
+  title: string;
+  links: readonly SheetLink[];
+  footer?: React.ReactNode;
+  label?: string;
+}) {
+  const pathname = usePathname();
+  const [openAt, setOpenAt] = useState<string | null>(null);
+  const open = openAt === pathname;
+  const closeSheet = useCallback(() => setOpenAt(null), []);
+  return (
+    <>
+      <button
+        type="button"
+        onClick={() => setOpenAt(pathname)}
+        aria-haspopup="dialog"
+        aria-expanded={open}
+        aria-label={label}
+        className="press grid h-10 w-10 place-items-center rounded-full text-ink"
+      >
+        <Icon name="menu" className="!h-6 !w-6" />
+      </button>
+      <MoreSheet open={open} onClose={closeSheet} title={title} links={links} footer={footer} />
     </>
   );
 }
@@ -211,7 +250,7 @@ export function SheetAccount({
   return (
     <div className="grid gap-3">
       {areas && areas.length > 1 ? (
-        <div className="flex gap-1 rounded-[13px] bg-[#f2f4fa] p-1 text-[12px]">
+        <div className="flex gap-1 rounded-[13px] bg-sand p-1 text-[12px]">
           {areas.map((area) => (
             <Link key={area.href} href={area.href} className="press flex-1 rounded-[10px] py-2 text-center text-label">
               {area.label}
@@ -220,7 +259,7 @@ export function SheetAccount({
         </div>
       ) : null}
       <div className="flex items-center gap-3">
-        <span className="grid h-10 w-10 place-items-center rounded-full bg-[#eef1fa] text-[13px] font-[550] text-[#687da8]" aria-hidden="true">
+        <span className="grid h-10 w-10 place-items-center rounded-full bg-avatar-1 text-[13px] font-[550] text-avatar-1-ink" aria-hidden="true">
           {initials}
         </span>
         <span className="min-w-0 flex-1 text-[13px] leading-tight">

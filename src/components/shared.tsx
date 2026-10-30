@@ -18,14 +18,14 @@ export interface HubItem {
   href: string;
 }
 
-export function Hub({ title, items, notice }: { title: string; items: readonly HubItem[]; notice: string }) {
+export function Hub({ title, items, notice, bare = false }: { title: string; items: readonly HubItem[]; notice: string; bare?: boolean }) {
   return (
     <>
-      <PageHeader
+      {bare ? null : <PageHeader
         eyebrow="Fluxos da plataforma"
         title={title}
         lead="Tudo organizado por etapa, sem perder os dados já preenchidos."
-      />
+      />}
       {/* A list of rows on phones, a grid of cards from md up. */}
       <ul className="overflow-hidden rounded-card border border-line bg-surface shadow-card md:grid md:grid-cols-2 md:gap-4 md:overflow-visible md:border-0 md:bg-transparent md:shadow-none">
         {items.map((item) => (
@@ -49,14 +49,14 @@ export function Hub({ title, items, notice }: { title: string; items: readonly H
   );
 }
 
-export function Incidents({ title = 'Imprevistos e cancelamentos' }: { title?: string }) {
+export function Incidents({ title = 'Imprevistos e cancelamentos', bare = false }: { title?: string; bare?: boolean }) {
   return (
     <>
-      <PageHeader
+      {bare ? null : <PageHeader
         eyebrow="Cada situação acompanhada"
         title={title}
         lead="Cada pedido pertence a um encontro. Os demais encontros e a prioridade da fila são preservados."
-      />
+      />}
       <div className="grid gap-5 lg:grid-cols-[1.3fr_1fr]">
         <Card>
           <h2 className="text-[16px]">Registrar uma situação</h2>
@@ -92,7 +92,7 @@ export function Incidents({ title = 'Imprevistos e cancelamentos' }: { title?: s
   );
 }
 
-export function Chat({ counterpart, counterpartRole }: { counterpart: string; counterpartRole: string }) {
+export function Chat({ counterpart, counterpartRole, bare = false }: { counterpart: string; counterpartRole: string; bare?: boolean }) {
   const initials = counterpart
     .split(' ')
     .map((part) => part.charAt(0))
@@ -100,7 +100,7 @@ export function Chat({ counterpart, counterpartRole }: { counterpart: string; co
     .slice(0, 2);
   return (
     <>
-      <PageHeader title={`Conversa com ${counterpart}`} />
+      {bare ? null : <PageHeader title={`Conversa com ${counterpart}`} />}
       <Note className="mb-5">Demonstração neste navegador. Nenhuma mensagem é enviada externamente.</Note>
       <Card className="!p-0">
         <div className="flex items-center gap-3 border-b border-line px-5 py-4">
@@ -133,14 +133,14 @@ export function Chat({ counterpart, counterpartRole }: { counterpart: string; co
   );
 }
 
-export function Inbox() {
+export function Inbox({ bare = false }: { bare?: boolean }) {
   return (
     <>
-      <PageHeader
+      {bare ? null : <PageHeader
         eyebrow="Atualizações da plataforma"
         title="Avisos"
         lead="Caixa de entrada demonstrativa. Push, e-mail e WhatsApp ainda não estão conectados."
-      />
+      />}
       <EmptyState>Seus avisos aparecerão após mensagens, documentos e alterações da demonstração.</EmptyState>
     </>
   );
@@ -154,14 +154,14 @@ const FLOW_RULES = [
   ['Reembolso e repasse', 'somente simulações; a movimentação real dependerá da integração financeira.'],
 ] as const;
 
-export function Policies({ children }: { children?: React.ReactNode }) {
+export function Policies({ children, bare = false }: { children?: React.ReactNode; bare?: boolean }) {
   return (
     <>
-      <PageHeader
+      {bare ? null : <PageHeader
         eyebrow="Regras antes da reserva"
         title="Políticas das aulas"
         lead="Rascunho comercial para revisar no esboço. Condições ainda não publicadas como contrato definitivo."
-      />
+      />}
       <div className="grid gap-5">
         <Card>
           <h2 className="text-[16px]">Quem presta a aula e o papel da plataforma</h2>

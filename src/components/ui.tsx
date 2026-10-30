@@ -14,7 +14,7 @@ const BUTTON_BASE =
   'press inline-flex items-center justify-center gap-2 rounded-full border font-[550] text-[13px] tracking-[.1px] disabled:cursor-not-allowed disabled:opacity-45 disabled:active:scale-100';
 
 const BUTTON_VARIANTS: Record<ButtonVariant, string> = {
-  primary: 'border-transparent bg-brand text-white hover:bg-brand-hover hover:shadow-button',
+  primary: 'btn-primary border-transparent bg-brand text-on-brand hover:bg-brand-hover hover:shadow-button',
   ghost: 'border-line-ghost bg-surface text-brand hover:bg-brand-wash',
   soft: 'border-transparent bg-brand-soft text-brand hover:bg-brand-tint',
   danger: 'border-danger-line bg-danger-soft text-danger',
@@ -86,8 +86,8 @@ export function Card({
   const tones = {
     plain: 'border-line bg-surface',
     tinted: 'border-line bg-brand-tint',
-    brand: 'border-brand bg-brand text-white rounded-hero',
-    warm: 'border-[#f4e8d2] bg-warning-soft',
+    brand: 'border-brand bg-brand text-on-brand rounded-hero',
+    warm: 'border-warm-line bg-warning-soft',
   } as const;
   return (
     <Tag className={`rounded-card border p-5 shadow-card sm:p-6 ${tones[tone]} ${className}`}>
@@ -127,8 +127,8 @@ export function Note({
   className?: string;
 }) {
   const tones = {
-    brand: 'border-[#e9edf6] bg-brand-wash text-[#627295]',
-    warning: 'border-[#f4e8d2] bg-[#fff8ed] text-warning',
+    brand: 'border-note-line bg-brand-wash text-note-ink',
+    warning: 'border-warm-line bg-warm-note text-warning',
   } as const;
   return (
     <div className={`flex items-start gap-2.5 rounded-note border px-4 py-3.5 text-[12px] leading-relaxed ${tones[tone]} ${className}`}>
@@ -188,17 +188,17 @@ export function StatCard({
 }) {
   return (
     <article
-      className={`relative rounded-card border p-4 shadow-card ${highlight ? 'border-brand bg-brand text-white' : 'border-line bg-surface'}`}
+      className={`relative rounded-card border p-4 shadow-card ${highlight ? 'border-brand bg-brand text-on-brand' : 'border-line bg-surface'}`}
     >
       {icon ? (
         <span
-          className={`absolute right-3 top-3 grid h-7 w-7 place-items-center rounded-full ${highlight ? 'bg-white/15 text-white' : 'bg-brand-tint text-[#768bd0]'}`}
+          className={`absolute right-3 top-3 grid h-7 w-7 place-items-center rounded-full ${highlight ? 'bg-white/15 text-on-brand' : 'bg-brand-tint text-stat-icon'}`}
         >
           <Icon name={icon} className="!h-4 !w-4" />
         </span>
       ) : null}
       <p className={`pr-8 text-[12px] ${highlight ? 'text-on-brand-muted' : 'text-muted'}`}>{label}</p>
-      <p className={`tabular mt-2.5 text-[24px] font-semibold tracking-[-0.7px] sm:text-[28px] ${highlight ? 'text-white' : 'text-brand'}`}>
+      <p className={`tabular mt-2.5 text-[24px] font-semibold tracking-[-0.7px] sm:text-[28px] ${highlight ? 'text-on-brand' : 'text-brand'}`}>
         {value}
       </p>
       {hint ? <p className={`mt-1 text-[11px] ${highlight ? 'text-on-brand-muted' : 'text-quiet'}`}>{hint}</p> : null}
@@ -207,10 +207,10 @@ export function StatCard({
 }
 
 const AVATAR_TONES = {
-  a1: 'bg-[#eef1fa] text-[#687da8]',
-  a2: 'bg-[#f0edf9] text-[#8e7dad]',
-  a3: 'bg-[#eaf4f2] text-[#739b91]',
-  a4: 'bg-[#f8efeb] text-[#b59889]',
+  a1: 'bg-avatar-1 text-avatar-1-ink',
+  a2: 'bg-avatar-2 text-avatar-2-ink',
+  a3: 'bg-avatar-3 text-avatar-3-ink',
+  a4: 'bg-avatar-4 text-avatar-4-ink',
 } as const;
 
 export function Avatar({
@@ -237,7 +237,7 @@ export function Avatar({
 export function ProgressBar({ donePercent, reservedPercent = 0 }: { donePercent: number; reservedPercent?: number }) {
   return (
     <div
-      className="flex h-[7px] overflow-hidden rounded-full bg-[#edf0f7]"
+      className="flex h-[7px] overflow-hidden rounded-full bg-track"
       role="progressbar"
       aria-valuemin={0}
       aria-valuemax={100}
