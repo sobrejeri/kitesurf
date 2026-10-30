@@ -1,5 +1,5 @@
 import { WorkspaceShell, type WorkspaceNavItem } from '@/components/shells';
-import { INSTRUCTOR } from '@/data/demo';
+import { requireRole } from '@/lib/auth';
 
 const NAV: readonly WorkspaceNavItem[] = [
   { label: 'Central de trabalho', href: '/instrutor/central', icon: 'grid' },
@@ -9,8 +9,7 @@ const NAV: readonly WorkspaceNavItem[] = [
   { label: 'Agenda e bloqueios', href: '/instrutor/agenda', icon: 'calendar' },
   { label: 'Realizar e registrar aula', href: '/instrutor/aula', icon: 'kite' },
   { label: 'Meu financeiro', href: '/instrutor/financeiro', icon: 'wallet' },
-  { label: 'Meu perfil profissional', href: '/instrutor/perfil', icon: 'user' },
-  { label: 'Cadastro de instrutor', href: '/instrutor/cadastro', icon: 'plus' },
+  { label: 'Meu perfil profissional', href: '/instrutor/cadastro', icon: 'user' },
   { label: 'Dias e turnos', href: '/instrutor/disponibilidade', icon: 'clock', secondary: true },
   { label: 'Meus documentos', href: '/instrutor/documentos', icon: 'file', secondary: true },
   { label: 'Ocorrências', href: '/instrutor/ocorrencias', icon: 'wind', secondary: true },
@@ -19,7 +18,8 @@ const NAV: readonly WorkspaceNavItem[] = [
   { label: 'Regras das aulas', href: '/instrutor/politicas', icon: 'shield', secondary: true },
 ];
 
-export default function InstructorLayout({ children }: { children: React.ReactNode }) {
+export default async function InstructorLayout({ children }: { children: React.ReactNode }) {
+  const viewer = await requireRole(['instructor'], '/instrutor/hoje');
   return (
     <WorkspaceShell
       workspace="ESPAÇO DO INSTRUTOR"
@@ -29,7 +29,7 @@ export default function InstructorLayout({ children }: { children: React.ReactNo
         title: 'Sua prioridade está guardada',
         body: 'Recusar ou deixar expirar preserva sua posição. A vez é usada após o pagamento.',
       }}
-      person={{ name: INSTRUCTOR.name, initials: INSTRUCTOR.initials, role: INSTRUCTOR.role }}
+      person={{ name: viewer.fullName, initials: viewer.fullName.split(' ').map((p) => p.charAt(0)).join('').slice(0, 2).toUpperCase(), role: 'Instrutor independente' }}
     >
       {children}
     </WorkspaceShell>

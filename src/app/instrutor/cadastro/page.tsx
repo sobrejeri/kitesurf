@@ -1,64 +1,67 @@
 import type { Metadata } from 'next';
 
-import { ChipChoice, DemoForm } from '@/components/interactive';
-import { Button, Card, Eyebrow, Field, Note, inputClass } from '@/components/ui';
-import { BEACHES, LANGUAGES } from '@/data/demo';
+import { updateInstructorProfile } from '@/app/actions/instructor';
+import { ActionForm } from '@/components/action-form';
+import { Badge, Card, Eyebrow, Field, Note, inputClass } from '@/components/ui';
+import { LANGUAGES } from '@/data/demo';
+import { requireRole } from '@/lib/auth';
+import { BEACH_LABELS, getOwnInstructor } from '@/lib/data';
 
-export const metadata: Metadata = { title: 'Cadastro de instrutor' };
+export const metadata: Metadata = { title: 'Perfil profissional' };
 
-const HOW = [
-  ['Apresente seu trabalho', 'Cadastre locais, idiomas e estrutura.'],
-  ['Receba a aprovação', 'A equipe analisa seu perfil.'],
-  ['Ative sua disponibilidade', 'Entre no rodízio de oportunidades.'],
-] as const;
+const STATUS = { pending: 'Em análise', approved: 'Aprovado', paused: 'Pausado' } as const;
 
-export default function InstructorSignupPage() {
+export default async function InstructorProfileFormPage() {
+  const viewer = await requireRole(['instructor'], '/instrutor/cadastro');
+  const me = await getOwnInstructor(viewer.id);
   return (
     <>
       <Eyebrow>Faça parte da rede</Eyebrow>
-      <h1 className="mt-2 text-[28px] tracking-[-0.9px] sm:text-[32px]">Seu próximo aluno pode estar aqui.</h1>
-      <p className="mt-1 max-w-xl text-[13px] text-muted">
-        Apresente seu trabalho. Seu perfil passa por análise antes de receber solicitações.
-      </p>
+      <div className="mt-2 flex flex-wrap items-center gap-3">
+        <h1 className="text-[28px] tracking-[-0.9px] sm:text-[32px]">Seu perfil profissional</h1>
+        {me ? <Badge tone={me.status === 'approved' ? 'success' : 'warning'}>{STATUS[me.status]}</Badge> : null}
+      </div>
+      <p className="mt-1 max-w-xl text-[13px] text-muted">Praias e idiomas definem quais pedidos chegam até você.</p>
       <div className="mt-6 grid gap-5 lg:grid-cols-[1.4fr_1fr]">
         <Card>
-          <DemoForm confirmation="Cadastro de teste enviado para análise. Ele aparece em Admin › Instrutores." className="grid gap-6">
-            <fieldset className="grid gap-4">
-              <legend className="mb-3 text-[14px] font-semibold">01. Sobre você</legend>
-              <Field label="Nome profissional"><input className={inputClass} required /></Field>
-              <Field label="E-mail"><input className={inputClass} type="email" placeholder="voce@exemplo.com" required /></Field>
-              <Field label="Anos de experiência"><input className={inputClass} type="number" min={0} max={60} inputMode="numeric" /></Field>
+          <ActionForm action={updateInstructorProfile} submitLabel="Salvar perfil" className="grid gap-5">
+            <Field label="Anos de experiência">
+              <input name="years" type="number" min={0} max={60} defaultValue={me?.years_experience ?? 0} className={inputClass} />
+            </Field>
+            <fieldset className="grid gap-2">
+              <legend className="mb-1 text-[12px] font-medium text-label">Praias</legend>
+              <div className="flex flex-wrap gap-2">
+                {Object.entries(BEACH_LABELS).map(([id, label]) => (
+                  <label key={id} className="flex items-center gap-2 rounded-full border border-line-input px-3.5 py-2 text-[12px] has-[:checked]:border-brand has-[:checked]:bg-brand-soft has-[:checked]:text-brand">
+                    <input type="checkbox" name="beaches" value={id} defaultChecked={me?.beaches.includes(id as 'prea' | 'jeri')} className="accent-brand" />
+                    {label}
+                  </label>
+                ))}
+              </div>
             </fieldset>
-            <fieldset className="grid gap-4 border-t border-line pt-5">
-              <legend className="mb-3 text-[14px] font-semibold">02. Seu atendimento</legend>
-              <div className="grid gap-2"><span className="text-[12px] font-medium text-label">Praias</span><ChipChoice label="Praias" multiple options={Object.values(BEACHES)} defaultSelected={['Preá']} /></div>
-              <div className="grid gap-2"><span className="text-[12px] font-medium text-label">Idiomas</span><ChipChoice label="Idiomas" multiple options={LANGUAGES} defaultSelected={['Português']} /></div>
-              <label className="flex gap-2.5 text-[12px] text-label"><input type="checkbox" className="mt-0.5 accent-brand" />Tenho equipamentos e estrutura de apoio para oferecer as aulas.</label>
+            <fieldset className="grid gap-2">
+              <legend className="mb-1 text-[12px] font-medium text-label">Idiomas</legend>
+              <div className="flex flex-wrap gap-2">
+                {LANGUAGES.map((language) => (
+                  <label key={language} className="flex items-center gap-2 rounded-full border border-line-input px-3.5 py-2 text-[12px] has-[:checked]:border-brand has-[:checked]:bg-brand-soft has-[:checked]:text-brand">
+                    <input type="checkbox" name="languages" value={language} defaultChecked={me?.languages.includes(language)} className="accent-brand" />
+                    {language}
+                  </label>
+                ))}
+              </div>
             </fieldset>
-            <fieldset className="grid gap-4 border-t border-line pt-5">
-              <legend className="mb-3 text-[14px] font-semibold">03. Revisão do cadastro</legend>
-              <p className="text-[12px] text-muted">A operação final solicitará identificação, comprovação de formação e dados de recebimento na etapa de verificação.</p>
-              <Note tone="warning">Este é um cadastro de teste. Não envie documentos pessoais nem dados bancários nesta demonstração.</Note>
-              <label className="flex gap-2.5 text-[12px] text-label"><input type="checkbox" required className="mt-0.5 accent-brand" />Estou cadastrando um perfil demonstrativo.</label>
-            </fieldset>
-            <Button type="submit" className="justify-self-start">Enviar cadastro para análise</Button>
-          </DemoForm>
+            <label className="flex gap-2.5 text-[12px] text-label">
+              <input type="checkbox" name="hasEquipment" defaultChecked={me?.has_equipment} className="mt-0.5 accent-brand" />
+              Tenho equipamentos e estrutura de apoio para oferecer as aulas.
+            </label>
+          </ActionForm>
         </Card>
-        <Card tone="tinted" className="self-start">
-          <Eyebrow>Como funciona</Eyebrow>
-          <h2 className="mt-2 text-[17px]">Mais tempo ensinando, mais clareza na operação.</h2>
-          <ol className="mt-4 grid gap-4">
-            {HOW.map(([title, body], index) => (
-              <li key={title} className="flex gap-3">
-                <span className="grid h-7 w-7 shrink-0 place-items-center rounded-full bg-surface text-[12px] font-[550] text-brand">{index + 1}</span>
-                <span><strong className="block text-[13px] font-[550]">{title}</strong><span className="text-[12px] text-muted">{body}</span></span>
-              </li>
-            ))}
-          </ol>
-          <p className="mt-5 text-[11px] leading-relaxed text-muted">
-            Novos instrutores aprovados entram no final da fila. Depois disso, pausas, recusas e expirações preservam sua prioridade.
-          </p>
-        </Card>
+        <div className="grid content-start gap-5">
+          <Note title="Como funciona">
+            A operação analisa seu perfil antes de liberar pedidos. Novos instrutores aprovados entram no final da fila; depois disso, recusas e expirações preservam sua prioridade.
+          </Note>
+          <Note tone="warning">Documentos e dados de recebimento serão pedidos na etapa de verificação. Não envie documentos por aqui.</Note>
+        </div>
       </div>
     </>
   );
