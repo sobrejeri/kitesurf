@@ -1,0 +1,19 @@
+{
+  "name": "Vento · Aulas de kitesurf",
+  "short_name": "Vento",
+  "description": "Aulas de kitesurf em Preá e Jericoacoara com instrutores independentes.",
+  "id": "/",
+  "start_url": "/",
+  "scope": "/",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#f7f8fc",
+  "theme_color": "#ffffff",
+  "lang": "pt-BR",
+  "categories": ["sports", "travel", "education"],
+  "icons": [
+    { "src": "/icon.svg", "sizes": "any", "type": "image/svg+xml", "purpose": "any" },
+    { "src": "/icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any" },
+    { "src": "/icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any" }
+  ]
+}
