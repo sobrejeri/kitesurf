@@ -34,8 +34,8 @@ end $$;
 
 -- Instructors fill in their profile.
 select pg_temp.act_as('00000000-0000-0000-0000-0000000000a1');
-update public.instructors set beaches = '{prea,jeri}', languages = '{Português,Inglês}', years_experience = 8
-  where id = auth.uid();
+update public.instructors set languages = '{Português,Inglês}', years_experience = 8 where id = auth.uid();
+select public.set_my_beaches(array(select id from public.beaches where slug in ('prea', 'jeri')));
 -- An instructor cannot approve themselves or jump the queue.
 do $$ begin
   begin
@@ -45,7 +45,8 @@ do $$ begin
 end $$;
 select pg_temp.reset();
 select pg_temp.act_as('00000000-0000-0000-0000-0000000000a2');
-update public.instructors set beaches = '{prea}', languages = '{Português}' where id = auth.uid();
+update public.instructors set languages = '{Português}' where id = auth.uid();
+select public.set_my_beaches(array(select id from public.beaches where slug = 'prea'));
 select pg_temp.reset();
 
 -- A student cannot change their own role.
@@ -70,7 +71,7 @@ select pg_temp.reset();
 
 -- Partner registers; admin approves.
 select pg_temp.act_as('00000000-0000-0000-0000-0000000000c1');
-select public.register_partner('Pousada Mar & Vento', 'prea');
+select public.register_partner('Pousada Mar & Vento', (select id from public.beaches where slug = 'prea'));
 select pg_temp.reset();
 update public.partners set code = 'MAR-E-VENTO';
 select pg_temp.act_as('00000000-0000-0000-0000-00000000000a');
@@ -91,7 +92,7 @@ reset role;
 
 -- Luana books 2 + 3 hours in Preá, referred by the inn.
 select pg_temp.act_as('00000000-0000-0000-0000-0000000000b1');
-select public.create_booking('prea', 'first_time', 'Português',
+select public.create_booking((select id from public.beaches where slug = 'prea'), 'first_time', 'Português',
   jsonb_build_array(
     jsonb_build_object('starts_at', (now() + interval '2 days')::text, 'hours', 2),
     jsonb_build_object('starts_at', (now() + interval '3 days')::text, 'hours', 3)),
@@ -158,13 +159,13 @@ declare got_none boolean := false;
 begin
   perform pg_temp.act_as('00000000-0000-0000-0000-0000000000b2');
   begin
-    perform public.create_booking('jeri', 'returning', 'Português',
+    perform public.create_booking((select id from public.beaches where slug = 'jeri'), 'returning', 'Português',
       jsonb_build_array(jsonb_build_object('starts_at', (now() + interval '2 days 30 minutes')::text, 'hours', 1)));
   exception when raise_exception then
     got_none := sqlerrm = 'No instructor available for these slots';
   end;
   assert got_none, 'overlapping slot must not be assigned';
-  perform public.create_booking('jeri', 'returning', 'Português',
+  perform public.create_booking((select id from public.beaches where slug = 'jeri'), 'returning', 'Português',
     jsonb_build_array(jsonb_build_object('starts_at', (now() + interval '5 days')::text, 'hours', 1)));
   perform pg_temp.reset();
   assert (select instructor_id from public.bookings where student_id = '00000000-0000-0000-0000-0000000000b2')
@@ -236,6 +237,53 @@ begin
     select * into r from public.split_total(t, 1500, 500);
     assert r.partner_cents + r.platform_cents + r.instructor_net_cents = t, format('split of %s', t);
   end loop;
+end $$;
+
+-- Beaches are managed by the admin; students and instructors cannot.
+do $$
+declare new_beach uuid; got_error boolean := false;
+begin
+  perform pg_temp.act_as('00000000-0000-0000-0000-0000000000b1');
+  begin
+    perform public.create_beach('Praia Falsa', 'Ceará');
+  exception when insufficient_privilege then got_error := true;
+  end;
+  assert got_error, 'student created a beach';
+  perform pg_temp.reset();
+
+  perform pg_temp.act_as('00000000-0000-0000-0000-00000000000a');
+  new_beach := public.create_beach('Praia do Guriú', 'Ceará');
+  perform pg_temp.reset();
+  assert (select slug from public.beaches where id = new_beach) = 'praia-do-guriu', 'slug without accents';
+
+  -- Marina adds the new beach; a booking there goes to her, not to Rafael.
+  perform pg_temp.act_as('00000000-0000-0000-0000-0000000000a2');
+  perform public.set_my_beaches(array[(select id from public.beaches where slug = 'prea'), new_beach]);
+  perform pg_temp.reset();
+  perform pg_temp.act_as('00000000-0000-0000-0000-0000000000b1');
+  perform public.create_booking(new_beach, 'first_time', 'Português',
+    jsonb_build_array(jsonb_build_object('starts_at', (now() + interval '9 days')::text, 'hours', 1)));
+  perform pg_temp.reset();
+  assert (select instructor_id from public.bookings where beach_id = new_beach)
+    = '00000000-0000-0000-0000-0000000000a2', 'only instructors of that beach are matched';
+
+  -- A deactivated beach is no longer bookable and is hidden from students.
+  perform pg_temp.act_as('00000000-0000-0000-0000-00000000000a');
+  perform public.update_beach(new_beach, 'Praia do Guriú', 'Ceará', false);
+  perform pg_temp.reset();
+  execute 'set role anon';
+  assert not exists (select 1 from public.beaches where id = new_beach), 'inactive beach hidden from visitors';
+  perform pg_temp.reset();
+  perform pg_temp.act_as('00000000-0000-0000-0000-0000000000b1');
+  got_error := false;
+  begin
+    perform public.create_booking(new_beach, 'first_time', 'Português',
+      jsonb_build_array(jsonb_build_object('starts_at', (now() + interval '10 days')::text, 'hours', 1)));
+  exception when invalid_parameter_value then got_error := true;
+  end;
+  assert got_error, 'booked an inactive beach';
+  perform pg_temp.reset();
+  assert (select count(*) from public.audit_logs where entity = 'beach') = 2, 'beach changes audited';
 end $$;
 
 select 'ALL TESTS PASSED' as result;
