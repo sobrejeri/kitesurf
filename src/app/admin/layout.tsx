@@ -1,5 +1,5 @@
 import { WorkspaceShell, type WorkspaceNavItem } from '@/components/shells';
-import { ADMIN_TEAM } from '@/data/demo';
+import { requireRole } from '@/lib/auth';
 
 const NAV: readonly WorkspaceNavItem[] = [
   { label: 'Central de operação', href: '/admin/central', icon: 'grid' },
@@ -21,7 +21,8 @@ const NAV: readonly WorkspaceNavItem[] = [
   { label: 'Estrutura da plataforma', href: '/admin/estrutura', icon: 'settings', secondary: true },
 ];
 
-export default function AdminLayout({ children }: { children: React.ReactNode }) {
+export default async function AdminLayout({ children }: { children: React.ReactNode }) {
+  const viewer = await requireRole(['admin'], '/admin/visao');
   return (
     <WorkspaceShell
       workspace="ADMINISTRAÇÃO"
@@ -31,7 +32,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
         title: 'Uma operação mais clara',
         body: 'Acompanhe cada oferta, reserva e mudança da fila em um só lugar.',
       }}
-      person={{ name: ADMIN_TEAM.name, initials: ADMIN_TEAM.initials, role: ADMIN_TEAM.role }}
+      person={{ name: viewer.fullName || 'Equipe Vento', initials: 'EV', role: 'Operação da plataforma' }}
     >
       {children}
     </WorkspaceShell>

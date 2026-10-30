@@ -1,25 +1,20 @@
 import type { Metadata } from 'next';
 
-import { BookingsTable } from '@/components/shared';
+import { AdminBookingsTable } from '@/components/admin-tables';
 import { Card, PageHeader } from '@/components/ui';
-import { BOOKING } from '@/data/demo';
-import { formatMoney } from '@/lib/format';
+import { requireRole } from '@/lib/auth';
+import { listAllBookings } from '@/lib/data';
 
 export const metadata: Metadata = { title: 'Reservas' };
 
-export default function BookingsPage() {
+export default async function BookingsPage() {
+  await requireRole(['admin'], '/admin/reservas');
+  const bookings = await listAllBookings(200);
   return (
     <>
       <PageHeader eyebrow="Cada atendimento acompanhado" title="Reservas" lead="Da confirmação ao registro dos minutos realizados." />
-      <div className="mb-4 flex flex-wrap gap-2 text-[12px]">
-        {['Todas', 'Agendadas', 'Em aula', 'Registradas'].map((filter, index) => (
-          <span key={filter} className={`rounded-full border px-3.5 py-2 ${index === 0 ? 'border-brand bg-brand-soft font-[550] text-brand' : 'border-line-input bg-surface text-label'}`}>
-            {filter}
-          </span>
-        ))}
-      </div>
       <Card className="!p-2">
-        <BookingsTable totalLabel={formatMoney(BOOKING.totalCents)} />
+        <AdminBookingsTable bookings={bookings} />
       </Card>
     </>
   );

@@ -1,67 +1,38 @@
 import type { Metadata } from 'next';
 
-import { EventLog, QueueList } from '@/components/shared';
-import { Button, ButtonLink, Card, EmptyState, Eyebrow, Note, PageHeader } from '@/components/ui';
-import { OPERATION_RULES, QUEUE } from '@/data/demo';
+import { Avatar, Badge, Card, EmptyState, Note, PageHeader } from '@/components/ui';
+import { requireRole } from '@/lib/auth';
+import { BEACH_LABELS, listQueue } from '@/lib/data';
+import { initials } from '@/lib/people';
 
 export const metadata: Metadata = { title: 'Fila e distribuição' };
 
-export default function DistributionPage() {
-  const rules = [
-    ['Resposta por oferta', OPERATION_RULES.offerResponse],
-    ['Busca total', OPERATION_RULES.searchTotal],
-    ['Pagamento', OPERATION_RULES.payment],
-    ['Pausa após', OPERATION_RULES.pauseAfter],
-  ] as const;
+export default async function DistributionPage() {
+  await requireRole(['admin'], '/admin/distribuicao');
+  const queue = await listQueue();
   return (
     <>
-      <PageHeader
-        eyebrow="Controle da distribuição"
-        title="Fila e solicitações"
-        lead="Veja cada encaminhamento e a prioridade que permanece guardada."
-        action={<Button variant="ghost" size="sm">Abrir simulação</Button>}
-      />
-      <div className="grid gap-5 lg:grid-cols-[1.3fr_1fr]">
-        <div className="grid content-start gap-5">
-          <Card>
-            <div className="flex items-center justify-between">
-              <div>
-                <h2 className="text-[16px]">Fila central</h2>
-                <p className="text-[11px] text-muted">A ordem é aplicada entre instrutores compatíveis.</p>
-              </div>
-              <span className="text-[11px] text-muted">{QUEUE.length} instrutores</span>
-            </div>
-            <div className="mt-3"><QueueList entries={QUEUE} /></div>
-            <Note className="mt-3">A posição muda depois do pagamento confirmado. Recusas, expirações e pausas preservam a prioridade.</Note>
-          </Card>
-          <Card>
-            <h2 className="mb-4 text-[16px]">Histórico da distribuição</h2>
-            <EventLog />
-          </Card>
-        </div>
-        <div className="grid content-start gap-5">
-          <div>
-            <Eyebrow>Solicitação atual</Eyebrow>
-            <div className="mt-3">
-              <EmptyState action={<ButtonLink href="/aluno/reservar" size="sm">Criar solicitação de teste</ButtonLink>}>
-                Nenhum pedido em andamento. Experimente solicitar uma aula na área do aluno.
-              </EmptyState>
-            </div>
-          </div>
-          <Card>
-            <h2 className="text-[16px]">Regras em uso</h2>
-            <dl className="mt-3 grid grid-cols-2 gap-3">
-              {rules.map(([label, value]) => (
-                <div key={label} className="rounded-search bg-brand-tint p-3">
-                  <dt className="text-[11px] text-muted">{label}</dt>
-                  <dd className="mt-1 text-[15px] font-semibold text-brand">{value}</dd>
+      <PageHeader eyebrow="Controle da distribuição" title="Fila e solicitações" lead="A ordem é aplicada entre instrutores compatíveis com praia, idioma e horário." />
+      <Card>
+        {queue.length === 0 ? (
+          <EmptyState>Nenhum instrutor aprovado.</EmptyState>
+        ) : (
+          <ol className="divide-y divide-line">
+            {queue.map((row, index) => (
+              <li key={row.id} className="flex items-center gap-3 py-3">
+                <span className="tabular w-6 text-[13px] font-[550] text-muted">{index + 1}º</span>
+                <Avatar initials={initials(row.profile?.full_name)} size={32} />
+                <div className="min-w-0 flex-1">
+                  <p className="truncate text-[13px] font-[550]">{row.profile?.full_name}</p>
+                  <p className="text-[11px] text-muted">{row.beaches.map((b) => BEACH_LABELS[b]).join(' e ')} · {row.languages.join(', ')}</p>
                 </div>
-              ))}
-            </dl>
-            <ButtonLink href="/admin/regras" variant="ghost" size="sm" className="mt-4">Editar parâmetros</ButtonLink>
-          </Card>
-        </div>
-      </div>
+                <Badge>Disponível</Badge>
+              </li>
+            ))}
+          </ol>
+        )}
+        <Note className="mt-3">A posição muda depois do pagamento confirmado: o instrutor que recebeu a aula vai para o final. Recusas, expirações e pausas preservam a prioridade.</Note>
+      </Card>
     </>
   );
 }
