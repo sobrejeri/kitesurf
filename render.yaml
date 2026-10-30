@@ -1,0 +1,26 @@
+# Render Blueprint for Vento.
+#
+# Render → New → Blueprint → pick this repository. Render reads this file and
+# creates the web service; it asks for the values marked `sync: false` the
+# first time. Only public Supabase values are needed: the app never uses a
+# service role key.
+services:
+  - type: web
+    name: vento
+    runtime: node
+    region: oregon
+    plan: starter
+    branch: main
+    buildCommand: corepack enable && pnpm install --frozen-lockfile && pnpm build
+    startCommand: pnpm start
+    healthCheckPath: /aluno/inicio
+    autoDeploy: true
+    envVars:
+      - key: NODE_VERSION
+        value: "22"
+      - key: NEXT_PUBLIC_SUPABASE_URL
+        sync: false
+      - key: NEXT_PUBLIC_SUPABASE_ANON_KEY
+        sync: false
+      - key: NEXT_PUBLIC_SITE_URL
+        sync: false

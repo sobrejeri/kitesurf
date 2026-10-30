@@ -10,20 +10,31 @@ This block is written and re-added by `next dev` — verify at `node_modules/nex
 
 # Vento — regras do projeto
 
-Vento é uma plataforma de aulas de kitesurf em Preá e Jericoacoara. Hoje este
-repositório é um **protótipo navegável**: todas as telas usam dados fictícios
-de `src/data/demo.ts` e nada é enviado a uma API.
+Vento é uma plataforma de aulas de kitesurf em Preá e Jericoacoara: Next.js no
+Render e Supabase (Postgres + Auth) como banco. Algumas telas ainda são
+protótipo com dados de `src/data/demo.ts`.
 
 - **Dinheiro é inteiro em centavos.** Nunca float, nunca string decimal.
-- **O navegador exibe valores, não os calcula.** Preço, comissão, líquido e
-  repasse chegam prontos (hoje das constantes de demonstração, depois da API).
-  Nenhum componente multiplica horas por tarifa ou soma valores.
-- **Durações em minutos** e exibidas como `1h 30min`, nunca `1,5h`.
-- **Só variáveis `NEXT_PUBLIC_*` no app.** Segredos nunca entram no bundle.
-- **Sem bypass de autorização.** Quando houver backend, cada rota de aluno,
-  instrutor, admin e pousada é autorizada no servidor; esconder um link é só
-  apresentação.
+- **Valores são calculados no banco.** `create_booking` deriva total,
+  comissão, parte da pousada e líquido do instrutor a partir da versão de preço
+  vigente. O cliente envia escolhas (praia, nível, idioma, horários), nunca um
+  valor; os schemas zod são `strictObject` e rejeitam campos a mais.
+- **Divisão:** calcule a comissão uma vez e obtenha o líquido por subtração —
+  as partes sempre somam o total (há CHECK no banco).
+- **Reserva tem valor congelado.** O trigger `bookings_snapshot_frozen` impede
+  alterar valores; mudança de preço é uma nova linha em `price_versions`.
+- **Toda escrita passa por função `SECURITY DEFINER`** que confere papel e dono
+  (`require_role` + checagem do registro). As tabelas não dão INSERT, UPDATE ou
+  DELETE ao cliente, exceto colunas de perfil liberadas uma a uma.
+- **RLS em todas as tabelas.** Ler por id não é permissão: as consultas de aluno
+  e instrutor filtram pelo próprio id, e a página confere o dono de novo.
+- **Admin nunca é autoatribuído** no cadastro.
+- **Ações administrativas geram `audit_logs`**, que é append-only por trigger.
+- **Migration aplicada não se edita**: crie a próxima em `supabase/migrations`.
+- **Só `NEXT_PUBLIC_*` no app.** O app não usa a chave `service_role`.
+- **Sem bypass de autorização**, nem temporário.
+- **Durações em minutos**, exibidas como `1h 30min`; datas no fuso de Fortaleza.
 - **Visual:** os tokens de `src/app/globals.css` espelham o Design System Vento.
-  Mude os dois juntos.
 
-Antes de commitar: `pnpm typecheck && pnpm lint && pnpm build`.
+Antes de commitar: `pnpm typecheck && pnpm lint && pnpm build` e, se mexeu no
+banco, `scripts/test-db.sh`.
