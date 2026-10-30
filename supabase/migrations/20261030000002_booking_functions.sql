@@ -62,6 +62,20 @@ begin
 end;
 $$;
 
+-- The same preview for every bookable duration, for the hours stepper.
+create function public.quote_table()
+returns table (hours integer, hourly_rate_cents integer, total_cents integer)
+language plpgsql stable security definer set search_path = '' as $$
+declare
+  v public.price_versions := public.current_price_version();
+begin
+  if v.id is null then
+    raise exception 'No price published' using errcode = 'P0002';
+  end if;
+  return query select h, v.hourly_rate_cents, h * v.hourly_rate_cents from generate_series(1, 8) as h;
+end;
+$$;
+
 -- Splits a total. The commission is derived once; the instructor's net is the
 -- remainder, so the three parts always add up to the total to the centavo.
 create function public.split_total(p_total integer, p_platform_bps integer, p_partner_bps integer)
@@ -393,6 +407,7 @@ $$;
 revoke execute on all functions in schema public from public, anon, authenticated;
 
 grant execute on function public.quote_preview(integer) to anon, authenticated;
+grant execute on function public.quote_table() to anon, authenticated;
 grant execute on function public.create_booking(public.beach, public.lesson_level, text, jsonb, text) to authenticated;
 grant execute on function public.confirm_test_payment(uuid) to authenticated;
 grant execute on function public.start_meeting(uuid, text) to authenticated;

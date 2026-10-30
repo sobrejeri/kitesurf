@@ -269,10 +269,12 @@ grant select on public.price_versions to anon;
 grant update (full_name, language) on public.profiles to authenticated;
 grant update (years_experience, beaches, languages, has_equipment) on public.instructors to authenticated;
 
--- profiles: yourself, an admin, or the other side of one of your bookings.
+-- profiles: yourself, an admin, an approved instructor (their names appear in
+-- the queue), or the other side of one of your bookings.
 create policy profiles_select on public.profiles for select to authenticated using (
   id = auth.uid()
   or public.is_admin()
+  or exists (select 1 from public.instructors i where i.id = profiles.id and i.status = 'approved')
   or exists (
     select 1 from public.bookings b
     where (b.student_id = auth.uid() and b.instructor_id = profiles.id)

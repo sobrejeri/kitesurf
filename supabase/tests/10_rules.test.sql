@@ -81,6 +81,11 @@ select pg_temp.reset();
 set role anon;
 do $$ begin
   assert (select total_cents from public.quote_preview(2)) = 60000, 'quote for 2h must be R$ 600';
+  assert (select total_cents from public.quote_table() where hours = 8) = 240000, 'quote table for 8h';
+  begin
+    perform count(*) from public.profiles;
+    raise exception 'anon read profiles';
+  exception when insufficient_privilege then null; end;
 end $$;
 reset role;
 
