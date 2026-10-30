@@ -1,0 +1,13 @@
+node_modules/
+.pnpm-store/
+.next/
+out/
+*.tsbuildinfo
+coverage/
+
+# Environment — never commit real secrets.
+.env
+.env.*
+!.env.example
+
+.DS_Store

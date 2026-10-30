@@ -1,0 +1,113 @@
+@import 'tailwindcss';
+
+/**
+ * Vento theme — the "Studio" look of the sketch.
+ *
+ * White surfaces, one cobalt accent and a quiet financial hierarchy. Values are
+ * copied from the sketch's stylesheet and mirror the Vento design system
+ * artifact token for token, so a change here should be made there as well.
+ *
+ * Several greys (subtle, faint, quiet) sit below 4.5:1 on white. They are kept
+ * as the sketch has them and only used for text that always has a second cue
+ * next to it (an icon, a position, a value).
+ */
+@theme {
+  --color-brand: #405fd3;
+  --color-brand-hover: #304fbe;
+  --color-brand-bar: #4b69d8;
+  --color-brand-reserved: #b9c7f2;
+  --color-brand-focus: #8b9de7;
+  --color-brand-soft: #edf1ff;
+  --color-brand-tint: #f2f5ff;
+  --color-brand-wash: #f6f8ff;
+  --color-on-brand-muted: #e0e6ff;
+
+  --color-ink: #283340;
+  --color-ink-strong: #33445a;
+  --color-label: #536174;
+  --color-muted: #6e7889;
+  --color-subtle: #8590a3;
+  --color-faint: #a4adbb;
+
+  --color-surface: #ffffff;
+  --color-canvas: #f7f8fc;
+  --color-backdrop: #f0f3fa;
+  --color-sand: #f4f6fa;
+  --color-line: #e9edf4;
+  --color-line-input: #e6eaf2;
+  --color-line-ghost: #e2e7f1;
+
+  --color-success: #27825b;
+  --color-success-soft: #edf5f1;
+  --color-warning: #986c24;
+  --color-warning-soft: #fff7e8;
+  --color-danger: #b44949;
+  --color-danger-soft: #fff1f0;
+  --color-danger-line: #f4d6d3;
+  --color-quiet: #788497;
+  --color-quiet-soft: #f2f4f8;
+
+  --color-logo-ink: #334667;
+
+  --radius-chip: 9px;
+  --radius-input: 11px;
+  --radius-note: 12px;
+  --radius-search: 15px;
+  --radius-card: 17px;
+  --radius-hero: 20px;
+
+  --shadow-card: 0 5px 24px #26365c04;
+  --shadow-search: 0 8px 26px #273b6706;
+  --shadow-button: 0 5px 14px #405fd31a;
+  --shadow-focus: 0 0 0 3px #405fd30c;
+
+  --font-sans: var(--font-dm-sans), system-ui, sans-serif;
+}
+
+:root {
+  color-scheme: light;
+}
+
+body {
+  background: var(--color-canvas);
+  color: var(--color-ink);
+  font-size: 14px;
+  -webkit-font-smoothing: antialiased;
+}
+
+h1,
+h2,
+h3 {
+  letter-spacing: -0.45px;
+  font-weight: 600;
+}
+
+:where(a, button, input, select, textarea, summary):focus-visible {
+  outline: 2px solid var(--color-brand);
+  outline-offset: 3px;
+}
+
+/* Durations and money stay aligned in lists and tables. */
+.tabular {
+  font-variant-numeric: tabular-nums;
+}
+
+.icon {
+  width: 20px;
+  height: 20px;
+  stroke: currentColor;
+  stroke-width: 1.5;
+  fill: none;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  flex-shrink: 0;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    transition-duration: 0.01ms !important;
+  }
+}
