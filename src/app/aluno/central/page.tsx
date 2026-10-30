@@ -1,5 +1,7 @@
 import type { Metadata } from 'next';
 
+import { StudentHero } from '@/components/student/sunset';
+
 import { Hub } from '@/components/shared';
 import { DEMO_NOTICE } from '@/data/demo';
 
@@ -15,5 +17,10 @@ const ITEMS = [
 ] as const;
 
 export default function StudentHubPage() {
-  return <Hub title="Central de aulas" items={ITEMS} notice={DEMO_NOTICE} />;
+  return (
+    <>
+      <StudentHero eyebrow="Fluxos da plataforma" title="Central de aulas" highlight="aulas" lead="Tudo organizado por etapa, sem perder os dados já preenchidos." compact />
+      <Hub bare title="Central de aulas" items={ITEMS} notice={DEMO_NOTICE} />
+    </>
+  );
 }

@@ -1,9 +1,7 @@
 import type { Metadata } from 'next';
-import Link from 'next/link';
 
-import { Icon } from '@/components/icon';
 import { LessonBuilder, type BuilderDefaults } from '@/components/student/lesson-builder';
-import { PageHeader } from '@/components/ui';
+import { StudentHero } from '@/components/student/sunset';
 import { LANGUAGES } from '@/data/demo';
 import { requireRole } from '@/lib/auth';
 import { getQuoteTable } from '@/lib/data';
@@ -31,10 +29,8 @@ export default async function BuildLessonPage({ searchParams }: { searchParams: 
   const [params, quotes] = await Promise.all([searchParams, getQuoteTable()]);
   return (
     <>
-      <Link href="/aluno/inicio" className="mb-4 inline-flex items-center gap-1.5 text-[12px] font-[550] text-brand">
-        <Icon name="back" className="!h-4 !w-4" /> Voltar para explorar
-      </Link>
-      <PageHeader title="Monte sua aula" lead="Escolha suas horas e os dias para ir ao mar." />
+      <StudentHero eyebrow="Seu próximo bordo" title="Monte sua aula" highlight="aula" lead="Escolha suas horas e os dias para ir ao mar." compact image="lesson" />
+      <div className="mt-6" />
       <LessonBuilder quotes={quotes} defaults={defaultsFrom(params)} />
     </>
   );

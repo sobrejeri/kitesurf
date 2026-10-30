@@ -5,6 +5,7 @@ import { notFound } from 'next/navigation';
 import { confirmTestPayment } from '@/app/actions/booking';
 import { ActionForm } from '@/components/action-form';
 import { Icon } from '@/components/icon';
+import { StudentHero } from '@/components/student/sunset';
 import { Avatar, Badge, ButtonLink, Card, Eyebrow, KeyValue, Note, ProgressBar } from '@/components/ui';
 import { requireRole } from '@/lib/auth';
 import { BEACH_LABELS, BOOKING_STATUS_LABELS, LEVEL_LABELS, MEETING_STATUS_LABELS, getBookingForViewer, learningBalance } from '@/lib/data';
@@ -31,15 +32,18 @@ export default async function BookingPage({ params }: { params: Promise<{ id: st
 
   return (
     <>
-      <Eyebrow>Seu próximo bordo</Eyebrow>
-      <h1 className="mt-2 text-[28px] tracking-[-0.9px] sm:text-[32px]">
-        {awaiting ? 'Falta só o pagamento.' : 'Sua aula está confirmada.'}
-      </h1>
-      <p className="mt-1 text-[13px] text-muted">
-        {awaiting
-          ? `${instructorName} está reservado para você. Confirme o pagamento para garantir a aula.`
-          : 'Tudo organizado. Confira os detalhes e encontre seu instrutor.'}
-      </p>
+      <StudentHero
+        eyebrow="Seu próximo bordo"
+        title={awaiting ? 'Falta só o pagamento.' : 'Sua aula está confirmada.'}
+        highlight={awaiting ? 'pagamento.' : 'confirmada.'}
+        lead={
+          awaiting
+            ? `${instructorName} está reservado para você. Confirme o pagamento para garantir a aula.`
+            : 'Tudo organizado. Confira os detalhes e encontre seu instrutor.'
+        }
+        compact
+        image="lesson"
+      />
 
       <div className="mt-6 grid gap-5 lg:grid-cols-[1.5fr_1fr]">
         <div className="grid content-start gap-5">

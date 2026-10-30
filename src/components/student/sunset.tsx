@@ -1,0 +1,144 @@
+import { Icon, type IconName } from '../icon';
+
+/**
+ * Building blocks of the student area's sunset look: the wave mark, the photo
+ * hero every student page opens with, and the orange-highlighted headings.
+ */
+
+/** Two breaking waves — the student-area brand mark. */
+export function WaveMark({ className = '' }: { className?: string }) {
+  return (
+    <svg viewBox="0 0 64 40" className={className} aria-hidden="true">
+      <path d="M2 30c10 0 14-12 26-18 9-4.5 19-3 26 3-8-2-15 0-20 5 6-1 11 1 14 5-8-2-15 1-21 6-9 7-17 6-25-1z" fill="#ff7a1a" />
+      <path d="M8 36c9 1 16-2 22-6 7-4.5 15-5.5 24-2-7 1-12 4-17 7-7 4-15 5-29 1z" fill="#ff9a4d" />
+    </svg>
+  );
+}
+
+export function StudentBrand() {
+  return (
+    <span className="flex items-center gap-2.5">
+      <WaveMark className="h-9 w-14" />
+      <span className="leading-none">
+        <span className="block text-[24px] font-bold tracking-[-0.6px] text-logo-ink">Vento</span>
+        <span className="mt-0.5 block text-[9px] font-medium uppercase tracking-[2px] text-label">Aulas de kitesurf</span>
+      </span>
+    </span>
+  );
+}
+
+/** "Minhas aulas" with the last word in orange, as the reference does. */
+export function HighlightTitle({ text, highlight, as: Tag = 'h1', className = '' }: { text: string; highlight?: string; as?: 'h1' | 'h2'; className?: string }) {
+  if (!highlight || !text.includes(highlight)) return <Tag className={className}>{text}</Tag>;
+  const at = text.lastIndexOf(highlight);
+  return (
+    <Tag className={className}>
+      {text.slice(0, at)}
+      <span className="text-brand">{highlight}</span>
+      {text.slice(at + highlight.length)}
+    </Tag>
+  );
+}
+
+export type HeroImage = 'coast' | 'lesson';
+
+const IMAGES: Readonly<Record<HeroImage, { src: string; position: string }>> = {
+  coast: { src: '/images/prea-coast.webp', position: '70% 40%' },
+  lesson: { src: '/images/kite-lesson.webp', position: '60% 30%' },
+};
+
+/**
+ * The photo header of a student page. On phones it runs edge to edge under
+ * the transparent app bar; from md up it is a rounded banner.
+ */
+export function StudentHero({
+  eyebrow,
+  eyebrowIcon,
+  title,
+  highlight,
+  lead,
+  image = 'coast',
+  compact = false,
+  top,
+  children,
+}: {
+  /** Shown above the eyebrow, e.g. the location pill on Explorar. */
+  top?: React.ReactNode;
+  eyebrow?: string;
+  eyebrowIcon?: IconName;
+  title: string;
+  highlight?: string;
+  lead?: string;
+  image?: HeroImage;
+  compact?: boolean;
+  children?: React.ReactNode;
+}) {
+  const photo = IMAGES[image];
+  return (
+    <section className="relative -mx-4 overflow-hidden md:mx-0 md:mt-2 md:rounded-hero">
+      {/* Decorative photograph; the heading carries the meaning. */}
+      <img
+        src={photo.src}
+        alt=""
+        className="sunset-photo absolute inset-0 h-full w-full object-cover"
+        style={{ objectPosition: photo.position }}
+      />
+      <div className="sunset-veil absolute inset-0" aria-hidden="true" />
+      <div
+        className={`relative px-4 md:px-10 ${compact ? 'pb-6 pt-[calc(env(safe-area-inset-top)+84px)] md:py-10' : 'pb-8 pt-[calc(env(safe-area-inset-top)+96px)] md:py-14'}`}
+      >
+        {top ? <div className="mb-6">{top}</div> : null}
+        {eyebrow ? (
+          <p className="flex items-center gap-2 text-[11px] font-semibold uppercase tracking-[2px] text-brand">
+            {eyebrowIcon ? <Icon name={eyebrowIcon} className="!h-4 !w-4" /> : null}
+            {eyebrow}
+          </p>
+        ) : null}
+        <HighlightTitle
+          text={title}
+          highlight={highlight}
+          className={`mt-2 max-w-[13ch] font-bold leading-[1.05] tracking-[-1.2px] text-white ${compact ? 'text-[34px] md:text-[40px]' : 'text-[40px] md:text-[52px]'}`}
+        />
+        {lead ? <p className="mt-3 max-w-[30ch] text-[15px] leading-snug text-[#dfe5ee]">{lead}</p> : null}
+        {children ? <div className="mt-5">{children}</div> : null}
+      </div>
+    </section>
+  );
+}
+
+/** A round orange-on-dark icon, used in lists and stat cards. */
+export function IconBubble({ icon, tone = 'brand', size = 40 }: { icon: IconName; tone?: 'brand' | 'solid'; size?: number }) {
+  return (
+    <span
+      className={`grid shrink-0 place-items-center rounded-full ${tone === 'solid' ? 'bg-brand text-white' : 'bg-brand-soft text-brand'}`}
+      style={{ width: size, height: size }}
+      aria-hidden="true"
+    >
+      <Icon name={icon} className="!h-[20px] !w-[20px]" />
+    </span>
+  );
+}
+
+/** Dashed empty state with an icon, as in "Extrato de horas". */
+export function SunsetEmpty({ icon, children, action }: { icon: IconName; children: React.ReactNode; action?: React.ReactNode }) {
+  return (
+    <div className="grid place-items-center gap-3 rounded-search border border-dashed border-line-ghost px-5 py-7 text-center text-[13px] text-muted">
+      <Icon name={icon} className="!h-9 !w-9 text-brand" />
+      <p className="max-w-[30ch]">{children}</p>
+      {action}
+    </div>
+  );
+}
+
+/** Kite over waves, for empty lesson lists. */
+export function KiteIllustration() {
+  return (
+    <svg viewBox="0 0 160 90" className="h-20 w-36" aria-hidden="true">
+      <path d="M58 52c4-22 22-38 46-38 8 0 14 2 18 5-12 1-22 8-27 18 8-3 17-2 22 3-10 0-19 5-24 12" fill="none" stroke="#ff7a1a" strokeWidth="5" strokeLinecap="round" />
+      <path d="M58 52c4-22 22-38 46-38" fill="none" stroke="#3aa0d8" strokeWidth="5" strokeLinecap="round" />
+      <path d="M70 50l10 22M93 47l-6 25" stroke="#8c97aa" strokeWidth="1.5" />
+      <path d="M20 78c10-6 20-6 30 0s20 6 30 0 20-6 30 0 20 6 30 0" fill="none" stroke="#8c97aa" strokeWidth="2" strokeLinecap="round" />
+      <path d="M32 40c4-2 8-2 12 0M128 30l4-3 4 3" fill="none" stroke="#8c97aa" strokeWidth="1.5" strokeLinecap="round" />
+    </svg>
+  );
+}

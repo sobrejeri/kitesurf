@@ -1,9 +1,9 @@
 import type { Metadata } from 'next';
+import Link from 'next/link';
 
-import { Icon } from '@/components/icon';
-import { SectionTitle } from '@/components/shared';
-import { LessonSearch, PathCard } from '@/components/student/lesson-search';
-import { Card } from '@/components/ui';
+import { Icon, type IconName } from '@/components/icon';
+import { LessonSearch, PathRail, type PathItem } from '@/components/student/lesson-search';
+import { HighlightTitle, StudentHero } from '@/components/student/sunset';
 import { getViewer } from '@/lib/auth';
 import { getQuoteTable, type QuoteRow } from '@/lib/data';
 import { lessonDate } from '@/lib/dates';
@@ -11,39 +11,45 @@ import { supabaseConfig } from '@/lib/env';
 
 export const metadata: Metadata = { title: 'Explorar' };
 
-const PATHS = [
+const PATHS: readonly PathItem[] = [
   {
     tag: 'Para começar',
     title: 'Meu primeiro contato',
     body: 'Aprenda os primeiros movimentos com orientação, no seu tempo.',
     image: '/images/kite-lesson.webp',
+    position: '35% 40%',
+    level: 'first_time',
   },
   {
     tag: 'Para retomar',
     title: 'Voltar para o mar',
     body: 'Conte o que já aprendeu e continue de onde parou.',
     image: '/images/kite-lesson.webp',
+    position: '75% 40%',
+    level: 'returning',
   },
   {
     tag: 'Para evoluir',
     title: 'Ir um pouco além',
     body: 'Pratique suas habilidades com acompanhamento particular.',
     image: '/images/prea-coast.webp',
+    position: '72% 50%',
+    level: 'improving',
   },
-] as const;
+];
 
-const STEPS = [
-  ['Escolha suas horas', 'Conte a duração, a praia, o dia e seu idioma.'],
-  ['Conheça seu instrutor', 'Encontre um profissional disponível para você.'],
-  ['Viva e acompanhe', 'Suas aulas, seu saldo e cada nova conquista.'],
-] as const;
+const STEPS: readonly { title: string; body: string; icon: IconName }[] = [
+  { title: 'Escolha suas horas', body: 'Conte a duração, a praia, o dia e seu idioma.', icon: 'calendar' },
+  { title: 'Conheça seu instrutor', body: 'Encontre um profissional disponível para você.', icon: 'user' },
+  { title: 'Viva e acompanhe', body: 'Suas aulas, seu saldo e cada nova conquista.', icon: 'waves' },
+];
 
 async function loadQuotes(): Promise<QuoteRow[]> {
   if (!supabaseConfig) return [];
   try {
     return await getQuoteTable();
   } catch {
-    // The page still works without prices; the line under the search says so.
+    // The page still works without prices; the quote line says so.
     return [];
   }
 }
@@ -51,75 +57,55 @@ async function loadQuotes(): Promise<QuoteRow[]> {
 export default async function StudentHomePage() {
   const [quotes, viewer] = await Promise.all([loadQuotes(), getViewer()]);
   const firstName = viewer?.fullName.split(' ')[0];
+
   return (
     <>
-      <div className="mb-4 flex items-start justify-between gap-4">
-        <div>
-          <p className="flex items-center gap-2 text-[17px] font-[550] text-[#374967]">
-            {firstName ? `Olá, ${firstName}!` : 'Olá!'} <Icon name="sun" className="text-[#e8a23d]" />
-          </p>
-          <p className="mt-1 flex items-center gap-1 text-[11px] text-muted">
-            <Icon name="pin" className="!h-3.5 !w-3.5" /> Preá e Jericoacoara
-          </p>
-        </div>
-        <span className="flex items-center gap-1.5 rounded-input border border-[#e6eaf5] bg-[#f1f4fd] px-3 py-2 text-[10px] text-[#7a8da9]">
-          <Icon name="wind" className="!h-3.5 !w-3.5" /> Ceará, Brasil
-        </span>
-      </div>
-
-      <section
-        className="relative flex min-h-[170px] items-end overflow-hidden rounded-hero bg-cover bg-center px-5 pb-10 pt-8 sm:min-h-[220px] sm:items-center sm:px-10 sm:pb-8"
-        style={{ backgroundImage: 'linear-gradient(90deg, #0d2b4ab3, #0d2b4a20 70%), url(/images/prea-coast.webp)' }}
-      >
-        <div className="max-w-md text-white">
-          <h1 className="text-[24px] leading-[1.15] tracking-[-0.6px] sm:text-[32px]">Seu próximo bordo começa aqui.</h1>
-          <p className="mt-2 text-[12px] text-[#f0f5ff]">Escolha suas horas e encontre seu instrutor.</p>
-        </div>
-      </section>
+      <StudentHero
+        title="Seu próximo bordo começa aqui."
+        highlight="aqui."
+        lead={firstName ? `${firstName}, escolha suas horas e encontre o instrutor ideal.` : 'Escolha suas horas e encontre o instrutor ideal.'}
+        top={
+          <span className="glass inline-flex items-center gap-3 rounded-[18px] border border-line px-4 py-2.5">
+            <Icon name="pin" className="!h-6 !w-6 text-brand" />
+            <span className="leading-tight">
+              <strong className="block text-[14px] font-semibold text-white">Preá e Jericoacoara</strong>
+              <span className="text-[12px] text-label">Ceará, Brasil</span>
+            </span>
+          </span>
+        }
+      />
 
       <LessonSearch defaultDate={lessonDate(1)} quotes={quotes} />
 
-      <section className="mt-12">
-        <p className="text-[10px] font-[550] uppercase tracking-[1px] text-brand">Um mar de possibilidades</p>
-        <div className="mt-2">
-          <SectionTitle title="Encontre o seu ritmo." action={{ label: 'Ver aulas', href: '/aluno/aulas' }} />
+      <section className="mt-10">
+        <p className="text-[11px] font-semibold uppercase tracking-[2px] text-brand">Um mar de possibilidades</p>
+        <div className="mt-1 flex items-end justify-between gap-3">
+          <HighlightTitle as="h2" text="Encontre o seu ritmo." highlight="seu ritmo." className="text-[28px] font-bold leading-tight tracking-[-0.8px] text-ink md:text-[34px]" />
+          <Link href="/aluno/aulas" className="flex shrink-0 items-center gap-1.5 pb-1 text-[14px] font-semibold text-brand">
+            <Icon name="arrow" className="!h-4 !w-4" /> Ver aulas
+          </Link>
         </div>
-        <p className="-mt-2 mb-5 text-[13px] text-muted">A aula acompanha seu nível. A duração é você quem escolhe.</p>
-        <div className="grid gap-4 md:grid-cols-3">
-          {PATHS.map((path) => (
-            <PathCard key={path.title} {...path} />
-          ))}
-        </div>
+        <p className="mb-5 mt-1 text-[15px] text-label">A aula acompanha seu nível. A duração é você quem escolhe.</p>
+        <PathRail items={PATHS} />
       </section>
 
-      <Card className="mt-6">
-        <h2 className="text-[16px]">Da vontade de aprender ao primeiro bordo.</h2>
-        <ol className="mt-4 grid gap-4 md:grid-cols-3">
-          {STEPS.map(([title, body], index) => (
-            <li key={title} className="flex gap-3">
-              <span className="grid h-8 w-8 shrink-0 place-items-center rounded-full bg-warning-soft text-[12px] font-[550] text-warning">
-                {index + 1}
+      <section className="relative mt-8 overflow-hidden rounded-[22px] border border-line bg-surface p-5 md:p-7">
+        <span className="absolute -right-10 -top-10 h-48 w-48 rounded-full bg-[radial-gradient(circle,#ff7a1a40,transparent_65%)]" aria-hidden="true" />
+        <HighlightTitle as="h2" text="Da vontade de aprender ao primeiro bordo." highlight="ao primeiro bordo." className="relative max-w-[18ch] text-[24px] font-bold leading-tight text-ink" />
+        <ol className="relative mt-5 grid gap-5 sm:grid-cols-3 sm:divide-x sm:divide-line">
+          {STEPS.map((step, index) => (
+            <li key={step.title} className="flex items-start gap-3 sm:block sm:px-4 sm:first:pl-0">
+              <span className="flex items-center gap-3">
+                <span className="grid h-10 w-10 shrink-0 place-items-center rounded-full bg-brand-soft text-[16px] font-semibold text-white">{index + 1}</span>
+                <Icon name={step.icon} className="hidden !h-7 !w-7 text-ink sm:block" />
               </span>
-              <span>
-                <strong className="block text-[13px] font-[550]">{title}</strong>
-                <span className="text-[12px] text-muted">{body}</span>
+              <span className="sm:mt-3 sm:block">
+                <strong className="block text-[16px] font-semibold text-ink">{step.title}</strong>
+                <span className="text-[13px] leading-snug text-muted">{step.body}</span>
               </span>
             </li>
           ))}
         </ol>
-      </Card>
-
-      <section className="mt-6 flex flex-wrap items-center justify-between gap-4 rounded-card border border-line bg-brand-tint p-5 sm:p-6">
-        <div className="flex items-center gap-4">
-          <Icon name="phone" className="!h-7 !w-7 text-brand" />
-          <div>
-            <p className="text-[16px] font-semibold">Leve os bons ventos com você.</p>
-            <p className="text-[12px] text-muted">Adicione o Vento à tela inicial do celular.</p>
-          </div>
-        </div>
-        <span className="inline-flex items-center gap-2 rounded-full bg-surface px-5 py-3 text-[12px] font-[550] text-brand shadow-card">
-          <Icon name="plus" className="!h-4 !w-4" /> Como instalar
-        </span>
       </section>
     </>
   );

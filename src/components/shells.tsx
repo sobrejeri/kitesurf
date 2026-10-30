@@ -4,7 +4,8 @@ import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 
 import { Icon, type IconName } from './icon';
-import { MobileHeader, SheetAccount, TabBar, isActive, type SheetLink, type TabItem } from './mobile';
+import { MenuButton, MobileHeader, SheetAccount, TabBar, isActive, type SheetLink, type TabItem } from './mobile';
+import { StudentBrand } from './student/sunset';
 import { AREAS } from '@/lib/areas';
 
 import { Avatar } from './ui';
@@ -47,9 +48,9 @@ export function TopBar({ viewer, signOut }: { viewer: TopBarViewer | null; signO
   const pathname = usePathname();
   const areas = viewer ? AREAS.filter((area) => viewer.role === 'admin' || area.role === viewer.role) : [];
   return (
-    <div className="sticky top-0 z-40 hidden h-14 items-center justify-between gap-3 border-b border-[#e5eaf5] bg-surface px-6 text-[12px] text-[#43547a] lg:flex">
+    <div className="sticky top-0 z-40 hidden h-14 items-center justify-between gap-3 border-b border-line bg-chrome px-6 text-[12px] text-label lg:flex">
       {areas.length > 1 ? (
-        <nav aria-label="Áreas" className="flex rounded-[13px] bg-[#f2f4fa] p-1">
+        <nav aria-label="Áreas" className="flex rounded-[13px] bg-sand p-1">
           {areas.map((area) => {
             const active = pathname.startsWith(area.prefix);
             return (
@@ -57,7 +58,7 @@ export function TopBar({ viewer, signOut }: { viewer: TopBarViewer | null; signO
                 key={area.href}
                 href={area.href}
                 aria-current={active ? 'page' : undefined}
-                className={`rounded-[10px] px-3 py-1.5 sm:px-4 ${active ? 'bg-brand font-[550] text-white' : 'text-[#6e7889] hover:text-brand'}`}
+                className={`rounded-[10px] px-3 py-1.5 sm:px-4 ${active ? 'bg-brand font-[550] text-on-brand' : 'text-muted hover:text-brand'}`}
               >
                 {area.label}
               </Link>
@@ -115,14 +116,6 @@ function LogoMark() {
   );
 }
 
-function HeaderIconLink({ href, icon, label }: { href: string; icon: IconName; label: string }) {
-  return (
-    <Link href={href} aria-label={label} className="press grid h-10 w-10 place-items-center rounded-full text-[#5f6c80] active:bg-sand">
-      <Icon name={icon} />
-    </Link>
-  );
-}
-
 const STUDENT_TABS: readonly TabItem[] = [
   { label: 'Explorar', href: '/aluno/inicio', icon: 'search', match: ['/aluno/reservar'] },
   { label: 'Minhas aulas', href: '/aluno/aulas', icon: 'book', match: ['/aluno/reserva', '/aluno/atendimento', '/aluno/ocorrencias'] },
@@ -130,39 +123,57 @@ const STUDENT_TABS: readonly TabItem[] = [
   { label: 'Perfil', href: '/aluno/conta', icon: 'user', match: ['/aluno/central', '/aluno/avisos', '/aluno/politicas', '/aluno/acesso'] },
 ];
 
-const STUDENT_TITLES: Readonly<Record<string, string>> = {
-  '/aluno/reservar': 'Monte sua aula',
-  '/aluno/reserva': 'Sua reserva',
-  '/aluno/central': 'Central de aulas',
-  '/aluno/avisos': 'Avisos',
-  '/aluno/politicas': 'Políticas das aulas',
-  '/aluno/acesso': 'Conta e acesso',
-  '/aluno/atendimento': 'Conversa',
-  '/aluno/ocorrencias': 'Imprevistos',
-};
+/** Pages reached from inside another tab: they get a back arrow on phones. */
+const STUDENT_SUBPAGES = [
+  '/aluno/reservar',
+  '/aluno/reserva',
+  '/aluno/central',
+  '/aluno/avisos',
+  '/aluno/politicas',
+  '/aluno/acesso',
+  '/aluno/atendimento',
+  '/aluno/ocorrencias',
+];
 
+const STUDENT_MENU: readonly SheetLink[] = [
+  { label: 'Central de aulas', href: '/aluno/central', icon: 'grid' },
+  { label: 'Avisos', href: '/aluno/avisos', icon: 'bell' },
+  { label: 'Regras das aulas', href: '/aluno/politicas', icon: 'shield' },
+  { label: 'Imprevistos', href: '/aluno/ocorrencias', icon: 'wind' },
+  { label: 'Conversas', href: '/aluno/atendimento', icon: 'chat' },
+  { label: 'Conta e acesso', href: '/aluno/acesso', icon: 'user' },
+];
+
+/**
+ * Student area, sunset theme. Every student page opens with a photo hero;
+ * on phones the app bar floats over it and the tab bar sits at the bottom.
+ */
 export function StudentShell({
   children,
   name,
   initials,
   signedIn,
+  signOut,
 }: {
   children: React.ReactNode;
   name: string;
   initials: string;
   signedIn: boolean;
+  signOut: () => Promise<void>;
 }) {
   const pathname = usePathname();
-  const subpage = Object.entries(STUDENT_TITLES).find(([route]) => pathname.startsWith(route));
+  const subpage = STUDENT_SUBPAGES.some((route) => pathname.startsWith(route));
   const tabs = signedIn
     ? STUDENT_TABS
     : STUDENT_TABS.map((tab) => (tab.href === '/aluno/conta' ? { ...tab, label: 'Entrar', href: '/entrar' } : tab));
 
   return (
-    <>
-      <header className="hidden border-b border-line bg-surface md:block">
+    <div className="theme-sunset min-h-dvh bg-canvas text-ink">
+      <header className="hidden border-b border-line bg-chrome md:block">
         <div className="mx-auto flex h-[76px] max-w-6xl items-center justify-between gap-6 px-8">
-          <Logo />
+          <Link href="/aluno/inicio" aria-label="Vento — início">
+            <StudentBrand />
+          </Link>
           <nav aria-label="Navegação do aluno" className="flex h-full items-stretch gap-8">
             {STUDENT_TABS.slice(0, 3).map((item) => {
               const active = isActive(pathname, item);
@@ -171,7 +182,7 @@ export function StudentShell({
                   key={item.href}
                   href={item.href}
                   aria-current={active ? 'page' : undefined}
-                  className={`flex items-center border-b-2 text-[13px] font-medium ${active ? 'border-brand text-brand' : 'border-transparent text-[#8993a2] hover:text-brand'}`}
+                  className={`flex items-center border-b-2 text-[14px] font-medium ${active ? 'border-brand text-brand' : 'border-transparent text-muted hover:text-ink'}`}
                 >
                   {item.label}
                 </Link>
@@ -179,19 +190,19 @@ export function StudentShell({
             })}
           </nav>
           <div className="flex items-center gap-3">
-            <Link href="/aluno/avisos" aria-label="Avisos" className="grid h-10 w-10 place-items-center rounded-full border border-line text-[#7e8999]">
+            <Link href="/aluno/avisos" aria-label="Avisos" className="grid h-10 w-10 place-items-center rounded-full border border-line text-label">
               <Icon name="bell" />
             </Link>
             {signedIn ? (
               <Link href="/aluno/conta" className="flex items-center gap-2.5">
-                <Avatar initials={initials} tone="a3" size={36} />
+                <Avatar initials={initials} size={36} />
                 <span className="text-[12px] leading-tight">
-                  <strong className="block font-[550] text-[#4f5e77]">{name}</strong>
-                  <span className="text-[11px] text-subtle">Seu espaço no kite</span>
+                  <strong className="block font-[550] text-ink">{name}</strong>
+                  <span className="text-[11px] text-muted">Seu espaço no kite</span>
                 </span>
               </Link>
             ) : (
-              <Link href="/entrar" className="rounded-full bg-brand px-4 py-2 text-[12px] font-[550] text-white">
+              <Link href="/entrar" className="btn-primary press rounded-full px-5 py-2 text-[13px] font-[650] text-white">
                 Entrar
               </Link>
             )}
@@ -199,32 +210,44 @@ export function StudentShell({
         </div>
       </header>
 
-      <MobileHeader
-        leading={
-          subpage ? (
-            <button type="button" onClick={() => history.back()} aria-label="Voltar" className="press -ml-2 grid h-10 w-10 place-items-center rounded-full text-ink">
+      {/* Phone app bar, floating over each page's photo hero. */}
+      <div className="pt-safe absolute inset-x-0 top-0 z-30 md:hidden">
+        <div className="flex h-16 items-center gap-1 px-4">
+          {subpage ? (
+            <button type="button" onClick={() => history.back()} aria-label="Voltar" className="press -ml-2 grid h-10 w-10 place-items-center rounded-full text-white">
               <Icon name="back" />
             </button>
-          ) : (
-            <LogoMark />
-          )
-        }
-        title={subpage ? subpage[1] : 'vento'}
-        trailing={
-          signedIn ? (
-            <HeaderIconLink href="/aluno/avisos" icon="bell" label="Avisos" />
-          ) : (
-            <Link href="/entrar" className="press rounded-full bg-brand px-4 py-2 text-[12px] font-[550] text-white">
-              Entrar
+          ) : null}
+          <Link href="/aluno/inicio" aria-label="Vento — início" className="press">
+            <StudentBrand />
+          </Link>
+          <span className="flex-1" />
+          {signedIn ? (
+            <Link href="/aluno/avisos" aria-label="Avisos" className="press grid h-10 w-10 place-items-center rounded-full text-white">
+              <Icon name="bell" className="!h-6 !w-6" />
             </Link>
-          )
-        }
-      />
+          ) : null}
+          <MenuButton
+            title="Menu"
+            links={STUDENT_MENU}
+            footer={
+              signedIn ? (
+                <SheetAccount name={name} subtitle="Aluno" initials={initials} signOut={signOut} />
+              ) : (
+                <div className="grid grid-cols-2 gap-2">
+                  <Link href="/entrar" className="press rounded-full border border-line py-3 text-center text-[14px] font-[550] text-ink">Entrar</Link>
+                  <Link href="/cadastro" className="btn-primary press rounded-full py-3 text-center text-white">Criar conta</Link>
+                </div>
+              )
+            }
+          />
+        </div>
+      </div>
 
-      <main className="mx-auto max-w-6xl px-4 pb-tabbar pt-5 md:px-8 md:pb-0 md:pt-8">{children}</main>
+      <main className="relative mx-auto max-w-6xl px-4 pb-tabbar md:px-8 md:pb-0 md:pt-6">{children}</main>
       <SiteFooter />
-      <TabBar items={tabs} label="Navegação do aluno" />
-    </>
+      <TabBar items={tabs} label="Navegação do aluno" variant="underline" />
+    </div>
   );
 }
 

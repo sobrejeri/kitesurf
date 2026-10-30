@@ -1,7 +1,8 @@
 import type { Metadata } from 'next';
 
 import { MyLessons, type LessonCard } from '@/components/student/my-lessons';
-import { ButtonLink, Eyebrow } from '@/components/ui';
+import { StudentHero } from '@/components/student/sunset';
+import { ButtonLink } from '@/components/ui';
 import { requireRole } from '@/lib/auth';
 import { BEACH_LABELS, BOOKING_STATUS_LABELS, MEETING_STATUS_LABELS, listBookingsForStudent } from '@/lib/data';
 import { formatDateShort, formatDay, formatMinutes, formatMonthTag, formatTime } from '@/lib/format';
@@ -40,14 +41,19 @@ export default async function MyLessonsPage() {
 
   return (
     <>
-      <header className="mb-6 flex flex-wrap items-end justify-between gap-4">
-        <div>
-          <Eyebrow icon="sun">Sua agenda de bons ventos</Eyebrow>
-          <h1 className="mt-2 text-[28px] tracking-[-0.9px] sm:text-[32px]">Minhas aulas</h1>
-          <p className="mt-1 text-[13px] text-muted">Seu próximo encontro com o mar começa aqui.</p>
-        </div>
-        <ButtonLink href="/aluno/reservar" icon="plus">Nova aula</ButtonLink>
-      </header>
+      <StudentHero
+        image="lesson"
+        eyebrow="Sua agenda de bons ventos"
+        eyebrowIcon="sun"
+        title="Minhas aulas"
+        highlight="aulas"
+        lead="Seu próximo encontro com o mar começa aqui."
+        compact
+      >
+        <ButtonLink href="/aluno/reservar" icon="plus" trailingIcon="arrow" className="px-7">
+          Nova aula
+        </ButtonLink>
+      </StudentHero>
       <MyLessons lessons={lessons} />
     </>
   );

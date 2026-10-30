@@ -8,27 +8,28 @@ import { BEACH_LABELS, LEVEL_LABELS, type QuoteRow } from '@/lib/data-labels';
 import { formatMoney } from '@/lib/format';
 
 import { Icon, type IconName } from '../icon';
-import { HoursStepper } from '../interactive';
 import { buttonClass } from '../ui';
 
-function SearchField({ label, icon, children }: { label: string; icon: IconName; children: React.ReactNode }) {
+/** One tappable row of the search card: icon, small label, value, chevron. */
+function SearchRow({ label, icon, children, chevron = true }: { label: string; icon: IconName; children: React.ReactNode; chevron?: boolean }) {
   return (
-    <label className="flex min-w-0 flex-col gap-1 rounded-input bg-canvas px-3 py-2.5 lg:rounded-none lg:border-r lg:border-line lg:bg-transparent lg:px-4 lg:py-2 lg:last-of-type:border-r-0">
-      <span className="flex items-center gap-1.5 text-[9px] font-medium uppercase tracking-[1px] text-muted">
-        <Icon name={icon} className="!h-3.5 !w-3.5 text-brand" />
-        {label}
+    <label className="relative flex items-center gap-4 border-b border-line px-1 py-3.5 last:border-b-0 lg:border-b-0 lg:border-r lg:px-4">
+      <Icon name={icon} className="!h-6 !w-6 shrink-0 text-brand" />
+      <span className="min-w-0 flex-1">
+        <span className="block text-[11px] font-medium uppercase tracking-[1.6px] text-muted">{label}</span>
+        {children}
       </span>
-      {children}
+      {chevron ? <Icon name="chevron" className="!h-5 !w-5 shrink-0 text-muted lg:hidden" /> : null}
     </label>
   );
 }
 
-const selectClass =
-  'w-full appearance-none bg-transparent py-1 text-base md:text-[14px] font-[550] text-ink focus:outline-none bg-[url("data:image/svg+xml,%3Csvg xmlns=%27http://www.w3.org/2000/svg%27 viewBox=%270 0 24 24%27 fill=%27none%27 stroke=%27%23283340%27 stroke-width=%272%27%3E%3Cpath d=%27m6 9 6 6 6-6%27/%3E%3C/svg%3E")] bg-[length:16px] bg-[right_center] bg-no-repeat pr-6';
+const controlClass =
+  'mt-0.5 w-full appearance-none bg-transparent text-[17px] font-semibold text-ink focus:outline-none [color-scheme:dark] lg:text-[15px]';
 
 /**
- * The home search. The total shown under it is looked up from the server's
- * quote table for the chosen hours — the component never multiplies.
+ * The Explorar search. The total under it is looked up in the server's quote
+ * table for the chosen hours — the component never multiplies.
  */
 export function LessonSearch({ defaultDate, quotes }: { defaultDate: string; quotes: readonly QuoteRow[] }) {
   const [hours, setHours] = useState(2);
@@ -38,92 +39,167 @@ export function LessonSearch({ defaultDate, quotes }: { defaultDate: string; quo
     <>
       <form
         action="/aluno/reservar"
-        className="relative z-10 -mt-6 mx-2 grid grid-cols-2 gap-2 rounded-search border border-[#ecf0f7] bg-surface p-3 shadow-search lg:mx-0 lg:mt-4 lg:grid-cols-[1fr_1fr_1.1fr_1fr_auto_auto] lg:items-center lg:gap-1 lg:p-3"
+        className="glass relative z-10 -mt-4 rounded-[26px] border border-line px-4 pb-4 pt-1 shadow-search lg:mt-6 lg:grid lg:grid-cols-[1fr_1fr_1.1fr_1fr_auto] lg:items-center lg:p-3"
       >
-        <SearchField label="Sua praia" icon="pin">
-          <select name="praia" className={selectClass} defaultValue="prea">
+        <SearchRow label="Sua praia" icon="pin">
+          <select name="praia" className={controlClass} defaultValue="prea">
             {Object.entries(BEACH_LABELS).map(([id, label]) => (
-              <option key={id} value={id}>
-                {label}
-              </option>
+              <option key={id} value={id}>{label}</option>
             ))}
           </select>
-        </SearchField>
-        <SearchField label="Qual dia?" icon="calendar">
-          <input name="dia" type="date" defaultValue={defaultDate} className="w-full bg-transparent py-1 text-base font-[550] focus:outline-none md:text-[14px]" />
-        </SearchField>
-        <SearchField label="Seu momento no kite" icon="kite">
-          <select name="nivel" className={selectClass} defaultValue="first_time">
+        </SearchRow>
+        <SearchRow label="Qual dia?" icon="calendar" chevron={false}>
+          <input name="dia" type="date" defaultValue={defaultDate} min={defaultDate} className={controlClass} />
+        </SearchRow>
+        <SearchRow label="Seu momento no kite" icon="kite">
+          <select name="nivel" className={controlClass} defaultValue="first_time">
             {Object.entries(LEVEL_LABELS).map(([id, label]) => (
-              <option key={id} value={id}>
-                {label}
-              </option>
+              <option key={id} value={id}>{label}</option>
             ))}
           </select>
-        </SearchField>
-        <SearchField label="Meu idioma" icon="globe">
-          <select name="idioma" className={selectClass} defaultValue={LANGUAGES[0]}>
+        </SearchRow>
+        <SearchRow label="Meu idioma" icon="globe">
+          <select name="idioma" className={controlClass} defaultValue={LANGUAGES[0]}>
             {LANGUAGES.map((language) => (
               <option key={language}>{language}</option>
             ))}
           </select>
-        </SearchField>
-        <div className="col-span-2 flex items-center justify-between gap-1 px-1 py-1 lg:col-span-1 lg:flex-col lg:items-start lg:px-4 lg:py-2">
-          <span className="flex items-center gap-1.5 text-[9px] font-medium uppercase tracking-[1px] text-muted">
-            <Icon name="clock" className="!h-3.5 !w-3.5 text-brand" />
-            Quantas horas
-          </span>
-          <HoursStepper value={hours} onChange={setHours} min={MIN_HOURS} max={MAX_HOURS} />
-          <input type="hidden" name="horas" value={hours} />
+        </SearchRow>
+
+        <div className="flex items-center gap-4 px-1 py-3.5 lg:hidden">
+          <Icon name="clock" className="!h-6 !w-6 shrink-0 text-brand" />
+          <span className="flex-1 text-[11px] font-medium uppercase tracking-[1.6px] text-muted">Quantas horas?</span>
+          <Stepper hours={hours} onChange={setHours} />
         </div>
-        <button type="submit" className={buttonClass('primary', 'md', 'col-span-2 !rounded-[13px] lg:col-span-1 lg:ml-2')}>
+        <input type="hidden" name="horas" value={hours} />
+
+        <div className="hidden items-center gap-3 px-4 lg:flex">
+          <Stepper hours={hours} onChange={setHours} />
+        </div>
+
+        <button type="submit" className={buttonClass('primary', 'md', 'mt-2 w-full !min-h-14 text-[16px] lg:col-span-5 lg:mt-3')}>
           Encontrar minha aula
-          <Icon name="arrow" className="!h-[18px] !w-[18px]" />
+          <Icon name="arrow" className="!h-5 !w-5" />
         </button>
       </form>
 
-      <div className="mt-4 flex items-start gap-3 rounded-search border border-line bg-brand-wash px-4 py-3.5 text-[12px]">
-        <Icon name="clock" className="!h-[18px] !w-[18px] text-[#7b8ec7]" />
-        <p className="text-muted">
-          <strong className="tabular block font-[550] text-brand">
-            {quote ? `${hours}h × ${formatMoney(quote.hourly_rate_cents)}/hora = ${formatMoney(quote.total_cents)}` : 'Valores indisponíveis no momento'}
+      <ul className="mt-5 grid grid-cols-3 divide-x divide-line text-[12px] leading-tight text-label">
+        {[
+          ['shield', 'Instrutores aprovados'],
+          ['users', 'Para todos os níveis'],
+          ['clock', 'Horas flexíveis'],
+        ].map(([icon, text]) => (
+          <li key={text} className="flex items-center justify-center gap-2 px-2">
+            <Icon name={icon as IconName} className="!h-6 !w-6 shrink-0 text-label" />
+            <span>{text}</span>
+          </li>
+        ))}
+      </ul>
+
+      <Link
+        href={`/aluno/reservar?horas=${hours}`}
+        className="press mt-6 flex items-center gap-4 rounded-[20px] border border-line bg-surface px-4 py-4"
+      >
+        <Icon name="clock" className="!h-8 !w-8 shrink-0 text-brand" />
+        <span className="min-w-0 flex-1">
+          <strong className="tabular block text-[16px] font-semibold text-ink">
+            {quote ? (
+              <>
+                {hours}h × {formatMoney(quote.hourly_rate_cents)}/hora = <span className="text-brand">{formatMoney(quote.total_cents)}</span>
+              </>
+            ) : (
+              'Valores indisponíveis no momento'
+            )}
           </strong>
-          Você escolhe as horas. O total é calculado automaticamente.
-        </p>
-      </div>
+          <span className="text-[12px] text-muted">Você escolhe as horas. O total é calculado automaticamente.</span>
+        </span>
+        <Icon name="chevron" className="!h-5 !w-5 text-muted" />
+      </Link>
     </>
   );
 }
 
-export function PathCard({
-  tag,
-  title,
-  body,
-  image,
-}: {
+function Stepper({ hours, onChange }: { hours: number; onChange: (next: number) => void }) {
+  return (
+    <div className="flex items-center gap-1 rounded-full bg-sand p-1">
+      <button
+        type="button"
+        aria-label="Menos uma hora"
+        disabled={hours <= MIN_HOURS}
+        onClick={() => onChange(hours - 1)}
+        className="press grid h-10 w-10 place-items-center rounded-full bg-line text-ink disabled:opacity-40"
+      >
+        <Icon name="minus" className="!h-5 !w-5" />
+      </button>
+      <output className="tabular min-w-[78px] text-center text-[22px] font-semibold text-ink" aria-live="polite">
+        {hours}
+        <span className="ml-1 text-[14px] font-normal text-label">horas</span>
+      </output>
+      <button
+        type="button"
+        aria-label="Mais uma hora"
+        disabled={hours >= MAX_HOURS}
+        onClick={() => onChange(hours + 1)}
+        className="press grid h-10 w-10 place-items-center rounded-full bg-brand text-white disabled:opacity-40"
+      >
+        <Icon name="plus" className="!h-5 !w-5" />
+      </button>
+    </div>
+  );
+}
+
+export interface PathItem {
   tag: string;
   title: string;
   body: string;
   image: string;
-}) {
+  position: string;
+  level: string;
+}
+
+/** Full-photo cards in a snapping rail on phones, a 3-column grid on desktop. */
+export function PathRail({ items }: { items: readonly PathItem[] }) {
+  const [index, setIndex] = useState(0);
   return (
-    <article className="flex flex-col overflow-hidden rounded-card border border-line bg-surface shadow-card">
-      <div className="relative h-44 bg-cover bg-center" style={{ backgroundImage: `url(${image})` }}>
-        <span className="absolute left-3 top-3 rounded-full bg-white px-2.5 py-1 text-[10px] font-medium text-ink">{tag}</span>
+    <>
+      <ul
+        className="snap-rail -mx-4 flex gap-3 overflow-x-auto px-4 pb-1 md:mx-0 md:grid md:grid-cols-3 md:overflow-visible md:px-0"
+        onScroll={(event) => {
+          const rail = event.currentTarget;
+          const card = rail.firstElementChild as HTMLElement | null;
+          if (card) setIndex(Math.round(rail.scrollLeft / (card.offsetWidth + 12)));
+        }}
+      >
+        {items.map((item, i) => (
+          <li key={item.title} className="w-[78%] shrink-0 md:w-auto">
+            <Link
+              href={`/aluno/reservar?nivel=${item.level}`}
+              className={`press relative flex h-[420px] flex-col justify-end overflow-hidden rounded-[22px] border ${i === index ? 'border-brand' : 'border-line'} md:border-line`}
+            >
+              <img src={item.image} alt="" className="sunset-photo absolute inset-0 h-full w-full object-cover" style={{ objectPosition: item.position }} />
+              <span className="absolute inset-0 bg-[linear-gradient(180deg,transparent_25%,#08101ee6_68%,#08101e_100%)]" aria-hidden="true" />
+              <span className="absolute left-4 top-4 flex items-center gap-1.5 rounded-full bg-[#fff3e8] px-3 py-1.5 text-[12px] font-semibold text-[#1b2433]">
+                <Icon name="chart" className="!h-3.5 !w-3.5" /> {item.tag}
+              </span>
+              <span className="relative p-5">
+                <strong className="block text-[24px] font-bold leading-[1.1] text-white">{item.title}</strong>
+                <span className="mt-2 block text-[14px] leading-snug text-[#cfd6e1]">{item.body}</span>
+                <span className="mt-5 flex items-center gap-3 text-[14px] font-semibold text-brand">
+                  <span className="grid h-11 w-11 place-items-center rounded-full bg-brand text-white">
+                    <Icon name="arrow" className="!h-5 !w-5" />
+                  </span>
+                  Escolher minhas horas
+                </span>
+              </span>
+            </Link>
+          </li>
+        ))}
+      </ul>
+      <div className="mt-4 flex justify-center gap-2 md:hidden" aria-hidden="true">
+        {items.map((item, i) => (
+          <span key={item.title} className={`h-2 rounded-full transition-all ${i === index ? 'w-5 bg-brand' : 'w-2 bg-line-ghost'}`} />
+        ))}
       </div>
-      <div className="flex flex-1 flex-col p-5">
-        <h3 className="text-[16px]">{title}</h3>
-        <p className="mt-1.5 flex-1 text-[12px] leading-relaxed text-muted">{body}</p>
-        <Link href="/aluno/reservar" className="mt-4 flex items-center justify-between border-t border-line pt-4">
-          <span>
-            <strong className="block text-[13px] font-[550] text-brand">Escolher minhas horas</strong>
-            <span className="text-[10px] text-muted">Você define a duração</span>
-          </span>
-          <span className="grid h-9 w-9 place-items-center rounded-full bg-brand-soft text-brand">
-            <Icon name="arrow" className="!h-4 !w-4" />
-          </span>
-        </Link>
-      </div>
-    </article>
+    </>
   );
 }
