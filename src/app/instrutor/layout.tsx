@@ -27,6 +27,8 @@ export default async function InstructorLayout({ children }: { children: React.R
       signOut={signOut}
       areas={areaLinksFor(viewer.role)}
       workspace="ESPAÇO DO INSTRUTOR"
+      theme="sunset"
+      brandSubtitle="Instrutor"
       nav={NAV}
       tip={{
         icon: 'shield',

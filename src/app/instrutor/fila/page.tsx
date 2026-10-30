@@ -1,7 +1,8 @@
 import type { Metadata } from 'next';
 
+import { AdminTitle, Panel, PhotoTile } from '@/components/admin/kit';
 import { Icon } from '@/components/icon';
-import { Avatar, Badge, Card, EmptyState, PageHeader } from '@/components/ui';
+import { Badge, EmptyState } from '@/components/ui';
 import { requireRole } from '@/lib/auth';
 import { listQueue } from '@/lib/data';
 import { initials } from '@/lib/people';
@@ -20,12 +21,14 @@ export default async function QueuePage() {
   const position = queue.findIndex((row) => row.id === viewer.id) + 1;
   return (
     <>
-      <PageHeader eyebrow="Distribuição de oportunidades" title="Sua prioridade está guardada." lead="Acompanhe sua posição e entenda quando a fila muda." />
-      <div className="grid gap-5 lg:grid-cols-[1.3fr_1fr]">
-        <Card>
-          <div className="mb-3 flex items-center gap-4 rounded-search bg-brand-tint px-5 py-4">
-            <span className="text-[28px] font-semibold text-brand">{position > 0 ? `${position}º` : '—'}</span>
-            <span className="text-[13px] font-[550] text-brand">{position > 0 ? 'Sua posição na fila' : 'Você entra na fila após a aprovação'}</span>
+      <AdminTitle title="Minha prioridade" subtitle="Sua posição na fila e quando ela muda." />
+      <div className="grid gap-4 lg:grid-cols-[1.3fr_1fr]">
+        <Panel>
+          <div className="mb-3 flex items-center gap-4 rounded-[14px] bg-[linear-gradient(120deg,#3a2316,#16223a)] px-5 py-4">
+            <span className="text-[34px] font-bold leading-none text-brand">{position > 0 ? `${position}º` : '—'}</span>
+            <span className="text-[14px] font-medium text-ink">
+              {position > 0 ? 'Sua posição na fila' : 'Você entra na fila após a aprovação'}
+            </span>
           </div>
           {queue.length === 0 ? (
             <EmptyState>Nenhum instrutor aprovado ainda.</EmptyState>
@@ -33,33 +36,32 @@ export default async function QueuePage() {
             <ol className="divide-y divide-line">
               {queue.map((row, index) => (
                 <li key={row.id} className="flex items-center gap-3 py-3">
-                  <span className="tabular w-6 text-[13px] font-[550] text-muted">{index + 1}º</span>
-                  <Avatar initials={initials(row.profile?.full_name)} size={32} />
+                  <span className="tabular w-7 text-[14px] font-semibold text-muted">{index + 1}º</span>
+                  <PhotoTile initials={initials(row.profile?.full_name)} size={40} />
                   <div className="min-w-0 flex-1">
-                    <p className="truncate text-[13px] font-[550]">
+                    <p className="truncate text-[14px] font-medium text-ink">
                       {row.profile?.full_name}
-                      {row.id === viewer.id ? <span className="font-normal text-muted"> · você</span> : null}
+                      {row.id === viewer.id ? <span className="font-normal text-brand"> · você</span> : null}
                     </p>
-                    <p className="text-[11px] text-muted">{row.beaches.map((b) => b.name).join(' e ') || '—'}</p>
+                    <p className="truncate text-[12px] text-muted">{row.beaches.map((b) => b.name).join(', ') || '—'}</p>
                   </div>
                   <Badge>Disponível</Badge>
                 </li>
               ))}
             </ol>
           )}
-        </Card>
-        <Card className="self-start">
-          <h2 className="text-[16px]">O que muda minha posição?</h2>
-          <ul className="mt-3 grid gap-3">
+        </Panel>
+        <Panel title="O que muda minha posição?" className="self-start">
+          <ul className="grid gap-3">
             {RULES.map(([question, answer]) => (
-              <li key={question} className="flex gap-2.5 text-[12px]">
-                <Icon name="check" className="!h-4 !w-4 text-brand" />
-                <span><strong className="font-[550]">{question}</strong> <span className="text-muted">{answer}</span></span>
+              <li key={question} className="flex gap-2.5 text-[13px]">
+                <Icon name="check" className="!h-4 !w-4 shrink-0 text-brand" />
+                <span><strong className="font-semibold text-ink">{question}</strong> <span className="text-muted">{answer}</span></span>
               </li>
             ))}
           </ul>
-          <p className="mt-4 text-[12px] text-muted">Pedidos só chegam para horários livres na sua agenda e para as praias e idiomas do seu perfil.</p>
-        </Card>
+          <p className="mt-4 text-[12px] text-muted">Pedidos só chegam para horários livres e para as praias e idiomas do seu perfil.</p>
+        </Panel>
       </div>
     </>
   );

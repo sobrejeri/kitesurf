@@ -2,7 +2,7 @@ import type { Metadata } from 'next';
 
 import { recordMeeting, startMeeting } from '@/app/actions/instructor';
 import { ActionForm } from '@/components/action-form';
-import { Avatar, Badge, Card, EmptyState, Eyebrow, Field, Note, inputClass, textareaClass } from '@/components/ui';
+import { Avatar, Badge, Card, EmptyState, Field, Note, inputClass, textareaClass } from '@/components/ui';
 import { requireRole } from '@/lib/auth';
 import { LEVEL_LABELS, MEETING_STATUS_LABELS, listBookingsForInstructor } from '@/lib/data';
 import { formatDateLong, formatMinutes, formatTime } from '@/lib/format';
@@ -20,8 +20,7 @@ export default async function RunLessonPage() {
 
   return (
     <>
-      <Eyebrow>Encontro com o aluno</Eyebrow>
-      <h1 className="mt-2 text-[28px] tracking-[-0.9px] sm:text-[32px]">Realizar e registrar aula</h1>
+      <h1 className="text-[30px] font-bold leading-tight tracking-[-0.8px] text-ink md:text-[34px]">Registrar aula</h1>
       <p className="mt-1 text-[13px] text-muted">Peça o código de presença ao aluno para iniciar. Ao final, registre os minutos realizados.</p>
 
       <div className="mt-6 grid gap-5">

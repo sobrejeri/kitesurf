@@ -2,7 +2,7 @@ import type { Metadata } from 'next';
 
 import { updateInstructorProfile } from '@/app/actions/instructor';
 import { ActionForm } from '@/components/action-form';
-import { Badge, Card, Eyebrow, Field, Note, inputClass } from '@/components/ui';
+import { Badge, Card, Field, Note, inputClass } from '@/components/ui';
 import { LANGUAGES } from '@/data/demo';
 import { requireRole } from '@/lib/auth';
 import { getOwnInstructor, listActiveBeaches } from '@/lib/data';
@@ -19,9 +19,8 @@ export default async function InstructorProfileFormPage() {
   const options = [...active, ...(me?.beaches.filter((beach) => !active.some((a) => a.id === beach.id)) ?? [])];
   return (
     <>
-      <Eyebrow>Faça parte da rede</Eyebrow>
-      <div className="mt-2 flex flex-wrap items-center gap-3">
-        <h1 className="text-[28px] tracking-[-0.9px] sm:text-[32px]">Seu perfil profissional</h1>
+      <div className="flex flex-wrap items-center gap-3">
+        <h1 className="text-[30px] font-bold leading-tight tracking-[-0.8px] text-ink md:text-[34px]">Perfil profissional</h1>
         {me ? <Badge tone={me.status === 'approved' ? 'success' : 'warning'}>{STATUS[me.status]}</Badge> : null}
       </div>
       <p className="mt-1 max-w-xl text-[13px] text-muted">Praias e idiomas definem quais pedidos chegam até você.</p>

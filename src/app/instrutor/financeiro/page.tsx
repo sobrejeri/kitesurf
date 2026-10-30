@@ -1,16 +1,16 @@
 import type { Metadata } from 'next';
 
-import { Card, EmptyState, Note, PageHeader, StatCard } from '@/components/ui';
+import { AdminTitle, BarChart, Metric, Panel } from '@/components/admin/kit';
+import { BOOKING_STATUS } from '@/components/admin/labels';
+import { Badge, EmptyState, Note } from '@/components/ui';
 import { requireRole } from '@/lib/auth';
-import { BOOKING_STATUS_LABELS, listBookingsForInstructor } from '@/lib/data';
+import { listBookingsForInstructor } from '@/lib/data';
+import { dayKey, lastDays } from '@/lib/dates';
 import { formatMoney } from '@/lib/format';
 
 export const metadata: Metadata = { title: 'Meu financeiro' };
 
-/**
- * Every amount here is a booking's frozen snapshot, computed by the database
- * when the booking was created. The page only adds them up for display.
- */
+/** Each booking's frozen snapshot, summed for display; nothing is recomputed. */
 export default async function InstructorFinancePage() {
   const viewer = await requireRole(['instructor'], '/instrutor/financeiro');
   const bookings = (await listBookingsForInstructor(viewer.id)).filter(
@@ -18,58 +18,48 @@ export default async function InstructorFinancePage() {
   );
   const gross = bookings.reduce((sum, b) => sum + b.total_cents, 0);
   const net = bookings.reduce((sum, b) => sum + b.instructor_net_cents, 0);
-  const commission = gross - net;
+  const perDay = lastDays(7).map((day) => ({
+    label: day.label.slice(0, 5),
+    value: bookings.filter((b) => dayKey(b.created_at) === day.key).reduce((sum, b) => sum + b.instructor_net_cents, 0),
+  }));
 
   return (
     <>
-      <PageHeader title="Meu financeiro" />
+      <AdminTitle title="Meu financeiro" subtitle="Valores das suas reservas confirmadas." />
       <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
-        <StatCard highlight label="Líquido previsto" value={formatMoney(net)} hint="Após comissão da plataforma" icon="wallet" />
-        <StatCard label="Repasse registrado" value={formatMoney(0)} hint="Repasses ainda não integrados" icon="check" />
-        <StatCard label="Vendas brutas" value={formatMoney(gross)} hint="Pago pelos alunos" icon="chart" />
-        <StatCard label="Reservas confirmadas" value={String(bookings.length)} hint="Vendas pelo aplicativo" icon="book" />
+        <Metric label="Líquido previsto" value={formatMoney(net)} hint="Após comissão" hintTone="success" icon="wallet" tone="green" />
+        <Metric label="Vendas brutas" value={formatMoney(gross)} hint="Pago pelos alunos" icon="chart" tone="blue" />
+        <Metric label="Comissão da plataforma" value={formatMoney(gross - net)} hint="Fixada em cada reserva" icon="sliders" tone="purple" />
+        <Metric label="Reservas" value={String(bookings.length)} hint="Confirmadas" icon="book" tone="orange" />
       </div>
 
-      <div className="mt-5 grid gap-5 lg:grid-cols-[1fr_1.4fr]">
-        <Card>
-          <h2 className="text-[16px]">Entenda o valor das reservas</h2>
-          <dl className="tabular mt-4 grid gap-3 text-[13px]">
-            <div className="flex justify-between"><dt className="text-muted">Vendas brutas</dt><dd className="font-[550]">{formatMoney(gross)}</dd></div>
-            <div className="flex justify-between"><dt className="text-muted">Comissão da plataforma</dt><dd className="font-[550] text-danger">− {formatMoney(commission)}</dd></div>
-            <div className="flex justify-between border-t border-line pt-3"><dt className="font-[550]">Líquido previsto</dt><dd className="text-[17px] font-semibold text-brand">{formatMoney(net)}</dd></div>
-          </dl>
-          <Note className="mt-4">A comissão de cada reserva é fixada quando o aluno reserva. Repasses reais dependem da integração de pagamento.</Note>
-        </Card>
-        <Card className="!p-0">
-          <h2 className="px-5 pt-5 text-[16px] sm:px-6">Extrato de reservas</h2>
-          {bookings.length === 0 ? (
-            <div className="p-5"><EmptyState>Nenhuma reserva confirmada ainda.</EmptyState></div>
-          ) : (
-            <div className="relative mt-4 overflow-x-auto">
-              <table className="w-full min-w-[520px] text-left">
-                <thead>
-                  <tr className="bg-[#fafbfe] text-[10px] uppercase tracking-[.5px] text-quiet">
-                    {['Reserva', 'Aluno', 'Bruto', 'Líquido', 'Situação'].map((head) => (
-                      <th key={head} className="px-5 py-3 font-medium">{head}</th>
-                    ))}
-                  </tr>
-                </thead>
-                <tbody className="tabular text-[12px] text-[#596b87]">
-                  {bookings.map((booking) => (
-                    <tr key={booking.id} className="border-t border-[#eef1f6]">
-                      <td className="px-5 py-4 font-[550] text-brand">{booking.code}</td>
-                      <td className="px-5 py-4">{booking.student?.full_name}</td>
-                      <td className="px-5 py-4">{formatMoney(booking.total_cents)}</td>
-                      <td className="px-5 py-4">{formatMoney(booking.instructor_net_cents)}</td>
-                      <td className="px-5 py-4">{BOOKING_STATUS_LABELS[booking.status]}</td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          )}
-        </Card>
-      </div>
+      <Panel title="Líquido por dia da reserva" action={<span className="text-[12px] text-muted">Últimos 7 dias</span>} className="mt-4">
+        <BarChart points={perDay} describe={formatMoney} />
+      </Panel>
+
+      <Panel title="Extrato de reservas" className="mt-4">
+        {bookings.length === 0 ? (
+          <EmptyState>Nenhuma reserva confirmada ainda.</EmptyState>
+        ) : (
+          <ul className="grid gap-2">
+            {bookings.map((b) => (
+              <li key={b.id} className="flex items-center justify-between gap-3 rounded-[14px] border border-line px-4 py-3">
+                <span className="min-w-0">
+                  <strong className="block truncate text-[14px] font-semibold text-ink">
+                    #{b.code.replace('VNT-', '')} · {b.student?.full_name ?? 'Aluno'}
+                  </strong>
+                  <span className="tabular text-[12px] text-muted">Bruto {formatMoney(b.total_cents)}</span>
+                </span>
+                <span className="text-right">
+                  <strong className="tabular block text-[15px] font-bold text-brand">{formatMoney(b.instructor_net_cents)}</strong>
+                  <Badge tone={BOOKING_STATUS[b.status].tone}>{BOOKING_STATUS[b.status].label}</Badge>
+                </span>
+              </li>
+            ))}
+          </ul>
+        )}
+      </Panel>
+      <Note className="mt-4">Repasses reais dependem da integração de pagamento.</Note>
     </>
   );
 }
