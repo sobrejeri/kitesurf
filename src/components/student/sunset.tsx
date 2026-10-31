@@ -95,12 +95,12 @@ export function StudentHero({
       <img
         src={photo.src}
         alt=""
-        className="sunset-photo absolute inset-0 h-full w-full object-cover"
+        className={`sunset-photo absolute inset-0 h-full w-full ${compact && image === 'lesson' ? 'object-contain object-top' : 'object-cover'}`}
         style={{ objectPosition: photo.position }}
       />
-      <div className="sunset-veil absolute inset-0" aria-hidden="true" />
+      <div className={`sunset-veil absolute inset-0 ${compact && image === 'lesson' ? '!bg-gradient-to-b !from-[#08283b]/35 !via-transparent !to-[#08283b]/85' : ''}`} aria-hidden="true" />
       <div
-        className={`relative px-4 md:px-10 ${compact ? 'pb-6 pt-[calc(env(safe-area-inset-top)+84px)] md:py-10' : 'pb-8 pt-[calc(env(safe-area-inset-top)+96px)] md:py-14'}`}
+        className={`relative px-4 md:px-10 ${compact ? 'min-h-[340px] pb-8 pt-[calc(env(safe-area-inset-top)+155px)] md:min-h-[320px] md:py-16' : 'pb-8 pt-[calc(env(safe-area-inset-top)+96px)] md:py-14'}`}
       >
         {top ? <div className="mb-6">{top}</div> : null}
         {eyebrow ? (
