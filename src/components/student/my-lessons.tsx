@@ -111,7 +111,7 @@ export function MyLessons({ lessons }: { lessons: readonly LessonCard[] }) {
           <span className="absolute inset-0 bg-[linear-gradient(90deg,var(--color-surface)_45%,transparent_100%)]" aria-hidden="true" />
           <div className="relative max-w-[78%]">
             <h2 className="text-[26px] font-bold leading-tight text-ink">
-              Pronto para o <span className="text-brand">mar?</span>
+              Pronto para o mar?
             </h2>
             <p className="mt-1 text-[14px] text-label">Alguns detalhes para curtir cada minuto da sua aula.</p>
             <ul className="mt-4 grid gap-3">

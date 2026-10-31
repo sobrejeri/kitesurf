@@ -125,15 +125,17 @@ export function LessonSearch({
         </button>
       </form>
 
-      <ul className="mt-5 grid grid-cols-3 divide-x divide-line-ghost text-[12px] leading-tight text-ink">
+      <ul className="mt-4 grid grid-cols-3 divide-x divide-line rounded-[22px] border border-line bg-surface py-4 shadow-card">
         {[
           ['shield', 'Instrutores aprovados'],
-          ['users', 'Para todos os níveis'],
+          ['users', 'Todos os níveis'],
           ['clock', 'Horários flexíveis'],
         ].map(([icon, text]) => (
-          <li key={text} className="flex flex-col items-center gap-1.5 px-2 text-center">
-            <Icon name={icon as IconName} className="!h-6 !w-6 text-ink" />
-            <span>{text}</span>
+          <li key={text} className="flex flex-col items-center gap-2 px-2 text-center">
+            <span className="grid h-10 w-10 place-items-center rounded-full bg-brand-soft text-[#ff6a13]" aria-hidden="true">
+              <Icon name={icon as IconName} className="!h-5 !w-5" />
+            </span>
+            <span className="text-[12px] font-semibold leading-tight text-ink">{text}</span>
           </li>
         ))}
       </ul>
@@ -204,8 +206,8 @@ export function PathRail({ items }: { items: readonly PathItem[] }) {
               <span className="absolute left-4 top-4 flex items-center gap-1.5 rounded-full bg-[#fff3e8] px-3 py-1.5 text-[12px] font-semibold text-[#1b2433]">
                 <Icon name="chart" className="!h-3.5 !w-3.5" /> {item.tag}
               </span>
-              <span className="relative p-5">
-                <strong className="block text-[24px] font-bold leading-[1.1] text-white">{item.title}</strong>
+              <div className="relative p-5">
+                <h3 className="text-[23px] leading-[1.1] text-white">{item.title}</h3>
                 <span className="mt-2 block text-[14px] leading-snug text-[#cfd6e1]">{item.body}</span>
                 <span className="text-sunrise mt-5 flex items-center gap-3 text-[14px] font-semibold">
                   <span className="grid h-11 w-11 place-items-center rounded-full bg-brand text-white">
@@ -213,7 +215,7 @@ export function PathRail({ items }: { items: readonly PathItem[] }) {
                   </span>
                   Escolher minhas horas
                 </span>
-              </span>
+              </div>
             </Link>
           </li>
         ))}

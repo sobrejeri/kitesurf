@@ -85,6 +85,7 @@
 
   --font-sans: var(--font-dm-sans), system-ui, sans-serif;
   --font-script: var(--font-caveat), cursive;
+  --font-display: var(--font-montserrat), var(--font-dm-sans), system-ui, sans-serif;
 }
 
 :root {
@@ -401,6 +402,13 @@ body:has(.theme-beach),
 body:has(.theme-beach) {
   background: var(--color-canvas);
   color: var(--color-ink);
+}
+
+/* Headings in the student app use the display face. */
+.theme-beach :is(h1, h2, h3) {
+  font-family: var(--font-display);
+  font-weight: 800;
+  letter-spacing: -0.02em;
 }
 
 /* Orange text on light surfaces needs a darker orange to be readable. */

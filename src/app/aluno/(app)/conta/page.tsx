@@ -69,7 +69,7 @@ export default async function AccountPage() {
           <div className="relative">
             <Icon name="users" className="!h-8 !w-8 text-brand" />
             <h2 className="mt-2 text-[24px] font-bold leading-tight text-ink">
-              Precisa de <span className="text-brand">uma mão?</span>
+              Precisa de uma mão?
             </h2>
             <p className="mt-1 text-[14px] text-label">Conte com a gente para sua aula.</p>
             <p className="mt-2 text-[14px] font-semibold text-brand">Menos pressa. Mais mar.</p>

@@ -111,8 +111,9 @@ export function StudentHero({
         ) : null}
         <HighlightTitle
           text={title}
-          highlight={highlight}
-          highlightClass={script ? 'text-sunrise font-script text-[1.35em] font-bold leading-[0.8] tracking-normal' : 'text-sunrise'}
+          // One colour per title; only the handwritten word stands out.
+          highlight={script ? highlight : undefined}
+          highlightClass="text-sunrise font-script text-[1.35em] font-bold leading-[0.8] tracking-normal"
           className={`mt-2 max-w-[14ch] font-bold leading-[1.05] tracking-[-1.2px] text-white ${compact ? 'text-[30px] md:text-[40px]' : 'text-[34px] md:text-[52px]'}`}
         />
         {lead ? <p className="mt-3 max-w-[30ch] text-[15px] leading-snug text-[#dfe5ee]">{lead}</p> : null}
