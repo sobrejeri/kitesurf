@@ -7,6 +7,7 @@ import { LANGUAGES, MAX_HOURS } from '@/data/demo';
 import { LEVEL_LABELS, type Beach, type LessonLevel, type QuoteRow } from '@/lib/data-labels';
 import { formatMoney } from '@/lib/format';
 
+import { Icon } from '../icon';
 import { Button, Card, Field, Note, inputClass } from '../ui';
 
 interface Meeting {
@@ -48,6 +49,7 @@ export function LessonBuilder({
     { id: 1, date: defaults.date, start: '09:00', hours: defaults.hours },
   ]);
   const [open, setOpen] = useState(1);
+  const [editing, setEditing] = useState(false);
 
   const totalHours = meetings.reduce((sum, meeting) => sum + meeting.hours, 0);
   const quote = quotes.find((row) => row.hours === totalHours);
@@ -80,35 +82,51 @@ export function LessonBuilder({
       <div className="grid gap-5 lg:grid-cols-[1.5fr_1fr]">
         {step === 1 ? (
           <div className="grid gap-5">
-            <Card>
-              <h2 className="text-[16px]">Idioma, nível e praia</h2>
-              <div className="mt-4 grid gap-4 sm:grid-cols-3">
-                <Field label="Praia" icon="pin">
-                  <select className={inputClass} value={beachId} onChange={(e) => setBeachId(e.target.value)}>
-                    {beaches.map((beach) => (
-                      <option key={beach.id} value={beach.id}>{beach.name}</option>
-                    ))}
-                  </select>
-                </Field>
-                <Field label="Seu momento no kite" icon="kite">
-                  <select className={inputClass} value={level} onChange={(e) => setLevel(e.target.value as LessonLevel)}>
-                    {Object.entries(LEVEL_LABELS).map(([id, label]) => (
-                      <option key={id} value={id}>{label}</option>
-                    ))}
-                  </select>
-                </Field>
-                <Field label="Idioma" icon="globe">
-                  <select className={inputClass} value={language} onChange={(e) => setLanguage(e.target.value)}>
-                    {LANGUAGES.map((item) => (
-                      <option key={item}>{item}</option>
-                    ))}
-                  </select>
-                </Field>
+            {/* Already chosen on Explorar: shown as a summary, editable on demand. */}
+            <Card className="!p-4">
+              <div className="flex items-center gap-3">
+                <span className="grid h-10 w-10 shrink-0 place-items-center rounded-full bg-brand-soft text-[#ff6a13]" aria-hidden="true">
+                  <Icon name="pin" className="!h-5 !w-5" />
+                </span>
+                <p className="min-w-0 flex-1 text-[14px] leading-snug">
+                  <strong className="block font-semibold text-ink">{beachName}</strong>
+                  <span className="text-muted">{LEVEL_LABELS[level]} · {language}</span>
+                </p>
+                <button
+                  type="button"
+                  onClick={() => setEditing(!editing)}
+                  aria-expanded={editing}
+                  className="press flex items-center gap-1.5 rounded-full border border-line px-3.5 py-2 text-[13px] font-semibold text-brand"
+                >
+                  <Icon name="edit" className="!h-4 !w-4" />
+                  {editing ? 'Pronto' : 'Editar'}
+                </button>
               </div>
-              <p className="mt-4 rounded-search border border-line px-4 py-3 text-[12px] text-muted">
-                <strong className="block text-[13px] font-[550] text-ink">Buscar um instrutor pela fila</strong>
-                O primeiro instrutor compatível e livre nos seus horários recebe a aula.
-              </p>
+              {editing ? (
+                <div className="mt-4 grid gap-4 border-t border-line pt-4 sm:grid-cols-3">
+                  <Field label="Praia" icon="pin">
+                    <select className={inputClass} value={beachId} onChange={(e) => setBeachId(e.target.value)}>
+                      {beaches.map((beach) => (
+                        <option key={beach.id} value={beach.id}>{beach.name}</option>
+                      ))}
+                    </select>
+                  </Field>
+                  <Field label="Nível" icon="kite">
+                    <select className={inputClass} value={level} onChange={(e) => setLevel(e.target.value as LessonLevel)}>
+                      {Object.entries(LEVEL_LABELS).map(([id, label]) => (
+                        <option key={id} value={id}>{label}</option>
+                      ))}
+                    </select>
+                  </Field>
+                  <Field label="Idioma" icon="globe">
+                    <select className={inputClass} value={language} onChange={(e) => setLanguage(e.target.value)}>
+                      {LANGUAGES.map((item) => (
+                        <option key={item}>{item}</option>
+                      ))}
+                    </select>
+                  </Field>
+                </div>
+              ) : null}
             </Card>
 
             <Card>
