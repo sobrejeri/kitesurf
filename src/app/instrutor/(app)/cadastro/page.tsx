@@ -1,12 +1,11 @@
 import type { Metadata } from 'next';
-import Image from 'next/image';
 
 import { updateInstructorProfile } from '@/app/actions/instructor';
-import { saveInstructorPersonal } from '@/app/actions/instructor-profile';
+import { saveInstructorPersonal, uploadInstructorAvatar } from '@/app/actions/instructor-profile';
 import { ActionForm } from '@/components/action-form';
 import { Icon } from '@/components/icon';
 import { InstructorMultiSelect } from '@/components/instructor/instructor-multi-select';
-import { InstructorAvatarForm } from '@/components/instructor/avatar-form';
+import { ProfilePhotoPicker } from '@/components/profile-photo-picker';
 import { InstructorPayoutForm } from '@/components/instructor/payout-form';
 import { Badge, Card, Field, Note, inputClass, textareaClass } from '@/components/ui';
 import { LANGUAGES } from '@/data/demo';
@@ -57,7 +56,6 @@ export default async function InstructorProfileFormPage() {
 
   const mine = new Set(me?.beaches.map((beach) => beach.id));
   const options = [...active, ...(me?.beaches.filter((beach) => !active.some((a) => a.id === beach.id)) ?? [])];
-  const initials = viewer.fullName.trim().split(/\s+/).slice(0, 2).map((word) => word.charAt(0)).join('').toUpperCase() || 'IN';
 
   return (
     <div className="mx-auto max-w-4xl pb-10">
@@ -73,20 +71,19 @@ export default async function InstructorProfileFormPage() {
       <div className="grid gap-4">
         <Card className="!p-4 sm:!p-6">
           <div className="flex items-center gap-3">
-            <span className="relative grid h-20 w-20 shrink-0 place-items-center overflow-hidden rounded-[22px] border border-line bg-brand-soft text-[22px] font-extrabold text-brand">
-              {avatarUrl ? <Image src={avatarUrl} alt="Foto atual do instrutor" width={80} height={80} unoptimized className="h-full w-full object-cover" /> : initials}
-            </span>
+            <ProfilePhotoPicker
+              action={uploadInstructorAvatar}
+              photoUrl={avatarUrl}
+              name={viewer.fullName || 'Instrutor'}
+              enabled={privateReady}
+              accent="orange"
+            />
             <div className="min-w-0 flex-1">
               <h2 className="text-[17px] font-bold text-ink">{viewer.fullName || 'Instrutor'}</h2>
               <p className="mt-1 truncate text-[12px] text-muted">{viewer.email}</p>
-              <p className="mt-1 text-[12px] text-muted">{avatarUrl ? 'Foto cadastrada' : 'Adicione uma foto para seu perfil'}</p>
+              <p className="mt-1 text-[12px] text-muted">{avatarUrl ? 'Use o + da foto para atualizar' : 'Toque no círculo para adicionar sua foto'}</p>
             </div>
           </div>
-          {privateReady ? (
-            <InstructorAvatarForm />
-          ) : (
-            <p className="mt-4 text-[12px] text-muted">O envio de foto estará disponível após a atualização do Supabase.</p>
-          )}
         </Card>
 
         <Card className="!p-4 sm:!p-6">

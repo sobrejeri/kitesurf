@@ -1,20 +1,41 @@
 import type { Metadata } from 'next';
 
 import { signOut } from '@/app/actions/auth';
+import { uploadStudentAvatar } from '@/app/actions/student';
 import { Icon } from '@/components/icon';
+import { createSupabaseServerClient } from '@/lib/supabase/server';
 import { ProfileEditor } from '@/components/student/profile-editor';
+import { ProfilePhotoPicker } from '@/components/profile-photo-picker';
 import { StudentHero, SunsetEmpty } from '@/components/student/sunset';
 import { ButtonLink } from '@/components/ui';
 import { requireRole } from '@/lib/auth';
 import { listBookingsForStudent } from '@/lib/data';
 import { formatDateLong, formatMinutes } from '@/lib/format';
-import { initials } from '@/lib/people';
 
 export const metadata: Metadata = { title: 'Meu perfil' };
 
 export default async function AccountPage() {
   const viewer = await requireRole(['student'], '/aluno/conta');
-  const bookings = await listBookingsForStudent(viewer.id);
+  const supabase = await createSupabaseServerClient();
+  const [bookings, avatarRecord] = await Promise.all([
+    listBookingsForStudent(viewer.id),
+    supabase.from('student_private_profiles')
+      .select('avatar_path')
+      .eq('id', viewer.id)
+      .maybeSingle<{ avatar_path: string | null }>(),
+  ]);
+  const avatarReady = !avatarRecord.error;
+  let avatarUrl: string | null = null;
+  if (avatarRecord.data?.avatar_path) {
+    try {
+      const { data, error } = await supabase.storage.from('vento-student-avatars')
+        .createSignedUrl(avatarRecord.data.avatar_path, 60 * 60);
+      if (error) console.warn('[student-profile] Could not retrieve avatar', { message: error.message });
+      avatarUrl = data?.signedUrl ?? null;
+    } catch (error) {
+      console.error('[student-profile] Error while loading avatar', error);
+    }
+  }
   const history = bookings
     .flatMap((booking) => booking.booking_meetings.filter((m) => m.status === 'done'))
     .sort((a, b) => b.starts_at.localeCompare(a.starts_at))
@@ -35,12 +56,17 @@ export default async function AccountPage() {
       <div className="grid gap-4 lg:grid-cols-2">
         <section className="rounded-[22px] border border-line bg-surface p-5">
           <div className="flex flex-wrap items-center gap-4">
-            <span className="grid h-16 w-16 place-items-center rounded-full border-2 border-line-ghost bg-sand text-[20px] font-semibold text-brand" aria-hidden="true">
-              {viewer.fullName ? initials(viewer.fullName) : <Icon name="user" className="!h-7 !w-7 text-label" />}
-            </span>
+            <ProfilePhotoPicker
+              action={uploadStudentAvatar}
+              photoUrl={avatarUrl}
+              name={viewer.fullName || 'Aluno'}
+              accent="cyan"
+              enabled={avatarReady}
+            />
             <div className="min-w-0 flex-1">
               <p className="break-words text-[20px] font-bold leading-tight text-ink">{viewer.fullName || 'Sem nome'}</p>
               <p className="text-[13px] text-muted">{viewer.language} · Aluno</p>
+              <p className="mt-1 text-[12px] text-label">{avatarUrl ? 'Toque no + para trocar a foto' : 'Toque no círculo para adicionar uma foto'}</p>
             </div>
             <ProfileEditor fullName={viewer.fullName} language={viewer.language} />
           </div>

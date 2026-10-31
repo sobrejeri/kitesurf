@@ -1,6 +1,6 @@
 'use client';
 
-import { useActionState, useRef, useState } from 'react';
+import { useActionState, useRef, useState, type ChangeEvent } from 'react';
 import type { ActionState } from '@/app/actions/errors';
 import { Icon } from '@/components/icon';
 
@@ -34,7 +34,7 @@ export function ProfilePhotoPicker({ action, photoUrl, name, accent = 'orange', 
     if (!pending && enabled) inputRef.current?.click();
   }
 
-  function onFileChosen(event: React.ChangeEvent<HTMLInputElement>) {
+  function onFileChosen(event: ChangeEvent<HTMLInputElement>) {
     const file = event.currentTarget.files?.[0];
     if (!file) return;
     let error: string | null = null;
