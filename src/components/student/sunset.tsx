@@ -95,12 +95,12 @@ export function StudentHero({
       <img
         src={photo.src}
         alt=""
-        className={`sunset-photo absolute inset-0 h-full w-full ${compact && image === 'lesson' ? 'object-contain object-top' : 'object-cover'}`}
+        className={`sunset-photo absolute inset-0 h-full w-full ${'object-cover'}`}
         style={{ objectPosition: photo.position }}
       />
-      <div className={`sunset-veil absolute inset-0 ${compact && image === 'lesson' ? '!bg-gradient-to-b !from-[#08283b]/35 !via-transparent !to-[#08283b]/85' : ''}`} aria-hidden="true" />
+      <div className={`sunset-veil absolute inset-0 ${compact && image === 'lesson' ? '!bg-gradient-to-b !from-[#041d32]/40 !via-[#062d48]/45 !to-[#003b59]/95' : ''}`} aria-hidden="true" />
       <div
-        className={`relative px-4 md:px-10 ${compact ? 'min-h-[340px] pb-8 pt-[calc(env(safe-area-inset-top)+155px)] md:min-h-[320px] md:py-16' : 'pb-8 pt-[calc(env(safe-area-inset-top)+96px)] md:py-14'}`}
+        className={`relative px-4 md:px-10 ${compact ? 'min-h-[300px] pb-14 pt-[calc(env(safe-area-inset-top)+105px)] md:min-h-[320px] md:py-16' : 'pb-8 pt-[calc(env(safe-area-inset-top)+96px)] md:py-14'}`}
       >
         {top ? <div className="mb-6">{top}</div> : null}
         {eyebrow ? (
@@ -119,6 +119,7 @@ export function StudentHero({
         {lead ? <p className="mt-3 max-w-[30ch] text-[15px] leading-snug text-[#dfe5ee]">{lead}</p> : null}
         {children ? <div className="mt-5">{children}</div> : null}
       </div>
+      {compact && image === 'lesson' ? <svg className="pointer-events-none absolute bottom-0 left-0 h-[45px] w-full" viewBox="0 0 390 45" preserveAspectRatio="none" aria-hidden="true"><path d="M0 26 C95 0 140 44 232 18 S350 8 390 16 L390 45 L0 45Z" fill="#00b9d5" opacity=".75"/><path d="M0 37 C95 12 153 48 244 30 S342 23 390 29 L390 45 L0 45Z" fill="#f3f8f9"/></svg> : null}
     </section>
   );
 }
