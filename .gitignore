@@ -11,3 +11,6 @@ coverage/
 !.env.example
 
 .DS_Store
+
+# Generated at build by next.config
+public/version.json

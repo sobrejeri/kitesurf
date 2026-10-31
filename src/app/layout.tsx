@@ -3,6 +3,7 @@ import { Caveat, DM_Sans, Montserrat } from 'next/font/google';
 
 import { signOut } from '@/app/actions/auth';
 import { TopBar } from '@/components/shells';
+import { UpdatePrompt } from '@/components/update-prompt';
 import { getViewer } from '@/lib/auth';
 
 import './globals.css';
@@ -43,6 +44,7 @@ export default async function RootLayout({ children }: { children: React.ReactNo
       <body className="min-h-dvh font-sans antialiased">
         <TopBar viewer={viewer ? { name: viewer.fullName || viewer.email || '', role: viewer.role } : null} signOut={signOut} />
         {children}
+        <UpdatePrompt />
       </body>
     </html>
   );

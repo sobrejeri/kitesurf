@@ -443,3 +443,14 @@ body:has(.theme-beach) {
 .text-sunrise {
   color: #ff8a3d;
 }
+
+@keyframes toast-rise {
+  from {
+    opacity: 0;
+    transform: translateY(16px);
+  }
+}
+
+.update-toast {
+  animation: toast-rise 0.3s cubic-bezier(0.2, 0.8, 0.2, 1);
+}
