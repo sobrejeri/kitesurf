@@ -31,7 +31,11 @@ export function ProfilePhotoPicker({ action, photoUrl, name, accent = 'orange', 
   const tone = isOrange ? 'text-[#ff861e]' : 'text-[#00dfed]';
 
   function choosePhoto() {
-    if (!pending && enabled) inputRef.current?.click();
+    if (pending || !enabled || !inputRef.current) return;
+    // Allow picking the same picture again after a failed upload on iOS.
+    inputRef.current.value = '';
+    setValidationError(null);
+    inputRef.current.click();
   }
 
   function onFileChosen(event: ChangeEvent<HTMLInputElement>) {
