@@ -52,6 +52,38 @@ function SectionHead({ icon, title, aside }: { icon: IconName; title: string; as
   );
 }
 
+
+/** Labeled data tile for the student booking review. */
+function ReviewDetail({
+  icon,
+  label,
+  value,
+  wide = false,
+  compact = false,
+}: {
+  icon: IconName;
+  label: string;
+  value: React.ReactNode;
+  wide?: boolean;
+  compact?: boolean;
+}) {
+  return (
+    <div
+      className={[
+        'min-w-0 rounded-[16px] border border-[#176f8c] bg-[#052d48]/85',
+        compact ? 'px-2.5 py-3' : 'px-3.5 py-3.5',
+        wide ? 'col-span-2' : '',
+      ].join(' ')}
+    >
+      <dt className="inline-flex max-w-full items-center gap-1.5 rounded-full bg-[#125776]/75 px-2 py-1 text-[10px] font-bold text-[#abe6ed]">
+        <Icon name={icon} className="!h-3.5 !w-3.5" />
+        <span>{label}</span>
+      </dt>
+      <dd className="mt-2 break-words text-[14px] font-bold leading-snug text-white sm:text-[15px]">{value}</dd>
+    </div>
+  );
+}
+
 /**
  * "Monte sua aula": the student spreads hours over one or more meetings with
  * the same instructor. The estimate is looked up in the server's quote table;
@@ -340,50 +372,136 @@ export function LessonBuilder({
             </Card>
           </div>
         ) : (
-          <Card>
-            <SectionHead icon="check" title="Revise antes de buscar" />
-            <dl className="mt-4 grid gap-3 text-[14px]">
-              <div className="flex justify-between border-b border-line pb-3"><dt className="text-muted">Aula</dt><dd className="font-bold text-ink">Aula particular · {selectedHours}h</dd></div>
-              <div className="flex justify-between gap-3 border-b border-line pb-3"><dt className="text-muted">Preferências</dt><dd className="text-right font-bold text-ink">{language} · {LEVEL_LABELS[level]} · {beachName}</dd></div>
-              <div className="flex justify-between gap-3 border-b border-line pb-3"><dt className="text-muted">Transporte de apoio</dt><dd className="font-bold text-ink">{transport ? 'Sim' : 'Não'}</dd></div>
-              {meetings.map((meeting, index) => (
-                <div key={meeting.id} className="flex justify-between border-b border-line pb-3 last:border-0">
-                  <dt className="text-muted">Encontro {index + 1}</dt>
-                  <dd className="tabular font-bold text-ink">{meeting.date.split('-').reverse().join('/')} · {meeting.start} · {meeting.hours}h</dd>
-                </div>
-              ))}
+          <Card className="!p-4 sm:!p-6">
+            <div className="flex items-start justify-between gap-3">
+              <div className="min-w-0">
+                <span className="inline-flex items-center gap-1.5 rounded-full border border-[#1b8097] bg-[#064461] px-3 py-1 text-[11px] font-bold text-[#83eaf0]">
+                  <Icon name="check" className="!h-3.5 !w-3.5" />
+                  Revisão da reserva
+                </span>
+                <h2 className="mt-3 text-[23px] font-extrabold leading-tight tracking-[-.7px] text-ink">
+                  Confira sua aula
+                </h2>
+                <p className="mt-1.5 text-[13px] leading-relaxed text-muted">
+                  Veja os detalhes antes de procurar seu instrutor.
+                </p>
+              </div>
+              <span className="shrink-0 rounded-full border border-line bg-brand-tint px-2.5 py-1 text-[11px] font-semibold text-brand">
+                Etapa 2/2
+              </span>
+            </div>
+
+            <dl className="mt-5 grid grid-cols-2 gap-2.5">
+              <ReviewDetail icon="kite" label="Tipo de aula" value="Particular" />
+              <ReviewDetail icon="clock" label="Horas contratadas" value={selectedHours === 1 ? '1 hora' : String(selectedHours) + ' horas'} />
+              <ReviewDetail icon="pin" label="Praia" value={beachName} wide />
+              <ReviewDetail icon="users" label="Nível no kite" value={LEVEL_LABELS[level]} />
+              <ReviewDetail icon="globe" label="Idioma" value={language} />
+              <ReviewDetail
+                icon="car"
+                label="Transporte de apoio"
+                value={transport ? 'Incluído na reserva' : 'Não solicitado'}
+                wide
+              />
             </dl>
-            <Note className="mt-5">
-              Ao buscar, o Vento reserva o primeiro instrutor compatível da fila e calcula o total no servidor. O pagamento confirma a aula.
+
+            <section className="mt-5 border-t border-line pt-5" aria-label="Datas dos encontros">
+              <div className="flex items-center justify-between gap-2">
+                <h3 className="flex items-center gap-2 text-[17px] font-extrabold text-ink">
+                  <Icon name="calendar" className="!h-5 !w-5 text-brand" />
+                  Seus encontros
+                </h3>
+                <span className="rounded-full border border-line bg-brand-tint px-2.5 py-1 text-[11px] font-bold text-brand">
+                  {meetings.length} {meetings.length === 1 ? 'encontro' : 'encontros'}
+                </span>
+              </div>
+              <div className="mt-3 grid gap-3">
+                {meetings.map((meeting, index) => (
+                  <div key={meeting.id} className="min-w-0 rounded-[18px] border border-[#147694] bg-[#002e49]/70 p-3">
+                    <div className="flex items-center justify-between gap-2">
+                      <span className="text-[12px] font-bold uppercase tracking-[.1em] text-[#80e9f0]">
+                        Encontro {String(index + 1).padStart(2, '0')}
+                      </span>
+                      <Icon name="check" className="!h-[17px] !w-[17px] text-[#00e1ec]" />
+                    </div>
+                    <dl className="mt-3 grid grid-cols-3 gap-2">
+                      <ReviewDetail
+                        icon="calendar"
+                        label="Data"
+                        value={meeting.date.split('-').reverse().join('/')}
+                        compact
+                      />
+                      <ReviewDetail icon="clock" label="Início" value={meeting.start} compact />
+                      <ReviewDetail
+                        icon="kite"
+                        label="Duração"
+                        value={String(meeting.hours) + 'h'}
+                        compact
+                      />
+                    </dl>
+                  </div>
+                ))}
+              </div>
+            </section>
+
+            <Note title="Como funciona a busca" className="mt-5">
+              O Vento procura o primeiro instrutor disponível e compatível com sua aula.
+              O valor final é calculado pelo sistema e a reserva é confirmada após o pagamento.
             </Note>
             {state.error ? <Note tone="warning" className="mt-3">{state.error}</Note> : null}
-            <div className="mt-5 flex flex-wrap gap-2">
-              <Button variant="ghost" icon="back" onClick={() => setStep(1)}>Editar aula</Button>
-              <Button type="submit" trailingIcon="arrow" disabled={pending || !valid}>
-                {pending ? 'Buscando instrutor…' : 'Buscar instrutor'}
+            <div className="mt-5 grid gap-3">
+              <Button
+                type="submit"
+                trailingIcon="arrow"
+                disabled={pending || !valid}
+                className="w-full !min-h-14 !px-4 !text-[15px] font-bold"
+              >
+                {pending ? 'Procurando instrutor…' : 'Confirmar e buscar instrutor'}
+              </Button>
+              <Button
+                variant="ghost"
+                icon="back"
+                onClick={() => setStep(1)}
+                className="w-full !min-h-12 !text-[14px]"
+              >
+                Voltar e editar aula
               </Button>
             </div>
           </Card>
         )}
 
-        {/* Total on a deep-navy card so it stands out against the sand. */}
-        <section className="self-start overflow-hidden rounded-[24px] bg-[#0f1b2d] p-6 text-white shadow-search lg:sticky lg:top-24">
+        {/* Estimated price: amounts are formatted in BRL with two decimal places. */}
+        <section className="self-start overflow-hidden rounded-[24px] border border-[#137394] bg-[#031f34] p-5 text-white shadow-search lg:sticky lg:top-24 sm:p-6">
+          <div className="flex flex-wrap items-center justify-between gap-2">
+            <p className="flex items-center gap-2 text-[12px] font-semibold uppercase tracking-[1.5px] text-white/75">
+              <Icon name="wallet" className="!h-4 !w-4 text-brand" /> Valor total estimado
+            </p>
+            <span className="rounded-full border border-[#176b86] bg-[#07415b] px-2.5 py-1 text-[10px] font-bold uppercase tracking-wider text-[#90eaf0]">
+              Estimativa
+            </span>
+          </div>
           <p className="flex items-center gap-2 text-[12px] font-semibold uppercase tracking-[2px] text-white/70">
             <Icon name="wallet" className="!h-4 !w-4 text-sunrise" /> Total estimado
           </p>
-          <p className="tabular mt-2 text-[40px] font-extrabold leading-none tracking-[-1px] text-sunrise">
+          <p className="tabular mt-3 break-words text-[clamp(30px,9vw,40px)] font-extrabold leading-tight tracking-[-1px] text-brand">
             {quote ? formatMoney(transport ? quote.total_with_transport_cents : quote.total_cents) : '—'}
           </p>
           {quote ? (
-            <dl className="tabular mt-4 grid gap-2 border-t border-white/15 pt-4 text-[12px] text-white/75">
-              <div className="flex justify-between">
-                <dt>Aula · {selectedHours}h × {formatMoney(quote.hourly_rate_cents)}</dt>
-                <dd className="font-semibold text-white">{formatMoney(quote.total_cents)}</dd>
+            <dl className="tabular mt-4 grid gap-3 border-t border-white/15 pt-4 text-[13px] text-white/80">
+              <div className="flex items-start justify-between gap-3">
+                <dt className="min-w-0">
+                  <span className="block text-[11px] font-semibold uppercase tracking-[.08em] text-white/55">Aulas</span>
+                  <span>{selectedHours}h × {formatMoney(quote.hourly_rate_cents)}/h</span>
+                </dt>
+                <dd className="shrink-0 whitespace-nowrap font-bold text-white">{formatMoney(quote.total_cents)}</dd>
               </div>
               {transport ? (
-                <div className="flex justify-between">
-                  <dt>Transporte · {selectedHours}h × {formatMoney(quote.transport_hourly_cents)}</dt>
-                  <dd className="font-semibold text-white">{formatMoney(quote.transport_cents)}</dd>
+                <div className="flex items-start justify-between gap-3">
+                  <dt className="min-w-0">
+                    <span className="block text-[11px] font-semibold uppercase tracking-[.08em] text-white/55">Transporte de apoio</span>
+                    <span>{selectedHours}h × {formatMoney(quote.transport_hourly_cents)}/h</span>
+                  </dt>
+                  <dd className="shrink-0 whitespace-nowrap font-bold text-white">{formatMoney(quote.transport_cents)}</dd>
                 </div>
               ) : null}
             </dl>
@@ -395,8 +513,9 @@ export function LessonBuilder({
               Continuar
             </Button>
           ) : null}
-          <p className="mt-3 flex items-center gap-1.5 text-[11px] text-white/60">
-            <Icon name="shield" className="!h-4 !w-4" /> Você revisa tudo antes de buscar o instrutor.
+          <p className="mt-4 flex items-start gap-2 text-[11px] leading-relaxed text-white/65">
+            <Icon name="shield" className="mt-0.5 !h-4 !w-4 shrink-0 text-brand" />
+            Valores apresentados como estimativa; o total definitivo é calculado no servidor.
           </p>
         </section>
       </div>

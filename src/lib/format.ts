@@ -5,10 +5,9 @@
 
 const BRL = new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' });
 
-/** "R$ 1.500" — whole reais drop the ",00" the way the sketch shows them. */
+/** Always display monetary values with two decimal places (e.g., R$ 600,00). */
 export function formatMoney(amountCents: number): string {
-  const formatted = BRL.format(amountCents / 100);
-  return amountCents % 100 === 0 ? formatted.replace(/,00$/, '') : formatted;
+  return BRL.format(amountCents / 100);
 }
 
 /** 90 → "1h 30min", 120 → "2h", 30 → "30min". Durations are never "1,5h". */
