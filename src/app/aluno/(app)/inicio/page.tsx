@@ -1,5 +1,4 @@
 import type { Metadata } from 'next';
-import Link from 'next/link';
 
 import { Icon, type IconName } from '@/components/icon';
 import { LessonSearch, PathRail, type PathItem } from '@/components/student/lesson-search';
@@ -79,15 +78,8 @@ export default async function StudentHomePage() {
 
       <LessonSearch defaultDate={lessonDate(1)} quotes={quotes} beaches={beaches} />
 
-      <section className="mt-10">
-        <p className="text-[11px] font-semibold uppercase tracking-[2px] text-brand">Um mar de possibilidades</p>
-        <div className="mt-1 flex items-center justify-between gap-3">
-          <HighlightTitle as="h2" text="Encontre o seu ritmo." className="text-[24px] font-bold leading-tight tracking-[-0.6px] text-ink md:text-[34px]" />
-          <Link href="/aluno/aulas" className="flex shrink-0 items-center gap-1 text-[13px] font-semibold text-brand">
-            Ver aulas <Icon name="chevron" className="!h-4 !w-4" />
-          </Link>
-        </div>
-        <p className="mb-5 mt-1 text-[14px] text-label">A aula acompanha seu nível. A duração é você quem escolhe.</p>
+      {/* The level cards speak for themselves; no section heading above them. */}
+      <section className="mt-8" aria-label="Escolha seu nível">
         <PathRail items={PATHS} />
       </section>
 
