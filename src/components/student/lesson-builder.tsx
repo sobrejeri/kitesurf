@@ -449,24 +449,6 @@ export function LessonBuilder({
               O valor final é calculado pelo sistema e a reserva é confirmada após o pagamento.
             </Note>
             {state.error ? <Note tone="warning" className="mt-3">{state.error}</Note> : null}
-            <div className="mt-5 grid gap-3">
-              <Button
-                type="submit"
-                trailingIcon="arrow"
-                disabled={pending || !valid}
-                className="w-full !min-h-14 !px-4 !text-[15px] font-bold"
-              >
-                {pending ? 'Procurando instrutor…' : 'Confirmar e buscar instrutor'}
-              </Button>
-              <Button
-                variant="ghost"
-                icon="back"
-                onClick={() => setStep(1)}
-                className="w-full !min-h-12 !text-[14px]"
-              >
-                Voltar e editar aula
-              </Button>
-            </div>
           </Card>
         )}
 
@@ -480,9 +462,6 @@ export function LessonBuilder({
               Estimativa
             </span>
           </div>
-          <p className="flex items-center gap-2 text-[12px] font-semibold uppercase tracking-[2px] text-white/70">
-            <Icon name="wallet" className="!h-4 !w-4 text-sunrise" /> Total estimado
-          </p>
           <p className="tabular mt-3 break-words text-[clamp(30px,9vw,40px)] font-extrabold leading-tight tracking-[-1px] text-brand">
             {quote ? formatMoney(transport ? quote.total_with_transport_cents : quote.total_cents) : '—'}
           </p>
@@ -508,11 +487,37 @@ export function LessonBuilder({
           ) : (
             <p className="mt-2 text-[12px] text-white/60">Valor confirmado na reserva</p>
           )}
-          {step === 1 ? (
-            <Button className="mt-5 w-full !min-h-14 !text-[16px]" trailingIcon="arrow" disabled={!valid} onClick={() => setStep(2)}>
-              Continuar
-            </Button>
-          ) : null}
+          <div className="mt-5 border-t border-white/15 pt-5">
+            {step === 1 ? (
+              <Button
+                className="w-full !min-h-14 !text-[16px]"
+                trailingIcon="arrow"
+                disabled={!valid}
+                onClick={() => setStep(2)}
+              >
+                Continuar
+              </Button>
+            ) : (
+              <div className="flex flex-col items-center gap-3">
+                <Button
+                  type="submit"
+                  trailingIcon="arrow"
+                  disabled={pending || !valid}
+                  className="w-full !min-h-14 !px-3 !text-[15px] font-bold"
+                >
+                  {pending ? 'Procurando instrutor…' : 'Confirmar e buscar instrutor'}
+                </Button>
+                <button
+                  type="button"
+                  onClick={() => setStep(1)}
+                  className="press inline-flex min-h-10 items-center justify-center gap-1.5 px-2 text-[13px] font-semibold text-[#8beaf0] underline-offset-4 hover:underline focus-visible:rounded-md focus-visible:outline-2 focus-visible:outline-[#00e1ee] focus-visible:outline-offset-2"
+                >
+                  <Icon name="back" className="!h-4 !w-4" />
+                  Voltar e editar aula
+                </button>
+              </div>
+            )}
+          </div>
           <p className="mt-4 flex items-start gap-2 text-[11px] leading-relaxed text-white/65">
             <Icon name="shield" className="mt-0.5 !h-4 !w-4 shrink-0 text-brand" />
             Valores apresentados como estimativa; o total definitivo é calculado no servidor.
