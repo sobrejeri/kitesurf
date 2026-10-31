@@ -8,7 +8,7 @@ import { lessonDate } from '@/lib/dates';
 const WEEKDAYS = ['DOM', 'SEG', 'TER', 'QUA', 'QUI', 'SEX', 'SÁB'] as const;
 
 function parts(ym: string): [number, number] {
-  const [year, month] = ym.split('-').map(Number);
+  const [year = 0, month = 0] = ym.split('-').map(Number);
   return [year, month];
 }
 
@@ -19,7 +19,7 @@ function shiftMonth(ym: string, amount: number): string {
 }
 
 function labelForDate(value: string, options: Intl.DateTimeFormatOptions): string {
-  const [year, month, day] = value.split('-').map(Number);
+  const [year = 0, month = 0, day = 0] = value.split('-').map(Number);
   if (!year || !month || !day) return 'Escolher data';
   return new Intl.DateTimeFormat('pt-BR', options).format(new Date(year, month - 1, day));
 }
