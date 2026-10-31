@@ -172,7 +172,7 @@ export function StudentShell({
     : STUDENT_TABS.map((tab) => (tab.href === '/aluno/conta' ? { ...tab, label: 'Entrar', href: '/aluno/entrar' } : tab));
 
   return (
-    <div className="theme-beach min-h-dvh bg-canvas text-ink">
+    <div className="theme-beach theme-mar-profundo min-h-dvh bg-canvas text-ink">
       <header className="hidden border-b border-line bg-chrome md:block">
         <div className="mx-auto flex h-[76px] max-w-6xl items-center justify-between gap-6 px-8">
           <Link href="/aluno/inicio" aria-label="Vento — início">

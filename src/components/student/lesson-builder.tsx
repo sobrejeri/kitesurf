@@ -40,7 +40,7 @@ function SectionHead({ icon, title, aside }: { icon: IconName; title: string; as
   return (
     <div className="flex items-center justify-between gap-3">
       <h2 className="flex items-center gap-2.5 text-[19px] font-extrabold text-ink">
-        <span className="grid h-9 w-9 shrink-0 place-items-center rounded-full bg-brand-soft text-[#ff6a13]" aria-hidden="true">
+        <span className="grid h-9 w-9 shrink-0 place-items-center rounded-full bg-brand-soft text-[#00e5f2]" aria-hidden="true">
           <Icon name={icon} className="!h-5 !w-5" />
         </span>
         {title}
@@ -125,7 +125,7 @@ export function LessonBuilder({
             {/* Already chosen on Explorar: shown as a summary, editable on demand. */}
             <Card className="!p-4">
               <div className="flex items-center gap-3">
-                <span className="grid h-12 w-12 shrink-0 place-items-center rounded-[14px] bg-brand-soft text-[#ff6a13]" aria-hidden="true">
+                <span className="grid h-12 w-12 shrink-0 place-items-center rounded-[14px] bg-brand-soft text-[#00e5f2]" aria-hidden="true">
                   <Icon name="pin" className="!h-6 !w-6" />
                 </span>
                 <p className="min-w-0 flex-1 leading-snug">
@@ -171,8 +171,8 @@ export function LessonBuilder({
 
             {/* Optional add-on: the instructor's own support vehicle. */}
             {quote && quote.transport_hourly_cents > 0 ? (
-              <label className="press flex cursor-pointer items-center gap-3 rounded-card border border-line bg-surface p-4 shadow-card has-[:checked]:border-[#ff6a13] has-[:checked]:bg-brand-tint">
-                <span className="grid h-12 w-12 shrink-0 place-items-center rounded-[14px] bg-brand-soft text-[#ff6a13]" aria-hidden="true">
+              <label className="press flex cursor-pointer items-center gap-3 rounded-card border border-line bg-surface p-4 shadow-card has-[:checked]:border-[#00dff0] has-[:checked]:bg-brand-tint">
+                <span className="grid h-12 w-12 shrink-0 place-items-center rounded-[14px] bg-brand-soft text-[#00e5f2]" aria-hidden="true">
                   <Icon name="car" className="!h-6 !w-6" />
                 </span>
                 <span className="min-w-0 flex-1 leading-snug">
@@ -185,7 +185,7 @@ export function LessonBuilder({
                   type="checkbox"
                   checked={transport}
                   onChange={(event) => setTransport(event.target.checked)}
-                  className="h-6 w-6 shrink-0 accent-[#ff6a13]"
+                  className="h-6 w-6 shrink-0 accent-[#00dff0]"
                 />
               </label>
             ) : null}
@@ -197,14 +197,14 @@ export function LessonBuilder({
                   const { day, month } = dayParts(meeting.date);
                   const isOpen = open === meeting.id;
                   return (
-                    <li key={meeting.id} className={`overflow-hidden rounded-[18px] border ${isOpen ? 'border-[#ff6a13]' : 'border-line'}`}>
+                    <li key={meeting.id} className={`overflow-hidden rounded-[18px] border ${isOpen ? 'border-[#00dff0]' : 'border-line'}`}>
                       <button
                         type="button"
                         onClick={() => setOpen(isOpen ? 0 : meeting.id)}
                         aria-expanded={isOpen}
                         className="flex w-full items-center gap-3 px-3 py-3 text-left"
                       >
-                        <span className="grid h-[52px] w-[48px] shrink-0 place-items-center content-center rounded-[12px] bg-brand-soft text-[#ff6a13]">
+                        <span className="grid h-[52px] w-[48px] shrink-0 place-items-center content-center rounded-[12px] bg-brand-soft text-[#00e5f2]">
                           <span className="text-[22px] font-extrabold leading-none">{day}</span>
                           <span className="mt-0.5 text-[9px] font-bold tracking-[1px]">{month}</span>
                         </span>

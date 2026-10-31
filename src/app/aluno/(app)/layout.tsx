@@ -1,3 +1,5 @@
+import './mar-profundo.css';
+
 import { signOut } from '@/app/actions/auth';
 import { StudentShell } from '@/components/shells';
 import { getViewer } from '@/lib/auth';

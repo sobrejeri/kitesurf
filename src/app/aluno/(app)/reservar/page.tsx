@@ -28,10 +28,10 @@ export default async function BuildLessonPage({ searchParams }: { searchParams: 
   await requireRole(['student'], '/aluno/reservar');
   const [params, quotes, beaches] = await Promise.all([searchParams, getQuoteTable(), listActiveBeaches()]);
   return (
-    <>
-      <StudentHero eyebrow="Seu próximo bordo" title="Monte sua aula" highlight="aula" lead="Escolha suas horas e os dias para ir ao mar." compact image="lesson" />
-      <div className="mt-6" />
+    <div className="mar-profundo-page">
+      <StudentHero eyebrow="Seu próximo bordo" title="Monte sua aula" highlight="aula" lead="Escolha suas horas e os dias para ir ao mar." compact image="ocean" />
+      <div className="mt-4 md:mt-7" />
       <LessonBuilder quotes={quotes} beaches={beaches} defaults={defaultsFrom(params, beaches)} />
-    </>
+    </div>
   );
 }

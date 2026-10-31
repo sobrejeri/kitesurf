@@ -52,11 +52,12 @@ export function HighlightTitle({
   );
 }
 
-export type HeroImage = 'coast' | 'lesson';
+export type HeroImage = 'coast' | 'lesson' | 'ocean';
 
 const IMAGES: Readonly<Record<HeroImage, { src: string; position: string }>> = {
   coast: { src: '/images/prea-coast.webp', position: '70% 40%' },
   lesson: { src: '/images/kite-lesson.webp', position: '60% 30%' },
+  ocean: { src: '/images/mar-profundo-kite.webp', position: '64% 35%' },
 };
 
 /**
@@ -90,7 +91,7 @@ export function StudentHero({
 }) {
   const photo = IMAGES[image];
   return (
-    <section className="relative -mx-4 overflow-hidden md:mx-0 md:mt-2 md:rounded-hero">
+    <section className={`relative -mx-4 overflow-hidden md:mx-0 md:mt-2 md:rounded-hero ${image === 'ocean' ? 'ocean-hero' : ''}`}>
       {/* Decorative photograph; the heading carries the meaning. */}
       <img
         src={photo.src}
@@ -119,7 +120,7 @@ export function StudentHero({
         {lead ? <p className="mt-3 max-w-[30ch] text-[15px] leading-snug text-[#dfe5ee]">{lead}</p> : null}
         {children ? <div className="mt-5">{children}</div> : null}
       </div>
-      {compact && image === 'lesson' ? <svg className="pointer-events-none absolute bottom-0 left-0 h-[45px] w-full" viewBox="0 0 390 45" preserveAspectRatio="none" aria-hidden="true"><path d="M0 26 C95 0 140 44 232 18 S350 8 390 16 L390 45 L0 45Z" fill="#00b9d5" opacity=".9"/><path d="M0 37 C95 12 153 48 244 30 S342 23 390 29 L390 45 L0 45Z" fill="#031c31"/></svg> : null}
+      {compact && (image === 'lesson' || image === 'ocean') ? <svg className="pointer-events-none absolute bottom-0 left-0 h-[45px] w-full" viewBox="0 0 390 45" preserveAspectRatio="none" aria-hidden="true"><path d="M0 26 C95 0 140 44 232 18 S350 8 390 16 L390 45 L0 45Z" fill="#00b9d5" opacity=".9"/><path d="M0 37 C95 12 153 48 244 30 S342 23 390 29 L390 45 L0 45Z" fill="#031c31"/></svg> : null}
     </section>
   );
 }
