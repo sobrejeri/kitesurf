@@ -76,7 +76,19 @@ export async function createBooking(_prev: ActionState, form: FormData): Promise
     p_partner_code: referral,
     p_with_transport: parsed.data.transport === 'yes',
   });
-  if (error || typeof data !== 'string') return { error: friendlyError(error) };
+  if (error) {
+    console.error('[booking.create] RPC create_booking failed', {
+      code: error.code,
+      message: error.message,
+      details: error.details,
+      hint: error.hint,
+    });
+    return { error: friendlyError(error) };
+  }
+  if (typeof data !== 'string' || !z.uuid().safeParse(data).success) {
+    console.error('[booking.create] Unexpected RPC response from create_booking');
+    return { error: 'Não foi possível confirmar a solicitação. Informe a administração e tente novamente.' };
+  }
 
   revalidatePath('/aluno/aulas');
   redirect(`/aluno/reserva/${data}`);

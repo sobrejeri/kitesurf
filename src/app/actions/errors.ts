@@ -4,6 +4,8 @@
  */
 const KNOWN: readonly [RegExp, string][] = [
   [/Unknown or inactive beach/i, 'Essa praia não está disponível. Escolha outra.'],
+  [/Could not find the function .*create_booking|function .*create_booking.* does not exist/i,
+    'O serviço de reservas precisa ser sincronizado com o banco de dados. Informe à administração.'],
   [/Beach name must have/i, 'O nome da praia precisa ter de 2 a 60 letras.'],
   [/duplicate key.*beaches_name/i, 'Já existe uma praia com esse nome.'],
   [/No instructor available/i, 'Nenhum instrutor disponível nesses horários. Tente outro dia ou horário (ou sem transporte de apoio).'],
@@ -24,11 +26,34 @@ const KNOWN: readonly [RegExp, string][] = [
   [/Password should be/i, 'A senha precisa ter pelo menos 8 caracteres.'],
 ];
 
-export function friendlyError(error: { message?: string } | null | undefined): string {
+export function friendlyError(
+  error: { message?: string; code?: string; hint?: string; details?: string } | null | undefined,
+): string {
   const message = error?.message ?? '';
   for (const [pattern, text] of KNOWN) if (pattern.test(message)) return text;
-  console.error('Unexpected Supabase error:', message);
-  return 'Não foi possível concluir agora. Tente novamente.';
+
+  // PostgREST reports PGRST202/203 when an RPC signature is missing or
+  // ambiguous. These usually mean the published app and SQL migrations differ.
+  if (error?.code === 'PGRST202' || error?.code === 'PGRST203' || error?.code === '42883') {
+    return 'A função necessária no Supabase não está disponível ou está desatualizada. Avise a administração para verificar as migrações.';
+  }
+  if (error?.code === '42501') return 'Você não tem permissão para esta operação. Entre novamente ou contate a administração.';
+  if (error?.hint === 'NO_INSTRUCTOR') {
+    return 'Nenhum instrutor disponível para essa praia e horário. Escolha outro horário ou tente outra praia.';
+  }
+
+  console.error('Unexpected Supabase error:', {
+    code: error?.code ?? 'unknown',
+    message,
+    hint: error?.hint,
+    details: error?.details,
+  });
+  // Error identifiers are operational codes, not database details. Displaying
+  // only this small sanitized code helps support find the Render log.
+  const code = error?.code?.match(/^[A-Za-z0-9]{4,12}$/)?.[0];
+  return code
+    ? `Não foi possível concluir agora (código ${code}). Tente novamente ou informe à administração.`
+    : 'Não foi possível concluir agora. Tente novamente.';
 }
 
 export interface ActionState {
