@@ -5,10 +5,12 @@ import { Fragment, useActionState, useState } from 'react';
 import { createBooking } from '@/app/actions/booking';
 import { LANGUAGES, MAX_HOURS } from '@/data/demo';
 import { LEVEL_LABELS, type Beach, type LessonLevel, type QuoteRow } from '@/lib/data-labels';
+import { lessonDate } from '@/lib/dates';
 import { formatMoney } from '@/lib/format';
 
 import { Icon, type IconName } from '../icon';
 import { Button, Card, Field, Note, inputClass } from '../ui';
+import { LessonDatePicker } from './lesson-date-picker';
 
 interface Meeting {
   id: number;
@@ -79,7 +81,8 @@ export function LessonBuilder({
 
   const totalHours = meetings.reduce((sum, meeting) => sum + meeting.hours, 0);
   const quote = quotes.find((row) => row.hours === totalHours);
-  const valid = totalHours >= 1 && totalHours <= MAX_HOURS && Boolean(beachId);
+  const datesValid = meetings.every((meeting) => meeting.date >= lessonDate());
+  const valid = totalHours >= 1 && totalHours <= MAX_HOURS && Boolean(beachId) && datesValid;
 
   function update(id: number, patch: Partial<Meeting>) {
     setMeetings((current) => current.map((meeting) => (meeting.id === id ? { ...meeting, ...patch } : meeting)));
@@ -220,7 +223,12 @@ export function LessonBuilder({
                       {isOpen ? (
                         <div className="grid gap-3 border-t border-line p-4 sm:grid-cols-3">
                           <Field label="Data">
-                            <input type="date" required className={inputClass} value={meeting.date} onChange={(e) => update(meeting.id, { date: e.target.value })} />
+                            <LessonDatePicker
+                              ariaLabel={`Data do encontro ${index + 1}`}
+                              className={inputClass}
+                              value={meeting.date}
+                              onChange={(date) => update(meeting.id, { date })}
+                            />
                           </Field>
                           <Field label="Início">
                             <input type="time" required step={1800} className={inputClass} value={meeting.start} onChange={(e) => update(meeting.id, { start: e.target.value })} />
@@ -261,6 +269,7 @@ export function LessonBuilder({
               >
                 Adicionar encontro
               </Button>
+              {!datesValid ? <p role="alert" className="mt-3 text-[12px] text-warning">Selecione hoje ou uma data futura para todos os encontros.</p> : null}
               <p className={`mt-3 text-[12px] ${valid ? 'text-muted' : 'text-warning'}`}>
                 {totalHours}h distribuídas em {meetings.length} encontro(s).
                 {valid ? '' : ` O máximo por reserva é ${MAX_HOURS}h.`}

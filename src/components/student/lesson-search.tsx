@@ -5,9 +5,11 @@ import { useState } from 'react';
 
 import { LANGUAGES, MAX_HOURS, MIN_HOURS } from '@/data/demo';
 import { type Beach, type QuoteRow } from '@/lib/data-labels';
+import { lessonDate } from '@/lib/dates';
 import { formatMoney } from '@/lib/format';
 
 import { Icon, type IconName } from '../icon';
+import { LessonDatePicker } from './lesson-date-picker';
 import { buttonClass } from '../ui';
 
 /** One row of the search card: orange icon, small label, bold value, chevron. */
@@ -48,12 +50,20 @@ export function LessonSearch({
 }) {
   const [hours, setHours] = useState(2);
   const [level, setLevel] = useState('first_time');
+  const [date, setDate] = useState(defaultDate);
+  const [dateError, setDateError] = useState('');
   const quote = quotes.find((row) => row.hours === hours);
 
   return (
     <>
       <form
         action="/aluno/reservar"
+        onSubmit={(event) => {
+          if (date < lessonDate()) {
+            event.preventDefault();
+            setDateError('A data escolhida já passou. Selecione hoje ou um dia futuro.');
+          }
+        }}
         className="glass relative z-10 -mt-6 grid gap-2.5 rounded-[28px] border border-white/70 p-4 shadow-search lg:mt-6 lg:p-5"
       >
         <div className="flex items-center justify-between gap-3 px-1">
@@ -89,7 +99,13 @@ export function LessonSearch({
             </select>
           </SearchRow>
           <SearchRow label="Qual dia?" icon="calendar" chevron={false}>
-            <input name="dia" type="date" defaultValue={defaultDate} min={defaultDate} className={controlClass} />
+            <input name="dia" type="hidden" value={date} />
+            <LessonDatePicker
+              ariaLabel="Qual dia?"
+              value={date}
+              onChange={(next) => { setDate(next); setDateError(''); }}
+              className={controlClass}
+            />
           </SearchRow>
           <SearchRow label="Seu idioma" icon="globe">
             <select name="idioma" className={controlClass} defaultValue={LANGUAGES[0]}>
@@ -99,6 +115,8 @@ export function LessonSearch({
             </select>
           </SearchRow>
         </div>
+
+        {dateError ? <p role="alert" className="text-[13px] text-warning">{dateError}</p> : null}
 
         <div className="flex items-center gap-3 rounded-[18px] bg-sand py-2.5 pl-4 pr-2">
           <Icon name="clock" className="!h-6 !w-6 shrink-0 text-[#ff6a13]" />

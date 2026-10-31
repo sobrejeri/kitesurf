@@ -6,6 +6,7 @@ import { redirect } from 'next/navigation';
 import { z } from 'zod';
 
 import { requireRole } from '@/lib/auth';
+import { lessonDate } from '@/lib/dates';
 import { LESSON_UTC_OFFSET } from '@/lib/format';
 import { createSupabaseServerClient } from '@/lib/supabase/server';
 
@@ -51,6 +52,9 @@ export async function createBooking(_prev: ActionState, form: FormData): Promise
 
   const totalHours = parsed.data.meetings.reduce((sum, meeting) => sum + meeting.hours, 0);
   if (totalHours > 8) return { error: 'Cada reserva tem de 1 a 8 horas no total.' };
+  if (parsed.data.meetings.some((meeting) => meeting.date < lessonDate())) {
+    return { error: 'Não é possível reservar uma aula em uma data anterior a hoje.' };
+  }
 
   const referral = (await cookies()).get('vento_ref')?.value ?? null;
 

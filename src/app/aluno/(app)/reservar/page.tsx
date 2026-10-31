@@ -14,13 +14,14 @@ type Params = { praia?: string; nivel?: string; idioma?: string; horas?: string;
 /** Search parameters only preset the form; nothing here is trusted later. */
 function defaultsFrom(params: Params, beaches: readonly Beach[]): BuilderDefaults {
   const hours = Number(params.horas);
+  const today = lessonDate();
   const tomorrow = lessonDate(1);
   return {
     beachId: beaches.find((beach) => beach.id === params.praia)?.id ?? beaches[0]?.id ?? '',
     level: params.nivel === 'returning' || params.nivel === 'improving' ? params.nivel : 'first_time',
     language: LANGUAGES.find((language) => language === params.idioma) ?? 'Português',
     hours: Number.isInteger(hours) && hours >= 1 && hours <= 8 ? hours : 2,
-    date: params.dia && /^\d{4}-\d{2}-\d{2}$/.test(params.dia) && params.dia >= tomorrow ? params.dia : tomorrow,
+    date: params.dia && /^\d{4}-\d{2}-\d{2}$/.test(params.dia) && params.dia >= today ? params.dia : tomorrow,
   };
 }
 
