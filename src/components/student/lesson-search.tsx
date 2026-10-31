@@ -27,10 +27,10 @@ function SearchRow({ label, icon, children, chevron = true }: { label: string; i
 const controlClass =
   'w-full appearance-none bg-transparent text-[16px] font-bold text-ink focus:outline-none lg:text-[15px]';
 
-const LEVELS: readonly { id: string; title: string; hint: string; icon: IconName }[] = [
-  { id: 'first_time', title: 'Primeira vez', hint: 'Quero aprender', icon: 'sprout' },
-  { id: 'returning', title: 'Intermediário', hint: 'Mais autonomia', icon: 'bars' },
-  { id: 'improving', title: 'Avançado', hint: 'Novos desafios', icon: 'crown' },
+const LEVELS: readonly { id: string; title: string }[] = [
+  { id: 'first_time', title: 'Primeira vez' },
+  { id: 'returning', title: 'Intermediário' },
+  { id: 'improving', title: 'Avançado' },
 ];
 
 /**
@@ -56,25 +56,24 @@ export function LessonSearch({
         action="/aluno/reservar"
         className="glass relative z-10 -mt-6 grid gap-2.5 rounded-[28px] border border-white/70 p-4 shadow-search lg:mt-6 lg:p-5"
       >
-        <div className="flex items-center justify-between gap-3 px-1 pt-1">
-          <p className="text-[12px] font-semibold uppercase tracking-[2px] text-ink">Qual é o seu nível no kite?</p>
-          <Link href="/aluno/politicas" className="flex items-center gap-1.5 rounded-full bg-sand px-3 py-1.5 text-[12px] text-label">
-            <Icon name="help" className="!h-4 !w-4" /> Ajuda?
+        <div className="flex items-center justify-between gap-3 px-1">
+          <p className="text-[13px] font-semibold text-ink">Seu nível no kite</p>
+          <Link href="/aluno/politicas" aria-label="Ajuda sobre os níveis" className="grid h-8 w-8 place-items-center rounded-full bg-sand text-label">
+            <Icon name="help" className="!h-[18px] !w-[18px]" />
           </Link>
         </div>
-        <fieldset className="grid grid-cols-3 gap-2.5">
+        {/* Three plain choices in one segmented control. */}
+        <fieldset className="grid grid-cols-3 gap-1 rounded-full bg-sand p-1">
           <legend className="sr-only">Seu nível no kite</legend>
           {LEVELS.map((item) => {
             const on = level === item.id;
             return (
               <label
                 key={item.id}
-                className={`press flex cursor-pointer flex-col items-center gap-1 rounded-[18px] px-2 py-3.5 text-center ${on ? 'btn-primary shadow-button' : 'bg-sand'}`}
+                className={`press flex h-10 cursor-pointer items-center justify-center rounded-full px-1 text-center text-[13px] font-semibold ${on ? 'btn-primary !text-[13px] text-white shadow-button' : 'text-label'}`}
               >
                 <input type="radio" name="nivel" value={item.id} checked={on} onChange={() => setLevel(item.id)} className="sr-only" />
-                <Icon name={item.icon} className={`!h-7 !w-7 ${on ? 'text-white' : 'text-ink'}`} />
-                <span className={`text-[14px] font-bold leading-tight ${on ? 'text-white' : 'text-ink'}`}>{item.title}</span>
-                <span className={`text-[11px] font-normal leading-tight ${on ? 'text-white/90' : 'text-muted'}`}>{item.hint}</span>
+                {item.title}
               </label>
             );
           })}
@@ -108,44 +107,37 @@ export function LessonSearch({
         </div>
         <input type="hidden" name="horas" value={hours} />
 
-        <button type="submit" className={buttonClass('primary', 'md', 'mt-1 w-full !min-h-14 !text-[17px]')}>
+        {/* A first idea of the price, looked up in the server's quote table. */}
+        <p className="tabular mt-1 text-center text-[12px] text-muted" aria-live="polite">
+          {quote ? (
+            <>
+              {hours}h × {formatMoney(quote.hourly_rate_cents)}/hora ={' '}
+              <strong className="font-semibold text-ink">{formatMoney(quote.total_cents)}</strong>
+            </>
+          ) : (
+            'Valores indisponíveis no momento'
+          )}
+        </p>
+
+        <button type="submit" className={buttonClass('primary', 'md', 'w-full !min-h-14 !text-[17px]')}>
           Encontrar minha aula
           <Icon name="arrow" className="!h-5 !w-5" />
         </button>
       </form>
 
-      <ul className="mt-5 grid grid-cols-3 divide-x divide-line-ghost text-[13px] leading-tight text-ink">
+      <ul className="mt-5 grid grid-cols-3 divide-x divide-line-ghost text-[12px] leading-tight text-ink">
         {[
           ['shield', 'Instrutores aprovados'],
           ['users', 'Para todos os níveis'],
           ['clock', 'Horários flexíveis'],
         ].map(([icon, text]) => (
           <li key={text} className="flex flex-col items-center gap-1.5 px-2 text-center">
-            <Icon name={icon as IconName} className="!h-7 !w-7 text-ink" />
+            <Icon name={icon as IconName} className="!h-6 !w-6 text-ink" />
             <span>{text}</span>
           </li>
         ))}
       </ul>
 
-      <Link
-        href={`/aluno/reservar?horas=${hours}&nivel=${level}`}
-        className="press mt-6 flex items-center gap-4 rounded-[20px] border border-line bg-surface px-4 py-4 shadow-card"
-      >
-        <Icon name="clock" className="!h-8 !w-8 shrink-0 text-[#ff6a13]" />
-        <span className="min-w-0 flex-1">
-          <strong className="tabular block text-[16px] font-semibold text-ink">
-            {quote ? (
-              <>
-                {hours}h × {formatMoney(quote.hourly_rate_cents)}/hora = <span className="text-brand">{formatMoney(quote.total_cents)}</span>
-              </>
-            ) : (
-              'Valores indisponíveis no momento'
-            )}
-          </strong>
-          <span className="text-[12px] text-muted">Você escolhe as horas. O total é calculado automaticamente.</span>
-        </span>
-        <Icon name="chevron" className="!h-5 !w-5 text-muted" />
-      </Link>
     </>
   );
 }
@@ -215,7 +207,7 @@ export function PathRail({ items }: { items: readonly PathItem[] }) {
               <span className="relative p-5">
                 <strong className="block text-[24px] font-bold leading-[1.1] text-white">{item.title}</strong>
                 <span className="mt-2 block text-[14px] leading-snug text-[#cfd6e1]">{item.body}</span>
-                <span className="mt-5 flex items-center gap-3 text-[14px] font-semibold text-brand">
+                <span className="text-sunrise mt-5 flex items-center gap-3 text-[14px] font-semibold">
                   <span className="grid h-11 w-11 place-items-center rounded-full bg-brand text-white">
                     <Icon name="arrow" className="!h-5 !w-5" />
                   </span>
