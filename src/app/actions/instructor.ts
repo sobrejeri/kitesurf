@@ -84,7 +84,7 @@ export async function updateInstructorProfile(_prev: ActionState, form: FormData
   // When support-vehicle migration is pending, save all the existing fields.
   // Never pretend the optional vehicle preference was saved if it wasn't.
   let transportUnavailable = false;
-  if (error && error.code === '42703' && /has_support_vehicle/i.test(error.message)) {
+  if (error && (error.code === '42703' || error.code === 'PGRST204') && /has_support_vehicle/i.test(error.message)) {
     transportUnavailable = true;
     const retry = await supabase.from('instructors').update(basicFields).eq('id', viewer.id);
     error = retry.error;
