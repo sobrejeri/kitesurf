@@ -62,6 +62,7 @@ export default async function InstructorDetailPage({ params }: { params: Promise
             <InfoRow icon="globe" label="Idiomas" value={row.languages.join(', ')} />
             <InfoRow icon="clock" label="Anos de experiência" value={`${row.years_experience} anos`} />
             <InfoRow icon="kite" label="Equipamentos próprios" value={row.has_equipment ? 'Sim' : 'Não informado'} />
+            <InfoRow icon="car" label="Veículo de apoio" value={row.has_support_vehicle ? 'Sim' : 'Não'} />
             <InfoRow icon="book" label="Reservas recebidas" value={String(theirs.length)} />
           </dl>
         </Panel>

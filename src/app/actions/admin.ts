@@ -16,6 +16,7 @@ import { friendlyError, type ActionState } from './errors';
 const Price = z.strictObject({
   hourlyRateReais: z.coerce.number().int().min(10).max(10000),
   commissionPercent: z.coerce.number().int().min(0).max(100),
+  transportRateReais: z.coerce.number().int().min(0).max(10000),
   reason: z.string().trim().min(3).max(500),
 });
 
@@ -24,6 +25,7 @@ export async function publishPrice(_prev: ActionState, form: FormData): Promise<
   const parsed = Price.safeParse({
     hourlyRateReais: form.get('hourlyRateReais'),
     commissionPercent: form.get('commissionPercent'),
+    transportRateReais: form.get('transportRateReais'),
     reason: form.get('reason'),
   });
   if (!parsed.success) return { error: 'Use valores inteiros e informe o motivo da alteração.' };
@@ -32,6 +34,7 @@ export async function publishPrice(_prev: ActionState, form: FormData): Promise<
   const { error } = await supabase.rpc('publish_price_version', {
     p_hourly_rate_cents: parsed.data.hourlyRateReais * 100,
     p_commission_bps: parsed.data.commissionPercent * 100,
+    p_transport_hourly_cents: parsed.data.transportRateReais * 100,
     p_reason: parsed.data.reason,
   });
   if (error) return { error: friendlyError(error) };

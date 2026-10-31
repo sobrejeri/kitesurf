@@ -49,6 +49,9 @@ export interface Booking {
   language: string;
   total_hours: number;
   hourly_rate_cents: number;
+  with_transport: boolean;
+  transport_hourly_cents: number;
+  transport_cents: number;
   total_cents: number;
   partner_cents: number;
   platform_cents: number;
@@ -64,7 +67,8 @@ export interface Booking {
 }
 
 const BOOKING_COLUMNS = `
-  id, code, status, beach_id, level, language, total_hours, hourly_rate_cents, total_cents,
+  id, code, status, beach_id, level, language, total_hours, hourly_rate_cents,
+  with_transport, transport_hourly_cents, transport_cents, total_cents,
   partner_cents, platform_cents, instructor_net_cents, presence_code, created_at,
   student_id, instructor_id, partner_id,
   booking_meetings ( id, position, starts_at, minutes, status, done_minutes, note ),
@@ -154,6 +158,7 @@ export interface PriceVersion {
   id: number;
   hourly_rate_cents: number;
   platform_commission_bps: number;
+  transport_hourly_cents: number;
   reason: string | null;
   created_at: string;
 }
@@ -162,7 +167,7 @@ export async function listPriceVersions(): Promise<PriceVersion[]> {
   const supabase = await createSupabaseServerClient();
   const { data, error } = await supabase
     .from('price_versions')
-    .select('id, hourly_rate_cents, platform_commission_bps, reason, created_at')
+    .select('id, hourly_rate_cents, platform_commission_bps, transport_hourly_cents, reason, created_at')
     .order('id', { ascending: false })
     .limit(10)
     .returns<PriceVersion[]>();
@@ -177,12 +182,13 @@ export interface InstructorRow {
   beaches: { id: string; name: string }[];
   languages: string[];
   has_equipment: boolean;
+  has_support_vehicle: boolean;
   queue_position: number | null;
   profile: { full_name: string } | null;
 }
 
 const INSTRUCTOR_COLUMNS =
-  'id, status, years_experience, languages, has_equipment, queue_position, profile:profiles ( full_name ), instructor_beaches ( beach:beaches ( id, name ) )';
+  'id, status, years_experience, languages, has_equipment, has_support_vehicle, queue_position, profile:profiles ( full_name ), instructor_beaches ( beach:beaches ( id, name ) )';
 
 interface RawInstructor extends Omit<InstructorRow, 'beaches'> {
   instructor_beaches: { beach: { id: string; name: string } | null }[];

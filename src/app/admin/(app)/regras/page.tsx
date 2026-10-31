@@ -27,12 +27,15 @@ export default async function OperationRulesPage() {
             </p>
           ) : null}
           <ActionForm action={publishPrice} submitLabel="Publicar novo valor" className="mt-5 grid gap-4">
-            <div className="grid gap-4 sm:grid-cols-2">
+            <div className="grid gap-4 sm:grid-cols-3">
               <Field label="Valor da hora (R$, inteiro)">
                 <input name="hourlyRateReais" type="number" min={10} max={10000} step={1} required defaultValue={current ? current.hourly_rate_cents / 100 : 300} className={inputClass} />
               </Field>
               <Field label="Comissão da plataforma (%)">
                 <input name="commissionPercent" type="number" min={0} max={100} step={1} required defaultValue={current ? current.platform_commission_bps / 100 : 15} className={inputClass} />
+              </Field>
+              <Field label="Transporte de apoio (R$/h)" hint="Vai inteiro para o instrutor. 0 desliga a opção.">
+                <input name="transportRateReais" type="number" min={0} max={10000} step={1} required defaultValue={current ? current.transport_hourly_cents / 100 : 100} className={inputClass} />
               </Field>
             </div>
             <Field label="Motivo" hint="Fica registrado no histórico de auditoria.">
@@ -46,7 +49,7 @@ export default async function OperationRulesPage() {
             {versions.map((version) => (
               <li key={version.id} className="flex items-center justify-between gap-3 py-3">
                 <span>
-                  <strong className="tabular block font-[550]">{formatMoney(version.hourly_rate_cents)}/hora · {formatBps(version.platform_commission_bps)}</strong>
+                  <strong className="tabular block font-[550]">{formatMoney(version.hourly_rate_cents)}/hora · {formatBps(version.platform_commission_bps)} · transporte {formatMoney(version.transport_hourly_cents)}/h</strong>
                   <span className="text-muted">{version.reason ?? '—'}</span>
                 </span>
                 <span className="text-muted">{formatDateShort(version.created_at)}</span>

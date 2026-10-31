@@ -76,6 +76,7 @@ export default async function InstructorTodayPage() {
                       <Badge tone={meeting.status === 'in_progress' ? 'warning' : 'success'}>
                         {meeting.status === 'in_progress' ? 'Em aula' : 'Confirmada'}
                       </Badge>
+                      {booking.with_transport ? <span className="ml-1.5"><Badge tone="warning">Com transporte</Badge></span> : null}
                       <p className="mt-1 truncate text-[15px] font-semibold text-ink">{booking.student?.full_name ?? 'Aluno'}</p>
                       <p className="text-[12px] text-muted">
                         {formatTime(meeting.starts_at)} · {formatMinutes(meeting.minutes)} · {booking.beach?.name ?? '—'}

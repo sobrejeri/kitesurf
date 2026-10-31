@@ -23,4 +23,8 @@ export interface QuoteRow {
   hours: number;
   hourly_rate_cents: number;
   total_cents: number;
+  /** Support vehicle, priced per lesson hour; computed by the server. */
+  transport_hourly_cents: number;
+  transport_cents: number;
+  total_with_transport_cents: number;
 }

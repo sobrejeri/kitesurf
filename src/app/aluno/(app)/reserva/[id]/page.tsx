@@ -124,7 +124,14 @@ export default async function BookingPage({ params }: { params: Promise<{ id: st
               <strong className="tabular text-[24px] font-semibold tracking-[-0.7px] text-brand">{formatMoney(booking.total_cents)}</strong>
             </div>
             <p className="tabular mt-1 text-right text-[11px] text-muted">
-              {booking.total_hours}h × {formatMoney(booking.hourly_rate_cents)}/hora
+              Aula: {booking.total_hours}h × {formatMoney(booking.hourly_rate_cents)}/hora
+              {booking.with_transport ? (
+                <>
+                  <br />
+                  Transporte de apoio: {booking.total_hours}h × {formatMoney(booking.transport_hourly_cents)}/hora ={' '}
+                  {formatMoney(booking.transport_cents)}
+                </>
+              ) : null}
             </p>
             {awaiting ? (
               <div className="mt-4 border-t border-line pt-4">

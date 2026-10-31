@@ -37,7 +37,10 @@ export default async function RunLessonPage() {
                   </p>
                 </div>
               </div>
-              <Badge tone={meeting.status === 'in_progress' ? 'warning' : 'brand'}>{MEETING_STATUS_LABELS[meeting.status]}</Badge>
+              <span className="flex flex-wrap justify-end gap-1.5">
+                {booking.with_transport ? <Badge tone="warning">Com transporte</Badge> : null}
+                <Badge tone={meeting.status === 'in_progress' ? 'warning' : 'brand'}>{MEETING_STATUS_LABELS[meeting.status]}</Badge>
+              </span>
             </div>
             <p className="mt-4 text-[13px] font-[550]">
               {formatDateLong(meeting.starts_at)} · {formatTime(meeting.starts_at)} · {formatMinutes(meeting.minutes)}

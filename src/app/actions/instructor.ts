@@ -57,6 +57,7 @@ const Profile = z.strictObject({
   beachIds: z.array(z.uuid()).max(20),
   languages: z.array(z.enum(['Português', 'Inglês', 'Espanhol', 'Francês', 'Alemão', 'Italiano'])).min(1).max(6),
   hasEquipment: z.boolean(),
+  hasSupportVehicle: z.boolean(),
 });
 
 /** Updates only the columns an instructor may edit (column grants enforce it). */
@@ -67,6 +68,7 @@ export async function updateInstructorProfile(_prev: ActionState, form: FormData
     beachIds: form.getAll('beachIds'),
     languages: form.getAll('languages'),
     hasEquipment: form.get('hasEquipment') === 'on',
+    hasSupportVehicle: form.get('hasSupportVehicle') === 'on',
   });
   if (!parsed.success) return { error: 'Escolha ao menos um idioma e confira os anos de experiência.' };
 
@@ -77,6 +79,7 @@ export async function updateInstructorProfile(_prev: ActionState, form: FormData
       years_experience: parsed.data.years,
       languages: parsed.data.languages,
       has_equipment: parsed.data.hasEquipment,
+      has_support_vehicle: parsed.data.hasSupportVehicle,
     })
     .eq('id', viewer.id);
   if (error) return { error: friendlyError(error) };

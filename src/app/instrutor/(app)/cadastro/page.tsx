@@ -57,6 +57,13 @@ export default async function InstructorProfileFormPage() {
               <input type="checkbox" name="hasEquipment" defaultChecked={me?.has_equipment} className="mt-0.5 accent-brand" />
               Tenho equipamentos e estrutura de apoio para oferecer as aulas.
             </label>
+            <label className="flex gap-2.5 text-[12px] text-label">
+              <input type="checkbox" name="hasSupportVehicle" defaultChecked={me?.has_support_vehicle} className="mt-0.5 accent-brand" />
+              <span>
+                Tenho veículo de apoio para acompanhar a aula.
+                <span className="block text-muted">Você recebe pedidos com transporte e fica com todo o valor do transporte.</span>
+              </span>
+            </label>
           </ActionForm>
         </Card>
         <div className="grid content-start gap-5">

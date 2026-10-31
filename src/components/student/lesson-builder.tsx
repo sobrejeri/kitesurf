@@ -50,6 +50,7 @@ export function LessonBuilder({
   ]);
   const [open, setOpen] = useState(1);
   const [editing, setEditing] = useState(false);
+  const [transport, setTransport] = useState(false);
 
   const totalHours = meetings.reduce((sum, meeting) => sum + meeting.hours, 0);
   const quote = quotes.find((row) => row.hours === totalHours);
@@ -67,6 +68,7 @@ export function LessonBuilder({
       <input type="hidden" name="level" value={level} />
       <input type="hidden" name="language" value={language} />
       <input type="hidden" name="meetings" value={payload} />
+      <input type="hidden" name="transport" value={transport ? 'yes' : 'no'} />
 
       <ol className="mb-6 flex gap-3 text-[12px]">
         {['1. Sua aula', '2. Revisar e buscar'].map((label, index) => (
@@ -128,6 +130,27 @@ export function LessonBuilder({
                 </div>
               ) : null}
             </Card>
+
+            {/* Optional add-on: the instructor's own support vehicle. */}
+            {quote && quote.transport_hourly_cents > 0 ? (
+              <label className="press flex cursor-pointer items-center gap-3 rounded-card border border-line bg-surface p-4 shadow-card has-[:checked]:border-[#ff6a13]">
+                <span className="grid h-10 w-10 shrink-0 place-items-center rounded-full bg-brand-soft text-[#ff6a13]" aria-hidden="true">
+                  <Icon name="car" className="!h-5 !w-5" />
+                </span>
+                <span className="min-w-0 flex-1 text-[14px] leading-snug">
+                  <strong className="block font-semibold text-ink">Transporte de apoio</strong>
+                  <span className="tabular text-[12px] text-muted">
+                    Veículo do instrutor acompanha a aula · + {formatMoney(quote.transport_hourly_cents)}/hora
+                  </span>
+                </span>
+                <input
+                  type="checkbox"
+                  checked={transport}
+                  onChange={(event) => setTransport(event.target.checked)}
+                  className="h-6 w-6 shrink-0 accent-[#ff6a13]"
+                />
+              </label>
+            ) : null}
 
             <Card>
               <div className="flex items-center justify-between">
@@ -206,6 +229,7 @@ export function LessonBuilder({
             <dl className="mt-4 grid gap-3 text-[13px]">
               <div className="flex justify-between border-b border-line pb-3"><dt className="text-muted">Aula</dt><dd className="font-[550]">Aula particular · {totalHours}h</dd></div>
               <div className="flex justify-between gap-3 border-b border-line pb-3"><dt className="text-muted">Preferências</dt><dd className="text-right font-[550]">{language} · {LEVEL_LABELS[level]} · {beachName}</dd></div>
+              <div className="flex justify-between gap-3 border-b border-line pb-3"><dt className="text-muted">Transporte de apoio</dt><dd className="font-[550]">{transport ? 'Sim' : 'Não'}</dd></div>
               {meetings.map((meeting, index) => (
                 <div key={meeting.id} className="flex justify-between border-b border-line pb-3 last:border-0">
                   <dt className="text-muted">Encontro {index + 1}</dt>
@@ -229,11 +253,18 @@ export function LessonBuilder({
         <Card className="self-start lg:sticky lg:top-24">
           <p className="text-[12px] text-muted">Total estimado</p>
           <p className="tabular mt-1 text-[32px] font-semibold tracking-[-0.7px] text-brand">
-            {quote ? formatMoney(quote.total_cents) : '—'}
+            {quote ? formatMoney(transport ? quote.total_with_transport_cents : quote.total_cents) : '—'}
           </p>
-          <p className="tabular text-[11px] text-muted">
-            {quote ? `${totalHours}h × ${formatMoney(quote.hourly_rate_cents)}/hora` : 'Valor confirmado na reserva'}
-          </p>
+          {quote ? (
+            <dl className="tabular mt-1 grid gap-0.5 text-[11px] text-muted">
+              <div className="flex justify-between"><dt>Aula · {totalHours}h × {formatMoney(quote.hourly_rate_cents)}</dt><dd>{formatMoney(quote.total_cents)}</dd></div>
+              {transport ? (
+                <div className="flex justify-between"><dt>Transporte · {totalHours}h × {formatMoney(quote.transport_hourly_cents)}</dt><dd>{formatMoney(quote.transport_cents)}</dd></div>
+              ) : null}
+            </dl>
+          ) : (
+            <p className="text-[11px] text-muted">Valor confirmado na reserva</p>
+          )}
           {step === 1 ? (
             <Button className="mt-5 w-full" trailingIcon="arrow" disabled={!valid} onClick={() => setStep(2)}>
               Continuar

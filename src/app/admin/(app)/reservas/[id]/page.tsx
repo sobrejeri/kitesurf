@@ -66,7 +66,8 @@ export default async function AdminBookingPage({ params }: { params: Promise<{ i
           <Panel title="Pagamento" action={<Badge tone={awaiting ? 'warning' : 'success'}>{awaiting ? 'Pendente' : 'Confirmado'}</Badge>}>
             <dl className="tabular grid gap-2.5 text-[14px]">
               <div className="flex justify-between"><dt className="text-label">Método</dt><dd className="text-ink">Pagamento de teste</dd></div>
-              <div className="flex justify-between"><dt className="text-label">Valor por hora</dt><dd className="text-ink">{formatMoney(booking.hourly_rate_cents)}</dd></div>
+              <div className="flex justify-between"><dt className="text-label">Aula ({booking.total_hours}h × {formatMoney(booking.hourly_rate_cents)})</dt><dd className="text-ink">{formatMoney(booking.total_cents - booking.transport_cents)}</dd></div>
+              <div className="flex justify-between"><dt className="text-label">Transporte de apoio</dt><dd className="text-ink">{booking.with_transport ? formatMoney(booking.transport_cents) : 'Não'}</dd></div>
               <div className="flex justify-between border-t border-line pt-2.5"><dt className="font-semibold text-ink">Valor total</dt><dd className="text-[18px] font-bold text-brand">{formatMoney(booking.total_cents)}</dd></div>
             </dl>
           </Panel>

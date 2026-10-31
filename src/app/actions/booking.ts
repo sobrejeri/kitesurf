@@ -28,6 +28,7 @@ const CreateBooking = z.strictObject({
   level: z.enum(['first_time', 'returning', 'improving']),
   language: z.enum(['Português', 'Inglês', 'Espanhol', 'Francês', 'Alemão', 'Italiano']),
   meetings: z.array(Meeting).min(1).max(8),
+  transport: z.enum(['yes', 'no']),
 });
 
 export async function createBooking(_prev: ActionState, form: FormData): Promise<ActionState> {
@@ -44,6 +45,7 @@ export async function createBooking(_prev: ActionState, form: FormData): Promise
     level: form.get('level'),
     language: form.get('language'),
     meetings,
+    transport: form.get('transport') ?? 'no',
   });
   if (!parsed.success) return { error: 'Confira praia, nível, idioma e os encontros.' };
 
@@ -62,6 +64,7 @@ export async function createBooking(_prev: ActionState, form: FormData): Promise
       hours: meeting.hours,
     })),
     p_partner_code: referral,
+    p_with_transport: parsed.data.transport === 'yes',
   });
   if (error || typeof data !== 'string') return { error: friendlyError(error) };
 
