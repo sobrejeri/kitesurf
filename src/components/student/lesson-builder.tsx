@@ -3,7 +3,7 @@
 import { Fragment, useActionState, useState } from 'react';
 
 import { createBooking } from '@/app/actions/booking';
-import { LANGUAGES, MAX_HOURS } from '@/data/demo';
+import { LANGUAGES } from '@/data/demo';
 import { LEVEL_LABELS, type Beach, type LessonLevel, type QuoteRow } from '@/lib/data-labels';
 import { lessonDate } from '@/lib/dates';
 import { formatMoney } from '@/lib/format';
