@@ -73,15 +73,22 @@ export async function updateInstructorProfile(_prev: ActionState, form: FormData
   if (!parsed.success) return { error: 'Escolha ao menos um idioma e confira os anos de experiência.' };
 
   const supabase = await createSupabaseServerClient();
-  const { error } = await supabase
-    .from('instructors')
-    .update({
-      years_experience: parsed.data.years,
-      languages: parsed.data.languages,
-      has_equipment: parsed.data.hasEquipment,
-      has_support_vehicle: parsed.data.hasSupportVehicle,
-    })
+  const basicFields = {
+    years_experience: parsed.data.years,
+    languages: parsed.data.languages,
+    has_equipment: parsed.data.hasEquipment,
+  };
+  let { error } = await supabase.from('instructors')
+    .update({ ...basicFields, has_support_vehicle: parsed.data.hasSupportVehicle })
     .eq('id', viewer.id);
+  // When support-vehicle migration is pending, save all the existing fields.
+  // Never pretend the optional vehicle preference was saved if it wasn't.
+  let transportUnavailable = false;
+  if (error && error.code === '42703' && /has_support_vehicle/i.test(error.message)) {
+    transportUnavailable = true;
+    const retry = await supabase.from('instructors').update(basicFields).eq('id', viewer.id);
+    error = retry.error;
+  }
   if (error) return { error: friendlyError(error) };
 
   // Beaches go through set_my_beaches, which accepts only beaches the
@@ -89,5 +96,7 @@ export async function updateInstructorProfile(_prev: ActionState, form: FormData
   const { error: beachError } = await supabase.rpc('set_my_beaches', { p_beach_ids: parsed.data.beachIds });
   if (beachError) return { error: friendlyError(beachError) };
   revalidatePath('/instrutor/cadastro');
-  return { ok: 'Perfil salvo. A operação analisa seu cadastro antes de liberar pedidos.' };
+  return { ok: transportUnavailable
+    ? 'Perfil salvo. A opção de veículo de apoio ainda depende da atualização do banco.'
+    : 'Perfil salvo. A operação analisa seu cadastro antes de liberar pedidos.' };
 }

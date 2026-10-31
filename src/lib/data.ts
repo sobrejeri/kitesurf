@@ -77,6 +77,19 @@ const BOOKING_COLUMNS = `
   instructor:instructors ( profile:profiles ( full_name ) )
 `;
 
+// Transport fields were added after the original booking schema. A missing
+// optional field must not crash the instructor workspace before that migration.
+const LEGACY_BOOKING_COLUMNS = BOOKING_COLUMNS.replace(
+  'with_transport, transport_hourly_cents, transport_cents, ',
+  '',
+);
+
+function missingTransportColumn(error: { code?: string; message?: string } | null): boolean {
+  return Boolean(error &&
+    (error.code === '42703' || error.code === 'PGRST204') &&
+    /\b(has_support_vehicle|with_transport|transport_hourly_cents|transport_cents)\b/i.test(error.message ?? ''));
+}
+
 interface RawBooking extends Omit<Booking, 'instructor'> {
   instructor: { profile: { full_name: string } | null } | null;
 }
@@ -186,15 +199,31 @@ export async function listBookingsForStudent(studentId: string): Promise<Student
 
 export async function listBookingsForInstructor(instructorId: string): Promise<Booking[]> {
   const supabase = await createSupabaseServerClient();
-  const { data, error } = await supabase
+  const read = (columns: string) => supabase
     .from('bookings')
-    .select(BOOKING_COLUMNS)
+    .select(columns)
     .eq('instructor_id', instructorId)
     .in('status', ['confirmed', 'completed', 'awaiting_payment'])
     .order('created_at', { ascending: false })
     .returns<RawBooking[]>();
-  if (error) throw error;
-  return (data ?? []).map(normalise);
+
+  const result = await read(BOOKING_COLUMNS);
+  if (missingTransportColumn(result.error)) {
+    console.warn('[instructor-bookings] Transport columns not installed; using legacy read');
+    const legacy = await read(LEGACY_BOOKING_COLUMNS);
+    if (legacy.error) {
+      console.error('[instructor-bookings] Legacy read failed', { code: legacy.error.code, message: legacy.error.message });
+      throw legacy.error;
+    }
+    return (legacy.data ?? []).map((row) => normalise({
+      ...row, with_transport: false, transport_hourly_cents: 0, transport_cents: 0,
+    }));
+  }
+  if (result.error) {
+    console.error('[instructor-bookings] Read failed', { code: result.error.code, message: result.error.message });
+    throw result.error;
+  }
+  return (result.data ?? []).map(normalise);
 }
 
 /** Admin only: RLS returns nothing to anyone else. */
@@ -272,6 +301,7 @@ export interface InstructorRow {
 
 const INSTRUCTOR_COLUMNS =
   'id, status, years_experience, languages, has_equipment, has_support_vehicle, queue_position, profile:profiles ( full_name ), instructor_beaches ( beach:beaches ( id, name ) )';
+const LEGACY_INSTRUCTOR_COLUMNS = INSTRUCTOR_COLUMNS.replace(', has_support_vehicle', '');
 
 interface RawInstructor extends Omit<InstructorRow, 'beaches'> {
   instructor_beaches: { beach: { id: string; name: string } | null }[];
@@ -290,37 +320,56 @@ function normaliseInstructor({ instructor_beaches, ...row }: RawInstructor): Ins
 /** Approved instructors in queue order. */
 export async function listQueue(): Promise<InstructorRow[]> {
   const supabase = await createSupabaseServerClient();
-  const { data, error } = await supabase
-    .from('instructors')
-    .select(INSTRUCTOR_COLUMNS)
+  const read = (columns: string) => supabase.from('instructors').select(columns)
     .eq('status', 'approved')
     .order('queue_position', { ascending: true })
     .returns<RawInstructor[]>();
-  if (error) throw error;
-  return (data ?? []).map(normaliseInstructor);
+  const result = await read(INSTRUCTOR_COLUMNS);
+  if (missingTransportColumn(result.error)) {
+    const legacy = await read(LEGACY_INSTRUCTOR_COLUMNS);
+    if (legacy.error) throw legacy.error;
+    return (legacy.data ?? []).map((row) => normaliseInstructor({ ...row, has_support_vehicle: false }));
+  }
+  if (result.error) throw result.error;
+  return (result.data ?? []).map(normaliseInstructor);
 }
 
 /** Admin only: pending and paused instructors are hidden from everyone else by RLS. */
 export async function listAllInstructors(): Promise<InstructorRow[]> {
   const supabase = await createSupabaseServerClient();
-  const { data, error } = await supabase
-    .from('instructors')
-    .select(INSTRUCTOR_COLUMNS)
+  const read = (columns: string) => supabase.from('instructors').select(columns)
     .order('created_at', { ascending: true })
     .returns<RawInstructor[]>();
-  if (error) throw error;
-  return (data ?? []).map(normaliseInstructor);
+  const result = await read(INSTRUCTOR_COLUMNS);
+  if (missingTransportColumn(result.error)) {
+    const legacy = await read(LEGACY_INSTRUCTOR_COLUMNS);
+    if (legacy.error) throw legacy.error;
+    return (legacy.data ?? []).map((row) => normaliseInstructor({ ...row, has_support_vehicle: false }));
+  }
+  if (result.error) throw result.error;
+  return (result.data ?? []).map(normaliseInstructor);
 }
 
 export async function getOwnInstructor(instructorId: string): Promise<InstructorRow | null> {
   const supabase = await createSupabaseServerClient();
-  const { data, error } = await supabase
-    .from('instructors')
-    .select(INSTRUCTOR_COLUMNS)
+  const read = (columns: string) => supabase.from('instructors').select(columns)
     .eq('id', instructorId)
     .maybeSingle<RawInstructor>();
-  if (error) throw error;
-  return data ? normaliseInstructor(data) : null;
+  const result = await read(INSTRUCTOR_COLUMNS);
+  if (missingTransportColumn(result.error)) {
+    console.warn('[instructor-profile] Transport column not installed; using legacy read');
+    const legacy = await read(LEGACY_INSTRUCTOR_COLUMNS);
+    if (legacy.error) {
+      console.error('[instructor-profile] Legacy read failed', { code: legacy.error.code, message: legacy.error.message });
+      throw legacy.error;
+    }
+    return legacy.data ? normaliseInstructor({ ...legacy.data, has_support_vehicle: false }) : null;
+  }
+  if (result.error) {
+    console.error('[instructor-profile] Read failed', { code: result.error.code, message: result.error.message });
+    throw result.error;
+  }
+  return result.data ? normaliseInstructor(result.data) : null;
 }
 
 export interface PartnerRow {
