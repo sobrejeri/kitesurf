@@ -30,7 +30,6 @@ export function InstructorAvatarForm() {
     <form
       action={formAction}
       className="mt-4 grid gap-3"
-      encType="multipart/form-data"
       onSubmit={(event) => {
         const input = event.currentTarget.elements.namedItem('avatar') as HTMLInputElement | null;
         const validation = validatePhoto(input?.files?.[0]);

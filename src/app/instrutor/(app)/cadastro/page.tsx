@@ -40,9 +40,19 @@ export default async function InstructorProfileFormPage() {
   const info = privateResult.data;
   let avatarUrl: string | null = null;
   if (info?.avatar_path) {
-    const { data: image } = await supabase.storage
-      .from('vento-instructor-avatars').createSignedUrl(info.avatar_path, 60 * 60);
-    avatarUrl = image?.signedUrl ?? null;
+    try {
+      const { data: image, error: imageError } = await supabase.storage
+        .from('vento-instructor-avatars').createSignedUrl(info.avatar_path, 60 * 60);
+      if (imageError) {
+        console.error('[instructor-profile] Avatar preview unavailable', { message: imageError.message });
+      } else {
+        avatarUrl = image?.signedUrl ?? null;
+      }
+    } catch (error) {
+      // The professional profile must remain usable when a private image
+      // cannot be retrieved (deleted object, expired session or storage outage).
+      console.error('[instructor-profile] Could not load avatar preview', error);
+    }
   }
 
   const mine = new Set(me?.beaches.map((beach) => beach.id));

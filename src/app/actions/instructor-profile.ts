@@ -123,26 +123,46 @@ export async function uploadInstructorAvatar(_previous: ActionState, form: FormD
   if (candidate.size > MAX_IMAGE_BYTES) return { error: 'A imagem deve ter no máximo 3 MB.' };
   if (!(candidate.type in IMAGE_FORMATS)) return { error: 'Use uma foto JPG, PNG ou WebP.' };
 
-  const mime = candidate.type as keyof typeof IMAGE_FORMATS;
-  const bytes = new Uint8Array(await candidate.arrayBuffer());
-  if (!hasValidImageSignature(bytes, mime)) return { error: 'O arquivo não é uma imagem válida.' };
+  try {
+    const mime = candidate.type as keyof typeof IMAGE_FORMATS;
+    const bytes = new Uint8Array(await candidate.arrayBuffer());
+    if (!hasValidImageSignature(bytes, mime)) return { error: 'O arquivo não é uma imagem válida.' };
 
-  const supabase = await createSupabaseServerClient();
-  // Check the new private table BEFORE storing any image, to prevent orphan uploads.
-  const { error: profileError } = await supabase.from('instructor_private_profiles')
-    .select('id').eq('id', viewer.id).maybeSingle();
-  if (profileError) return { error: describeError(profileError) };
+    const supabase = await createSupabaseServerClient();
+    // Check that storage metadata can be written before uploading the image.
+    const { error: profileError } = await supabase.from('instructor_private_profiles')
+      .select('id').eq('id', viewer.id).maybeSingle();
+    if (profileError) {
+      console.error('[instructor-avatar] Profile lookup failed', {
+        code: profileError.code, message: profileError.message,
+      });
+      return { error: describeError(profileError) };
+    }
 
-  const path = viewer.id + '/avatar.' + IMAGE_FORMATS[mime];
-  const { error: uploadError } = await supabase.storage.from(AVATAR_BUCKET)
-    .upload(path, bytes, { contentType: mime, upsert: true, cacheControl: '60' });
-  if (uploadError) return { error: 'Não foi possível salvar a foto. Verifique o armazenamento privado no Supabase.' };
+    const path = viewer.id + '/avatar.' + IMAGE_FORMATS[mime];
+    const { error: uploadError } = await supabase.storage.from(AVATAR_BUCKET)
+      .upload(path, bytes, { contentType: mime, upsert: true, cacheControl: '60' });
+    if (uploadError) {
+      console.error('[instructor-avatar] Storage upload failed', {
+        statusCode: uploadError.statusCode, message: uploadError.message,
+      });
+      return { error: 'Não foi possível enviar a foto. Verifique a configuração do armazenamento e as permissões no Supabase.' };
+    }
 
-  const { error: saveError } = await supabase.from('instructor_private_profiles').upsert({
-    id: viewer.id, avatar_path: path, updated_at: new Date().toISOString(),
-  }, { onConflict: 'id' });
-  if (saveError) return { error: describeError(saveError) };
+    const { error: saveError } = await supabase.from('instructor_private_profiles').upsert({
+      id: viewer.id, avatar_path: path, updated_at: new Date().toISOString(),
+    }, { onConflict: 'id' });
+    if (saveError) {
+      console.error('[instructor-avatar] Avatar path save failed', {
+        code: saveError.code, message: saveError.message,
+      });
+      return { error: describeError(saveError) };
+    }
 
-  revalidatePath('/instrutor/cadastro');
-  return { ok: 'Foto do perfil atualizada.' };
+    revalidatePath('/instrutor/cadastro');
+    return { ok: 'Foto do perfil atualizada.' };
+  } catch (error) {
+    console.error('[instructor-avatar] Unexpected upload error', error);
+    return { error: 'O envio não foi concluído. Tente novamente com uma foto JPG, PNG ou WebP de até 3 MB.' };
+  }
 }
