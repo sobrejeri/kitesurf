@@ -89,16 +89,99 @@ function normalise(raw: RawBooking): Booking {
   };
 }
 
-export async function listBookingsForStudent(studentId: string): Promise<Booking[]> {
+/**
+ * Student history needs only a few booking fields; never couple these three
+ * pages to the financial snapshot or PostgREST's multi-level relationship join.
+ *
+ * Extra finance columns are added by later migrations. A large nested select
+ * makes even an empty student account crash when a deployment uses an older
+ * schema (or the API relationship cache is behind the migration).
+ */
+export type StudentBooking = Pick<
+  Booking,
+  'id' | 'status' | 'student_id' | 'instructor_id' | 'beach_id' | 'total_hours' |
+  'created_at' | 'booking_meetings' | 'beach' | 'instructor'
+>;
+
+type StudentBookingBase = Omit<StudentBooking, 'booking_meetings' | 'beach' | 'instructor'>;
+type StudentMeetingRow = Meeting & { booking_id: string };
+
+export async function listBookingsForStudent(studentId: string): Promise<StudentBooking[]> {
   const supabase = await createSupabaseServerClient();
   const { data, error } = await supabase
     .from('bookings')
-    .select(BOOKING_COLUMNS)
+    .select('id, status, student_id, instructor_id, beach_id, total_hours, created_at')
     .eq('student_id', studentId)
     .order('created_at', { ascending: false })
-    .returns<RawBooking[]>();
-  if (error) throw error;
-  return (data ?? []).map(normalise);
+    .returns<StudentBookingBase[]>();
+
+  if (error) {
+    console.error('[student-bookings] Failed to read bookings', { code: error.code, message: error.message });
+    throw new Error('Não foi possível consultar suas reservas.');
+  }
+
+  const bookings = data ?? [];
+  if (bookings.length === 0) return [];
+
+  const bookingIds = bookings.map((booking) => booking.id);
+  const beachIds = [...new Set(bookings.map((booking) => booking.beach_id))];
+  const instructorIds = [...new Set(
+    bookings.map((booking) => booking.instructor_id).filter((id): id is string => id !== null),
+  )];
+
+  // Relations are loaded independently under the same signed-in user's RLS.
+  // Profile metadata is optional; missing permission should not hide a booking.
+  const [meetingResult, beachResult, instructorResult] = await Promise.all([
+    supabase
+      .from('booking_meetings')
+      .select('id, booking_id, position, starts_at, minutes, status, done_minutes, note')
+      .in('booking_id', bookingIds)
+      .returns<StudentMeetingRow[]>(),
+    supabase
+      .from('beaches')
+      .select('id, name')
+      .in('id', beachIds)
+      .returns<{ id: string; name: string }[]>(),
+    instructorIds.length > 0
+      ? supabase
+          .from('profiles')
+          .select('id, full_name')
+          .in('id', instructorIds)
+          .returns<{ id: string; full_name: string }[]>()
+      : Promise.resolve({ data: [] as { id: string; full_name: string }[], error: null }),
+  ]);
+
+  if (meetingResult.error) {
+    console.error('[student-bookings] Failed to read meetings', {
+      code: meetingResult.error.code,
+      message: meetingResult.error.message,
+    });
+    throw new Error('Não foi possível consultar os encontros da reserva.');
+  }
+  if (beachResult.error) {
+    console.error('[student-bookings] Failed to read beaches', { code: beachResult.error.code, message: beachResult.error.message });
+  }
+  if (instructorResult.error) {
+    console.error('[student-bookings] Failed to read instructor names', {
+      code: instructorResult.error.code, message: instructorResult.error.message,
+    });
+  }
+
+  const meetingMap = new Map<string, Meeting[]>();
+  for (const { booking_id, ...meeting } of meetingResult.data ?? []) {
+    const entries = meetingMap.get(booking_id) ?? [];
+    entries.push(meeting);
+    meetingMap.set(booking_id, entries);
+  }
+  const beaches = new Map((beachResult.data ?? []).map((item) => [item.id, { name: item.name }]));
+  const instructors = new Map((instructorResult.data ?? []).map((item) => [item.id, { full_name: item.full_name }]));
+
+  return bookings.map((booking) => ({
+    ...booking,
+    beach: beaches.get(booking.beach_id) ?? null,
+    instructor: booking.instructor_id ? instructors.get(booking.instructor_id) ?? null : null,
+    booking_meetings: (meetingMap.get(booking.id) ?? []).sort((a, b) => a.position - b.position),
+  }));
 }
 
 export async function listBookingsForInstructor(instructorId: string): Promise<Booking[]> {
@@ -294,7 +377,7 @@ export async function getPartnerSummary(): Promise<PartnerSummary> {
 }
 
 /** Minutes contracted, done, scheduled and still free for a list of bookings. */
-export function learningBalance(bookings: readonly Booking[]) {
+export function learningBalance(bookings: readonly Pick<Booking, 'status' | 'total_hours' | 'booking_meetings'>[]) {
   const live = bookings.filter((booking) => booking.status === 'confirmed' || booking.status === 'completed');
   let contracted = 0;
   let done = 0;
