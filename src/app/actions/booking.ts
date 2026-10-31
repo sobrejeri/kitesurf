@@ -29,6 +29,8 @@ const CreateBooking = z.strictObject({
   level: z.enum(['first_time', 'returning', 'improving']),
   language: z.enum(['Português', 'Inglês', 'Espanhol', 'Francês', 'Alemão', 'Italiano']),
   meetings: z.array(Meeting).min(1).max(8),
+  // Preserves compatibility with older cached clients that do not send it yet.
+  expectedHours: z.coerce.number().int().min(1).max(8).optional(),
   transport: z.enum(['yes', 'no']),
 });
 
@@ -46,12 +48,16 @@ export async function createBooking(_prev: ActionState, form: FormData): Promise
     level: form.get('level'),
     language: form.get('language'),
     meetings,
+    expectedHours: form.get('expectedHours') ?? undefined,
     transport: form.get('transport') ?? 'no',
   });
   if (!parsed.success) return { error: 'Confira praia, nível, idioma e os encontros.' };
 
   const totalHours = parsed.data.meetings.reduce((sum, meeting) => sum + meeting.hours, 0);
   if (totalHours > 8) return { error: 'Cada reserva tem de 1 a 8 horas no total.' };
+  if (parsed.data.expectedHours !== undefined && totalHours !== parsed.data.expectedHours) {
+    return { error: `Distribua exatamente as ${parsed.data.expectedHours}h escolhidas antes de continuar.` };
+  }
   if (parsed.data.meetings.some((meeting) => meeting.date < lessonDate())) {
     return { error: 'Não é possível reservar uma aula em uma data anterior a hoje.' };
   }

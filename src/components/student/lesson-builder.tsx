@@ -79,13 +79,49 @@ export function LessonBuilder({
   const [editing, setEditing] = useState(false);
   const [transport, setTransport] = useState(false);
 
+  // The hour package chosen in Explorar is fixed. Meetings only distribute it
+  // across dates; changing a meeting must not change the package or its quote.
+  const selectedHours = defaults.hours;
   const totalHours = meetings.reduce((sum, meeting) => sum + meeting.hours, 0);
-  const quote = quotes.find((row) => row.hours === totalHours);
+  const remainingHours = selectedHours - totalHours;
+  const quote = quotes.find((row) => row.hours === selectedHours);
   const datesValid = meetings.every((meeting) => meeting.date >= lessonDate());
-  const valid = totalHours >= 1 && totalHours <= MAX_HOURS && Boolean(beachId) && datesValid;
+  const hoursFullyDistributed = remainingHours === 0;
+  const canAddMeeting = meetings.length < selectedHours &&
+    (remainingHours > 0 || meetings.some((meeting) => meeting.hours > 1));
+  const valid = hoursFullyDistributed && Boolean(beachId) && datesValid;
 
   function update(id: number, patch: Partial<Meeting>) {
-    setMeetings((current) => current.map((meeting) => (meeting.id === id ? { ...meeting, ...patch } : meeting)));
+    // The select options already cap each meeting, but validate state updates too.
+    setMeetings((current) => {
+      const otherHours = current.reduce((sum, meeting) => sum + (meeting.id === id ? 0 : meeting.hours), 0);
+      return current.map((meeting) => {
+        if (meeting.id !== id) return meeting;
+        if (patch.hours === undefined) return { ...meeting, ...patch };
+        const maxAllowed = selectedHours - otherHours;
+        const hours = Math.max(1, Math.min(maxAllowed, Math.trunc(patch.hours)));
+        return { ...meeting, ...patch, hours };
+      });
+    });
+  }
+
+  function addMeeting() {
+    if (!canAddMeeting) return;
+
+    let next = meetings;
+    if (remainingHours === 0) {
+      // All hours are in use: split one existing meeting instead of adding hours.
+      const split = meetings.find((meeting) => meeting.hours > 1);
+      if (!split) return;
+      next = meetings.map((meeting) =>
+        meeting.id === split.id ? { ...meeting, hours: meeting.hours - 1 } : meeting,
+      );
+    }
+
+    const id = Math.max(...next.map((meeting) => meeting.id)) + 1;
+    const last = next[next.length - 1];
+    setMeetings([...next, { id, date: last?.date ?? defaults.date, start: '09:00', hours: 1 }]);
+    setOpen(id);
   }
 
   const payload = JSON.stringify(meetings.map(({ date, start, hours }) => ({ date, start, hours })));
@@ -96,6 +132,7 @@ export function LessonBuilder({
       <input type="hidden" name="level" value={level} />
       <input type="hidden" name="language" value={language} />
       <input type="hidden" name="meetings" value={payload} />
+      <input type="hidden" name="expectedHours" value={selectedHours} />
       <input type="hidden" name="transport" value={transport ? 'yes' : 'no'} />
 
       {/* Numbered stepper. */}
@@ -195,6 +232,10 @@ export function LessonBuilder({
 
             <Card>
               <SectionHead icon="calendar" title="Seus encontros" aside={<span className="text-[12px] text-muted">Mesmo instrutor</span>} />
+              <p className="mt-3 text-[13px] leading-relaxed text-muted">
+                Você escolheu <strong className="text-ink">{selectedHours}h de aula</strong>. Divida esse total entre
+                um ou mais encontros, em dias diferentes se preferir.
+              </p>
               <ul className="mt-4 grid gap-3">
                 {meetings.map((meeting, index) => {
                   const { day, month } = dayParts(meeting.date);
@@ -235,7 +276,7 @@ export function LessonBuilder({
                           </Field>
                           <Field label="Horas">
                             <select className={inputClass} value={meeting.hours} onChange={(e) => update(meeting.id, { hours: Number(e.target.value) })}>
-                              {Array.from({ length: MAX_HOURS }, (_, i) => i + 1).map((value) => (
+                              {Array.from({ length: selectedHours - (totalHours - meeting.hours) }, (_, i) => i + 1).map((value) => (
                                 <option key={value} value={value}>{value}h</option>
                               ))}
                             </select>
@@ -259,28 +300,50 @@ export function LessonBuilder({
                 variant="soft"
                 icon="plus"
                 className="mt-4"
-                disabled={totalHours >= MAX_HOURS}
-                onClick={() => {
-                  const id = Math.max(...meetings.map((meeting) => meeting.id)) + 1;
-                  const last = meetings[meetings.length - 1];
-                  setMeetings((current) => [...current, { id, date: last?.date ?? defaults.date, start: '09:00', hours: 1 }]);
-                  setOpen(id);
-                }}
+                disabled={!canAddMeeting}
+                onClick={addMeeting}
               >
                 Adicionar encontro
               </Button>
+              <div className="mt-4 space-y-2" aria-live="polite">
+                <div className="flex flex-wrap items-center justify-between gap-2 text-[13px]">
+                  <span className="font-semibold text-ink">
+                    {totalHours}h de {selectedHours}h distribuídas
+                  </span>
+                  <span className={hoursFullyDistributed ? 'font-semibold text-brand' : 'font-semibold text-warning'}>
+                    {hoursFullyDistributed ? 'Todas as horas definidas' : `Faltam ${remainingHours}h`}
+                  </span>
+                </div>
+                <div
+                  role="progressbar"
+                  aria-label="Distribuição das horas"
+                  aria-valuemin={0}
+                  aria-valuemax={selectedHours}
+                  aria-valuenow={totalHours}
+                  className="h-2 overflow-hidden rounded-full bg-sand"
+                >
+                  <div
+                    className="h-full rounded-full bg-brand transition-[width] duration-200"
+                    style={{ width: `${(totalHours / selectedHours) * 100}%` }}
+                  />
+                </div>
+                <p className="text-[12px] text-muted">
+                  {meetings.length} encontro(s). O total contratado permanece em {selectedHours}h.
+                </p>
+              </div>
               {!datesValid ? <p role="alert" className="mt-3 text-[12px] text-warning">Selecione hoje ou uma data futura para todos os encontros.</p> : null}
-              <p className={`mt-3 text-[12px] ${valid ? 'text-muted' : 'text-warning'}`}>
-                {totalHours}h distribuídas em {meetings.length} encontro(s).
-                {valid ? '' : ` O máximo por reserva é ${MAX_HOURS}h.`}
-              </p>
+              {!hoursFullyDistributed ? (
+                <p role="status" className="mt-3 text-[12px] text-warning">
+                  Defina as {remainingHours}h restantes antes de continuar.
+                </p>
+              ) : null}
             </Card>
           </div>
         ) : (
           <Card>
             <SectionHead icon="check" title="Revise antes de buscar" />
             <dl className="mt-4 grid gap-3 text-[14px]">
-              <div className="flex justify-between border-b border-line pb-3"><dt className="text-muted">Aula</dt><dd className="font-bold text-ink">Aula particular · {totalHours}h</dd></div>
+              <div className="flex justify-between border-b border-line pb-3"><dt className="text-muted">Aula</dt><dd className="font-bold text-ink">Aula particular · {selectedHours}h</dd></div>
               <div className="flex justify-between gap-3 border-b border-line pb-3"><dt className="text-muted">Preferências</dt><dd className="text-right font-bold text-ink">{language} · {LEVEL_LABELS[level]} · {beachName}</dd></div>
               <div className="flex justify-between gap-3 border-b border-line pb-3"><dt className="text-muted">Transporte de apoio</dt><dd className="font-bold text-ink">{transport ? 'Sim' : 'Não'}</dd></div>
               {meetings.map((meeting, index) => (
@@ -314,12 +377,12 @@ export function LessonBuilder({
           {quote ? (
             <dl className="tabular mt-4 grid gap-2 border-t border-white/15 pt-4 text-[12px] text-white/75">
               <div className="flex justify-between">
-                <dt>Aula · {totalHours}h × {formatMoney(quote.hourly_rate_cents)}</dt>
+                <dt>Aula · {selectedHours}h × {formatMoney(quote.hourly_rate_cents)}</dt>
                 <dd className="font-semibold text-white">{formatMoney(quote.total_cents)}</dd>
               </div>
               {transport ? (
                 <div className="flex justify-between">
-                  <dt>Transporte · {totalHours}h × {formatMoney(quote.transport_hourly_cents)}</dt>
+                  <dt>Transporte · {selectedHours}h × {formatMoney(quote.transport_hourly_cents)}</dt>
                   <dd className="font-semibold text-white">{formatMoney(quote.transport_cents)}</dd>
                 </div>
               ) : null}
