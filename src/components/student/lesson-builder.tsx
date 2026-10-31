@@ -1,13 +1,13 @@
 'use client';
 
-import { useActionState, useState } from 'react';
+import { Fragment, useActionState, useState } from 'react';
 
 import { createBooking } from '@/app/actions/booking';
 import { LANGUAGES, MAX_HOURS } from '@/data/demo';
 import { LEVEL_LABELS, type Beach, type LessonLevel, type QuoteRow } from '@/lib/data-labels';
 import { formatMoney } from '@/lib/format';
 
-import { Icon } from '../icon';
+import { Icon, type IconName } from '../icon';
 import { Button, Card, Field, Note, inputClass } from '../ui';
 
 interface Meeting {
@@ -23,6 +23,31 @@ export interface BuilderDefaults {
   language: string;
   hours: number;
   date: string;
+}
+
+const STEPS = ['Sua aula', 'Revisar e buscar'] as const;
+const MONTHS = ['JAN', 'FEV', 'MAR', 'ABR', 'MAI', 'JUN', 'JUL', 'AGO', 'SET', 'OUT', 'NOV', 'DEZ'];
+
+/** "2026-10-31" → { day: "31", month: "OUT" }, read straight from the parts so
+ *  no timezone shift moves it to the day before. */
+function dayParts(date: string): { day: string; month: string } {
+  const [, month, day] = date.split('-');
+  return { day: day ?? '--', month: MONTHS[Number(month) - 1] ?? '' };
+}
+
+/** A section heading with an orange icon bubble, in the display face. */
+function SectionHead({ icon, title, aside }: { icon: IconName; title: string; aside?: React.ReactNode }) {
+  return (
+    <div className="flex items-center justify-between gap-3">
+      <h2 className="flex items-center gap-2.5 text-[19px] font-extrabold text-ink">
+        <span className="grid h-9 w-9 shrink-0 place-items-center rounded-full bg-brand-soft text-[#ff6a13]" aria-hidden="true">
+          <Icon name={icon} className="!h-5 !w-5" />
+        </span>
+        {title}
+      </h2>
+      {aside}
+    </div>
+  );
 }
 
 /**
@@ -70,15 +95,28 @@ export function LessonBuilder({
       <input type="hidden" name="meetings" value={payload} />
       <input type="hidden" name="transport" value={transport ? 'yes' : 'no'} />
 
-      <ol className="mb-6 flex gap-3 text-[12px]">
-        {['1. Sua aula', '2. Revisar e buscar'].map((label, index) => (
-          <li
-            key={label}
-            className={`flex-1 border-b-2 pb-2.5 ${step === index + 1 ? 'border-brand font-[550] text-brand' : 'border-line text-quiet'}`}
-          >
-            {label}
-          </li>
-        ))}
+      {/* Numbered stepper. */}
+      <ol className="mb-6 flex items-center">
+        {STEPS.map((label, index) => {
+          const n = index + 1;
+          const done = step > n;
+          const active = step === n;
+          return (
+            <Fragment key={label}>
+              <li className="flex items-center gap-2.5">
+                <span
+                  className={`grid h-9 w-9 shrink-0 place-items-center rounded-full text-[15px] font-bold ${
+                    active || done ? 'btn-primary text-white shadow-button' : 'bg-sand text-muted'
+                  }`}
+                >
+                  {done ? <Icon name="check" className="!h-5 !w-5" /> : n}
+                </span>
+                <span className={`text-[14px] font-bold ${active ? 'text-ink' : 'text-muted'}`}>{label}</span>
+              </li>
+              {index < STEPS.length - 1 ? <span className="mx-3 h-0.5 flex-1 rounded-full bg-line" /> : null}
+            </Fragment>
+          );
+        })}
       </ol>
 
       <div className="grid gap-5 lg:grid-cols-[1.5fr_1fr]">
@@ -87,18 +125,18 @@ export function LessonBuilder({
             {/* Already chosen on Explorar: shown as a summary, editable on demand. */}
             <Card className="!p-4">
               <div className="flex items-center gap-3">
-                <span className="grid h-10 w-10 shrink-0 place-items-center rounded-full bg-brand-soft text-[#ff6a13]" aria-hidden="true">
-                  <Icon name="pin" className="!h-5 !w-5" />
+                <span className="grid h-12 w-12 shrink-0 place-items-center rounded-[14px] bg-brand-soft text-[#ff6a13]" aria-hidden="true">
+                  <Icon name="pin" className="!h-6 !w-6" />
                 </span>
-                <p className="min-w-0 flex-1 text-[14px] leading-snug">
-                  <strong className="block font-semibold text-ink">{beachName}</strong>
-                  <span className="text-muted">{LEVEL_LABELS[level]} · {language}</span>
+                <p className="min-w-0 flex-1 leading-snug">
+                  <strong className="block text-[16px] font-extrabold text-ink">{beachName}</strong>
+                  <span className="text-[13px] text-muted">{LEVEL_LABELS[level]} · {language}</span>
                 </p>
                 <button
                   type="button"
                   onClick={() => setEditing(!editing)}
                   aria-expanded={editing}
-                  className="press flex items-center gap-1.5 rounded-full border border-line px-3.5 py-2 text-[13px] font-semibold text-brand"
+                  className="press flex items-center gap-1.5 rounded-full border border-line px-3.5 py-2 text-[13px] font-bold text-brand"
                 >
                   <Icon name="edit" className="!h-4 !w-4" />
                   {editing ? 'Pronto' : 'Editar'}
@@ -133,12 +171,12 @@ export function LessonBuilder({
 
             {/* Optional add-on: the instructor's own support vehicle. */}
             {quote && quote.transport_hourly_cents > 0 ? (
-              <label className="press flex cursor-pointer items-center gap-3 rounded-card border border-line bg-surface p-4 shadow-card has-[:checked]:border-[#ff6a13]">
-                <span className="grid h-10 w-10 shrink-0 place-items-center rounded-full bg-brand-soft text-[#ff6a13]" aria-hidden="true">
-                  <Icon name="car" className="!h-5 !w-5" />
+              <label className="press flex cursor-pointer items-center gap-3 rounded-card border border-line bg-surface p-4 shadow-card has-[:checked]:border-[#ff6a13] has-[:checked]:bg-brand-tint">
+                <span className="grid h-12 w-12 shrink-0 place-items-center rounded-[14px] bg-brand-soft text-[#ff6a13]" aria-hidden="true">
+                  <Icon name="car" className="!h-6 !w-6" />
                 </span>
-                <span className="min-w-0 flex-1 text-[14px] leading-snug">
-                  <strong className="block font-semibold text-ink">Transporte de apoio</strong>
+                <span className="min-w-0 flex-1 leading-snug">
+                  <strong className="block text-[15px] font-extrabold text-ink">Transporte de apoio</strong>
                   <span className="tabular text-[12px] text-muted">
                     Veículo do instrutor acompanha a aula · + {formatMoney(quote.transport_hourly_cents)}/hora
                   </span>
@@ -153,55 +191,61 @@ export function LessonBuilder({
             ) : null}
 
             <Card>
-              <div className="flex items-center justify-between">
-                <h2 className="text-[16px]">Seus encontros</h2>
-                <span className="text-[11px] text-muted">Mesmo instrutor</span>
-              </div>
+              <SectionHead icon="calendar" title="Seus encontros" aside={<span className="text-[12px] text-muted">Mesmo instrutor</span>} />
               <ul className="mt-4 grid gap-3">
-                {meetings.map((meeting, index) => (
-                  <li key={meeting.id} className="rounded-search border border-line">
-                    <button
-                      type="button"
-                      onClick={() => setOpen(open === meeting.id ? 0 : meeting.id)}
-                      aria-expanded={open === meeting.id}
-                      className="flex w-full items-center justify-between px-4 py-3.5 text-left"
-                    >
-                      <span>
-                        <span className="block text-[13px] font-[550]">Encontro {index + 1}</span>
-                        <span className="text-[11px] text-muted">
-                          {meeting.date.split('-').reverse().slice(0, 2).join('/')} · {meeting.start} · {meeting.hours}h
+                {meetings.map((meeting, index) => {
+                  const { day, month } = dayParts(meeting.date);
+                  const isOpen = open === meeting.id;
+                  return (
+                    <li key={meeting.id} className={`overflow-hidden rounded-[18px] border ${isOpen ? 'border-[#ff6a13]' : 'border-line'}`}>
+                      <button
+                        type="button"
+                        onClick={() => setOpen(isOpen ? 0 : meeting.id)}
+                        aria-expanded={isOpen}
+                        className="flex w-full items-center gap-3 px-3 py-3 text-left"
+                      >
+                        <span className="grid h-[52px] w-[48px] shrink-0 place-items-center content-center rounded-[12px] bg-brand-soft text-[#ff6a13]">
+                          <span className="text-[22px] font-extrabold leading-none">{day}</span>
+                          <span className="mt-0.5 text-[9px] font-bold tracking-[1px]">{month}</span>
                         </span>
-                      </span>
-                      <span className="text-[12px] font-[550] text-brand">{open === meeting.id ? 'Recolher' : 'Editar'}</span>
-                    </button>
-                    {open === meeting.id ? (
-                      <div className="grid gap-3 border-t border-line p-4 sm:grid-cols-3">
-                        <Field label="Data">
-                          <input type="date" required className={inputClass} value={meeting.date} onChange={(e) => update(meeting.id, { date: e.target.value })} />
-                        </Field>
-                        <Field label="Início">
-                          <input type="time" required step={1800} className={inputClass} value={meeting.start} onChange={(e) => update(meeting.id, { start: e.target.value })} />
-                        </Field>
-                        <Field label="Horas">
-                          <select className={inputClass} value={meeting.hours} onChange={(e) => update(meeting.id, { hours: Number(e.target.value) })}>
-                            {Array.from({ length: MAX_HOURS }, (_, i) => i + 1).map((value) => (
-                              <option key={value} value={value}>{value}h</option>
-                            ))}
-                          </select>
-                        </Field>
-                        {meetings.length > 1 ? (
-                          <button
-                            type="button"
-                            className="text-left text-[12px] font-[550] text-danger sm:col-span-3"
-                            onClick={() => setMeetings((current) => current.filter((item) => item.id !== meeting.id))}
-                          >
-                            Remover encontro
-                          </button>
-                        ) : null}
-                      </div>
-                    ) : null}
-                  </li>
-                ))}
+                        <span className="min-w-0 flex-1">
+                          <span className="block text-[15px] font-bold text-ink">Encontro {index + 1}</span>
+                          <span className="tabular text-[12px] text-muted">{meeting.start} · {meeting.hours}h de aula</span>
+                        </span>
+                        <span className="flex items-center gap-1 text-[13px] font-bold text-brand">
+                          {isOpen ? 'Recolher' : 'Editar'}
+                          <Icon name="chevronDown" className={`!h-4 !w-4 transition-transform ${isOpen ? 'rotate-180' : ''}`} />
+                        </span>
+                      </button>
+                      {isOpen ? (
+                        <div className="grid gap-3 border-t border-line p-4 sm:grid-cols-3">
+                          <Field label="Data">
+                            <input type="date" required className={inputClass} value={meeting.date} onChange={(e) => update(meeting.id, { date: e.target.value })} />
+                          </Field>
+                          <Field label="Início">
+                            <input type="time" required step={1800} className={inputClass} value={meeting.start} onChange={(e) => update(meeting.id, { start: e.target.value })} />
+                          </Field>
+                          <Field label="Horas">
+                            <select className={inputClass} value={meeting.hours} onChange={(e) => update(meeting.id, { hours: Number(e.target.value) })}>
+                              {Array.from({ length: MAX_HOURS }, (_, i) => i + 1).map((value) => (
+                                <option key={value} value={value}>{value}h</option>
+                              ))}
+                            </select>
+                          </Field>
+                          {meetings.length > 1 ? (
+                            <button
+                              type="button"
+                              className="flex items-center gap-1.5 text-left text-[13px] font-bold text-danger sm:col-span-3"
+                              onClick={() => setMeetings((current) => current.filter((item) => item.id !== meeting.id))}
+                            >
+                              <Icon name="minus" className="!h-4 !w-4" /> Remover encontro
+                            </button>
+                          ) : null}
+                        </div>
+                      ) : null}
+                    </li>
+                  );
+                })}
               </ul>
               <Button
                 variant="soft"
@@ -225,15 +269,15 @@ export function LessonBuilder({
           </div>
         ) : (
           <Card>
-            <h2 className="text-[16px]">Revise antes de buscar</h2>
-            <dl className="mt-4 grid gap-3 text-[13px]">
-              <div className="flex justify-between border-b border-line pb-3"><dt className="text-muted">Aula</dt><dd className="font-[550]">Aula particular · {totalHours}h</dd></div>
-              <div className="flex justify-between gap-3 border-b border-line pb-3"><dt className="text-muted">Preferências</dt><dd className="text-right font-[550]">{language} · {LEVEL_LABELS[level]} · {beachName}</dd></div>
-              <div className="flex justify-between gap-3 border-b border-line pb-3"><dt className="text-muted">Transporte de apoio</dt><dd className="font-[550]">{transport ? 'Sim' : 'Não'}</dd></div>
+            <SectionHead icon="check" title="Revise antes de buscar" />
+            <dl className="mt-4 grid gap-3 text-[14px]">
+              <div className="flex justify-between border-b border-line pb-3"><dt className="text-muted">Aula</dt><dd className="font-bold text-ink">Aula particular · {totalHours}h</dd></div>
+              <div className="flex justify-between gap-3 border-b border-line pb-3"><dt className="text-muted">Preferências</dt><dd className="text-right font-bold text-ink">{language} · {LEVEL_LABELS[level]} · {beachName}</dd></div>
+              <div className="flex justify-between gap-3 border-b border-line pb-3"><dt className="text-muted">Transporte de apoio</dt><dd className="font-bold text-ink">{transport ? 'Sim' : 'Não'}</dd></div>
               {meetings.map((meeting, index) => (
                 <div key={meeting.id} className="flex justify-between border-b border-line pb-3 last:border-0">
                   <dt className="text-muted">Encontro {index + 1}</dt>
-                  <dd className="font-[550]">{meeting.date.split('-').reverse().join('/')} · {meeting.start} · {meeting.hours}h</dd>
+                  <dd className="tabular font-bold text-ink">{meeting.date.split('-').reverse().join('/')} · {meeting.start} · {meeting.hours}h</dd>
                 </div>
               ))}
             </dl>
@@ -250,28 +294,39 @@ export function LessonBuilder({
           </Card>
         )}
 
-        <Card className="self-start lg:sticky lg:top-24">
-          <p className="text-[12px] text-muted">Total estimado</p>
-          <p className="tabular mt-1 text-[32px] font-semibold tracking-[-0.7px] text-brand">
+        {/* Total on a deep-navy card so it stands out against the sand. */}
+        <section className="self-start overflow-hidden rounded-[24px] bg-[#0f1b2d] p-6 text-white shadow-search lg:sticky lg:top-24">
+          <p className="flex items-center gap-2 text-[12px] font-semibold uppercase tracking-[2px] text-white/70">
+            <Icon name="wallet" className="!h-4 !w-4 text-sunrise" /> Total estimado
+          </p>
+          <p className="tabular mt-2 text-[40px] font-extrabold leading-none tracking-[-1px] text-sunrise">
             {quote ? formatMoney(transport ? quote.total_with_transport_cents : quote.total_cents) : '—'}
           </p>
           {quote ? (
-            <dl className="tabular mt-1 grid gap-0.5 text-[11px] text-muted">
-              <div className="flex justify-between"><dt>Aula · {totalHours}h × {formatMoney(quote.hourly_rate_cents)}</dt><dd>{formatMoney(quote.total_cents)}</dd></div>
+            <dl className="tabular mt-4 grid gap-2 border-t border-white/15 pt-4 text-[12px] text-white/75">
+              <div className="flex justify-between">
+                <dt>Aula · {totalHours}h × {formatMoney(quote.hourly_rate_cents)}</dt>
+                <dd className="font-semibold text-white">{formatMoney(quote.total_cents)}</dd>
+              </div>
               {transport ? (
-                <div className="flex justify-between"><dt>Transporte · {totalHours}h × {formatMoney(quote.transport_hourly_cents)}</dt><dd>{formatMoney(quote.transport_cents)}</dd></div>
+                <div className="flex justify-between">
+                  <dt>Transporte · {totalHours}h × {formatMoney(quote.transport_hourly_cents)}</dt>
+                  <dd className="font-semibold text-white">{formatMoney(quote.transport_cents)}</dd>
+                </div>
               ) : null}
             </dl>
           ) : (
-            <p className="text-[11px] text-muted">Valor confirmado na reserva</p>
+            <p className="mt-2 text-[12px] text-white/60">Valor confirmado na reserva</p>
           )}
           {step === 1 ? (
-            <Button className="mt-5 w-full" trailingIcon="arrow" disabled={!valid} onClick={() => setStep(2)}>
+            <Button className="mt-5 w-full !min-h-14 !text-[16px]" trailingIcon="arrow" disabled={!valid} onClick={() => setStep(2)}>
               Continuar
             </Button>
           ) : null}
-          <p className="mt-3 text-[11px] text-muted">Você revisa tudo antes de buscar o instrutor.</p>
-        </Card>
+          <p className="mt-3 flex items-center gap-1.5 text-[11px] text-white/60">
+            <Icon name="shield" className="!h-4 !w-4" /> Você revisa tudo antes de buscar o instrutor.
+          </p>
+        </section>
       </div>
     </form>
   );
