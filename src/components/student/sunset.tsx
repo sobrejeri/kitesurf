@@ -119,7 +119,7 @@ export function StudentHero({
         {lead ? <p className="mt-3 max-w-[30ch] text-[15px] leading-snug text-[#dfe5ee]">{lead}</p> : null}
         {children ? <div className="mt-5">{children}</div> : null}
       </div>
-      {compact && image === 'lesson' ? <svg className="pointer-events-none absolute bottom-0 left-0 h-[45px] w-full" viewBox="0 0 390 45" preserveAspectRatio="none" aria-hidden="true"><path d="M0 26 C95 0 140 44 232 18 S350 8 390 16 L390 45 L0 45Z" fill="#00b9d5" opacity=".75"/><path d="M0 37 C95 12 153 48 244 30 S342 23 390 29 L390 45 L0 45Z" fill="#f3f8f9"/></svg> : null}
+      {compact && image === 'lesson' ? <svg className="pointer-events-none absolute bottom-0 left-0 h-[45px] w-full" viewBox="0 0 390 45" preserveAspectRatio="none" aria-hidden="true"><path d="M0 26 C95 0 140 44 232 18 S350 8 390 16 L390 45 L0 45Z" fill="#00b9d5" opacity=".9"/><path d="M0 37 C95 12 153 48 244 30 S342 23 390 29 L390 45 L0 45Z" fill="#031c31"/></svg> : null}
     </section>
   );
 }
