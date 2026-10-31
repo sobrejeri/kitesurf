@@ -2,10 +2,11 @@ import type { Metadata } from 'next';
 import Image from 'next/image';
 
 import { updateInstructorProfile } from '@/app/actions/instructor';
-import { saveInstructorPersonal, uploadInstructorAvatar } from '@/app/actions/instructor-profile';
+import { saveInstructorPersonal } from '@/app/actions/instructor-profile';
 import { ActionForm } from '@/components/action-form';
 import { Icon } from '@/components/icon';
 import { InstructorMultiSelect } from '@/components/instructor/instructor-multi-select';
+import { InstructorAvatarForm } from '@/components/instructor/avatar-form';
 import { InstructorPayoutForm } from '@/components/instructor/payout-form';
 import { Badge, Card, Field, Note, inputClass, textareaClass } from '@/components/ui';
 import { LANGUAGES } from '@/data/demo';
@@ -72,11 +73,7 @@ export default async function InstructorProfileFormPage() {
             </div>
           </div>
           {privateReady ? (
-            <ActionForm action={uploadInstructorAvatar} submitLabel="Salvar foto" className="mt-4 grid gap-3">
-              <Field label="Foto do perfil" hint="JPG, PNG ou WebP · até 3 MB.">
-                <input type="file" name="avatar" accept="image/jpeg,image/png,image/webp" required className="block w-full min-w-0 rounded-[14px] border border-line-input bg-surface p-2 text-[12px] text-ink file:mr-3 file:rounded-full file:border-0 file:bg-brand-soft file:px-3 file:py-2 file:font-semibold file:text-brand" />
-              </Field>
-            </ActionForm>
+            <InstructorAvatarForm />
           ) : (
             <p className="mt-4 text-[12px] text-muted">O envio de foto estará disponível após a atualização do Supabase.</p>
           )}
