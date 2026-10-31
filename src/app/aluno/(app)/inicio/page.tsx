@@ -1,7 +1,7 @@
 import type { Metadata } from 'next';
 
 import { Icon, type IconName } from '@/components/icon';
-import { LessonSearch, PathRail, type PathItem } from '@/components/student/lesson-search';
+import { LessonSearch } from '@/components/student/lesson-search';
 import { HighlightTitle, StudentHero } from '@/components/student/sunset';
 import { getViewer } from '@/lib/auth';
 import { getQuoteTable, listActiveBeaches, type Beach, type QuoteRow } from '@/lib/data';
@@ -9,33 +9,6 @@ import { lessonDate } from '@/lib/dates';
 import { supabaseConfig } from '@/lib/env';
 
 export const metadata: Metadata = { title: 'Explorar' };
-
-const PATHS: readonly PathItem[] = [
-  {
-    tag: 'Para começar',
-    title: 'Meu primeiro contato',
-    body: 'Aprenda os primeiros movimentos com orientação, no seu tempo.',
-    image: '/images/kite-lesson.webp',
-    position: '35% 40%',
-    level: 'first_time',
-  },
-  {
-    tag: 'Para retomar',
-    title: 'Voltar para o mar',
-    body: 'Conte o que já aprendeu e continue de onde parou.',
-    image: '/images/kite-lesson.webp',
-    position: '75% 40%',
-    level: 'returning',
-  },
-  {
-    tag: 'Para evoluir',
-    title: 'Ir um pouco além',
-    body: 'Pratique suas habilidades com acompanhamento particular.',
-    image: '/images/prea-coast.webp',
-    position: '72% 50%',
-    level: 'improving',
-  },
-];
 
 const STEPS: readonly { title: string; body: string; icon: IconName }[] = [
   { title: 'Escolha suas horas', body: 'Conte a duração, a praia, o dia e seu idioma.', icon: 'calendar' },
@@ -78,10 +51,6 @@ export default async function StudentHomePage() {
 
       <LessonSearch defaultDate={lessonDate(1)} quotes={quotes} beaches={beaches} />
 
-      {/* The level cards speak for themselves; no section heading above them. */}
-      <section className="mt-8" aria-label="Escolha seu nível">
-        <PathRail items={PATHS} />
-      </section>
 
       <section className="relative mt-8 overflow-hidden rounded-[22px] border border-line bg-surface p-5 md:p-7">
         <span className="absolute -right-10 -top-10 h-48 w-48 rounded-full bg-[radial-gradient(circle,#ff7a1a40,transparent_65%)]" aria-hidden="true" />
