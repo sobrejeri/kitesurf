@@ -214,7 +214,7 @@ end $$;
 -- A new price does not change existing bookings; price rows are immutable.
 do $$ begin
   perform pg_temp.act_as('00000000-0000-0000-0000-00000000000a');
-  perform public.publish_price_version(35000, 1500, 'Alta temporada');
+  perform public.publish_price_version(35000, 1500, 12000, 'Alta temporada');
   perform pg_temp.reset();
   assert (select total_cents from public.bookings where code = 'VNT-1001') = 150000, 'old booking keeps price';
   assert (select hourly_rate_cents from public.quote_preview(1)) = 35000, 'new quotes use new price';
@@ -284,6 +284,47 @@ begin
   assert got_error, 'booked an inactive beach';
   perform pg_temp.reset();
   assert (select count(*) from public.audit_logs where entity = 'beach') = 2, 'beach changes audited';
+end $$;
+
+-- Support vehicle: only instructors with one are matched; the transport
+-- amount is added to the total and to the instructor's net, commissions stay
+-- on the lesson.
+do $$
+declare b public.bookings; got_none boolean := false;
+begin
+  perform pg_temp.act_as('00000000-0000-0000-0000-0000000000b2');
+  begin
+    perform public.create_booking((select id from public.beaches where slug = 'prea'), 'first_time', 'Português',
+      jsonb_build_array(jsonb_build_object('starts_at', (now() + interval '12 days')::text, 'hours', 2)), null, true);
+  exception when raise_exception then
+    got_none := sqlerrm = 'No instructor available for these slots';
+  end;
+  assert got_none, 'nobody has a vehicle yet';
+  perform pg_temp.reset();
+
+  perform pg_temp.act_as('00000000-0000-0000-0000-0000000000a2');
+  update public.instructors set has_support_vehicle = true where id = auth.uid();
+  perform pg_temp.reset();
+
+  perform pg_temp.act_as('00000000-0000-0000-0000-0000000000b2');
+  perform public.create_booking((select id from public.beaches where slug = 'prea'), 'first_time', 'Português',
+    jsonb_build_array(jsonb_build_object('starts_at', (now() + interval '12 days')::text, 'hours', 2)), null, true);
+  perform pg_temp.reset();
+
+  select * into b from public.bookings where with_transport order by created_at desc limit 1;
+  assert b.instructor_id = '00000000-0000-0000-0000-0000000000a2', 'only the instructor with a vehicle';
+  -- Current price: R$ 350/h lesson, 15%, R$ 120/h transport; 2 hours.
+  assert b.transport_cents = 24000, format('transport %s', b.transport_cents);
+  assert b.total_cents = 70000 + 24000, format('total %s', b.total_cents);
+  assert b.platform_cents = 10500, format('platform %s', b.platform_cents);
+  assert b.instructor_net_cents = 59500 + 24000, format('net %s', b.instructor_net_cents);
+  assert b.partner_cents + b.platform_cents + b.instructor_net_cents = b.total_cents, 'split reconciles';
+
+  begin
+    update public.bookings set transport_cents = 0 where id = b.id;
+    raise exception 'transport snapshot changed';
+  exception when insufficient_privilege then null; end;
+  assert (select total_with_transport_cents from public.quote_table() where hours = 2) = 94000, 'quote with transport';
 end $$;
 
 select 'ALL TESTS PASSED' as result;
