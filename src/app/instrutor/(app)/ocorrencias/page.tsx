@@ -1,9 +1,7 @@
 import type { Metadata } from 'next';
+import { IncidentWorkspace } from '@/components/incident-workspace';
 
-import { Incidents } from '@/components/shared';
-
-export const metadata: Metadata = { title: 'Ocorrências' };
-
-export default function InstructorIncidentsPage() {
-  return <Incidents />;
+export const metadata: Metadata = {title:'Ocorrências'};
+export default async function IncidentsPage() {
+  return <IncidentWorkspace area="instrutor"/>;
 }
