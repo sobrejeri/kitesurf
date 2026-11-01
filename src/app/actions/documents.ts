@@ -108,41 +108,6 @@ export async function registerInstructorDocumentUpload(input:{
   }
 }
 
-);
-  if(!pattern.test(path))return {error:'O documento não pertence a esta conta.'};
-  const extension=path.split('.').pop();
-  const mime=extension==='pdf'?'application/pdf':extension==='jpg'?'image/jpeg':'image/png';
-  try {
-    const db=await createSupabaseServerClient();
-    const bucket=db.storage.from('vento-instructor-documents');
-    const {data:blob,error:downloadError}=await bucket.download(path);
-    if(downloadError||!blob) {
-      console.error('[document.verify.download]',{message:downloadError?.message});
-      return {error:'Arquivo ainda não disponível no armazenamento. Tente enviar novamente.'};
-    }
-    if(blob.size===0||blob.size>MAX_SIZE)
-      return {error:'Arquivo vazio ou acima do limite de 8 MB.'};
-    const data=new Uint8Array(await blob.arrayBuffer());
-    if(!validSignature(data,mime as Mime))
-      return {error:'O conteúdo não é um PDF, JPG ou PNG válido. Selecione outro arquivo.'};
-
-    const {error}=await db.rpc('register_my_document',{
-      p_kind:parsed.data.kind,p_path:path,p_original_name:parsed.data.name,
-    });
-    if(error){
-      console.error('[document.register]',{code:error.code,message:error.message});
-      return {error:friendlyError(error)};
-    }
-    revalidatePath('/instrutor/documentos');
-    revalidatePath('/instrutor/cadastro');
-    revalidatePath('/admin/documentos');
-    revalidatePath('/admin/instrutores/[id]','page');
-    return {ok:'Documento recebido! Agora aguarde a análise da administração.'};
-  } catch(error) {
-    console.error('[document.register.unexpected]',error);
-    return {error:'O arquivo foi enviado, mas não conseguimos concluir o registro. Entre novamente e tente outra vez.'};
-  }
-}
 
 export async function reviewInstructorDocument(_prev:ActionState,form:FormData):Promise<ActionState> {
   const viewer=await requireRole(['admin']);
