@@ -16,7 +16,7 @@ import { friendlyError, type ActionState } from './errors';
  * The client sends choices only — beach, level, language and when each
  * meeting happens. A strict schema rejects anything else (a total, a rate, an
  * instructor id) instead of silently dropping it, and the price is derived by
- * create_booking in the database.
+ * create_instructor_request and then frozen into the booking on acceptance.
  */
 const Meeting = z.strictObject({
   date: z.iso.date(),
@@ -65,7 +65,7 @@ export async function createBooking(_prev: ActionState, form: FormData): Promise
   const referral = (await cookies()).get('vento_ref')?.value ?? null;
 
   const supabase = await createSupabaseServerClient();
-  const { data, error } = await supabase.rpc('create_booking', {
+  const { data, error } = await supabase.rpc('create_instructor_request', {
     p_beach_id: parsed.data.beachId,
     p_level: parsed.data.level,
     p_language: parsed.data.language,
@@ -77,7 +77,7 @@ export async function createBooking(_prev: ActionState, form: FormData): Promise
     p_with_transport: parsed.data.transport === 'yes',
   });
   if (error) {
-    console.error('[booking.create] RPC create_booking failed', {
+    console.error('[booking.request] RPC create_instructor_request failed', {
       code: error.code,
       message: error.message,
       details: error.details,
@@ -86,12 +86,12 @@ export async function createBooking(_prev: ActionState, form: FormData): Promise
     return { error: friendlyError(error) };
   }
   if (typeof data !== 'string' || !z.uuid().safeParse(data).success) {
-    console.error('[booking.create] Unexpected RPC response from create_booking');
+    console.error('[booking.request] Unexpected RPC response from create_instructor_request');
     return { error: 'Não foi possível confirmar a solicitação. Informe a administração e tente novamente.' };
   }
 
   revalidatePath('/aluno/aulas');
-  redirect(`/aluno/reserva/${data}`);
+  redirect(`/aluno/solicitacao/${data}`);
 }
 
 const BookingId = z.uuid();
