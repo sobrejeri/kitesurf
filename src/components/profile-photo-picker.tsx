@@ -105,7 +105,7 @@ export function ProfilePhotoPicker({ action, photoUrl, name, accent = 'orange', 
         {validationError ? <p className="text-[#ffb26b]" role="alert">{validationError}</p> : null}
         {!validationError && result.error ? <p className="text-[#ffb26b]" role="alert">{result.error}</p> : null}
         {!validationError && result.ok ? <p className={tone} role="status">{result.ok}</p> : null}
-        {!enabled ? <p className="text-muted">Fotos em configuração. A administração precisa ativar o armazenamento.</p> : null>
+        {!enabled ? <p className="text-muted">Fotos em configuração. A administração precisa ativar o armazenamento.</p> : null}
       </div>
       {filename ? <span className="sr-only">Arquivo selecionado: {filename}</span> : null}
     </form>
