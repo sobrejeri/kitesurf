@@ -176,7 +176,7 @@ end $$;
 -- Only the admin may see contact data needed to review the establishment.
 -- Financial credentials are deliberately excluded.
 create function public.get_partner_admin_details(p_partner_id uuid)
-returns jsonb language plpgsql stable security definer set search_path='' as $
+returns jsonb language plpgsql stable security definer set search_path='' as $$
 declare result jsonb;
 begin
   perform public.require_role(array['admin']::public.app_role[]);
@@ -194,7 +194,7 @@ begin
   if result is null then
     raise exception 'Partner not found' using errcode='P0002'; end if;
   return result;
-end $;
+end $$;
 
 -- Database is the final enforcement point (not a client-side progress bar).
 create or replace function public.set_partner_status(
