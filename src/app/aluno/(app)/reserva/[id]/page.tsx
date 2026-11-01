@@ -88,6 +88,14 @@ export default async function BookingPage({ params }: { params: Promise<{ id: st
               {!awaiting && booking.status !== 'cancelled' ? (
                 <ButtonLink href={`/aluno/atendimento/${booking.id}`} size="sm">Conversar com meu instrutor</ButtonLink>
               ) : null}
+              {(booking.status === 'confirmed' || booking.status === 'completed') && booking.instructor_id ? (
+                <ButtonLink
+                  href={`/aluno/reservar?instrutor=${booking.instructor_id}&praia=${booking.beach_id}&nivel=${booking.level}&idioma=${encodeURIComponent(booking.language)}&horas=${booking.total_hours}`}
+                  variant="ghost" size="sm"
+                >
+                  Contratar este instrutor novamente
+                </ButtonLink>
+              ) : null}
               <ButtonLink href="/aluno/politicas" variant="text" size="sm">Consultar regras</ButtonLink>
             </div>
           </Card>

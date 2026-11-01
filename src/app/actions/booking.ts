@@ -32,6 +32,7 @@ const CreateBooking = z.strictObject({
   // Preserves compatibility with older cached clients that do not send it yet.
   expectedHours: z.coerce.number().int().min(1).max(8).optional(),
   transport: z.enum(['yes', 'no']),
+  preferredInstructorId: z.uuid().nullable(),
 });
 
 export async function createBooking(_prev: ActionState, form: FormData): Promise<ActionState> {
@@ -50,6 +51,7 @@ export async function createBooking(_prev: ActionState, form: FormData): Promise
     meetings,
     expectedHours: form.get('expectedHours') ?? undefined,
     transport: form.get('transport') ?? 'no',
+    preferredInstructorId: form.get('preferredInstructorId') || null,
   });
   if (!parsed.success) return { error: 'Confira praia, nível, idioma e os encontros.' };
 
@@ -65,7 +67,7 @@ export async function createBooking(_prev: ActionState, form: FormData): Promise
   const referral = (await cookies()).get('vento_ref')?.value ?? null;
 
   const supabase = await createSupabaseServerClient();
-  const { data, error } = await supabase.rpc('create_instructor_request', {
+  const { data, error } = await supabase.rpc('create_instructor_request_with_preference', {
     p_beach_id: parsed.data.beachId,
     p_level: parsed.data.level,
     p_language: parsed.data.language,
@@ -75,9 +77,10 @@ export async function createBooking(_prev: ActionState, form: FormData): Promise
     })),
     p_partner_code: referral,
     p_with_transport: parsed.data.transport === 'yes',
+    p_preferred_instructor_id: parsed.data.preferredInstructorId,
   });
   if (error) {
-    console.error('[booking.request] RPC create_instructor_request failed', {
+    console.error('[booking.request] RPC create_instructor_request_with_preference failed', {
       code: error.code,
       message: error.message,
       details: error.details,
@@ -86,7 +89,7 @@ export async function createBooking(_prev: ActionState, form: FormData): Promise
     return { error: friendlyError(error) };
   }
   if (typeof data !== 'string' || !z.uuid().safeParse(data).success) {
-    console.error('[booking.request] Unexpected RPC response from create_instructor_request');
+    console.error('[booking.request] Unexpected RPC response from create_instructor_request_with_preference');
     return { error: 'Não foi possível confirmar a solicitação. Informe a administração e tente novamente.' };
   }
 

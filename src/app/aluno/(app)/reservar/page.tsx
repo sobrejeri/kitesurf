@@ -9,7 +9,7 @@ import { lessonDate } from '@/lib/dates';
 
 export const metadata: Metadata = { title: 'Monte sua aula' };
 
-type Params = { praia?: string; nivel?: string; idioma?: string; horas?: string; dia?: string };
+type Params = { praia?: string; nivel?: string; idioma?: string; horas?: string; dia?: string; instrutor?: string };
 
 /** Search parameters only preset the form; nothing here is trusted later. */
 function defaultsFrom(params: Params, beaches: readonly Beach[]): BuilderDefaults {
@@ -22,6 +22,7 @@ function defaultsFrom(params: Params, beaches: readonly Beach[]): BuilderDefault
     language: LANGUAGES.find((language) => language === params.idioma) ?? 'Português',
     hours: Number.isInteger(hours) && hours >= 1 && hours <= 8 ? hours : 2,
     date: params.dia && /^\d{4}-\d{2}-\d{2}$/.test(params.dia) && params.dia >= today ? params.dia : tomorrow,
+    preferredInstructorId: params.instrutor && /^[a-f0-9-]{36}$/i.test(params.instrutor) ? params.instrutor : null,
   };
 }
 

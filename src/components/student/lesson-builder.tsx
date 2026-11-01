@@ -25,6 +25,7 @@ export interface BuilderDefaults {
   language: string;
   hours: number;
   date: string;
+  preferredInstructorId: string | null;
 }
 
 const STEPS = ['Sua aula', 'Revisar e buscar'] as const;
@@ -166,6 +167,14 @@ export function LessonBuilder({
       <input type="hidden" name="meetings" value={payload} />
       <input type="hidden" name="expectedHours" value={selectedHours} />
       <input type="hidden" name="transport" value={transport ? 'yes' : 'no'} />
+      <input type="hidden" name="preferredInstructorId" value={defaults.preferredInstructorId ?? ''} />
+
+      {defaults.preferredInstructorId ? (
+        <Note className="mb-4">
+          Nova aula com o instrutor anterior: ele receberá prioridade para responder.
+          Se recusar ou deixar a oferta expirar, a busca seguirá a fila de profissionais.
+        </Note>
+      ) : null}
 
       {/* Numbered stepper. */}
       <ol className="mb-6 flex items-center">
