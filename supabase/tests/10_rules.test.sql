@@ -94,7 +94,7 @@ select public.update_my_partner_profile(
 select pg_temp.reset();
 update public.partners set code = 'MAR-E-VENTO';
 select pg_temp.act_as('00000000-0000-0000-0000-00000000000a');
-select public.set_partner_status((select id from public.partners), 'approved', 'ok');
+select public.set_partner_status((select id from public.partners), 'approved', 'Dados conferidos');
 select pg_temp.reset();
 
 -- Quote preview is public and computed by the server.
