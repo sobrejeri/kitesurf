@@ -89,11 +89,24 @@ export default async function InstructorProfileFormPage() {
         </Card>
 
         <Card className="!p-4 sm:!p-6">
-          <h2 className="flex items-center gap-2 text-[18px] font-extrabold text-ink">
-            <Icon name="user" className="!h-5 !w-5 text-brand" /> Informações pessoais
-          </h2>
-          <p className="mt-1 text-[12px] text-muted">Seus dados de contato são privados e não aparecem na fila de instrutores.</p>
-          {privateReady ? (
+          <details className="group">
+            <summary className="flex min-h-12 cursor-pointer list-none items-center justify-between gap-3 rounded-xl focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-brand [&::-webkit-details-marker]:hidden">
+              <span className="flex min-w-0 items-center gap-3">
+                <span className="grid h-10 w-10 shrink-0 place-items-center rounded-[12px] bg-brand-soft text-brand">
+                  <Icon name="user" className="!h-5 !w-5" />
+                </span>
+                <span className="min-w-0">
+                  <strong className="block text-[17px] font-extrabold leading-snug text-ink">Informações pessoais</strong>
+                  <span className="mt-1 block text-[12px] leading-relaxed text-muted">
+                    {info?.phone || info?.city || info?.bio ? 'Dados cadastrados · toque para editar' : 'Nome, telefone e apresentação'}
+                  </span>
+                </span>
+              </span>
+              <Icon name="chevronDown" className="!h-5 !w-5 shrink-0 text-brand transition-transform group-open:rotate-180" />
+            </summary>
+            <div className="mt-4 border-t border-line pt-4">
+              <p className="text-[12px] leading-relaxed text-muted">Seus dados de contato são privados e não aparecem na fila de instrutores.</p>
+              {privateReady ? (
             <ActionForm action={saveInstructorPersonal} submitLabel="Salvar dados pessoais" wideSubmit className="mt-4 grid gap-4">
               <Field label="Nome completo">
                 <input name="fullName" defaultValue={viewer.fullName} autoComplete="name" minLength={2} maxLength={120} required className={inputClass} />
@@ -110,17 +123,32 @@ export default async function InstructorProfileFormPage() {
                 <textarea name="bio" defaultValue={info?.bio ?? ''} maxLength={500} rows={3} className={textareaClass} />
               </Field>
             </ActionForm>
-          ) : (
-            <Note tone="warning" className="mt-4">Para salvar telefone, cidade e apresentação, instale a migração do perfil no Supabase.</Note>
-          )}
+              ) : (
+                <Note tone="warning" className="mt-4">Para salvar telefone, cidade e apresentação, instale a migração do perfil no Supabase.</Note>
+              )}
+            </div>
+          </details>
         </Card>
 
         <Card className="!p-4 sm:!p-6">
-          <h2 className="flex items-center gap-2 text-[18px] font-extrabold text-ink">
-            <Icon name="kite" className="!h-5 !w-5 text-brand" /> Onde e como você atende
-          </h2>
-          <p className="mt-1 text-[12px] text-muted">Selecione todas as praias e idiomas em que pode ministrar aulas.</p>
-          <ActionForm action={updateInstructorProfile} submitLabel="Salvar atendimento" wideSubmit className="mt-4 grid gap-4">
+          <details className="group">
+            <summary className="flex min-h-12 cursor-pointer list-none items-center justify-between gap-3 rounded-xl focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-brand [&::-webkit-details-marker]:hidden">
+              <span className="flex min-w-0 items-center gap-3">
+                <span className="grid h-10 w-10 shrink-0 place-items-center rounded-[12px] bg-brand-soft text-brand">
+                  <Icon name="kite" className="!h-5 !w-5" />
+                </span>
+                <span className="min-w-0">
+                  <strong className="block text-[17px] font-extrabold leading-snug text-ink">Onde e como você atende</strong>
+                  <span className="mt-1 block text-[12px] leading-relaxed text-muted">
+                    {me?.beaches.length ?? 0} praia(s) · {me?.languages.length ?? 0} idioma(s)
+                  </span>
+                </span>
+              </span>
+              <Icon name="chevronDown" className="!h-5 !w-5 shrink-0 text-brand transition-transform group-open:rotate-180" />
+            </summary>
+            <div className="mt-4 border-t border-line pt-4">
+              <p className="text-[12px] leading-relaxed text-muted">Selecione as praias e os idiomas em que pode ministrar aulas.</p>
+              <ActionForm action={updateInstructorProfile} submitLabel="Salvar atendimento" wideSubmit className="mt-4 grid gap-4">
             <Field label="Anos de experiência">
               <input name="years" type="number" min={0} max={60} defaultValue={me?.years_experience ?? 0} className={inputClass} />
             </Field>
@@ -144,7 +172,9 @@ export default async function InstructorProfileFormPage() {
                 <span className="mt-1 block text-[11px] text-muted">Pedidos com transporte dependem da atualização do módulo de transporte.</span>
               </span>
             </label>
-          </ActionForm>
+              </ActionForm>
+            </div>
+          </details>
         </Card>
 
         <Card className="!p-4 sm:!p-6">
