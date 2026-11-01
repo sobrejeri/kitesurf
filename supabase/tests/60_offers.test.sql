@@ -15,7 +15,7 @@ end $$;
 -- First create a proposal as the student, not a payable booking.
 do $$
 declare req_id uuid; offer_id uuid; first_instructor uuid; next_offer uuid;
-  second_instructor uuid; booking_id uuid; start_time timestamptz;
+  second_instructor uuid; v_booking_id uuid; start_time timestamptz;
   d integer; meeting_plan jsonb;
 begin
   start_time:=(((now() at time zone 'America/Fortaleza')::date+32)::timestamp
@@ -32,7 +32,7 @@ begin
   perform pg_temp.reset();
 
   assert not exists(select 1 from public.bookings b where b.id=
-    (select booking_id from public.instructor_requests where id=req_id)),
+    (select ir.booking_id from public.instructor_requests ir where ir.id=req_id)),
     'no payable booking before instructor accepts';
   select id,instructor_id into offer_id,first_instructor from public.instructor_offers
     where request_id=req_id and status='offered';
@@ -59,27 +59,27 @@ begin
   assert second_instructor <> first_instructor,'different instructor after decline';
 
   perform pg_temp.act_as(second_instructor::text);
-  booking_id:=public.accept_instructor_offer(next_offer);
+  v_booking_id:=public.accept_instructor_offer(next_offer);
   perform pg_temp.reset();
 
-  assert booking_id is not null, 'accept must create a booking';
+  assert v_booking_id is not null, 'accept must create a booking';
   assert (select status from public.instructor_requests where id=req_id)='accepted',
     'request becomes accepted';
-  assert (select instructor_id from public.bookings where id=booking_id)=second_instructor,
+  assert (select instructor_id from public.bookings where id=v_booking_id)=second_instructor,
     'accepted booking belongs to accepting instructor';
-  assert (select status from public.bookings where id=booking_id)='awaiting_payment',
+  assert (select status from public.bookings where id=v_booking_id)='awaiting_payment',
     'booking waits for payment only after acceptance';
-  assert (select partner_cents from public.bookings where id=booking_id)=0,
+  assert (select partner_cents from public.bookings where id=v_booking_id)=0,
     'repeat student gets no second inn commission';
 
   -- Student can access the accepted request and pay their booking.
   perform pg_temp.act_as('00000000-0000-0000-0000-0000000000b1');
-  assert (select booking_id from public.instructor_requests where id=req_id)=booking_id,
+  assert (select ir.booking_id from public.instructor_requests ir where ir.id=req_id)=v_booking_id,
     'student sees payment destination';
-  assert public.simulate_test_payment(booking_id,'pix','approved')='approved',
+  assert public.simulate_test_payment(v_booking_id,'pix','approved')='approved',
     'paying an accepted request works';
   perform pg_temp.reset();
-  assert (select status from public.bookings where id=booking_id)='confirmed',
+  assert (select status from public.bookings where id=v_booking_id)='confirmed',
     'accepted booking can be paid';
 
   -- Two overlapping meetings must never enter the offer workflow.
