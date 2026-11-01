@@ -43,13 +43,35 @@ export function InstructorDocumentUploader() {
   const [error,setError]=useState<string|null>(null);
   const [notice,setNotice]=useState<string|null>(null);
   const [selectedName,setSelectedName]=useState('');
+  const [pendingRegistration,setPendingRegistration]=useState<{kind:string;path:string;name:string}|null>(null);
   const busy=phase!=='idle';
+
+  async function retryRegistration() {
+    if(!pendingRegistration||busy)return;
+    setPhase('verifying');
+    setError(null);
+    try {
+      const result=await registerInstructorDocumentUpload(pendingRegistration);
+      if(result.error){setError(result.error);return;}
+      setPendingRegistration(null);
+      setNotice(result.ok??'Documento recebido para análise.');
+      formRef.current?.reset();
+      setSelectedName('');
+      router.refresh();
+    }catch(cause){
+      console.error('[document.client.retry]',cause);
+      setError('A confirmação ainda não foi concluída. Tente novamente sem reenviar.');
+    }finally{
+      setPhase('idle');
+    }
+  }
 
   async function submit(event:FormEvent<HTMLFormElement>) {
     event.preventDefault();
     if(busy)return;
     setError(null);
     setNotice(null);
+    setPendingRegistration(null);
     const data=new FormData(event.currentTarget);
     const file=data.get('document');
     const kind=data.get('kind');
@@ -101,13 +123,14 @@ export function InstructorDocumentUploader() {
       }
 
       setPhase('verifying');
-      const result=await registerInstructorDocumentUpload({
-        kind,path:ticket.path,name:file.name.slice(0,180)||'Documento',
-      });
+      const registration={kind,path:ticket.path,name:file.name.slice(0,180)||'Documento'};
+      setPendingRegistration(registration);
+      const result=await registerInstructorDocumentUpload(registration);
       if(result.error){
         setError(result.error);
         return;
       }
+      setPendingRegistration(null);
 
       formRef.current?.reset();
       setSelectedName('');
@@ -139,7 +162,7 @@ export function InstructorDocumentUploader() {
       accept=".pdf,.jpg,.jpeg,.png,application/pdf,image/jpeg,image/png"
       disabled={busy}
       required
-      onChange={e=>{setSelectedName(e.currentTarget.files?.[0]?.name??'');setError(null);}}
+      onChange={e=>{setSelectedName(e.currentTarget.files?.[0]?.name??'');setError(null);setPendingRegistration(null);}}
       className="block w-full min-w-0 rounded-xl border border-line bg-canvas p-3 text-[13px] text-ink file:mr-3 file:rounded-lg file:border-0 file:bg-brand-soft file:px-3 file:py-2 file:text-[12px] file:font-semibold file:text-brand"/>
     {selectedName?<p className="break-all text-[12px] text-muted">Selecionado: {selectedName}</p>:null}
     <p className="text-[12px] leading-relaxed text-muted">
@@ -158,6 +181,12 @@ export function InstructorDocumentUploader() {
     {error?<div role="alert" className="rounded-xl border border-warm-line bg-warm-note px-4 py-3 text-[12px] text-warning">
       {error}
     </div>:null}
+    {pendingRegistration&&!busy?(
+      <button type="button" onClick={retryRegistration}
+        className="press min-h-11 justify-self-start rounded-full border border-brand px-4 text-[13px] font-semibold text-brand">
+        Concluir registro sem reenviar
+      </button>
+    ):null}
     {notice?<div role="status" className="rounded-xl border border-line bg-brand-wash px-4 py-3 text-[12px] text-ink">
       <Icon name="check" className="mr-2 inline-block !h-4 !w-4 text-success"/>{notice}
     </div>:null}
