@@ -42,8 +42,8 @@ BEGIN
   PERFORM public.set_partner_commission(partner_id, 700, 'Indicacao de teste');
   EXECUTE 'RESET ROLE';
 
-  ASSERT (SELECT commission_bps FROM public.instructor_commission_overrides
-      WHERE instructor_id = '00000000-0000-0000-0000-0000000000a1'::uuid) = 2000,
+  ASSERT (SELECT ico.commission_bps FROM public.instructor_commission_overrides ico
+      WHERE ico.instructor_id = '00000000-0000-0000-0000-0000000000a1'::uuid) = 2000,
       'Expected individual 20% instructor platform fee';
   ASSERT (SELECT commission_bps FROM public.partners WHERE id = partner_id) = 700,
       'Expected 7% partner fee';
