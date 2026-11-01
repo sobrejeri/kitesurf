@@ -8,6 +8,8 @@ export const dynamic = 'force-dynamic';
 export const revalidate = 0;
 
 export function GET() {
+  // Render deploy marker is server-only; this route never exposes a secret.
+  // eslint-disable-next-line no-restricted-syntax
   const id = process.env.RENDER_GIT_COMMIT
     ?? process.env.NEXT_PUBLIC_BUILD_ID
     ?? 'dev';
