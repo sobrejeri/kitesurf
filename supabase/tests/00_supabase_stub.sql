@@ -24,3 +24,21 @@ $$;
 
 grant usage on schema public, auth, extensions to anon, authenticated;
 grant execute on function auth.uid() to anon, authenticated;
+
+
+-- Supabase Storage stand-in: needed for avatar migration DDL in isolated PG.
+-- Not an implementation of the Storage API; only bucket/policy structure.
+create schema if not exists storage;
+create table storage.buckets (
+  id text primary key, name text not null, public boolean not null default false,
+  file_size_limit bigint, allowed_mime_types text[]
+);
+create table storage.objects (
+  id uuid primary key default gen_random_uuid(),
+  bucket_id text not null references storage.buckets(id),
+  name text not null
+);
+create function storage.foldername(p_name text) returns text[]
+language sql immutable as $$
+  select string_to_array(p_name,'/');
+$$;
