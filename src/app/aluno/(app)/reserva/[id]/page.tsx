@@ -79,6 +79,9 @@ export default async function BookingPage({ params }: { params: Promise<{ id: st
             </ul>
             <div className="mt-5 flex flex-wrap gap-2">
               <ButtonLink href="/aluno/ocorrencias" variant="ghost" size="sm">Vento, cancelamento ou ausência</ButtonLink>
+              {!awaiting && booking.status !== 'cancelled' ? (
+                <ButtonLink href={`/aluno/atendimento/${booking.id}`} size="sm">Conversar com meu instrutor</ButtonLink>
+              ) : null}
               <ButtonLink href="/aluno/politicas" variant="text" size="sm">Consultar regras</ButtonLink>
             </div>
           </Card>
