@@ -3,6 +3,7 @@ import Link from 'next/link';
 import { notFound } from 'next/navigation';
 
 import { confirmTestPayment } from '@/app/actions/booking';
+import { rateInstructor } from '@/app/actions/ratings';
 import { ActionForm } from '@/components/action-form';
 import { Icon } from '@/components/icon';
 import { StudentHero } from '@/components/student/sunset';
@@ -106,6 +107,28 @@ export default async function BookingPage({ params }: { params: Promise<{ id: st
         </div>
 
         <div className="grid content-start gap-5">
+          {booking.status === 'completed' ? (
+            <Card>
+              <h2 className="text-[17px] font-bold text-ink">Avalie seu instrutor</h2>
+              <p className="mt-1 text-[12px] text-muted">Sua experiência ajuda a melhorar o Vento.</p>
+              <ActionForm action={rateInstructor} submitLabel="Enviar avaliação" className="mt-4 grid gap-3">
+                <input type="hidden" name="bookingId" value={booking.id}/>
+                <label htmlFor="rating-stars" className="text-[13px] font-semibold text-ink">Sua nota</label>
+                <select id="rating-stars" name="stars" defaultValue="5" required
+                  className="min-h-12 rounded-xl border border-line bg-surface px-3 text-[13px] text-ink">
+                  <option value="5">★★★★★ — Excelente</option>
+                  <option value="4">★★★★☆ — Muito bom</option>
+                  <option value="3">★★★☆☆ — Bom</option>
+                  <option value="2">★★☆☆☆ — Regular</option>
+                  <option value="1">★☆☆☆☆ — Ruim</option>
+                </select>
+                <label htmlFor="rating-comment" className="text-[13px] font-semibold text-ink">Comentário (opcional)</label>
+                <textarea id="rating-comment" name="comment" maxLength={500} rows={3}
+                  className="w-full rounded-xl border border-line bg-surface p-3 text-[13px] text-ink"
+                  placeholder="Como foi sua aula?"/>
+              </ActionForm>
+            </Card>
+          ) : null}
           {awaiting ? null : (
             <Card className="text-center">
               <Eyebrow>Na hora da aula</Eyebrow>

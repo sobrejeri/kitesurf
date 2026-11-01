@@ -207,6 +207,13 @@ export default async function InstructorProfileFormPage() {
           </details>
         </Card>
 
+        <Card className="!p-4 sm:!p-6">
+          <a href="/instrutor/avaliacoes" className="press flex min-h-12 items-center justify-between gap-3 rounded-xl text-[16px] font-bold text-ink">
+            <span>★ Minhas avaliações</span>
+            <span className="text-[12px] font-semibold text-brand">Ver comentários</span>
+          </a>
+        </Card>
+
         <Note title="Análise do cadastro">
           A administração analisa seu perfil e libera sua participação na fila. Você poderá atualizar praias e idiomas sempre que necessário.
         </Note>
