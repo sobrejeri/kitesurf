@@ -31,7 +31,7 @@ export async function IncidentWorkspace({area}:{area:'aluno'|'instrutor'|'admin'
     admin?Promise.resolve([]):area==='aluno'?listBookingsForStudent(viewer.id):listBookingsForInstructor(viewer.id),
   ]);
   const meetings=bookings.filter(b=>b.status==='confirmed'||b.status==='completed')
-    .flatMap(b=>b.booking_meetings.map(m=>({id:m.id,bookingId:b.id,code:b.code,startsAt:m.starts_at,minutes:m.minutes})));
+    .flatMap(b=>b.booking_meetings.map(m=>({id:m.id,bookingId:b.id,code:('code' in b && typeof b.code==='string' ? b.code : b.id.slice(0,8)),startsAt:m.starts_at,minutes:m.minutes})));
   return (
     <>
       <PageHeader eyebrow="Cada situação acompanhada" title={admin?'Analisar ocorrências':'Imprevistos e ocorrências'}
