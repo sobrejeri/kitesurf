@@ -79,6 +79,10 @@ export async function registerInstructorDocumentUpload(input:{
   try {
     const db=await createSupabaseServerClient();
     const bucket=db.storage.from('vento-instructor-documents');
+    const previous=await db.from('instructor_documents').select('id')
+      .eq('instructor_id',viewer.id).eq('storage_path',path).maybeSingle();
+    if(!previous.error && previous.data)
+      return {ok:'Este documento já consta no histórico. Não é necessário reenviar.'};
     const {data:blob,error:downloadError}=await bucket.download(path);
     if(downloadError||!blob) {
       console.error('[document.verify.download]',{message:downloadError?.message});
@@ -94,6 +98,11 @@ export async function registerInstructorDocumentUpload(input:{
       p_kind:parsed.data.kind,p_path:path,p_original_name:parsed.data.name,
     });
     if(error){
+      if(error.code==='23505'){
+        const {data:existing}=await db.from('instructor_documents').select('id')
+          .eq('instructor_id',viewer.id).eq('storage_path',path).maybeSingle();
+        if(existing)return {ok:'Este documento já consta no histórico.'};
+      }
       console.error('[document.register]',{code:error.code,message:error.message});
       return {error:friendlyError(error)};
     }
