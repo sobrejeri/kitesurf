@@ -38,14 +38,25 @@ export async function saveInstructorPersonal(_previous: ActionState, form: FormD
   if (!parsed.success) return { error: 'Confira nome, telefone, cidade e apresentação.' };
 
   const supabase = await createSupabaseServerClient();
-  const { error } = await supabase.from('instructor_private_profiles').upsert({
-    id: viewer.id,
+  // Column-level privileges intentionally forbid changing the primary key.
+  // An UPSERT would attempt an UPDATE of id and fail with 42501.
+  const { data: existing, error: readError } = await supabase
+    .from('instructor_private_profiles').select('id').eq('id', viewer.id).maybeSingle();
+  if (readError) return { error: describeError(readError) };
+
+  const fields = {
     phone: parsed.data.phone,
     city: parsed.data.city,
     bio: parsed.data.bio,
     updated_at: new Date().toISOString(),
-  }, { onConflict: 'id' });
-  if (error) return { error: describeError(error) };
+  };
+  const { error } = existing
+    ? await supabase.from('instructor_private_profiles').update(fields).eq('id', viewer.id)
+    : await supabase.from('instructor_private_profiles').insert({ id: viewer.id, ...fields });
+  if (error) {
+    console.error('[instructor-personal] Save failed', { code: error.code, message: error.message });
+    return { error: describeError(error) };
+  }
 
   const profileResult = await supabase.from('profiles')
     .update({ full_name: parsed.data.fullName }).eq('id', viewer.id);
@@ -83,8 +94,11 @@ export async function saveInstructorPayout(_previous: ActionState, form: FormDat
   }
 
   const supabase = await createSupabaseServerClient();
-  const { error } = await supabase.from('instructor_payout_details').upsert({
-    id: viewer.id,
+  const supabaseRead = await supabase.from('instructor_payout_details')
+    .select('id').eq('id', viewer.id).maybeSingle();
+  if (supabaseRead.error) return { error: describeError(supabaseRead.error) };
+
+  const payoutFields = {
     method: p.method,
     holder_name: p.holderName,
     pix_key: p.method === 'pix' ? p.pixKey : null,
@@ -93,8 +107,14 @@ export async function saveInstructorPayout(_previous: ActionState, form: FormDat
     account_number: p.method === 'bank' ? p.accountNumber : null,
     account_type: p.method === 'bank' ? p.accountType : null,
     updated_at: new Date().toISOString(),
-  }, { onConflict: 'id' });
-  if (error) return { error: describeError(error) };
+  };
+  const { error } = supabaseRead.data
+    ? await supabase.from('instructor_payout_details').update(payoutFields).eq('id', viewer.id)
+    : await supabase.from('instructor_payout_details').insert({ id: viewer.id, ...payoutFields });
+  if (error) {
+    console.error('[instructor-payout] Save failed', { code: error.code, message: error.message });
+    return { error: describeError(error) };
+  }
 
   revalidatePath('/instrutor/cadastro');
   return { ok: 'Dados de recebimento armazenados. Eles ainda não habilitam repasses automáticos.' };
@@ -130,7 +150,7 @@ export async function uploadInstructorAvatar(_previous: ActionState, form: FormD
 
     const supabase = await createSupabaseServerClient();
     // Check that storage metadata can be written before uploading the image.
-    const { error: profileError } = await supabase.from('instructor_private_profiles')
+    const { data: profileRow, error: profileError } = await supabase.from('instructor_private_profiles')
       .select('id').eq('id', viewer.id).maybeSingle();
     if (profileError) {
       console.error('[instructor-avatar] Profile lookup failed', {
@@ -149,9 +169,10 @@ export async function uploadInstructorAvatar(_previous: ActionState, form: FormD
       return { error: 'Não foi possível enviar a foto. Verifique a configuração do armazenamento e as permissões no Supabase.' };
     }
 
-    const { error: saveError } = await supabase.from('instructor_private_profiles').upsert({
-      id: viewer.id, avatar_path: path, updated_at: new Date().toISOString(),
-    }, { onConflict: 'id' });
+    const avatarFields = { avatar_path: path, updated_at: new Date().toISOString() };
+    const { error: saveError } = profileRow
+      ? await supabase.from('instructor_private_profiles').update(avatarFields).eq('id', viewer.id)
+      : await supabase.from('instructor_private_profiles').insert({ id: viewer.id, ...avatarFields });
     if (saveError) {
       console.error('[instructor-avatar] Avatar path save failed', {
         code: saveError.code, message: saveError.message,

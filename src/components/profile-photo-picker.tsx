@@ -57,7 +57,7 @@ export function ProfilePhotoPicker({ action, photoUrl, name, accent = 'orange', 
   }
 
   return (
-    <form action={submitAction} ref={formRef} className="min-w-0">
+    <form action={submitAction} ref={formRef} className="flex min-w-0 flex-col items-center sm:items-start">
       <input
         ref={inputRef}
         type="file"
@@ -100,12 +100,12 @@ export function ProfilePhotoPicker({ action, photoUrl, name, accent = 'orange', 
           </button>
         )}
       </div>
-      <div aria-live="polite" className="mt-2 max-w-[220px] text-[11px] leading-relaxed">
+      <div aria-live="polite" className="mt-2 max-w-[280px] text-center text-[12px] leading-relaxed sm:text-left">
         {pending ? <p className={tone} role="status">Enviando foto…</p> : null}
         {validationError ? <p className="text-[#ffb26b]" role="alert">{validationError}</p> : null}
         {!validationError && result.error ? <p className="text-[#ffb26b]" role="alert">{result.error}</p> : null}
         {!validationError && result.ok ? <p className={tone} role="status">{result.ok}</p> : null}
-        {!enabled ? <p className="text-muted">Upload indisponível até a atualização do cadastro.</p> : null}
+        {!enabled ? <p className="text-muted">Fotos em configuração. A administração precisa ativar o armazenamento.</p> : null>
       </div>
       {filename ? <span className="sr-only">Arquivo selecionado: {filename}</span> : null}
     </form>

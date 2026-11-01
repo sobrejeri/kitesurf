@@ -70,7 +70,7 @@ export default async function InstructorProfileFormPage() {
 
       <div className="grid gap-4">
         <Card className="!p-4 sm:!p-6">
-          <div className="flex items-center gap-3">
+          <div className="flex flex-col items-center gap-3 text-center sm:flex-row sm:items-center sm:gap-5 sm:text-left">
             <ProfilePhotoPicker
               action={uploadInstructorAvatar}
               photoUrl={avatarUrl}
@@ -78,10 +78,12 @@ export default async function InstructorProfileFormPage() {
               enabled={privateReady}
               accent="orange"
             />
-            <div className="min-w-0 flex-1">
-              <h2 className="text-[17px] font-bold text-ink">{viewer.fullName || 'Instrutor'}</h2>
-              <p className="mt-1 truncate text-[12px] text-muted">{viewer.email}</p>
-              <p className="mt-1 text-[12px] text-muted">{avatarUrl ? 'Use o + da foto para atualizar' : 'Toque no círculo para adicionar sua foto'}</p>
+            <div className="min-w-0 w-full flex-1">
+              <h2 className="break-words text-[18px] font-bold leading-snug text-ink">{viewer.fullName?.trim() || 'Instrutor'}</h2>
+              <p className="mt-1 break-all text-[12px] leading-relaxed text-muted">{viewer.email}</p>
+              <p className="mt-1 text-[12px] leading-relaxed text-muted">
+                {avatarUrl ? 'Use o + para trocar a foto.' : 'Toque no + para adicionar uma foto.'}
+              </p>
             </div>
           </div>
         </Card>

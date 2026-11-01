@@ -55,7 +55,7 @@ export default async function AccountPage() {
 
       <div className="grid gap-4 lg:grid-cols-2">
         <section className="rounded-[22px] border border-line bg-surface p-5">
-          <div className="flex flex-wrap items-center gap-4">
+          <div className="flex flex-col items-center gap-3 text-center sm:flex-row sm:items-center sm:gap-4 sm:text-left">
             <ProfilePhotoPicker
               action={uploadStudentAvatar}
               photoUrl={avatarUrl}
@@ -63,12 +63,14 @@ export default async function AccountPage() {
               accent="cyan"
               enabled={avatarReady}
             />
-            <div className="min-w-0 flex-1">
-              <p className="break-words text-[20px] font-bold leading-tight text-ink">{viewer.fullName || 'Sem nome'}</p>
-              <p className="text-[13px] text-muted">{viewer.language} · Aluno</p>
-              <p className="mt-1 text-[12px] text-label">{avatarUrl ? 'Toque no + para trocar a foto' : 'Toque no círculo para adicionar uma foto'}</p>
+            <div className="min-w-0 w-full flex-1">
+              <p className="break-words text-[19px] font-bold leading-tight text-ink">{viewer.fullName?.trim() || 'Aluno'}</p>
+              <p className="mt-1 text-[13px] text-muted">{viewer.language} · Aluno</p>
+              <p className="mt-1 text-[12px] leading-relaxed text-label">{avatarUrl ? 'Use o + para trocar a foto.' : 'Toque no + para adicionar uma foto.'}</p>
             </div>
-            <ProfileEditor fullName={viewer.fullName} language={viewer.language} />
+            <div className="w-full sm:w-auto sm:basis-full">
+              <ProfileEditor fullName={viewer.fullName} language={viewer.language} />
+            </div>
           </div>
           <dl className="mt-5 divide-y divide-line border-y border-line text-[14px]">
             <div className="flex items-center gap-3 py-3.5">

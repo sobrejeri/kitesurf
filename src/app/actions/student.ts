@@ -69,7 +69,7 @@ export async function uploadStudentAvatar(_previous: ActionState, form: FormData
     if (!validAvatarBytes(bytes, mime)) return { error: 'O arquivo selecionado não é uma imagem válida.' };
 
     const supabase = await createSupabaseServerClient();
-    const { error: tableError } = await supabase.from('student_private_profiles')
+    const { data: studentProfile, error: tableError } = await supabase.from('student_private_profiles')
       .select('id').eq('id', viewer.id).maybeSingle();
     if (tableError) {
       console.error('[student-avatar] Private profile lookup failed', {
@@ -86,11 +86,10 @@ export async function uploadStudentAvatar(_previous: ActionState, form: FormData
       return { error: 'Não foi possível enviar sua foto. Tente novamente.' };
     }
 
-    const { error: saveError } = await supabase.from('student_private_profiles').upsert({
-      id: viewer.id,
-      avatar_path: path,
-      updated_at: new Date().toISOString(),
-    }, { onConflict: 'id' });
+    const avatarFields = { avatar_path: path, updated_at: new Date().toISOString() };
+    const { error: saveError } = studentProfile
+      ? await supabase.from('student_private_profiles').update(avatarFields).eq('id', viewer.id)
+      : await supabase.from('student_private_profiles').insert({ id: viewer.id, ...avatarFields });
     if (saveError) {
       console.error('[student-avatar] Path update failed', {
         code: saveError.code, message: saveError.message,
