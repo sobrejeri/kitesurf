@@ -63,6 +63,15 @@ do $$ begin
 end $$;
 select pg_temp.reset();
 
+-- Test fixtures: mock admin-reviewed evidence only in isolated PostgreSQL.
+-- Real production approvals are performed from the private document review UI.
+insert into public.instructor_documents(instructor_id,kind,storage_path,original_name,status)
+select i.id,k.kind,i.id::text||'/'||gen_random_uuid()::text||'.pdf',k.kind||'.pdf','approved'
+from public.instructors i
+cross join (values ('identity'),('certification')) as k(kind)
+where i.id in ('00000000-0000-0000-0000-0000000000a1'::uuid,
+               '00000000-0000-0000-0000-0000000000a2'::uuid);
+
 -- Admin approves Rafael then Marina: queue order follows approval order.
 select pg_temp.act_as('00000000-0000-0000-0000-00000000000a');
 select public.set_instructor_status('00000000-0000-0000-0000-0000000000a1', 'approved', 'Documentos ok');
