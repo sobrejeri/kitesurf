@@ -2,7 +2,7 @@ import type { Metadata } from 'next';
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
 
-import { setInstructorStatus } from '@/app/actions/admin';
+import { setInstructorStatus, setIndividualInstructorCommission } from '@/app/actions/admin';
 import { ActionForm } from '@/components/action-form';
 import { Panel } from '@/components/admin/kit';
 import { AdminProfilePhoto } from '@/components/admin/profile-photo';
@@ -13,8 +13,9 @@ import { InstructorCompletionPanel } from '@/components/instructor/completion-pa
 import { VerifiedInstructorBadge } from '@/components/instructor/verified-badge';
 import { requireRole } from '@/lib/auth';
 import { getAdminAvatarUrls } from '@/lib/admin-avatars';
-import { listAllBookings, listAllInstructors, listQueue } from '@/lib/data';
+import { listAllBookings, listAllInstructors, listQueue, listPriceVersions } from '@/lib/data';
 import { initials } from '@/lib/people';
+import { formatBps } from '@/lib/format';
 import { computeInstructorCompletion, readProgressFlags, type DocumentRecord } from '@/lib/instructor-completion';
 import { createSupabaseServerClient } from '@/lib/supabase/server';
 
@@ -58,12 +59,15 @@ export default async function InstructorDetailPage({ params }: { params: Promise
   const theirs = bookings.filter((booking) => booking.instructor_id === row.id);
   const next = row.status === 'approved' ? 'paused' : 'approved';
   const db = await createSupabaseServerClient();
-  const [documents, previousApproval, completionResult] = await Promise.all([
+  const [documents, previousApproval, completionResult, commissionResult, prices] = await Promise.all([
     db.from('instructor_documents').select('kind,status').eq('instructor_id',row.id)
       .in('kind',['identity','certification']).returns<DocumentRecord[]>(),
     db.from('instructors').select('approved_at').eq('id',row.id)
       .maybeSingle<{approved_at:string|null}>(),
     db.rpc('get_instructor_profile_progress',{p_instructor_id:row.id}),
+    db.from('instructor_commission_overrides').select('commission_bps')
+      .eq('instructor_id', row.id).maybeSingle<{commission_bps:number}>(),
+    listPriceVersions(),
   ]);
   const flags = readProgressFlags(completionResult.data);
   const completion=computeInstructorCompletion(
@@ -76,6 +80,9 @@ export default async function InstructorDetailPage({ params }: { params: Promise
     (!initialApproval || (completion.documentsReady &&
       (flags===null || completion.essentialsReady)));
   const docsHref = `/admin/documentos?instrutor=${row.id}`;
+  const globalBps = prices[0]?.platform_commission_bps ?? 0;
+  const individualBps = commissionResult.data?.commission_bps ?? null;
+  const effectiveBps = individualBps ?? globalBps;
 
   return (
     <>
@@ -133,6 +140,54 @@ export default async function InstructorDetailPage({ params }: { params: Promise
               <Badge tone={row.beaches.length?'success':'warning'}>{row.beaches.length?'Preenchido':'Pendente'}</Badge>
               O próprio instrutor marca as praias no perfil profissional.
             </div>
+          </Panel>
+
+          <Panel title="Comissão das aulas">
+            <p className="text-[12px] text-muted">
+              O percentual é a taxa da plataforma sobre as aulas deste instrutor;
+              o restante é do instrutor. O transporte de apoio continua 100% do instrutor.
+            </p>
+            <p className="mt-3 text-[14px] text-ink">
+              Atual: <strong className="text-brand">{formatBps(effectiveBps)}</strong>
+              <span className="ml-1 text-[11px] text-muted">
+                ({individualBps === null ? 'taxa global' : 'taxa individual'})
+              </span>
+            </p>
+            <p className="mt-1 text-[12px] text-muted">
+              Global: {formatBps(globalBps)} · Líquido das aulas: {formatBps(10000 - effectiveBps)}
+            </p>
+            {commissionResult.error ? (
+              <Note tone="warning" className="mt-3">
+                Configure a migration 24 no Supabase antes de alterar a comissão individual.
+              </Note>
+            ) : (
+              <ActionForm action={setIndividualInstructorCommission}
+                submitLabel="Salvar comissão do instrutor" className="mt-4 grid gap-3">
+                <input type="hidden" name="instructorId" value={row.id}/>
+                <label className="grid gap-1.5 text-[12px] text-label">
+                  Regra aplicada às novas reservas
+                  <select name="mode" defaultValue={individualBps === null ? 'global' : 'custom'}
+                    className={inputClass}>
+                    <option value="global">Usar taxa global</option>
+                    <option value="custom">Usar taxa individual</option>
+                  </select>
+                </label>
+                <label className="grid gap-1.5 text-[12px] text-label">
+                  Comissão individual da plataforma (%)
+                  <input name="commissionPercent" type="number" min={0} max={100} step="0.01"
+                    defaultValue={(effectiveBps / 100).toFixed(2)} className={inputClass}/>
+                </label>
+                <label className="grid gap-1.5 text-[12px] text-label">
+                  Motivo (obrigatório, registrado na auditoria)
+                  <input name="reason" required minLength={3} maxLength={500}
+                    placeholder="Ex.: acordo comercial atualizado" className={inputClass}/>
+                </label>
+              </ActionForm>
+            )}
+            <p className="mt-3 text-[11px] text-muted">
+              Alterações não recalculam contratos existentes. A comissão de pousadas,
+              quando houver, sai somente da parte da plataforma.
+            </p>
           </Panel>
 
           <Panel title="Validação documental">

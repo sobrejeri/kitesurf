@@ -163,3 +163,83 @@ export async function updateBeach(_prev: ActionState, form: FormData): Promise<A
   revalidatePath('/admin/praias');
   return { ok: parsed.data.active === 'true' ? 'Praia salva.' : 'Praia desativada. Reservas existentes não mudam.' };
 }
+
+// Percentages use integer basis points (100 bps = 1%).
+// Accept at most two decimal places; never calculate a monetary value in JS.
+function parseCommissionBps(raw: FormDataEntryValue | null, maxBps: number): number | null {
+  if (typeof raw !== 'string' || !/^\d{1,3}(?:\.\d{1,2})?$/.test(raw)) return null;
+  const [whole, fractional = ''] = raw.split('.');
+  const bps = Number(whole) * 100 + Number(fractional.padEnd(2, '0'));
+  return Number.isSafeInteger(bps) && bps <= maxBps ? bps : null;
+}
+
+export async function setIndividualInstructorCommission(
+  _prev: ActionState,
+  form: FormData,
+): Promise<ActionState> {
+  await requireRole(['admin']);
+  const parsed = z.strictObject({
+    instructorId: z.uuid(),
+    mode: z.enum(['global', 'custom']),
+    reason: z.string().trim().min(3).max(500),
+  }).safeParse({
+    instructorId: form.get('instructorId'),
+    mode: form.get('mode'),
+    reason: form.get('reason'),
+  });
+  if (!parsed.success) return { error: 'Confira o instrutor e informe o motivo da alteração.' };
+  const commissionBps = parsed.data.mode === 'global'
+    ? null : parseCommissionBps(form.get('commissionPercent'), 10000);
+  if (parsed.data.mode === 'custom' && commissionBps === null) {
+    return { error: 'Informe a comissão de 0 a 100%, com até duas casas decimais.' };
+  }
+  const db = await createSupabaseServerClient();
+  const { error } = await db.rpc('set_instructor_commission', {
+    p_instructor_id: parsed.data.instructorId,
+    p_commission_bps: commissionBps,
+    p_reason: parsed.data.reason,
+  });
+  if (error) return { error: friendlyError(error) };
+  revalidatePath('/admin/instrutores');
+  revalidatePath('/admin/instrutores/[id]', 'page');
+  revalidatePath('/admin/regras');
+  revalidatePath('/instrutor/cadastro');
+  revalidatePath('/instrutor/financeiro');
+  return { ok: commissionBps === null
+    ? 'Instrutor voltou a utilizar a comissão global. Reservas antigas não mudam.'
+    : 'Comissão individual salva para novas reservas. Reservas antigas não mudam.' };
+}
+
+export async function setIndividualPartnerCommission(
+  _prev: ActionState,
+  form: FormData,
+): Promise<ActionState> {
+  await requireRole(['admin']);
+  const parsed = z.strictObject({
+    partnerId: z.uuid(),
+    reason: z.string().trim().min(3).max(500),
+  }).safeParse({
+    partnerId: form.get('partnerId'),
+    reason: form.get('reason'),
+  });
+  if (!parsed.success) return { error: 'Confira a pousada e informe o motivo.' };
+  const commissionBps = parseCommissionBps(form.get('commissionPercent'), 5000);
+  if (commissionBps === null) {
+    return { error: 'Informe a comissão da pousada de 0 a 50%, com até duas casas decimais.' };
+  }
+  const db = await createSupabaseServerClient();
+  const { error } = await db.rpc('set_partner_commission', {
+    p_partner_id: parsed.data.partnerId,
+    p_commission_bps: commissionBps,
+    p_reason: parsed.data.reason,
+  });
+  if (error) return { error: friendlyError(error) };
+  revalidatePath('/admin/afiliados');
+  revalidatePath('/admin/afiliados/[id]', 'page');
+  revalidatePath('/pousada', 'layout');
+  revalidatePath('/pousada/perfil');
+  revalidatePath('/pousada/central');
+  revalidatePath('/pousada/divulgacao');
+  revalidatePath('/pousada/indicacoes');
+  return { ok: 'Comissão da pousada atualizada para novas reservas. As anteriores não mudam.' };
+}

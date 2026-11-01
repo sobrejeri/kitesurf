@@ -1,7 +1,7 @@
 import type {Metadata} from 'next';
 import {notFound} from 'next/navigation';
 
-import {approvePartner} from '@/app/actions/admin';
+import {approvePartner,setIndividualPartnerCommission} from '@/app/actions/admin';
 import {ActionForm} from '@/components/action-form';
 import {AdminTitle} from '@/components/admin/kit';
 import {Icon} from '@/components/icon';
@@ -134,6 +134,38 @@ export default async function PartnerReviewPage({
           </div>
         ))}
       </dl>
+    </Card>
+
+    <Card className="mb-4">
+      <h2 className="text-[18px] font-bold text-ink">Comissão da pousada</h2>
+      <p className="mt-1 text-[12px] text-muted">
+        Percentual sobre o valor das aulas de hóspedes indicados, somente na
+        primeira reserva paga de cada cliente. Sai da parte da plataforma.
+      </p>
+      <p className="mt-3 text-[14px] text-ink">
+        Comissão atual: <strong className="text-brand">{formatBps(partner.commission_bps)}</strong>
+      </p>
+      <ActionForm action={setIndividualPartnerCommission}
+        submitLabel="Salvar comissão da pousada"
+        className="mt-4 grid gap-3">
+        <input type="hidden" name="partnerId" value={partner.id}/>
+        <label className="grid gap-1.5 text-[12px] text-label">
+          Comissão da pousada (%)
+          <input name="commissionPercent" type="number" required min={0} max={50}
+            step="0.01" defaultValue={(partner.commission_bps / 100).toFixed(2)}
+            className={inputClass}/>
+        </label>
+        <label className="grid gap-1.5 text-[12px] text-label">
+          Motivo (obrigatório, registrado na auditoria)
+          <input name="reason" required minLength={3} maxLength={500}
+            placeholder="Ex.: parceria comercial atualizada" className={inputClass}/>
+        </label>
+      </ActionForm>
+      <p className="mt-3 text-[11px] text-muted">
+        Se a comissão disponível da plataforma for menor que a porcentagem
+        configurada para a pousada, o repasse da pousada ficará limitado
+        àquela comissão disponível. Reservas já contratadas não mudam.
+      </p>
     </Card>
 
     {partner.status==='pending'?(
