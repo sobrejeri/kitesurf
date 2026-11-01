@@ -149,27 +149,30 @@ end $$;
 -- returned to other partners or the public.
 create function public.get_partner_profile_progress(p_partner_id uuid)
 returns jsonb language plpgsql stable security definer set search_path='' as $$
-declare uid uuid:=auth.uid(); p public.partners; result jsonb;
+declare
+  uid uuid:=auth.uid();
+  v_partner public.partners;
+  result jsonb;
 begin
-  select * into p from public.partners where id=p_partner_id;
-  if p.id is null then
+  select * into v_partner from public.partners where id=p_partner_id;
+  if v_partner.id is null then
     raise exception 'Partner not found' using errcode='P0002'; end if;
-  if uid is null or (p.owner_id<>uid and not public.is_admin()) then
+  if uid is null or (v_partner.owner_id<>uid and not public.is_admin()) then
     raise exception 'Not allowed to inspect this partner' using errcode='42501'; end if;
   select jsonb_build_object(
-    'name',length(btrim(coalesce(p.name,'')))>=2,
-    'beach',p.beach_id is not null,
+    'name',length(btrim(coalesce(partner_row.name,'')))>=2,
+    'beach',partner_row.beach_id is not null,
     'responsible',length(btrim(coalesce(d.responsible_name,'')))>=2,
     'phone',length(btrim(coalesce(d.phone,'')))>=8,
     'city',length(btrim(coalesce(d.city,'')))>=2,
     'address',length(btrim(coalesce(d.address,'')))>=5,
     'instagram',length(btrim(coalesce(d.instagram,'')))>0,
     'avatar',length(btrim(coalesce(d.avatar_path,'')))>0,
-    'payout',exists(select 1 from public.partner_payout_details pd where pd.id=p.owner_id)
+    'payout',exists(select 1 from public.partner_payout_details pd where pd.id=v_partner.owner_id)
   ) into result
-  from public.partners p
-  left join public.partner_private_profiles d on d.id=p.owner_id
-  where p.id=p_partner_id;
+  from public.partners partner_row
+  left join public.partner_private_profiles d on d.id=partner_row.owner_id
+  where partner_row.id=p_partner_id;
   return result;
 end $$;
 
