@@ -144,3 +144,93 @@ export async function uploadPartnerAvatar(_previous:ActionState,form:FormData):P
     return {error:'Não foi possível atualizar a foto. Tente novamente com JPG, PNG ou WebP de até 3 MB.'};
   }
 }
+
+/**
+ * The signed upload ticket contains only a private, role-scoped Storage path.
+ * The image bytes are sent by the browser directly to Supabase, avoiding
+ * multipart Server Actions on iOS and mobile networks.
+ */
+export async function preparePartnerAvatarUpload(input: {
+  mime: string;
+  size: number;
+}): Promise<
+  | { error: string; path?: never; token?: never }
+  | { path: string; token: string; error?: never }
+> {
+  const viewer = await requireRole(['partner']);
+  if (viewer.role !== 'partner') return { error: 'Apenas a pousada pode enviar sua foto.' };
+
+  const parsed = z.strictObject({
+    mime: z.enum(['image/jpeg', 'image/png', 'image/webp']),
+    size: z.number().int().min(1).max(3 * 1024 * 1024),
+  }).safeParse(input);
+  if (!parsed.success) return { error: 'Envie uma imagem JPG, PNG ou WebP de até 3 MB.' };
+
+  try {
+    const db = await createSupabaseServerClient();
+    const { data: partner, error: partnerError } = await db.from('partners')
+      .select('id').eq('owner_id', viewer.id).maybeSingle();
+    if (partnerError || !partner) {
+      return { error: 'Complete o cadastro da pousada antes de adicionar uma foto.' };
+    }
+    const path = viewer.id + '/avatar.' + AVATAR_MIMES[parsed.data.mime];
+    // For changing an existing avatar, the signed ticket must authorize
+    // replacement; adding upsert only to uploadToSignedUrl is insufficient.
+    const { data, error } = await db.storage.from(AVATAR_BUCKET)
+      .createSignedUploadUrl(path, { upsert: true });
+    if (error || !data?.token) {
+      console.error('[partner.avatar.prepare]', { message: error?.message });
+      return { error: 'Não foi possível preparar a foto. Confira o bucket privado e tente novamente.' };
+    }
+    return { path, token: data.token };
+  } catch (cause) {
+    console.error('[partner.avatar.prepare.unexpected]', cause);
+    return { error: 'Falha ao autorizar a foto. Tente novamente.' };
+  }
+}
+
+/**
+ * Never trust just a browser-supplied Storage path: verify owner, file size
+ * and real file signature before recording it in the private profile.
+ */
+export async function registerPartnerAvatarUpload(input: { path: string }): Promise<ActionState> {
+  const viewer = await requireRole(['partner']);
+  if (viewer.role !== 'partner') return { error: 'Apenas a pousada pode confirmar sua foto.' };
+
+  const parsed = z.strictObject({ path: z.string().min(1).max(200) }).safeParse(input);
+  if (!parsed.success) return { error: 'Caminho da foto inválido.' };
+  const path = parsed.data.path;
+  const allowed = new RegExp('^' + viewer.id + '/avatar\\.(jpg|png|webp)$');
+  if (!allowed.test(path)) return { error: 'A foto não pertence a esta pousada.' };
+
+  const ext = path.split('.').pop();
+  const mime: keyof typeof AVATAR_MIMES =
+    ext === 'jpg' ? 'image/jpeg' : ext === 'png' ? 'image/png' : 'image/webp';
+
+  try {
+    const db = await createSupabaseServerClient();
+    const { data: file, error: downloadError } = await db.storage.from(AVATAR_BUCKET).download(path);
+    if (downloadError || !file) {
+      console.error('[partner.avatar.verify.download]', { message: downloadError?.message });
+      return { error: 'Não foi possível verificar a foto enviada. Tente confirmar novamente.' };
+    }
+    if (file.size === 0 || file.size > 3 * 1024 * 1024) {
+      return { error: 'A foto enviada está vazia ou ultrapassa 3 MB.' };
+    }
+    const bytes = new Uint8Array(await file.arrayBuffer());
+    if (!validImage(bytes, mime)) {
+      return { error: 'O arquivo enviado não corresponde ao formato JPG, PNG ou WebP.' };
+    }
+
+    const { error } = await db.rpc('set_my_partner_avatar', { p_path: path });
+    if (error) {
+      console.error('[partner.avatar.verify.register]', { code: error.code, message: error.message });
+      return { error: readableError(error) };
+    }
+    refreshPartner();
+    return { ok: 'Foto da pousada atualizada!' };
+  } catch (cause) {
+    console.error('[partner.avatar.verify.unexpected]', cause);
+    return { error: 'A foto foi enviada, mas não conseguimos finalizar o cadastro. Tente confirmar novamente.' };
+  }
+}
