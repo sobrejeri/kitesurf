@@ -180,6 +180,8 @@ export async function uploadInstructorAvatar(_previous: ActionState, form: FormD
       return { error: describeError(saveError) };
     }
 
+    // Update the persistent workspace header as well as the profile page.
+    revalidatePath('/instrutor', 'layout');
     revalidatePath('/instrutor/cadastro');
     return { ok: 'Foto do perfil atualizada.' };
   } catch (error) {

@@ -270,6 +270,29 @@ export interface WorkspaceNavItem {
   tab?: boolean;
 }
 
+function WorkspaceProfileAvatar({ person, size }: { person: { name: string; initials: string; photoUrl?: string | null; profileHref?: string }; size: number }) {
+  const avatar = person.photoUrl ? (
+    <span className="inline-block shrink-0 overflow-hidden rounded-full border border-line-ghost bg-sand" style={{ width: size, height: size }}>
+      <img src={person.photoUrl} alt="" className="h-full w-full object-cover" />
+    </span>
+  ) : (
+    <span className="inline-block shrink-0">
+      <Avatar initials={person.initials} size={size} />
+    </span>
+  );
+
+  return person.profileHref ? (
+    <Link
+      href={person.profileHref}
+      aria-label="Abrir meu perfil"
+      title="Meu perfil"
+      className="press inline-flex shrink-0 items-center rounded-full focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand"
+    >
+      {avatar}
+    </Link>
+  ) : avatar;
+}
+
 export function WorkspaceShell({
   children,
   workspace,
@@ -285,7 +308,7 @@ export function WorkspaceShell({
   workspace: string;
   nav: readonly WorkspaceNavItem[];
   tip: { title: string; body: string; icon: IconName };
-  person: { name: string; initials: string; role: string };
+  person: { name: string; initials: string; role: string; photoUrl?: string | null; profileHref?: string };
   signOut: () => Promise<void>;
   areas?: readonly { label: string; href: string }[];
   /** "sunset": the dark navy and orange look of the student and admin areas. */
@@ -330,7 +353,7 @@ export function WorkspaceShell({
             {tip.body}
           </div>
           <div className="mt-4 flex items-center gap-2.5 px-1">
-            <Avatar initials={person.initials} size={34} />
+            <WorkspaceProfileAvatar person={person} size={34} />
             <span className="text-[12px] leading-tight">
               <strong className="block font-[550] text-label">{person.name}</strong>
               <span className="text-[11px] text-subtle">{person.role}</span>
@@ -348,9 +371,7 @@ export function WorkspaceShell({
               <span className="grid h-10 w-10 place-items-center text-ink" aria-hidden="true">
                 <Icon name="bell" className="!h-6 !w-6" />
               </span>
-              <span className="grid h-10 w-10 place-items-center rounded-full border border-line-ghost bg-sand text-[13px] font-[550] text-ink" aria-hidden="true">
-                {person.initials}
-              </span>
+              <WorkspaceProfileAvatar person={person} size={40} />
             </span>
           }
         />
@@ -359,7 +380,7 @@ export function WorkspaceShell({
           breakpoint="lg"
           leading={<LogoMark />}
           title={current?.label ?? workspaceTitle}
-          trailing={<span className="grid h-9 w-9 place-items-center rounded-full bg-avatar-1 text-[12px] font-[550] text-avatar-1-ink" aria-hidden="true">{person.initials}</span>}
+          trailing={<WorkspaceProfileAvatar person={person} size={36} />}
         />
       )}
 
@@ -377,7 +398,7 @@ export function WorkspaceShell({
             <span className="grid h-10 w-10 place-items-center rounded-full border border-line text-label" aria-hidden="true">
               <Icon name="bell" />
             </span>
-            <Avatar initials={person.initials} size={36} />
+            <WorkspaceProfileAvatar person={person} size={36} />
           </div>
         </div>
         <main className="mx-auto max-w-6xl px-4 pb-tabbar pt-4 sm:px-6 lg:px-9 lg:py-9">{children}</main>
