@@ -44,7 +44,6 @@ create policy request_visible_to_participants on public.instructor_requests for 
 );
 create policy offer_visible_to_participants on public.instructor_offers for select to authenticated using(
   instructor_id=auth.uid() or public.is_admin()
-  or exists(select 1 from public.instructor_requests r where r.id=request_id and r.student_id=auth.uid())
 );
 
 -- Only our other SECURITY DEFINER functions call this helper, not browser clients.
@@ -180,7 +179,7 @@ language plpgsql security definer set search_path='' as $$
 declare uid uuid:=public.require_role(array['instructor']::public.app_role[]);
   req_id uuid; r public.instructor_requests; o public.instructor_offers;
   price public.price_versions; partner public.partners; instructor public.instructors;
-  total_lesson integer; total_transport integer; split record; booking_id uuid;
+  total_lesson integer; total_transport integer; split record; v_booking_id uuid;
   meeting jsonb; position integer:=0;
 begin
   select request_id into req_id from public.instructor_offers
@@ -222,19 +221,19 @@ begin
      total_transport,total_lesson+total_transport,split.partner_cents,split.platform_cents,
      split.instructor_net_cents+total_transport,
      lpad(floor(random()*10000)::integer::text,4,'0'))
-  returning id into booking_id;
+  returning id into v_booking_id;
   for meeting in select value from jsonb_array_elements(r.meetings)
     order by (value->>'starts_at')::timestamptz loop
     position:=position+1;
     insert into public.booking_meetings(booking_id,position,starts_at,minutes)
-      values(booking_id,position,(meeting->>'starts_at')::timestamptz,(meeting->>'hours')::integer*60);
+      values(v_booking_id,position,(meeting->>'starts_at')::timestamptz,(meeting->>'hours')::integer*60);
   end loop;
-  update public.instructor_requests set status='accepted',booking_id=booking_id
+  update public.instructor_requests set status='accepted',booking_id=v_booking_id
     where id=r.id;
   update public.instructor_offers set status='accepted',responded_at=now() where id=o.id;
   perform public.write_audit('offer.accepted','instructor_offer',o.id::text,null,
-    jsonb_build_object('booking',booking_id));
-  return booking_id;
+    jsonb_build_object('booking',v_booking_id));
+  return v_booking_id;
 end $$;
 
 revoke execute on function public.create_instructor_request(uuid,public.lesson_level,text,jsonb,text,boolean) from public,anon;
