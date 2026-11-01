@@ -308,7 +308,7 @@ export function WorkspaceShell({
   workspace: string;
   nav: readonly WorkspaceNavItem[];
   tip: { title: string; body: string; icon: IconName };
-  person: { name: string; initials: string; role: string; photoUrl?: string | null; profileHref?: string };
+  person: { name: string; initials: string; role: string; photoUrl?: string | null; profileHref?: string; unreadCount?: number };
   signOut: () => Promise<void>;
   areas?: readonly { label: string; href: string }[];
   /** "sunset": the dark navy and orange look of the student and admin areas. */
@@ -319,6 +319,8 @@ export function WorkspaceShell({
   const sunset = theme === 'sunset';
   const pathname = usePathname();
   const current = nav.find((item) => pathname.startsWith(item.href));
+  const alertsHref = nav.find((item) => item.href.endsWith('/avisos'))?.href;
+  const unread = person.unreadCount ?? 0;
   const workspaceTitle = workspace.charAt(0) + workspace.slice(1).toLowerCase();
   const tabs = nav.filter((item) => item.tab).map(({ label, href, icon }) => ({ label: shortLabel(label), href, icon }));
   const sheetLinks: SheetLink[] = nav.filter((item) => !item.tab).map(({ label, href, icon }) => ({ label, href, icon }));
@@ -368,9 +370,13 @@ export function WorkspaceShell({
           leading={<StudentBrand subtitle={brandSubtitle} />}
           trailing={
             <span className="flex items-center gap-2">
-              <span className="grid h-10 w-10 place-items-center text-ink" aria-hidden="true">
-                <Icon name="bell" className="!h-6 !w-6" />
-              </span>
+              {alertsHref ? (
+                <Link href={alertsHref} aria-label="Abrir notificações"
+                  className="press relative grid h-10 w-10 place-items-center rounded-full text-ink">
+                  <Icon name="bell" className="!h-6 !w-6"/>
+                  {unread>0 ? <span className="absolute -right-0.5 -top-0.5 grid h-5 min-w-5 place-items-center rounded-full bg-brand px-1 text-[10px] font-bold text-white">{unread>9?'9+':unread}</span> : null}
+                </Link>
+              ) : null}
               <WorkspaceProfileAvatar person={person} size={40} />
             </span>
           }
@@ -395,9 +401,13 @@ export function WorkspaceShell({
             <span className="flex items-center gap-1.5 text-[11px] text-muted">
               <Icon name="pin" className="!h-4 !w-4" /> Preá, Ceará
             </span>
-            <span className="grid h-10 w-10 place-items-center rounded-full border border-line text-label" aria-hidden="true">
-              <Icon name="bell" />
-            </span>
+            {alertsHref ? (
+              <Link href={alertsHref} aria-label="Abrir notificações"
+                className="press relative grid h-10 w-10 place-items-center rounded-full border border-line text-label">
+                <Icon name="bell"/>
+                {unread>0 ? <span className="absolute -right-1 -top-1 grid h-5 min-w-5 place-items-center rounded-full bg-brand px-1 text-[10px] font-bold text-white">{unread>9?'9+':unread}</span> : null}
+              </Link>
+            ) : null}
             <WorkspaceProfileAvatar person={person} size={36} />
           </div>
         </div>

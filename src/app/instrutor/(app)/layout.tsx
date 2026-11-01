@@ -27,8 +27,13 @@ export default async function InstructorLayout({ children }: { children: React.R
   // The avatar is private: resolve its signed URL using the instructor session.
   // A missing photo or a Storage error must never block access to the workspace.
   let photoUrl: string | null = null;
+  let unreadCount = 0;
   try {
     const supabase = await createSupabaseServerClient();
+    const { count, error: notificationError } = await supabase
+      .from('app_notifications').select('id',{count:'exact',head:true})
+      .eq('recipient_id',viewer.id).is('read_at',null);
+    if (!notificationError) unreadCount=count??0;
     const { data: profile, error: profileError } = await supabase
       .from('instructor_private_profiles')
       .select('avatar_path')
@@ -69,6 +74,7 @@ export default async function InstructorLayout({ children }: { children: React.R
         role: 'Instrutor independente',
         photoUrl,
         profileHref: '/instrutor/cadastro',
+        unreadCount,
       }}
     >
       {children}
