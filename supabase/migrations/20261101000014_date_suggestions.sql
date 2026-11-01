@@ -40,7 +40,10 @@ begin
     order by case when ins.id=r.preferred_instructor_id then 0 else 1 end, ins.queue_position nulls last,ins.id
     for update of ins skip locked
   loop
-    if not public.instructor_can_attend(i.id,r.meetings) then continue; end if;
+    -- A previously chosen instructor may be unavailable for the original
+    -- dates but still needs the chance to suggest another date to the student.
+    if i.id is distinct from r.preferred_instructor_id
+       and not public.instructor_can_attend(i.id,r.meetings) then continue; end if;
     select exists (
       select 1 from public.instructor_offers o
       join public.instructor_requests other on other.id=o.request_id
