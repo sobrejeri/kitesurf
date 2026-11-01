@@ -1,4 +1,5 @@
 import type { Metadata } from 'next';
+import Link from 'next/link';
 
 import { publishPrice } from '@/app/actions/admin';
 import { ActionForm } from '@/components/action-form';
@@ -15,7 +16,7 @@ export default async function OperationRulesPage() {
   const current = versions[0];
   return (
     <>
-      <PageHeader eyebrow="Valores e operação" title="Valor por hora e regras" lead="Defina o preço da aula e a comissão das novas reservas." />
+      <PageHeader eyebrow="Valores e operação" title="Valor por hora e regras" lead="Defina o preço das aulas e a comissão global para novas reservas." />
       <div className="grid gap-5 lg:grid-cols-2">
         <Card>
           <Eyebrow>Preço das aulas</Eyebrow>
@@ -26,6 +27,13 @@ export default async function OperationRulesPage() {
               Atual: <strong className="text-brand">{formatMoney(current.hourly_rate_cents)}/hora</strong> · comissão {formatBps(current.platform_commission_bps)}
             </p>
           ) : null}
+          <p className="mt-3 text-[12px] text-muted">
+            A comissão global vale para instrutores sem uma taxa individual.
+            Ajustes específicos são feitos em{' '}
+            <Link href="/admin/instrutores" className="font-semibold text-brand underline">Instrutores</Link>
+            {' '}e{' '}
+            <Link href="/admin/afiliados" className="font-semibold text-brand underline">Pousadas afiliadas</Link>.
+          </p>
           <ActionForm action={publishPrice} submitLabel="Publicar novo valor" className="mt-5 grid gap-4">
             <div className="grid gap-4 sm:grid-cols-3">
               <Field label="Valor da hora (R$, inteiro)">
