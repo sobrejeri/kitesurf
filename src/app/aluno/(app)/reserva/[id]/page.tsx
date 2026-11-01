@@ -12,6 +12,7 @@ import { requireRole } from '@/lib/auth';
 import { BOOKING_STATUS_LABELS, LEVEL_LABELS, MEETING_STATUS_LABELS, getBookingForViewer, learningBalance } from '@/lib/data';
 import { formatDateLong, formatMinutes, formatMoney, formatTime } from '@/lib/format';
 import { initials } from '@/lib/people';
+import { createSupabaseServerClient } from '@/lib/supabase/server';
 
 export const metadata: Metadata = { title: 'Sua reserva' };
 
@@ -25,6 +26,10 @@ export default async function BookingPage({ params }: { params: Promise<{ id: st
   const booking = await getBookingForViewer(id, viewer);
   if (!booking || booking.student_id !== viewer.id) notFound();
 
+  const db = await createSupabaseServerClient();
+  const rated = booking.status === 'completed' ? await db.from('instructor_ratings')
+    .select('stars,comment').eq('booking_id',booking.id).eq('student_id',viewer.id)
+    .maybeSingle<{stars:number;comment:string}>() : null;
   const awaiting = booking.status === 'awaiting_payment';
   const balance = learningBalance([{ ...booking, status: awaiting ? 'confirmed' : booking.status }]);
   const donePercent = balance.contracted ? Math.round((balance.done / balance.contracted) * 100) : 0;
@@ -111,6 +116,14 @@ export default async function BookingPage({ params }: { params: Promise<{ id: st
             <Card>
               <h2 className="text-[17px] font-bold text-ink">Avalie seu instrutor</h2>
               <p className="mt-1 text-[12px] text-muted">Sua experiência ajuda a melhorar o Vento.</p>
+              {rated?.error ? (
+                <Note tone="warning" className="mt-4">As avaliações precisam ser ativadas no Supabase.</Note>
+              ) : rated?.data ? (
+                <div className="mt-4">
+                  <p className="text-[18px] font-semibold text-brand">{'★'.repeat(rated.data.stars)}{'☆'.repeat(5-rated.data.stars)}</p>
+                  <p className="mt-2 text-[13px] text-muted">Sua avaliação já foi enviada. Obrigado!</p>
+                </div>
+              ) : (
               <ActionForm action={rateInstructor} submitLabel="Enviar avaliação" className="mt-4 grid gap-3">
                 <input type="hidden" name="bookingId" value={booking.id}/>
                 <label htmlFor="rating-stars" className="text-[13px] font-semibold text-ink">Sua nota</label>
@@ -127,6 +140,7 @@ export default async function BookingPage({ params }: { params: Promise<{ id: st
                   className="w-full rounded-xl border border-line bg-surface p-3 text-[13px] text-ink"
                   placeholder="Como foi sua aula?"/>
               </ActionForm>
+              )}
             </Card>
           ) : null}
           {awaiting ? null : (
