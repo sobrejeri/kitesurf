@@ -2,13 +2,13 @@ import type { Metadata } from 'next';
 import { redirect } from 'next/navigation';
 
 import { signOut } from '@/app/actions/auth';
-import { savePartnerPayout, savePartnerProfile, uploadPartnerAvatar } from '@/app/actions/partner-profile';
+import { savePartnerPayout, savePartnerProfile } from '@/app/actions/partner-profile';
 import { ActionForm } from '@/components/action-form';
 import { Icon } from '@/components/icon';
 import { PartnerFootnote, PartnerHeading } from '@/components/partner-info';
 import { VerifiedVentoBadge } from '@/components/verified-badge';
 import { PartnerPayoutFields } from '@/components/partner/payout-fields';
-import { ProfilePhotoPicker } from '@/components/profile-photo-picker';
+import { PartnerAvatarUploader } from '@/components/partner/avatar-uploader';
 import { Badge, ButtonLink, Card, Note, Field, inputClass } from '@/components/ui';
 import { requireRole } from '@/lib/auth';
 import { getOwnPartner, listActiveBeaches } from '@/lib/data';
@@ -69,9 +69,7 @@ export default async function PartnerProfilePage(){
     <PartnerHeading title="Meu perfil" lead="Gerencie sua pousada, contatos, foto e dados de recebimento." />
     <Card className="mb-4">
       <div className="flex flex-col items-center gap-4 text-center sm:flex-row sm:items-center sm:text-left">
-        <ProfilePhotoPicker
-          action={uploadPartnerAvatar} photoUrl={photoUrl} name={partner.name}
-          enabled={ready}/>
+        <PartnerAvatarUploader photoUrl={photoUrl} name={partner.name} enabled={ready}/>
         <div className="min-w-0 flex-1">
           <div className="flex min-w-0 items-center justify-center gap-1.5 sm:justify-start">
             <h2 className="min-w-0 break-words text-[22px] font-bold text-ink">{partner.name}</h2>
