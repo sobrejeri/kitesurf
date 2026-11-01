@@ -2,9 +2,12 @@ import type {Metadata} from 'next';
 import Link from 'next/link';
 
 import {AdminTitle} from '@/components/admin/kit';
+import {AdminProfilePhoto} from '@/components/admin/profile-photo';
 import {Icon} from '@/components/icon';
 import {Badge,EmptyState,Note} from '@/components/ui';
 import {requireRole} from '@/lib/auth';
+import {getAdminAvatarUrls} from '@/lib/admin-avatars';
+import {VerifiedVentoBadge} from '@/components/verified-badge';
 import {listAllBookings,listAllPartners} from '@/lib/data';
 import {formatBps,formatMoney} from '@/lib/format';
 import {parsePartnerProgress,partnerCompletion} from '@/lib/partner-progress';
@@ -14,7 +17,9 @@ export const metadata:Metadata={title:'Pousadas afiliadas'};
 
 export default async function PartnersAdminPage(){
   await requireRole(['admin'],'/admin/afiliados');
-  const [partners,bookings]=await Promise.all([listAllPartners(),listAllBookings(500)]);
+  const [partners,bookings,avatarUrls]=await Promise.all([
+    listAllPartners(),listAllBookings(500),getAdminAvatarUrls('partner'),
+  ]);
   const db=await createSupabaseServerClient();
   const states=await Promise.all(partners.map(async partner=>{
     const result=await db.rpc('get_partner_profile_progress',{p_partner_id:partner.id});
@@ -41,12 +46,19 @@ export default async function PartnersAdminPage(){
             <Link href={`/admin/afiliados/${partner.id}`} aria-label={`Analisar pousada ${partner.name}`}
               className="press block p-4">
               <div className="flex items-start gap-3">
-                <span className="grid h-[64px] w-[64px] shrink-0 place-items-center rounded-[14px] bg-[linear-gradient(135deg,#3a2316,#1d2a42)]" aria-hidden="true">
-                  <Icon name="home" className="!h-7 !w-7 text-brand"/>
-                </span>
+                <AdminProfilePhoto
+                  src={avatarUrls.get(partner.id)}
+                  name={partner.name}
+                  initials={partner.name.slice(0,1).toUpperCase()}
+                  kind="partner"
+                  size={64}
+                />
                 <div className="min-w-0 flex-1">
                   <div className="flex flex-wrap items-start justify-between gap-2">
-                    <h2 className="min-w-0 break-words text-[16px] font-bold text-ink">{partner.name}</h2>
+                    <div className="flex min-w-0 items-center gap-1.5">
+                      <h2 className="min-w-0 break-words text-[16px] font-bold text-ink">{partner.name}</h2>
+                      <VerifiedVentoBadge kind="partner" status={partner.status} size="sm"/>
+                    </div>
                     <Badge tone={partner.status==='approved'?'success':'warning'}>
                       {partner.status==='approved'?'Aprovada':'Em análise'}
                     </Badge>
