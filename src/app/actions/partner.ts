@@ -22,5 +22,7 @@ export async function registerPartner(_prev: ActionState, form: FormData): Promi
   const { error } = await supabase.rpc('register_partner', { p_name: parsed.data.name, p_beach_id: parsed.data.beachId });
   if (error) return { error: friendlyError(error) };
   revalidatePath('/pousada/inicio');
-  return { ok: 'Pousada cadastrada. A operação aprova antes de liberar o link.' };
+  revalidatePath('/pousada/cadastro');
+  revalidatePath('/pousada/perfil');
+  return { ok: 'Pousada cadastrada! Abra Meu perfil e complete responsável, telefone, cidade e endereço para a análise.' };
 }

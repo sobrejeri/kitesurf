@@ -3,6 +3,10 @@
  * message: the raw text can carry internal details and is only logged.
  */
 const KNOWN: readonly [RegExp, string][] = [
+  [/Partner profile must be completed before approval/i,
+    'A pousada ainda precisa preencher responsável, telefone, cidade e endereço antes da aprovação.'],
+  [/Approved establishment identity requires admin review/i,
+    'Nome e praia de uma pousada já aprovada só podem ser alterados após análise da administração.'],
   [/Instructor documents must be approved before activation/i,
     'Antes de aprovar, confira e aprove a identidade e a certificação profissional do instrutor em Admin > Documentos.'],
   [/Unknown or inactive beach/i, 'Essa praia não está disponível. Escolha outra.'],
