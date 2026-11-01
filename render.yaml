@@ -10,7 +10,7 @@ services:
     runtime: node
     region: oregon
     plan: starter
-    branch: main
+    branch: claude/cool-ride-x47z5c
     buildCommand: corepack enable && pnpm install --frozen-lockfile && pnpm build
     startCommand: pnpm start
     healthCheckPath: /aluno/inicio
