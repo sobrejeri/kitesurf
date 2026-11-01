@@ -13,12 +13,11 @@ import { mkdirSync, writeFileSync } from 'node:fs';
 const nextConfig = {
   reactStrictMode: true,
   poweredByHeader: false,
-  // The instructor accepts avatars of up to 3 MiB. The default Server
-  // Action request limit is just 1 MiB and rejects camera photos before our
-  // upload action can validate them. Leave room for multipart overhead.
+  // Instructor documents allow up to 8 MiB and photos up to 3 MiB.
+  // Reserve 1 MiB for multipart overhead; server actions validate each file.
   experimental: {
     serverActions: {
-      bodySizeLimit: '4mb',
+      bodySizeLimit: '9mb',
     },
   },
   async headers() {
