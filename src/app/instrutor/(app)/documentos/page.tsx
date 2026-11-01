@@ -1,8 +1,7 @@
 import type { Metadata } from 'next';
 
-import { uploadInstructorDocument } from '@/app/actions/documents';
-import { ActionForm } from '@/components/action-form';
-import { Card, Note, PageHeader, inputClass } from '@/components/ui';
+import { InstructorDocumentUploader } from '@/components/instructor/document-uploader';
+import { Badge, Card, Note, PageHeader } from '@/components/ui';
 import { requireRole } from '@/lib/auth';
 import { createSupabaseServerClient } from '@/lib/supabase/server';
 
@@ -18,24 +17,40 @@ export default async function InstructorDocumentsPage() {
   const {data,error}=await db.from('instructor_documents')
     .select('id,kind,original_name,status,review_notes,uploaded_at')
     .eq('instructor_id',viewer.id).order('uploaded_at',{ascending:false}).limit(50).returns<Doc[]>();
+  const essential=['identity','certification'].map(kind=>{
+    const rows=(data??[]).filter(doc=>doc.kind===kind);
+    return {
+      kind,
+      name:KINDS[kind],
+      status:rows.find(doc=>doc.status==='approved')?.status
+        ??rows.find(doc=>doc.status==='pending')?.status
+        ??rows[0]?.status
+        ??'missing',
+    };
+  });
   return (
     <>
       <PageHeader eyebrow="Documentação profissional" title="Meus documentos"
         lead="Envie seus comprovantes para análise. Os arquivos ficam privados e só podem ser acessados por você e pela administração."/>
       {error?<Note tone="warning">O cadastro documental depende da migração 17 no Supabase.</Note>:(
         <div className="grid gap-4 lg:grid-cols-2">
+          <div className="lg:col-span-2 rounded-[20px] border border-line bg-surface p-4">
+            <h2 className="text-[15px] font-bold text-ink">Documentos necessários para aprovação</h2>
+            <div className="mt-3 grid gap-2 sm:grid-cols-2">
+              {essential.map(doc=>(
+                <div key={doc.kind} className="flex flex-wrap items-center justify-between gap-2 rounded-xl border border-line px-3 py-3">
+                  <span className="text-[13px] text-ink">{doc.name}</span>
+                  <Badge tone={doc.status==='approved'?'success':doc.status==='rejected'?'danger':'warning'}>
+                    {STATUS[doc.status]??'Não enviado'}
+                  </Badge>
+                </div>
+              ))}
+            </div>
+            <p className="mt-2 text-[12px] text-muted">Depois de enviar, acompanhe a análise aqui. Somente a administração pode aprovar os arquivos.</p>
+          </div>
           <Card>
             <h2 className="text-[17px] font-bold text-ink">Enviar documento</h2>
-            <ActionForm action={uploadInstructorDocument} submitLabel="Enviar para análise" className="mt-4 grid gap-4">
-              <label htmlFor="doc-kind" className="text-[13px] font-semibold">Tipo de documento</label>
-              <select id="doc-kind" name="kind" required className={inputClass}>
-                {Object.entries(KINDS).map(([value,label])=><option key={value} value={value}>{label}</option>)}
-              </select>
-              <label htmlFor="doc-file" className="text-[13px] font-semibold">Arquivo</label>
-              <input id="doc-file" name="document" type="file" accept=".pdf,.jpg,.jpeg,.png,application/pdf,image/jpeg,image/png"
-                required className="w-full min-w-0 text-[12px] text-ink"/>
-              <p className="text-[12px] text-muted">PDF, JPG ou PNG · máximo 8 MB. Evite compartilhar esses arquivos em conversas.</p>
-            </ActionForm>
+            <InstructorDocumentUploader/>
           </Card>
           <Card>
             <h2 className="text-[17px] font-bold text-ink">Histórico de envios</h2>
@@ -44,7 +59,7 @@ export default async function InstructorDocumentsPage() {
                 {(data??[]).map(d=>(
                   <li key={d.id} className="py-3">
                     <strong className="block break-words text-[13px] text-ink">{KINDS[d.kind]??d.kind} · {d.original_name}</strong>
-                    <span className="mt-1 block text-[12px] text-brand">{STATUS[d.status]??d.status}</span>
+                    <Badge tone={d.status==='approved'?'success':d.status==='rejected'?'danger':'warning'}>{STATUS[d.status]??d.status}</Badge>
                     {d.review_notes?<p className="mt-2 text-[12px] text-muted">Análise: {d.review_notes}</p>:null}
                   </li>
                 ))}
