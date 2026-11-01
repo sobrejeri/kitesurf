@@ -14,7 +14,7 @@ end $$;
 
 do $$
 declare
-  owner_id uuid:='00000000-0000-0000-0000-0000000000c1';
+  v_owner_id uuid:='00000000-0000-0000-0000-0000000000c1';
   admin_id uuid:='00000000-0000-0000-0000-00000000000a';
   student_id uuid:='00000000-0000-0000-0000-0000000000b1';
   pid uuid;
@@ -22,10 +22,10 @@ declare
   flags jsonb;
   details jsonb;
 begin
-  select id,beach_id into pid,beach_id from public.partners where owner_id=owner_id;
+  select id,beach_id into pid,beach_id from public.partners p where p.owner_id=v_owner_id;
   assert pid is not null,'requires partner fixture';
 
-  perform pg_temp.act_as(owner_id::text);
+  perform pg_temp.act_as(v_owner_id::text);
   flags:=public.get_partner_profile_progress(pid);
   assert (flags->>'name')::boolean,'business name present';
   assert (flags->>'phone')::boolean,'contact phone provided';
@@ -67,7 +67,7 @@ begin
 
   -- Simulate incomplete new application and verify SQL enforces the gate.
   update public.partners set status='pending' where id=pid;
-  update public.partner_private_profiles set phone='' where id=owner_id;
+  update public.partner_private_profiles set phone='' where id=v_owner_id;
   perform pg_temp.act_as(admin_id::text);
   begin
     perform public.set_partner_status(pid,'approved','Contato incompleto');
@@ -77,7 +77,7 @@ begin
   assert (select status from public.partners where id=pid)='pending',
     'approval failure leaves partner pending';
 
-  perform pg_temp.act_as(owner_id::text);
+  perform pg_temp.act_as(v_owner_id::text);
   perform public.update_my_partner_profile(
     'Pousada Mar & Vento',beach_id,
     'Recepção Mar e Vento','(88) 99999-9999',
@@ -93,7 +93,7 @@ begin
 
   -- Payout table cannot be read by admin or another partner.
   perform pg_temp.act_as(admin_id::text);
-  assert (select count(*) from public.partner_payout_details where id=owner_id)=0,
+  assert (select count(*) from public.partner_payout_details where id=v_owner_id)=0,
     'admin sees no payout record values';
   perform pg_temp.reset();
 end $$;
