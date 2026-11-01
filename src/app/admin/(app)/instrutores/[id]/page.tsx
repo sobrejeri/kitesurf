@@ -4,13 +4,15 @@ import { notFound } from 'next/navigation';
 
 import { setInstructorStatus } from '@/app/actions/admin';
 import { ActionForm } from '@/components/action-form';
-import { Panel, PhotoTile } from '@/components/admin/kit';
+import { Panel } from '@/components/admin/kit';
+import { AdminProfilePhoto } from '@/components/admin/profile-photo';
 import { INSTRUCTOR_STATUS } from '@/components/admin/labels';
 import { Icon, type IconName } from '@/components/icon';
 import { Badge, Note, inputClass } from '@/components/ui';
 import { InstructorCompletionPanel } from '@/components/instructor/completion-panel';
 import { VerifiedInstructorBadge } from '@/components/instructor/verified-badge';
 import { requireRole } from '@/lib/auth';
+import { getAdminAvatarUrls } from '@/lib/admin-avatars';
 import { listAllBookings, listAllInstructors, listQueue } from '@/lib/data';
 import { initials } from '@/lib/people';
 import { computeInstructorCompletion, readProgressFlags, type DocumentRecord } from '@/lib/instructor-completion';
@@ -45,7 +47,9 @@ function InfoRow({
 export default async function InstructorDetailPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
   await requireRole(['admin'], `/admin/instrutores/${id}`);
-  const [instructors, queue, bookings] = await Promise.all([listAllInstructors(), listQueue(), listAllBookings(500)]);
+  const [instructors, queue, bookings, avatarUrls] = await Promise.all([
+    listAllInstructors(), listQueue(), listAllBookings(500), getAdminAvatarUrls('instructor'),
+  ]);
   const row = instructors.find((item) => item.id === id);
   if (!row) notFound();
 
@@ -81,7 +85,7 @@ export default async function InstructorDetailPage({ params }: { params: Promise
 
       <section className="relative overflow-hidden rounded-[22px] border border-line bg-[linear-gradient(135deg,#1d2a42,#3a2316)] p-5">
         <div className="flex items-center gap-4">
-          <PhotoTile initials={initials(name)} size={84} />
+          <AdminProfilePhoto src={avatarUrls.get(row.id)} name={name} initials={initials(name)} size={84} />
           <div className="min-w-0">
             <div className="flex min-w-0 items-center gap-2">
               <h1 className="min-w-0 break-words text-[24px] font-bold leading-tight text-white">{name}</h1>

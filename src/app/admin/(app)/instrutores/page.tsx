@@ -1,12 +1,14 @@
 import type { Metadata } from 'next';
 
 import { FilterList, type FilterEntry } from '@/components/admin/filter-list';
-import { AdminTitle, ListCard, PhotoTile } from '@/components/admin/kit';
+import { AdminTitle, ListCard } from '@/components/admin/kit';
+import { AdminProfilePhoto } from '@/components/admin/profile-photo';
 import { INSTRUCTOR_STATUS } from '@/components/admin/labels';
 import { Icon } from '@/components/icon';
 import { VerifiedInstructorBadge } from '@/components/instructor/verified-badge';
 import { Badge } from '@/components/ui';
 import { requireRole } from '@/lib/auth';
+import { getAdminAvatarUrls } from '@/lib/admin-avatars';
 import { listAllInstructors } from '@/lib/data';
 import { initials } from '@/lib/people';
 
@@ -14,7 +16,9 @@ export const metadata: Metadata = { title: 'Instrutores' };
 
 export default async function InstructorsPage() {
   await requireRole(['admin'], '/admin/instrutores');
-  const instructors = await listAllInstructors();
+  const [instructors, avatarUrls] = await Promise.all([
+    listAllInstructors(), getAdminAvatarUrls('instructor'),
+  ]);
 
   const entries: FilterEntry[] = instructors.map((row) => {
     const name = row.profile?.full_name || 'Sem nome';
@@ -26,7 +30,7 @@ export default async function InstructorsPage() {
       node: (
         <ListCard href={`/admin/instrutores/${row.id}`}>
           <div className="flex items-start gap-3">
-            <PhotoTile initials={initials(name)} size={64} />
+            <AdminProfilePhoto src={avatarUrls.get(row.id)} name={name} initials={initials(name)} size={64} />
             <div className="min-w-0 flex-1">
               <div className="flex items-start justify-between gap-2">
                 <div className="flex min-w-0 flex-1 flex-col gap-1">

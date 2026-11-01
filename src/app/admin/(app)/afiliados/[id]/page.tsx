@@ -6,6 +6,7 @@ import {ActionForm} from '@/components/action-form';
 import {AdminTitle} from '@/components/admin/kit';
 import {Icon} from '@/components/icon';
 import {Badge,ButtonLink,Card,Note,inputClass} from '@/components/ui';
+import {VerifiedVentoBadge} from '@/components/verified-badge';
 import {requireRole} from '@/lib/auth';
 import {listAllPartners,listAllBookings} from '@/lib/data';
 import {formatBps,formatMoney} from '@/lib/format';
@@ -68,7 +69,10 @@ export default async function PartnerReviewPage({
           </span>
         )}
         <div className="min-w-0 flex-1">
-          <strong className="block break-words text-[19px] text-ink">{partner.name}</strong>
+          <div className="flex min-w-0 items-center gap-1.5">
+            <strong className="min-w-0 break-words text-[19px] text-ink">{partner.name}</strong>
+            <VerifiedVentoBadge kind="partner" status={partner.status} size="md"/>
+          </div>
           <p className="mt-1 text-[12px] text-muted">{partner.beach?.name??'Praia não informada'} · {partner.code}</p>
           <div className="mt-2"><Badge tone={partner.status==='approved'?'success':'warning'}>
             {partner.status==='approved'?'Aprovada':'Em análise'}

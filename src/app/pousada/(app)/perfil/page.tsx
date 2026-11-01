@@ -6,6 +6,7 @@ import { savePartnerPayout, savePartnerProfile, uploadPartnerAvatar } from '@/ap
 import { ActionForm } from '@/components/action-form';
 import { Icon } from '@/components/icon';
 import { PartnerFootnote, PartnerHeading } from '@/components/partner-info';
+import { VerifiedVentoBadge } from '@/components/verified-badge';
 import { PartnerPayoutFields } from '@/components/partner/payout-fields';
 import { ProfilePhotoPicker } from '@/components/profile-photo-picker';
 import { Badge, ButtonLink, Card, Note, Field, inputClass } from '@/components/ui';
@@ -72,7 +73,10 @@ export default async function PartnerProfilePage(){
           action={uploadPartnerAvatar} photoUrl={photoUrl} name={partner.name}
           enabled={ready}/>
         <div className="min-w-0 flex-1">
-          <h2 className="break-words text-[22px] font-bold text-ink">{partner.name}</h2>
+          <div className="flex min-w-0 items-center justify-center gap-1.5 sm:justify-start">
+            <h2 className="min-w-0 break-words text-[22px] font-bold text-ink">{partner.name}</h2>
+            <VerifiedVentoBadge kind="partner" status={partner.status} size="lg"/>
+          </div>
           <p className="mt-1 text-[12px] text-muted">{partner.beach?.name??'Praia não informada'} · Pousada parceira</p>
           <div className="mt-3 flex flex-wrap items-center justify-center gap-2 sm:justify-start">
             <Badge tone={isApproved?'success':'warning'}>
