@@ -84,6 +84,14 @@ const LEGACY_BOOKING_COLUMNS = BOOKING_COLUMNS.replace(
   'with_transport, transport_hourly_cents, transport_cents, ',
   '',
 );
+// A new deploy must continue to read bookings before migration 20 runs.
+const PRETEST_BOOKING_COLUMNS = BOOKING_COLUMNS.replace('is_test, ', '');
+
+function missingTestColumn(error: { code?: string; message?: string } | null): boolean {
+  return Boolean(error &&
+    (error.code === '42703' || error.code === 'PGRST204') &&
+    /\bis_test\b/i.test(error.message ?? ''));
+}
 
 function missingTransportColumn(error: { code?: string; message?: string } | null): boolean {
   return Boolean(error &&
@@ -122,19 +130,23 @@ type StudentMeetingRow = Meeting & { booking_id: string };
 
 export async function listBookingsForStudent(studentId: string): Promise<StudentBooking[]> {
   const supabase = await createSupabaseServerClient();
-  const { data, error } = await supabase
-    .from('bookings')
-    .select('id, status, is_test, student_id, instructor_id, beach_id, total_hours, created_at')
-    .eq('student_id', studentId)
-    .order('created_at', { ascending: false })
+  const read = (columns: string) => supabase.from('bookings').select(columns)
+    .eq('student_id', studentId).order('created_at', { ascending: false })
     .returns<StudentBookingBase[]>();
-
-  if (error) {
-    console.error('[student-bookings] Failed to read bookings', { code: error.code, message: error.message });
+  const result = await read('id, status, is_test, student_id, instructor_id, beach_id, total_hours, created_at');
+  let bookings: StudentBookingBase[];
+  if (missingTestColumn(result.error)) {
+    const old = await read('id, status, student_id, instructor_id, beach_id, total_hours, created_at');
+    if (old.error) throw new Error('Não foi possível consultar suas reservas.');
+    bookings = (old.data ?? []).map((b) => ({ ...b, is_test: false }));
+  } else if (result.error) {
+    console.error('[student-bookings] Failed to read bookings', {
+      code: result.error.code, message: result.error.message,
+    });
     throw new Error('Não foi possível consultar suas reservas.');
+  } else {
+    bookings = result.data ?? [];
   }
-
-  const bookings = data ?? [];
   if (bookings.length === 0) return [];
 
   const bookingIds = bookings.map((booking) => booking.id);
@@ -209,6 +221,11 @@ export async function listBookingsForInstructor(instructorId: string): Promise<B
     .returns<RawBooking[]>();
 
   const result = await read(BOOKING_COLUMNS);
+  if (missingTestColumn(result.error)) {
+    const old = await read(PRETEST_BOOKING_COLUMNS);
+    if (old.error) throw old.error;
+    return (old.data ?? []).map((b) => normalise({ ...b, is_test: false }));
+  }
   if (missingTransportColumn(result.error)) {
     console.warn('[instructor-bookings] Transport columns not installed; using legacy read');
     const legacy = await read(LEGACY_BOOKING_COLUMNS);
@@ -230,14 +247,17 @@ export async function listBookingsForInstructor(instructorId: string): Promise<B
 /** Admin only: RLS returns nothing to anyone else. */
 export async function listAllBookings(limit = 100): Promise<Booking[]> {
   const supabase = await createSupabaseServerClient();
-  const { data, error } = await supabase
-    .from('bookings')
-    .select(BOOKING_COLUMNS)
-    .order('created_at', { ascending: false })
-    .limit(limit)
-    .returns<RawBooking[]>();
-  if (error) throw error;
-  return (data ?? []).map(normalise);
+  const read = (columns: string) => supabase.from('bookings')
+    .select(columns).order('created_at', { ascending: false })
+    .limit(limit).returns<RawBooking[]>();
+  const result = await read(BOOKING_COLUMNS);
+  if (missingTestColumn(result.error)) {
+    const old = await read(PRETEST_BOOKING_COLUMNS);
+    if (old.error) throw old.error;
+    return (old.data ?? []).map((b) => normalise({ ...b, is_test: false }));
+  }
+  if (result.error) throw result.error;
+  return (result.data ?? []).map(normalise);
 }
 
 /**
@@ -249,12 +269,17 @@ export async function getBookingForViewer(
   viewer: { id: string; role: string },
 ): Promise<Booking | null> {
   const supabase = await createSupabaseServerClient();
-  const { data, error } = await supabase
-    .from('bookings')
-    .select(BOOKING_COLUMNS)
-    .eq('id', bookingId)
-    .maybeSingle<RawBooking>();
-  if (error) throw error;
+  const read = (columns: string) => supabase.from('bookings')
+    .select(columns).eq('id', bookingId).maybeSingle<RawBooking>();
+  const result = await read(BOOKING_COLUMNS);
+  let data: RawBooking | null = result.data;
+  if (missingTestColumn(result.error)) {
+    const old = await read(PRETEST_BOOKING_COLUMNS);
+    if (old.error) throw old.error;
+    data = old.data ? { ...old.data, is_test: false } : null;
+  } else if (result.error) {
+    throw result.error;
+  }
   if (!data) return null;
   const allowed = viewer.role === 'admin' || data.student_id === viewer.id || data.instructor_id === viewer.id;
   return allowed ? normalise(data) : null;
