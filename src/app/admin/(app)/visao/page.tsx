@@ -19,15 +19,16 @@ export default async function OverviewPage() {
 
   const approved = instructors.filter((i) => i.status === 'approved').length;
   const pendingInstructors = instructors.filter((i) => i.status === 'pending').length;
-  const paid = bookings.filter((b) => b.status === 'confirmed' || b.status === 'completed');
-  const awaiting = bookings.filter((b) => b.status === 'awaiting_payment');
+  const actualBookings = bookings.filter((b) => !b.is_test);
+  const paid = actualBookings.filter((b) => b.status === 'confirmed' || b.status === 'completed');
+  const awaiting = actualBookings.filter((b) => b.status === 'awaiting_payment');
   const volume = paid.reduce((sum, b) => sum + b.total_cents, 0);
   const awaitingValue = awaiting.reduce((sum, b) => sum + b.total_cents, 0);
 
   const days = lastDays(7);
   const perDay = days.map((day) => ({
     label: day.label.slice(0, 5),
-    value: bookings.filter((b) => dayKey(b.created_at) === day.key).length,
+    value: actualBookings.filter((b) => dayKey(b.created_at) === day.key).length,
   }));
 
   return (
@@ -43,7 +44,7 @@ export default async function OverviewPage() {
 
       <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
         <Metric label="Instrutores ativos" value={String(approved)} hint={pendingInstructors ? `${pendingInstructors} em análise` : 'Nenhum em análise'} hintTone={pendingInstructors ? 'brand' : 'muted'} icon="users" tone="blue" />
-        <Metric label="Reservas" value={String(bookings.length)} hint={`${awaiting.length} pendentes`} hintTone={awaiting.length ? 'brand' : 'muted'} icon="calendar" tone="orange" />
+        <Metric label="Reservas" value={String(actualBookings.length)} hint={`${awaiting.length} pendentes`} hintTone={awaiting.length ? 'brand' : 'muted'} icon="calendar" tone="orange" />
         <Metric label="Volume confirmado" value={formatMoney(volume)} hint={`${paid.length} pagas`} hintTone="success" icon="wallet" tone="green" />
         <Metric label="Aguardando pagamento" value={String(awaiting.length)} hint={formatMoney(awaitingValue)} hintTone="brand" icon="clock" tone="purple" />
       </div>

@@ -48,7 +48,7 @@ export default async function AdminBookingPage({ params }: { params: Promise<{ i
             Criada em {formatDateLong(booking.created_at)} às {formatTime(booking.created_at)}
           </p>
         </div>
-        <Badge tone={status.tone}>{status.label}</Badge>
+        <span className="flex flex-wrap gap-2"><Badge tone={status.tone}>{status.label}</Badge>{booking.is_test ? <Badge tone="warning">AULA TESTE</Badge> : null}</span>
       </header>
 
       <div className="grid gap-4 lg:grid-cols-2">
@@ -63,7 +63,7 @@ export default async function AdminBookingPage({ params }: { params: Promise<{ i
         </Panel>
 
         <div className="grid content-start gap-4">
-          <Panel title="Pagamento" action={<Badge tone={awaiting ? 'warning' : 'success'}>{awaiting ? 'Pendente' : 'Confirmado'}</Badge>}>
+          <Panel title={booking.is_test ? 'Simulação — sem cobrança' : 'Pagamento'} action={<Badge tone={booking.is_test || awaiting ? 'warning' : 'success'}>{booking.is_test ? 'AULA TESTE' : awaiting ? 'Pendente' : 'Confirmado'}</Badge>}>
             <dl className="tabular grid gap-2.5 text-[14px]">
               <div className="flex justify-between"><dt className="text-label">Método</dt><dd className="text-ink">Pagamento de teste</dd></div>
               <div className="flex justify-between"><dt className="text-label">Aula ({booking.total_hours}h × {formatMoney(booking.hourly_rate_cents)})</dt><dd className="text-ink">{formatMoney(booking.total_cents - booking.transport_cents)}</dd></div>
@@ -72,13 +72,13 @@ export default async function AdminBookingPage({ params }: { params: Promise<{ i
             </dl>
           </Panel>
 
-          <Panel title="Divisão do valor">
+          <Panel title={booking.is_test ? 'Valores demonstrativos (sem repasse)' : 'Divisão do valor'}>
             <dl className="tabular grid gap-2.5 text-[14px]">
               <div className="flex justify-between"><dt className="text-label">Instrutor (líquido)</dt><dd className="text-ink">{formatMoney(booking.instructor_net_cents)}</dd></div>
               <div className="flex justify-between"><dt className="text-label">Plataforma</dt><dd className="text-ink">{formatMoney(booking.platform_cents)}</dd></div>
               <div className="flex justify-between"><dt className="text-label">Pousada parceira</dt><dd className="text-ink">{formatMoney(booking.partner_cents)}</dd></div>
             </dl>
-            <p className="mt-3 text-[12px] text-muted">Fixada no momento da reserva; mudanças de preço não alteram este valor.</p>
+            <p className="mt-3 text-[12px] text-muted">{booking.is_test ? 'Valores apenas ilustrativos: não houve pagamento e não há comissão ou repasse.' : 'Fixada no momento da reserva; mudanças de preço não alteram este valor.'}</p>
           </Panel>
         </div>
 

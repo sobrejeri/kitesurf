@@ -182,8 +182,8 @@ export default async function BookingPage({ params }: { params: Promise<{ id: st
           )}
           <Card>
             <div className="flex items-center justify-between">
-              <span className="text-[13px] text-label">Pagamento</span>
-              <Badge tone={awaiting ? 'warning' : 'success'}>{awaiting ? 'Pendente' : 'Confirmado'}</Badge>
+              <span className="text-[13px] text-label">{booking.is_test ? 'Simulação' : 'Pagamento'}</span>
+              <Badge tone={booking.is_test || awaiting ? 'warning' : 'success'}>{booking.is_test ? 'Sem cobrança' : awaiting ? 'Pendente' : 'Confirmado'}</Badge>
             </div>
             <div className="mt-4 flex items-center justify-between">
               <span className="text-[13px] text-label">Total da reserva</span>
