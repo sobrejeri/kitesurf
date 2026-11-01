@@ -43,7 +43,7 @@ BEGIN
   EXECUTE 'RESET ROLE';
 
   ASSERT (SELECT commission_bps FROM public.instructor_commission_overrides
-      WHERE instructor_id = instructor_id) = 2000,
+      WHERE instructor_id = '00000000-0000-0000-0000-0000000000a1'::uuid) = 2000,
       'Expected individual 20% instructor platform fee';
   ASSERT (SELECT commission_bps FROM public.partners WHERE id = partner_id) = 700,
       'Expected 7% partner fee';
@@ -90,7 +90,7 @@ BEGIN
     (new_booking.partner_cents,new_booking.platform_cents,
     new_booking.instructor_net_cents), 'Changing commission rewrote old booking';
   ASSERT NOT EXISTS (SELECT 1 FROM public.instructor_commission_overrides
-    WHERE instructor_commission_overrides.instructor_id = instructor_id),
+    WHERE instructor_commission_overrides.instructor_id = '00000000-0000-0000-0000-0000000000a1'::uuid),
     'Clearing override should restore global rate';
   ASSERT EXISTS (
     SELECT 1 FROM public.audit_logs
