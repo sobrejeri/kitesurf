@@ -89,6 +89,9 @@ export async function setInstructorStatus(_prev: ActionState, form: FormData): P
   });
   if (error) return { error: friendlyError(error) };
   revalidatePath('/admin/instrutores');
+  revalidatePath('/admin/instrutores/[id]', 'page');
+  revalidatePath('/instrutor', 'layout');
+  revalidatePath('/instrutor/cadastro');
   return { ok: parsed.data.status === 'approved' ? 'Instrutor liberado para pedidos.' : 'Instrutor pausado. A posição na fila foi preservada.' };
 }
 
@@ -107,6 +110,11 @@ export async function approvePartner(_prev: ActionState, form: FormData): Promis
   });
   if (error) return { error: friendlyError(error) };
   revalidatePath('/admin/afiliados');
+  revalidatePath('/admin/afiliados/[id]', 'page');
+  revalidatePath('/pousada', 'layout');
+  revalidatePath('/pousada/perfil');
+  revalidatePath('/pousada/central');
+  revalidatePath('/pousada/divulgacao');
   return { ok: 'Pousada aprovada.' };
 }
 
