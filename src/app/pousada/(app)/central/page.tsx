@@ -2,6 +2,7 @@ import type {Metadata} from 'next';
 import Link from 'next/link';
 import {redirect} from 'next/navigation';
 import {PartnerHeading,PartnerFootnote} from '@/components/partner-info';
+import {VerifiedVentoBadge} from '@/components/verified-badge';
 import {Icon,type IconName} from '@/components/icon';
 import {Badge,Card,ButtonLink} from '@/components/ui';
 import {requireRole} from '@/lib/auth';
@@ -26,7 +27,10 @@ export default async function PartnerCentralPage(){
     <Card className="mb-4">
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div className="min-w-0">
-          <h2 className="break-words text-[18px] font-bold text-ink">{partner.name}</h2>
+          <div className="flex min-w-0 items-center gap-1.5">
+            <h2 className="min-w-0 break-words text-[18px] font-bold text-ink">{partner.name}</h2>
+            <VerifiedVentoBadge kind="partner" status={partner.status} size="sm"/>
+          </div>
           <p className="mt-1 text-[12px] text-muted">{partner.beach?.name??'Praia não informada'} · Código {partner.code}</p>
         </div>
         <Badge tone={partner.status==='approved'?'success':'warning'}>
