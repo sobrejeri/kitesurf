@@ -1,4 +1,5 @@
 import type { Metadata } from 'next';
+import { redirect } from 'next/navigation';
 
 import { registerPartner } from '@/app/actions/partner';
 import { ActionForm } from '@/components/action-form';
@@ -13,6 +14,7 @@ export const metadata: Metadata = { title: 'Cadastro da pousada' };
 export default async function PartnerSignupPage() {
   const viewer = await requireRole(['partner'], '/pousada/cadastro');
   const [partner, beaches] = await Promise.all([getOwnPartner(viewer.id), listActiveBeaches()]);
+  if(partner)redirect('/pousada/perfil');
   return (
     <>
       <PartnerHeading title="Cadastro da pousada" lead="Cadastre sua pousada e aguarde a aprovação da operação." />

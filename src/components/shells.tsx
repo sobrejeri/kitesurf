@@ -445,8 +445,31 @@ const PARTNER_NAV = [
   { label: 'Início', href: '/pousada/inicio', icon: 'home' },
   { label: 'Indicações', href: '/pousada/indicacoes', icon: 'users' },
   { label: 'Divulgação', href: '/pousada/divulgacao', icon: 'link' },
-  { label: 'Cadastro', href: '/pousada/cadastro', icon: 'file' },
+  { label: 'Meu perfil', href: '/pousada/perfil', icon: 'user' },
 ] as const satisfies readonly TabItem[];
+
+const PARTNER_MENU: readonly SheetLink[] = [
+  { label: 'Central da pousada', href: '/pousada/central', icon: 'grid' },
+  { label: 'Meu perfil', href: '/pousada/perfil', icon: 'user' },
+  { label: 'Cadastro inicial', href: '/pousada/cadastro', icon: 'file' },
+];
+
+function PartnerHeaderAvatar({ partner, size = 40 }: {
+  partner: { name:string; initials:string; photoUrl?:string|null };
+  size?:number;
+}) {
+  return (
+    <Link href="/pousada/perfil" aria-label="Abrir meu perfil da pousada" title="Meu perfil"
+      className="press inline-grid shrink-0 place-items-center rounded-full focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand">
+      {partner.photoUrl ? (
+        <span className="overflow-hidden rounded-full border border-line-ghost bg-sand"
+          style={{width:size,height:size}}>
+          <img src={partner.photoUrl} alt="" className="h-full w-full object-cover"/>
+        </span>
+      ) : <Avatar initials={partner.initials} size={size}/>}
+    </Link>
+  );
+}
 
 export function PartnerShell({
   children,
@@ -455,7 +478,7 @@ export function PartnerShell({
   areas,
 }: {
   children: React.ReactNode;
-  partner: { name: string; initials: string };
+  partner: { name: string; initials: string; photoUrl?:string|null };
   signOut: () => Promise<void>;
   areas?: readonly { label: string; href: string }[];
 }) {
@@ -466,7 +489,7 @@ export function PartnerShell({
         <div className="mx-auto flex max-w-6xl items-center justify-between gap-4 px-8 py-4">
           <StudentBrand subtitle="Pousada parceira" />
           <div className="flex items-center gap-2.5">
-            <Avatar initials={partner.initials} size={36} />
+            <PartnerHeaderAvatar partner={partner} size={40}/>
             <span className="text-[12px] leading-tight">
               <strong className="block font-[550] text-ink">{partner.name}</strong>
               <span className="text-[11px] text-muted">Pousada parceira</span>
@@ -491,11 +514,7 @@ export function PartnerShell({
       </header>
       <MobileHeader
         leading={<StudentBrand subtitle="Pousada" />}
-        trailing={
-          <span className="grid h-10 w-10 place-items-center rounded-full border border-line-ghost bg-sand text-[13px] font-[550] text-ink" aria-hidden="true">
-            {partner.initials}
-          </span>
-        }
+        trailing={<PartnerHeaderAvatar partner={partner} size={42}/>} 
       />
       <main className="mx-auto max-w-6xl px-4 pb-tabbar pt-4 md:px-8 md:pb-0 md:pt-7">{children}</main>
       <SiteFooter />
@@ -505,7 +524,7 @@ export function PartnerShell({
         items={PARTNER_NAV.slice(0, 3)}
         more={{
           title: 'Pousada parceira',
-          links: PARTNER_NAV.slice(3),
+          links: PARTNER_MENU,
           footer: <SheetAccount name={partner.name} subtitle="Pousada parceira" initials={partner.initials} signOut={signOut} areas={areas} />,
         }}
       />
