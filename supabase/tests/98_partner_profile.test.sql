@@ -22,7 +22,7 @@ declare
   flags jsonb;
   details jsonb;
 begin
-  select id,beach_id into pid,beach_id from public.partners p where p.owner_id=v_owner_id;
+  select p.id,p.beach_id into pid,beach_id from public.partners p where p.owner_id=v_owner_id;
   assert pid is not null,'requires partner fixture';
 
   perform pg_temp.act_as(v_owner_id::text);
