@@ -38,6 +38,7 @@ export default async function RunLessonPage() {
                 </div>
               </div>
               <span className="flex flex-wrap justify-end gap-1.5">
+                {booking.is_test ? <Badge tone="warning">AULA TESTE</Badge> : null}
                 {booking.with_transport ? <Badge tone="warning">Com transporte</Badge> : null}
                 <Badge tone={meeting.status === 'in_progress' ? 'warning' : 'brand'}>{MEETING_STATUS_LABELS[meeting.status]}</Badge>
               </span>

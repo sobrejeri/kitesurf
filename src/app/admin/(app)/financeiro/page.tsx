@@ -13,7 +13,7 @@ export const metadata: Metadata = { title: 'Financeiro' };
 /** Sums of each paid booking's frozen split; nothing is recomputed here. */
 export default async function AdminFinancePage() {
   await requireRole(['admin'], '/admin/financeiro');
-  const paid = (await listAllBookings(500)).filter((b) => b.status === 'confirmed' || b.status === 'completed');
+  const paid = (await listAllBookings(500)).filter((b) => !b.is_test && (b.status === 'confirmed' || b.status === 'completed'));
   const sum = (pick: (b: (typeof paid)[number]) => number) => paid.reduce((total, b) => total + pick(b), 0);
   const volume = sum((b) => b.total_cents);
   const platform = sum((b) => b.platform_cents);

@@ -8,6 +8,7 @@ export const metadata: Metadata = { title: 'Mais opções' };
 
 const OPTIONS: readonly { label: string; href: string; icon: IconName; tone: Tone }[] = [
   { label: 'Agenda de aulas', href: '/admin/agenda', icon: 'calendar', tone: 'blue' },
+  { label: 'Criar aula teste', href: '/admin/aula-teste', icon: 'kite', tone: 'green' },
   { label: 'Fila e distribuição', href: '/admin/distribuicao', icon: 'list', tone: 'purple' },
   { label: 'Praias e localizações', href: '/admin/praias', icon: 'pin', tone: 'blue' },
   { label: 'Pousadas afiliadas', href: '/admin/afiliados', icon: 'home', tone: 'orange' },

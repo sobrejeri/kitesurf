@@ -28,7 +28,7 @@ export default async function BookingsPage() {
         <ListCard href={`/admin/reservas/${booking.id}`}>
           <div className="flex items-start justify-between gap-2">
             <div>
-              <p className="text-[15px] font-semibold text-ink">#{booking.code.replace('VNT-', '')}</p>
+              <p className="text-[15px] font-semibold text-ink">#{booking.code.replace('VNT-', '')}{booking.is_test ? ' · TESTE' : ''}</p>
               {first ? (
                 <p className="mt-0.5 flex items-center gap-1.5 text-[12px] text-label">
                   <Icon name="clock" className="!h-3.5 !w-3.5" />

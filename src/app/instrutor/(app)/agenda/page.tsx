@@ -23,7 +23,7 @@ export default async function InstructorAgendaPage() {
   ]);
   const future = bookings.filter((b) => b.status === 'confirmed')
     .flatMap((b) => b.booking_meetings.filter(m => m.status === 'scheduled' || m.status === 'in_progress')
-      .map(m => ({ ...m, code: b.code, beach: b.beach?.name ?? 'Praia', student: b.student?.full_name ?? 'Aluno' })))
+      .map(m => ({ ...m, code: b.code, beach: b.beach?.name ?? 'Praia', student: b.student?.full_name ?? 'Aluno', isTest: b.is_test })))
     .filter((m) => new Date(m.starts_at).getTime() + m.minutes * 60000 > Date.now())
     .sort((a, b) => a.starts_at.localeCompare(b.starts_at));
 
@@ -38,7 +38,7 @@ export default async function InstructorAgendaPage() {
             <ul className="mt-3 divide-y divide-line">
               {future.map(m => <li key={m.id} className="py-3 text-[13px]">
                 <strong className="block text-ink">{formatDateLong(m.starts_at)} · {formatTime(m.starts_at)}</strong>
-                <span className="text-muted">{m.student} · {m.beach} · {m.minutes / 60}h · {m.code}</span>
+                <span className="text-muted">{m.isTest ? '[AULA TESTE] · ' : ''}{m.student} · {m.beach} · {m.minutes / 60}h · {m.code}</span>
               </li>)}
             </ul>
           )}

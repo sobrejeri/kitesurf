@@ -6,6 +6,7 @@ import { requireRole } from '@/lib/auth';
 const NAV: readonly WorkspaceNavItem[] = [
   { label: 'Mais opções', href: '/admin/central', icon: 'grid' },
   { label: 'Agenda de aulas', href: '/admin/agenda', icon: 'calendar' },
+  { label: 'Criar aula teste', href: '/admin/aula-teste', icon: 'kite', secondary: true },
   { label: 'Visão geral', href: '/admin/visao', icon: 'chart', tab: true },
   { label: 'Fila e distribuição', href: '/admin/distribuicao', icon: 'list' },
   { label: 'Instrutores', href: '/admin/instrutores', icon: 'users', tab: true },

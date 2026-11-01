@@ -14,7 +14,7 @@ export const metadata: Metadata = { title: 'Meu financeiro' };
 export default async function InstructorFinancePage() {
   const viewer = await requireRole(['instructor'], '/instrutor/financeiro');
   const bookings = (await listBookingsForInstructor(viewer.id)).filter(
-    (booking) => booking.status === 'confirmed' || booking.status === 'completed',
+    (booking) => !booking.is_test && (booking.status === 'confirmed' || booking.status === 'completed'),
   );
   const gross = bookings.reduce((sum, b) => sum + b.total_cents, 0);
   const net = bookings.reduce((sum, b) => sum + b.instructor_net_cents, 0);

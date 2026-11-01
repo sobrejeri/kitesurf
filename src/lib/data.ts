@@ -43,6 +43,7 @@ export interface Booking {
   id: string;
   code: string;
   status: BookingStatus;
+  is_test: boolean;
   beach_id: string;
   beach: { name: string } | null;
   level: LessonLevel;
@@ -67,7 +68,7 @@ export interface Booking {
 }
 
 const BOOKING_COLUMNS = `
-  id, code, status, beach_id, level, language, total_hours, hourly_rate_cents,
+  id, code, status, is_test, beach_id, level, language, total_hours, hourly_rate_cents,
   with_transport, transport_hourly_cents, transport_cents, total_cents,
   partner_cents, platform_cents, instructor_net_cents, presence_code, created_at,
   student_id, instructor_id, partner_id,
@@ -112,7 +113,7 @@ function normalise(raw: RawBooking): Booking {
  */
 export type StudentBooking = Pick<
   Booking,
-  'id' | 'status' | 'student_id' | 'instructor_id' | 'beach_id' | 'total_hours' |
+  'id' | 'status' | 'is_test' | 'student_id' | 'instructor_id' | 'beach_id' | 'total_hours' |
   'created_at' | 'booking_meetings' | 'beach' | 'instructor'
 >;
 
@@ -123,7 +124,7 @@ export async function listBookingsForStudent(studentId: string): Promise<Student
   const supabase = await createSupabaseServerClient();
   const { data, error } = await supabase
     .from('bookings')
-    .select('id, status, student_id, instructor_id, beach_id, total_hours, created_at')
+    .select('id, status, is_test, student_id, instructor_id, beach_id, total_hours, created_at')
     .eq('student_id', studentId)
     .order('created_at', { ascending: false })
     .returns<StudentBookingBase[]>();

@@ -30,7 +30,8 @@ export default async function InstructorTodayPage() {
     .flatMap((b) => b.booking_meetings)
     .reduce((sum, m) => sum + (m.status === 'done' ? m.done_minutes : 0), 0);
   // Each booking's frozen net, summed for display.
-  const expectedNet = confirmed.reduce((sum, booking) => sum + booking.instructor_net_cents, 0);
+  const expectedNet = confirmed.filter((booking) => !booking.is_test)
+    .reduce((sum, booking) => sum + booking.instructor_net_cents, 0);
   const firstName = viewer.fullName.split(' ')[0] ?? '';
 
   return (
@@ -76,6 +77,7 @@ export default async function InstructorTodayPage() {
                       <Badge tone={meeting.status === 'in_progress' ? 'warning' : 'success'}>
                         {meeting.status === 'in_progress' ? 'Em aula' : 'Confirmada'}
                       </Badge>
+                      {booking.is_test ? <span className="ml-1.5"><Badge tone="warning">AULA TESTE</Badge></span> : null}
                       {booking.with_transport ? <span className="ml-1.5"><Badge tone="warning">Com transporte</Badge></span> : null}
                       <p className="mt-1 truncate text-[15px] font-semibold text-ink">{booking.student?.full_name ?? 'Aluno'}</p>
                       <p className="text-[12px] text-muted">

@@ -63,7 +63,7 @@ export default async function BookingPage({ params }: { params: Promise<{ id: st
           <Card>
             <div className="flex items-start justify-between gap-3">
               <h2 className="text-[16px]">Aula particular de kitesurf</h2>
-              <Badge tone={awaiting ? 'warning' : 'success'}>{BOOKING_STATUS_LABELS[booking.status]}</Badge>
+              <span className="flex flex-wrap gap-2"><Badge tone={awaiting ? 'warning' : 'success'}>{BOOKING_STATUS_LABELS[booking.status]}</Badge>{booking.is_test ? <Badge tone="warning">AULA TESTE</Badge> : null}</span>
             </div>
             <div className="mt-4 flex items-center gap-3">
               <Avatar initials={initials(booking.instructor?.full_name)} tone="a3" size={44} />
@@ -189,6 +189,7 @@ export default async function BookingPage({ params }: { params: Promise<{ id: st
               <span className="text-[13px] text-label">Total da reserva</span>
               <strong className="tabular text-[24px] font-semibold tracking-[-0.7px] text-brand">{formatMoney(booking.total_cents)}</strong>
             </div>
+            {booking.is_test ? <p className="mt-2 text-[12px] font-semibold text-brand">Demonstração sem cobrança, sem comissão e sem repasse.</p> : null}
             <p className="tabular mt-1 text-right text-[11px] text-muted">
               Aula: {booking.total_hours}h × {formatMoney(booking.hourly_rate_cents)}/hora
               {booking.with_transport ? (
