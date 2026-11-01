@@ -102,11 +102,24 @@ export async function confirmTestPayment(_prev: ActionState, form: FormData): Pr
   const id = BookingId.safeParse(form.get('bookingId'));
   if (!id.success) return { error: 'Reserva inválida.' };
 
+  const method = z.enum(['pix', 'card']).safeParse(form.get('method'));
+  const outcome = z.enum(['approved', 'pending', 'declined']).safeParse(form.get('outcome'));
+  if (!method.success || !outcome.success) {
+    return { error: 'Escolha o método e o resultado da simulação.' };
+  }
+
   const supabase = await createSupabaseServerClient();
-  const { error } = await supabase.rpc('confirm_test_payment', { p_booking_id: id.data });
-  if (error) return { error: friendlyError(error) };
+  const { error } = await supabase.rpc('simulate_test_payment', {
+    p_booking_id: id.data, p_method: method.data, p_outcome: outcome.data,
+  });
+  if (error) {
+    console.error('[payment.simulate]', { code: error.code, message: error.message });
+    return { error: friendlyError(error) };
+  }
 
   revalidatePath(`/aluno/reserva/${id.data}`);
   revalidatePath('/aluno/aulas');
-  return { ok: 'Pagamento de teste confirmado. Sua aula está reservada.' };
+  if (outcome.data === 'pending') return { ok: 'Simulação pendente registrada. Nenhum pagamento realizado.' };
+  if (outcome.data === 'declined') return { error: 'Pagamento de teste recusado. Tente outra simulação.' };
+  return { ok: 'Pagamento de teste aprovado. Nenhum valor foi cobrado.' };
 }

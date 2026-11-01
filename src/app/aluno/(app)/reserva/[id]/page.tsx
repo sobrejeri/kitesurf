@@ -140,6 +140,23 @@ export default async function BookingPage({ params }: { params: Promise<{ id: st
               <div className="mt-4 border-t border-line pt-4">
                 <ActionForm action={confirmTestPayment} submitLabel="Confirmar pagamento de teste" className="grid gap-3" wideSubmit>
                   <input type="hidden" name="bookingId" value={booking.id} />
+                  <fieldset>
+                    <legend className="mb-2 text-[13px] font-semibold text-ink">Forma de pagamento (simulação)</legend>
+                    <div className="grid grid-cols-2 gap-2">
+                      <label className="flex cursor-pointer items-center gap-2 rounded-xl border border-line px-3 py-3 text-[13px]">
+                        <input type="radio" name="method" value="pix" defaultChecked className="accent-cyan-500"/> PIX
+                      </label>
+                      <label className="flex cursor-pointer items-center gap-2 rounded-xl border border-line px-3 py-3 text-[13px]">
+                        <input type="radio" name="method" value="card" className="accent-cyan-500"/> Cartão de crédito
+                      </label>
+                    </div>
+                  </fieldset>
+                  <label htmlFor="test-outcome" className="text-[13px] font-semibold text-ink">Resultado do teste</label>
+                  <select id="test-outcome" name="outcome" defaultValue="approved" className="min-h-12 rounded-xl border border-line bg-surface px-3 text-[13px] text-ink">
+                    <option value="approved">Pagamento aprovado</option>
+                    <option value="pending">Pagamento pendente</option>
+                    <option value="declined">Pagamento recusado</option>
+                  </select>
                 </ActionForm>
                 <Note tone="warning" className="mt-3">
                   Pagamento simulado: nenhuma cobrança é feita. A integração com o provedor de pagamento vem na próxima etapa.
