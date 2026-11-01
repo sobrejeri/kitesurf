@@ -24,3 +24,6 @@ for migration in "$ROOT"/supabase/migrations/*.sql; do
   "${PSQL[@]}" -1 -f "$migration"
 done
 "${PSQL[@]}" -f "$ROOT/supabase/tests/10_rules.test.sql"
+for testfile in "$ROOT"/supabase/tests/[2-9]*.test.sql; do
+  "${PSQL[@]}" -f "$testfile"
+done

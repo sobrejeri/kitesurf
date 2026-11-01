@@ -1,0 +1,30 @@
+name: Vento - build and database rules
+
+on:
+  push:
+    branches: ['**']
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  verify:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 10.33.0
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm typecheck
+      - run: pnpm lint
+      - run: pnpm build
+      - name: Install isolated PostgreSQL tooling
+        run: sudo apt-get update && sudo apt-get install -y postgresql
+      - name: Run isolated database migrations and SQL assertions
+        run: bash scripts/test-db.sh
