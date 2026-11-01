@@ -67,18 +67,44 @@ export async function createBooking(_prev: ActionState, form: FormData): Promise
   const referral = (await cookies()).get('vento_ref')?.value ?? null;
 
   const supabase = await createSupabaseServerClient();
+  const selectedMeetings = parsed.data.meetings.map((meeting) => ({
+    starts_at: `${meeting.date}T${meeting.start}:00${LESSON_UTC_OFFSET}`,
+    hours: meeting.hours,
+  }));
   const { data, error } = await supabase.rpc('create_instructor_request_with_preference', {
     p_beach_id: parsed.data.beachId,
     p_level: parsed.data.level,
     p_language: parsed.data.language,
-    p_meetings: parsed.data.meetings.map((meeting) => ({
-      starts_at: `${meeting.date}T${meeting.start}:00${LESSON_UTC_OFFSET}`,
-      hours: meeting.hours,
-    })),
+    p_meetings: selectedMeetings,
     p_partner_code: referral,
     p_with_transport: parsed.data.transport === 'yes',
     p_preferred_instructor_id: parsed.data.preferredInstructorId,
   });
+  if (error && (error.code === 'PGRST202' || error.code === '42883')) {
+    // Transitional deployment: older Supabase databases do not have the
+    // offer engine yet. Preserve existing bookings until SQL migration 13 is
+    // installed; never silently discard an explicit instructor preference.
+    if (parsed.data.preferredInstructorId) {
+      return { error: 'A recontratação com o mesmo instrutor depende da atualização do Supabase. Avise a administração.' };
+    }
+    const legacy = await supabase.rpc('create_booking', {
+      p_beach_id: parsed.data.beachId,
+      p_level: parsed.data.level,
+      p_language: parsed.data.language,
+      p_meetings: selectedMeetings,
+      p_partner_code: referral,
+      p_with_transport: parsed.data.transport === 'yes',
+    });
+    if (legacy.error) {
+      console.error('[booking.create] Legacy booking failed', { code: legacy.error.code, message: legacy.error.message });
+      return { error: friendlyError(legacy.error) };
+    }
+    if (typeof legacy.data !== 'string' || !z.uuid().safeParse(legacy.data).success) {
+      return { error: 'Não foi possível abrir a reserva. Avise a administração.' };
+    }
+    revalidatePath('/aluno/aulas');
+    redirect(`/aluno/reserva/${legacy.data}`);
+  }
   if (error) {
     console.error('[booking.request] RPC create_instructor_request_with_preference failed', {
       code: error.code,
