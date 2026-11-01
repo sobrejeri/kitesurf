@@ -1,9 +1,7 @@
 import type { Metadata } from 'next';
+import { NotificationInbox } from '@/components/notification-inbox';
 
-import { Inbox } from '@/components/shared';
-
-export const metadata: Metadata = { title: 'Avisos' };
-
-export default function InstructorInboxPage() {
-  return <Inbox />;
+export const metadata:Metadata={title:'Notificações'};
+export default async function NoticesPage() {
+  return <NotificationInbox area="instrutor"/>;
 }
