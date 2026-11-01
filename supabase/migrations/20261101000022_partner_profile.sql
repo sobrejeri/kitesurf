@@ -173,6 +173,29 @@ begin
   return result;
 end $$;
 
+-- Only the admin may see contact data needed to review the establishment.
+-- Financial credentials are deliberately excluded.
+create function public.get_partner_admin_details(p_partner_id uuid)
+returns jsonb language plpgsql stable security definer set search_path='' as $
+declare result jsonb;
+begin
+  perform public.require_role(array['admin']::public.app_role[]);
+  select jsonb_build_object(
+    'responsible_name',coalesce(d.responsible_name,''),
+    'phone',coalesce(d.phone,''),
+    'city',coalesce(d.city,''),
+    'address',coalesce(d.address,''),
+    'instagram',coalesce(d.instagram,''),
+    'avatar_path',d.avatar_path
+  ) into result
+  from public.partners p
+  left join public.partner_private_profiles d on d.id=p.owner_id
+  where p.id=p_partner_id;
+  if result is null then
+    raise exception 'Partner not found' using errcode='P0002'; end if;
+  return result;
+end $;
+
 -- Database is the final enforcement point (not a client-side progress bar).
 create or replace function public.set_partner_status(
   p_partner_id uuid,p_status public.partner_status,p_reason text
@@ -205,10 +228,12 @@ end $$;
 revoke execute on function public.update_my_partner_profile(text,uuid,text,text,text,text,text) from public,anon;
 revoke execute on function public.set_my_partner_avatar(text) from public,anon;
 revoke execute on function public.get_partner_profile_progress(uuid) from public,anon;
+revoke execute on function public.get_partner_admin_details(uuid) from public,anon;
 revoke execute on function public.set_partner_status(uuid,public.partner_status,text) from public,anon;
 grant execute on function public.update_my_partner_profile(text,uuid,text,text,text,text,text) to authenticated;
 grant execute on function public.set_my_partner_avatar(text) to authenticated;
 grant execute on function public.get_partner_profile_progress(uuid) to authenticated;
+grant execute on function public.get_partner_admin_details(uuid) to authenticated;
 grant execute on function public.set_partner_status(uuid,public.partner_status,text) to authenticated;
 
 notify pgrst,'reload schema';
