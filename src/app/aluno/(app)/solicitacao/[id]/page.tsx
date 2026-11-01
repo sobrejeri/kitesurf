@@ -2,6 +2,9 @@ import type { Metadata } from 'next';
 import { notFound } from 'next/navigation';
 
 import { RequestPoller } from '@/components/student/request-poller';
+import { respondToSuggestedDate } from '@/app/actions/suggestions';
+import { ActionForm } from '@/components/action-form';
+import { formatDateLong, formatTime } from '@/lib/format';
 import { Badge, ButtonLink, Card, Note, PageHeader } from '@/components/ui';
 import { requireRole } from '@/lib/auth';
 import { formatMoney } from '@/lib/format';
@@ -35,6 +38,14 @@ export default async function InstructorRequestPage({ params }: { params: Promis
   const { data: price } = await db.from('price_versions')
     .select('hourly_rate_cents').eq('id', request.price_version_id)
     .maybeSingle<{ hourly_rate_cents: number }>();
+  const { data: suggestion } = request.status === 'searching'
+    ? await db.rpc('read_my_offer_suggestion', { p_request_id: request.id })
+    : { data: null };
+  interface SuggestedMeeting { starts_at: string; hours: number }
+  interface Suggestion { id: string; meetings: SuggestedMeeting[]; expires_at: string }
+  const proposed = suggestion && typeof suggestion === 'object' &&
+    'id' in suggestion && 'meetings' in suggestion
+      ? suggestion as Suggestion : null;
   const accepted = request.status === 'accepted' && Boolean(request.booking_id);
   return (
     <>
@@ -57,6 +68,29 @@ export default async function InstructorRequestPage({ params }: { params: Promis
           </ButtonLink>
         ) : request.status === 'searching' ? (
           <>
+            {proposed ? (
+              <div className="mt-4 rounded-xl border border-brand p-4">
+                <h2 className="text-[16px] font-bold text-ink">O instrutor sugeriu outra data</h2>
+                <ul className="mt-3 grid gap-2">
+                  {proposed.meetings.map((m,i)=><li key={i} className="text-[13px] text-ink">
+                    {formatDateLong(m.starts_at)} · {formatTime(m.starts_at)} · {m.hours}h
+                  </li>)}
+                </ul>
+                <p className="mt-2 text-[12px] text-muted">As horas contratadas e o valor estimado são mantidos.</p>
+                <div className="mt-4 grid grid-cols-2 gap-2">
+                  <ActionForm action={respondToSuggestedDate} submitLabel="Aceitar data">
+                    <input type="hidden" name="requestId" value={request.id}/>
+                    <input type="hidden" name="offerId" value={proposed.id}/>
+                    <input type="hidden" name="decision" value="accept"/>
+                  </ActionForm>
+                  <ActionForm action={respondToSuggestedDate} submitLabel="Recusar e seguir fila" submitVariant="ghost">
+                    <input type="hidden" name="requestId" value={request.id}/>
+                    <input type="hidden" name="offerId" value={proposed.id}/>
+                    <input type="hidden" name="decision" value="decline"/>
+                  </ActionForm>
+                </div>
+              </div>
+            ) : null}
             {request.preferred_instructor_id ? <Note className="mt-3">
               O instrutor escolhido recebeu prioridade. Caso recuse ou não responda, outro profissional da fila poderá atender.
             </Note> : null}

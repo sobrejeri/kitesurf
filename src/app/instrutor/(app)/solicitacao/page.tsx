@@ -1,6 +1,7 @@
 import type { Metadata } from 'next';
 
 import { respondToInstructorOffer } from '@/app/actions/offers';
+import { suggestAlternativeDate } from '@/app/actions/suggestions';
 import { ActionForm } from '@/components/action-form';
 import { Badge, ButtonLink, Card, Note, PageHeader } from '@/components/ui';
 import { requireRole } from '@/lib/auth';
@@ -74,6 +75,18 @@ export default async function RequestPage() {
                   <input type="hidden" name="response" value="decline"/>
                 </ActionForm>
               </div>
+              <details className="mt-4 rounded-xl border border-line p-3">
+                <summary className="cursor-pointer text-[13px] font-semibold text-brand">Não consigo nessa data · sugerir outra</summary>
+                <ActionForm action={suggestAlternativeDate} submitLabel="Enviar sugestão ao aluno" className="mt-4 grid gap-3">
+                  <input type="hidden" name="offerId" value={offer.id}/>
+                  <input type="hidden" name="totalHours" value={offer.request.total_hours}/>
+                  <label htmlFor={'alternative-'+offer.id} className="text-[13px] font-semibold text-ink">Nova data e horário</label>
+                  <input id={'alternative-'+offer.id} name="start" type="datetime-local" required
+                    className="min-h-12 w-full rounded-xl border border-line bg-surface px-3 text-[13px] text-ink"/>
+                  <p className="text-[12px] text-muted">A proposta manterá as {offer.request.total_hours}h da contratação.
+                    O aluno precisará aceitar antes de você confirmar.</p>
+                </ActionForm>
+              </details>
             </Card>
           ):null)}
         </div>
