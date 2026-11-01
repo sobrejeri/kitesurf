@@ -37,10 +37,11 @@ function CheckRow({item,audience}:{item:ProfileField;audience:'admin'|'instructo
 }
 
 export function InstructorCompletionPanel({
-  completion,audience,
+  completion,audience,instructorId,
 }:{
   completion:InstructorCompletion;
   audience:'admin'|'instructor';
+  instructorId?:string;
 }) {
   const progress=completion.percentage;
   return (
@@ -93,7 +94,7 @@ export function InstructorCompletionPanel({
                 </li>
               ))}
             </ul>
-            <Link href={audience==='instructor'?'/instrutor/documentos':'/admin/documentos'}
+            <Link href={audience==='instructor'?'/instrutor/documentos':instructorId?`/admin/documentos?instrutor=${instructorId}`:'/admin/documentos'}
               className="mt-2 inline-flex items-center gap-1 text-[12px] font-semibold text-brand underline">
               {audience==='instructor'?'Enviar ou acompanhar documentos':'Analisar documentos'}
               <Icon name="chevron" className="!h-3.5 !w-3.5"/>

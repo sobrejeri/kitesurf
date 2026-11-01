@@ -3,6 +3,7 @@ import type { Metadata } from 'next';
 import { updateInstructorProfile } from '@/app/actions/instructor';
 import { saveInstructorPersonal, uploadInstructorAvatar } from '@/app/actions/instructor-profile';
 import { ActionForm } from '@/components/action-form';
+import { InstructorCompletionPanel } from '@/components/instructor/completion-panel';
 import { Icon } from '@/components/icon';
 import { InstructorMultiSelect } from '@/components/instructor/instructor-multi-select';
 import { ProfilePhotoPicker } from '@/components/profile-photo-picker';
@@ -11,6 +12,7 @@ import { Badge, Card, Field, Note, inputClass, textareaClass } from '@/component
 import { LANGUAGES } from '@/data/demo';
 import { requireRole } from '@/lib/auth';
 import { getOwnInstructor, listActiveBeaches } from '@/lib/data';
+import { computeInstructorCompletion, type DocumentRecord, type ProgressFlags } from '@/lib/instructor-completion';
 import { createSupabaseServerClient } from '@/lib/supabase/server';
 
 export const metadata: Metadata = { title: 'Perfil profissional' };
@@ -26,17 +28,38 @@ export default async function InstructorProfileFormPage() {
   const supabase = await createSupabaseServerClient();
   // These private tables are introduced in a separate SQL migration. An older
   // deployment can still show and save the original professional fields.
-  const [privateResult, payoutResult] = await Promise.all([
+  const [privateResult, payoutResult, documentsResult] = await Promise.all([
     supabase.from('instructor_private_profiles')
       .select('phone, city, bio, avatar_path').eq('id', viewer.id).maybeSingle<PrivateProfile>(),
     supabase.from('instructor_payout_details')
       .select('method').eq('id', viewer.id).maybeSingle<PayoutInfo>(),
+    supabase.from('instructor_documents').select('kind,status')
+      .eq('instructor_id',viewer.id).in('kind',['identity','certification'])
+      .returns<DocumentRecord[]>(),
   ]);
   const privateReady = !privateResult.error;
   const payoutReady = !payoutResult.error;
   if (privateResult.error) console.warn('[instructor-profile] Personal fields unavailable', { code: privateResult.error.code });
   if (payoutResult.error) console.warn('[instructor-profile] Payout fields unavailable', { code: payoutResult.error.code });
   const info = privateResult.data;
+  // Instructor can inspect only their own private fields. Admin will use a
+  // restricted RPC returning presence booleans, never their actual values.
+  const flags: ProgressFlags | null = privateReady && payoutReady ? {
+    fullName: (viewer.fullName??'').trim().length>=2,
+    phone: Boolean(info?.phone?.trim()),
+    city: Boolean(info?.city?.trim()),
+    bio: Boolean(info?.bio?.trim()),
+    photo: Boolean(info?.avatar_path),
+    beaches: (me?.beaches.length??0)>0,
+    languages: (me?.languages.length??0)>0,
+    experience: me?.years_experience!=null,
+    equipment: Boolean(me?.has_equipment),
+    supportVehicle: Boolean(me?.has_support_vehicle),
+    payout: Boolean(payoutResult.data),
+  } : null;
+  const completion = computeInstructorCompletion(
+    flags,documentsResult.error?null:documentsResult.data??[],
+  );
   let avatarUrl: string | null = null;
   if (info?.avatar_path) {
     try {
@@ -69,8 +92,9 @@ export default async function InstructorProfileFormPage() {
       </header>
 
       <div className="grid gap-4">
-        <Card className="!p-4 sm:!p-6">
-          <div className="flex flex-col items-center gap-3 text-center sm:flex-row sm:items-center sm:gap-5 sm:text-left">
+        <InstructorCompletionPanel completion={completion} audience="instructor"/>
+        <Card className="!p-4 sm:!p-6" >
+          <div id="cadastro-foto" className="flex flex-col items-center gap-3 text-center sm:flex-row sm:items-center sm:gap-5 sm:text-left">
             <ProfilePhotoPicker
               action={uploadInstructorAvatar}
               photoUrl={avatarUrl}
@@ -84,13 +108,16 @@ export default async function InstructorProfileFormPage() {
               <p className="mt-1 text-[12px] leading-relaxed text-muted">
                 {avatarUrl ? 'Use o + para trocar a foto.' : 'Toque no + para adicionar uma foto.'}
               </p>
+              <Badge tone={info?.avatar_path?'success':'warning'}>
+                {info?.avatar_path?'Foto cadastrada':'Foto recomendada'}
+              </Badge>
             </div>
           </div>
         </Card>
 
         <Card className="!p-4 sm:!p-6">
           <details className="group">
-            <summary className="flex min-h-12 cursor-pointer list-none items-center justify-between gap-3 rounded-xl focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-brand [&::-webkit-details-marker]:hidden">
+            <summary id="cadastro-pessoais" className="flex min-h-12 cursor-pointer list-none items-center justify-between gap-3 rounded-xl focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-brand [&::-webkit-details-marker]:hidden">
               <span className="flex min-w-0 items-center gap-3">
                 <span className="grid h-10 w-10 shrink-0 place-items-center rounded-[12px] bg-brand-soft text-brand">
                   <Icon name="user" className="!h-5 !w-5" />
@@ -98,7 +125,9 @@ export default async function InstructorProfileFormPage() {
                 <span className="min-w-0">
                   <strong className="block text-[17px] font-extrabold leading-snug text-ink">Informações pessoais</strong>
                   <span className="mt-1 block text-[12px] leading-relaxed text-muted">
-                    {info?.phone || info?.city || info?.bio ? 'Dados cadastrados · toque para editar' : 'Nome, telefone e apresentação'}
+                    {completion.required.filter(x=>x.group==='Pessoal').every(x=>x.state==='done')
+                      ? 'Dados pessoais preenchidos · toque para editar'
+                      : 'Há dados pessoais pendentes · toque para preencher'}
                   </span>
                 </span>
               </span>
@@ -132,7 +161,7 @@ export default async function InstructorProfileFormPage() {
 
         <Card className="!p-4 sm:!p-6">
           <details className="group">
-            <summary className="flex min-h-12 cursor-pointer list-none items-center justify-between gap-3 rounded-xl focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-brand [&::-webkit-details-marker]:hidden">
+            <summary id="cadastro-atendimento" className="flex min-h-12 cursor-pointer list-none items-center justify-between gap-3 rounded-xl focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-brand [&::-webkit-details-marker]:hidden">
               <span className="flex min-w-0 items-center gap-3">
                 <span className="grid h-10 w-10 shrink-0 place-items-center rounded-[12px] bg-brand-soft text-brand">
                   <Icon name="kite" className="!h-5 !w-5" />
@@ -179,7 +208,7 @@ export default async function InstructorProfileFormPage() {
 
         <Card className="!p-4 sm:!p-6">
           <details className="group">
-            <summary className="flex cursor-pointer list-none items-center justify-between gap-3 [&::-webkit-details-marker]:hidden">
+            <summary id="cadastro-recebimento" className="flex cursor-pointer list-none items-center justify-between gap-3 [&::-webkit-details-marker]:hidden">
               <span className="flex min-w-0 items-center gap-3">
                 <span className="grid h-10 w-10 shrink-0 place-items-center rounded-[12px] bg-brand-soft text-brand">
                   <Icon name="wallet" className="!h-5 !w-5" />
@@ -214,8 +243,13 @@ export default async function InstructorProfileFormPage() {
           </a>
         </Card>
 
-        <Note title="Análise do cadastro">
-          A administração analisa seu perfil e libera sua participação na fila. Você poderá atualizar praias e idiomas sempre que necessário.
+        <Note title={me?.status==='approved'?'Cadastro aprovado':'Próximos passos para sua aprovação'}>
+          {me?.status==='approved'
+            ? 'Seu cadastro está aprovado. Continue atualizando suas informações para receber solicitações compatíveis.'
+            : completion.readyForApproval
+              ? 'Os dados essenciais estão completos e os documentos foram aprovados. Aguarde a liberação pela administração.'
+              : 'Confira os campos pendentes no painel de progresso e os documentos em análise. A administração só poderá validar o cadastro quando tudo estiver em ordem.'}
+          {' '}<a href="/instrutor/documentos" className="font-semibold underline">Acompanhar documentos</a>
         </Note>
       </div>
     </div>

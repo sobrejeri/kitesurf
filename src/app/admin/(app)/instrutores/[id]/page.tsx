@@ -8,25 +8,35 @@ import { Panel, PhotoTile } from '@/components/admin/kit';
 import { INSTRUCTOR_STATUS } from '@/components/admin/labels';
 import { Icon, type IconName } from '@/components/icon';
 import { Badge, Note, inputClass } from '@/components/ui';
+import { InstructorCompletionPanel } from '@/components/instructor/completion-panel';
 import { requireRole } from '@/lib/auth';
 import { listAllBookings, listAllInstructors, listQueue } from '@/lib/data';
 import { initials } from '@/lib/people';
+import { computeInstructorCompletion, readProgressFlags, type DocumentRecord } from '@/lib/instructor-completion';
 import { createSupabaseServerClient } from '@/lib/supabase/server';
 
-type ReviewDoc = {kind:string;status:'pending'|'approved'|'rejected'};
-const REQUIRED_DOCS = [
-  {kind:'identity', label:'Documento de identidade'},
-  {kind:'certification', label:'Certificação profissional'},
-] as const;
-
+ 
 export const metadata: Metadata = { title: 'Instrutor' };
 
-function InfoRow({ icon, label, value }: { icon: IconName; label: string; value: React.ReactNode }) {
+function InfoRow({
+  icon,label,value,filled,optional=false,
+}:{
+  icon:IconName;label:string;value:React.ReactNode;
+  filled?:boolean|null;optional?:boolean;
+}) {
   return (
     <div className="flex items-start gap-3 border-b border-line py-3 last:border-b-0">
       <Icon name={icon} className="mt-0.5 !h-5 !w-5 shrink-0 text-label" />
       <dt className="flex-1 text-[13px] text-label">{label}</dt>
-      <dd className="text-right text-[13px] text-ink">{value}</dd>
+      <dd className="flex min-w-0 flex-1 flex-col items-end gap-1.5 text-right text-[13px] text-ink">
+        <span className="break-words">{value}</span>
+        {optional
+          ? <Badge tone="quiet">Opcional · informado</Badge>
+          : filled===undefined?null:
+            <Badge tone={filled===null?'quiet':filled?'success':'warning'}>
+              {filled===null?'Não verificado':filled?'Preenchido':'Pendente'}
+            </Badge>}
+      </dd>
     </div>
   );
 }
@@ -43,23 +53,23 @@ export default async function InstructorDetailPage({ params }: { params: Promise
   const theirs = bookings.filter((booking) => booking.instructor_id === row.id);
   const next = row.status === 'approved' ? 'paused' : 'approved';
   const db = await createSupabaseServerClient();
-  const [documents, previousApproval] = await Promise.all([
+  const [documents, previousApproval, completionResult] = await Promise.all([
     db.from('instructor_documents').select('kind,status').eq('instructor_id',row.id)
-      .in('kind',['identity','certification']).returns<ReviewDoc[]>(),
+      .in('kind',['identity','certification']).returns<DocumentRecord[]>(),
     db.from('instructors').select('approved_at').eq('id',row.id)
       .maybeSingle<{approved_at:string|null}>(),
+    db.rpc('get_instructor_profile_progress',{p_instructor_id:row.id}),
   ]);
-  const checklist = REQUIRED_DOCS.map(item => {
-    const found=(documents.data??[]).filter(d=>d.kind===item.kind);
-    return {...item,
-      status: found.some(d=>d.status==='approved') ? 'approved'
-        : found.some(d=>d.status==='pending') ? 'pending'
-        : found.some(d=>d.status==='rejected') ? 'rejected' : 'missing',
-    };
-  });
+  const flags = readProgressFlags(completionResult.data);
+  const completion=computeInstructorCompletion(
+    flags,documents.error?null:documents.data??[],
+  );
   const initialApproval = next==='approved' && !previousApproval.data?.approved_at;
-  const docsOk = !documents.error && checklist.every(d=>d.status==='approved');
-  const allowed = !previousApproval.error && (!initialApproval || docsOk);
+  // Until the new read-only RPC is installed, keep the previous documented
+  // approval rule (approved documents). Do not label unknown fields as missing.
+  const canApprove = !previousApproval.error &&
+    (!initialApproval || (completion.documentsReady &&
+      (flags===null || completion.essentialsReady)));
   const docsHref = `/admin/documentos?instrutor=${row.id}`;
 
   return (
@@ -81,14 +91,18 @@ export default async function InstructorDetailPage({ params }: { params: Promise
         </div>
       </section>
 
+      <div className="mt-4">
+        <InstructorCompletionPanel completion={completion} audience="admin" instructorId={row.id}/>
+      </div>
+
       <div className="mt-4 grid gap-4 lg:grid-cols-2">
         <Panel title="Informações">
           <dl>
-            <InfoRow icon="user" label="Nome completo" value={name} />
-            <InfoRow icon="globe" label="Idiomas" value={row.languages.join(', ')} />
-            <InfoRow icon="clock" label="Anos de experiência" value={`${row.years_experience} anos`} />
-            <InfoRow icon="kite" label="Equipamentos próprios" value={row.has_equipment ? 'Sim' : 'Não informado'} />
-            <InfoRow icon="car" label="Veículo de apoio" value={row.has_support_vehicle ? 'Sim' : 'Não'} />
+            <InfoRow icon="user" label="Nome completo" value={name} filled={flags?.fullName??null} />
+            <InfoRow icon="globe" label="Idiomas" value={row.languages.join(', ')||'Não informado'} filled={flags?.languages??null} />
+            <InfoRow icon="clock" label="Anos de experiência" value={`${row.years_experience} anos`} filled={flags?.experience??null} />
+            <InfoRow icon="kite" label="Equipamentos próprios" value={row.has_equipment ? 'Sim' : 'Não'} optional />
+            <InfoRow icon="car" label="Veículo de apoio" value={row.has_support_vehicle ? 'Sim' : 'Não'} optional />
             <InfoRow icon="book" label="Reservas recebidas" value={String(theirs.length)} />
           </dl>
         </Panel>
@@ -106,30 +120,24 @@ export default async function InstructorDetailPage({ params }: { params: Promise
                 ))}
               </div>
             )}
-            <p className="mt-3 text-[12px] text-muted">O próprio instrutor marca as praias no perfil profissional.</p>
+            <div className="mt-3 flex items-center gap-2 text-[12px] text-muted">
+              <Badge tone={row.beaches.length?'success':'warning'}>{row.beaches.length?'Preenchido':'Pendente'}</Badge>
+              O próprio instrutor marca as praias no perfil profissional.
+            </div>
           </Panel>
 
-          <Panel title="Documentação obrigatória">
+          <Panel title="Validação documental">
             <p className="text-[12px] text-muted">
-              A primeira aprovação exige identidade e certificação profissional aprovadas pelo Admin.
+              Os dois documentos devem estar aprovados para liberar um instrutor pela primeira vez.
             </p>
-            {documents.error ? (
-              <Note tone="warning" className="mt-3">Não foi possível consultar os documentos deste instrutor.</Note>
-            ) : (
-              <ul className="mt-3 divide-y divide-line">
-                {checklist.map(item=>(
-                  <li key={item.kind} className="flex flex-wrap items-center justify-between gap-2 py-3">
-                    <span className="text-[13px] text-ink">{item.label}</span>
-                    <Badge tone={item.status==='approved'?'success':'warning'}>
-                      {item.status==='approved'?'Aprovado':item.status==='pending'?'Aguardando análise':item.status==='rejected'?'Rejeitado':'Não enviado'}
-                    </Badge>
-                  </li>
-                ))}
-              </ul>
-            )}
-            <Link href={docsHref} className="mt-3 inline-flex items-center gap-2 text-[13px] font-semibold text-brand underline">
-              <Icon name="file" className="!h-4 !w-4"/> Analisar documentos
-            </Link>
+            <div className="mt-3 flex flex-wrap items-center gap-2">
+              <Badge tone={completion.documentsReady?'success':'warning'}>
+                {completion.documents.filter(doc=>doc.state==='approved').length} de 2 aprovados
+              </Badge>
+              <Link href={docsHref} className="text-[13px] font-semibold text-brand underline">
+                Conferir documentos
+              </Link>
+            </div>
           </Panel>
 
           <Panel title={row.status === 'pending' ? 'Analisar cadastro' : row.status === 'paused' ? 'Reativar' : 'Pausar instrutor'}>
@@ -137,13 +145,16 @@ export default async function InstructorDetailPage({ params }: { params: Promise
               <Note tone="warning" className="mb-3">
                 Falha ao verificar a situação da primeira aprovação. Atualize a página.
               </Note>
-            ) : initialApproval && !docsOk ? (
-              <Note tone="warning" className="mb-3" title="Aprovação bloqueada">
-                Peça ao instrutor que envie a identidade e a certificação em Mais → Meus documentos.
-                Analise os dois arquivos no Admin e volte aqui para aprovar.
+            ) : completionResult.error ? (
+              <Note tone="warning" className="mb-3">
+                A conferência dos dados privados ainda depende da migração 21. A regra documental antiga continua válida.
+              </Note>
+            ) : initialApproval && !completion.readyForApproval ? (
+              <Note tone="warning" className="mb-3" title="Cadastro ainda incompleto">
+                Faltam informações essenciais ou documentos aprovados. Confira a lista acima antes de validar.
               </Note>
             ) : null}
-            {allowed ? (
+            {canApprove ? (
               <ActionForm
                 action={setInstructorStatus}
                 submitLabel={row.status === 'pending' ? 'Aprovar cadastro' : row.status === 'paused' ? 'Reativar' : 'Pausar'}
@@ -161,6 +172,7 @@ export default async function InstructorDetailPage({ params }: { params: Promise
             ) : null}
             <p className="mt-3 text-[12px] text-muted">
               A primeira aprovação coloca o instrutor no final da fila. Pausar e reativar preservam a posição.
+              Foto e dados bancários são recomendados, não obrigatórios para essa etapa.
             </p>
           </Panel>
         </div>

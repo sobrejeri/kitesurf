@@ -7,6 +7,7 @@ import { requireRole } from '@/lib/auth';
 import { createSupabaseServerClient } from '@/lib/supabase/server';
 
 import { friendlyError, type ActionState } from './errors';
+import { PROFILE_REQUIRED, readProgressFlags } from '@/lib/instructor-completion';
 
 /**
  * The hourly rate is typed in whole reais and the commission in whole
@@ -59,6 +60,28 @@ export async function setInstructorStatus(_prev: ActionState, form: FormData): P
   if (!parsed.success) return { error: 'Informe o motivo.' };
 
   const supabase = await createSupabaseServerClient();
+  if (parsed.data.status==='approved') {
+    const {data:instructor,error:statusError}=await supabase.from('instructors')
+      .select('approved_at').eq('id',parsed.data.instructorId)
+      .maybeSingle<{approved_at:string|null}>();
+    if(statusError)return {error:friendlyError(statusError)};
+    if(!instructor)return {error:'Instrutor não encontrado.'};
+    if(!instructor.approved_at) {
+      const completion=await supabase.rpc('get_instructor_profile_progress',{
+        p_instructor_id:parsed.data.instructorId,
+      });
+      if(!completion.error) {
+        const flags=readProgressFlags(completion.data);
+        if(!flags)return {error:'Não foi possível verificar o preenchimento. Atualize a página e tente novamente.'};
+        const missing=PROFILE_REQUIRED.filter(field=>!flags[field.key]).map(field=>field.label);
+        if(missing.length>0)return {
+          error:'Antes da aprovação, o instrutor precisa completar: '+missing.join(', ')+'.',
+        };
+      } else if(!['42883','PGRST202'].includes(completion.error.code??'')) {
+        return {error:friendlyError(completion.error)};
+      }
+    }
+  }
   const { error } = await supabase.rpc('set_instructor_status', {
     p_instructor_id: parsed.data.instructorId,
     p_status: parsed.data.status,
