@@ -81,6 +81,16 @@ select pg_temp.reset();
 -- Partner registers; admin approves.
 select pg_temp.act_as('00000000-0000-0000-0000-0000000000c1');
 select public.register_partner('Pousada Mar & Vento', (select id from public.beaches where slug = 'prea'));
+-- A partner must supply real contact information before first approval.
+select public.update_my_partner_profile(
+  'Pousada Mar & Vento',
+  (select id from public.beaches where slug='prea'),
+  'Recepção Mar e Vento',
+  '(88) 99999-9999',
+  'Jijoca de Jericoacoara',
+  'Rua da Praia, 100, Preá',
+  '@pousadamarvento'
+);
 select pg_temp.reset();
 update public.partners set code = 'MAR-E-VENTO';
 select pg_temp.act_as('00000000-0000-0000-0000-00000000000a');
