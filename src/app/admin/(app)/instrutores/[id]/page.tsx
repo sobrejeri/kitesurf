@@ -9,6 +9,7 @@ import { INSTRUCTOR_STATUS } from '@/components/admin/labels';
 import { Icon, type IconName } from '@/components/icon';
 import { Badge, Note, inputClass } from '@/components/ui';
 import { InstructorCompletionPanel } from '@/components/instructor/completion-panel';
+import { VerifiedInstructorBadge } from '@/components/instructor/verified-badge';
 import { requireRole } from '@/lib/auth';
 import { listAllBookings, listAllInstructors, listQueue } from '@/lib/data';
 import { initials } from '@/lib/people';
@@ -82,7 +83,11 @@ export default async function InstructorDetailPage({ params }: { params: Promise
         <div className="flex items-center gap-4">
           <PhotoTile initials={initials(name)} size={84} />
           <div className="min-w-0">
-            <h1 className="text-[24px] font-bold leading-tight text-white">{name}</h1>
+            <div className="flex min-w-0 items-center gap-2">
+              <h1 className="min-w-0 break-words text-[24px] font-bold leading-tight text-white">{name}</h1>
+              <VerifiedInstructorBadge status={row.status} size="lg" />
+            </div>
+            <p className="mt-1 text-[13px] text-white/75">Instrutor</p>
             <div className="mt-2 flex flex-wrap items-center gap-2">
               <Badge tone={INSTRUCTOR_STATUS[row.status].tone}>{INSTRUCTOR_STATUS[row.status].label}</Badge>
               {position > 0 ? <span className="text-[12px] text-label">{position}º na fila</span> : null}

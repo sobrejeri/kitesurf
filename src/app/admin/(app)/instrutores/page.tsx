@@ -4,6 +4,7 @@ import { FilterList, type FilterEntry } from '@/components/admin/filter-list';
 import { AdminTitle, ListCard, PhotoTile } from '@/components/admin/kit';
 import { INSTRUCTOR_STATUS } from '@/components/admin/labels';
 import { Icon } from '@/components/icon';
+import { VerifiedInstructorBadge } from '@/components/instructor/verified-badge';
 import { Badge } from '@/components/ui';
 import { requireRole } from '@/lib/auth';
 import { listAllInstructors } from '@/lib/data';
@@ -28,7 +29,13 @@ export default async function InstructorsPage() {
             <PhotoTile initials={initials(name)} size={64} />
             <div className="min-w-0 flex-1">
               <div className="flex items-start justify-between gap-2">
-                <p className="truncate text-[16px] font-semibold text-ink">{name}</p>
+                <div className="flex min-w-0 flex-1 flex-col gap-1">
+                  <div className="flex min-w-0 items-center gap-1.5">
+                    <p className="min-w-0 truncate text-[16px] font-semibold text-ink">{name}</p>
+                    <VerifiedInstructorBadge status={row.status} size="sm" />
+                  </div>
+                  <span className="text-[12px] font-medium text-muted">Instrutor</span>
+                </div>
                 <Badge tone={INSTRUCTOR_STATUS[row.status].tone}>{INSTRUCTOR_STATUS[row.status].label}</Badge>
               </div>
               <p className="mt-1 text-[12px] text-muted">{row.years_experience} anos de experiência</p>

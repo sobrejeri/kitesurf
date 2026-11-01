@@ -4,6 +4,7 @@ import { updateInstructorProfile } from '@/app/actions/instructor';
 import { saveInstructorPersonal, uploadInstructorAvatar } from '@/app/actions/instructor-profile';
 import { ActionForm } from '@/components/action-form';
 import { InstructorCompletionPanel } from '@/components/instructor/completion-panel';
+import { VerifiedInstructorBadge } from '@/components/instructor/verified-badge';
 import { Icon } from '@/components/icon';
 import { InstructorMultiSelect } from '@/components/instructor/instructor-multi-select';
 import { ProfilePhotoPicker } from '@/components/profile-photo-picker';
@@ -103,7 +104,13 @@ export default async function InstructorProfileFormPage() {
               accent="orange"
             />
             <div className="min-w-0 w-full flex-1">
-              <h2 className="break-words text-[18px] font-bold leading-snug text-ink">{viewer.fullName?.trim() || 'Instrutor'}</h2>
+              <div className="flex min-w-0 flex-wrap items-center justify-center gap-2 sm:justify-start">
+                <h2 className="min-w-0 break-words text-[20px] font-bold leading-snug text-ink">{viewer.fullName?.trim() || 'Instrutor'}</h2>
+                <VerifiedInstructorBadge status={me?.status} size="lg" />
+              </div>
+              <p className="mt-1 text-[12px] font-medium text-muted">
+                {me?.status === 'approved' ? 'Instrutor verificado pelo Vento' : 'Instrutor'}
+              </p>
               <p className="mt-1 break-all text-[12px] leading-relaxed text-muted">{viewer.email}</p>
               <p className="mt-1 text-[12px] leading-relaxed text-muted">
                 {avatarUrl ? 'Use o + para trocar a foto.' : 'Toque no + para adicionar uma foto.'}
