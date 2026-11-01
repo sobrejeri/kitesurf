@@ -84,6 +84,7 @@ export function computeInstructorCompletion(flags:ProgressFlags|null,documents:D
       supportVehicle:flags.supportVehicle,
     },
     essentialCount,recommendedCount,completed,total,
+    profileAvailable:flags!==null,
     percentage:flags===null?null:Math.round(completed/total*100),
     essentialsReady,documentsReady,readyForApproval:essentialsReady&&documentsReady,
   };

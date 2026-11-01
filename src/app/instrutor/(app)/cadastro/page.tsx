@@ -92,7 +92,7 @@ export default async function InstructorProfileFormPage() {
       </header>
 
       <div className="grid gap-4">
-        <InstructorCompletionPanel completion={completion} audience="instructor"/>
+        <InstructorCompletionPanel completion={completion} audience="instructor" yearsExperience={me?.years_experience}/>
         <Card className="!p-4 sm:!p-6" >
           <div id="cadastro-foto" className="flex flex-col items-center gap-3 text-center sm:flex-row sm:items-center sm:gap-5 sm:text-left">
             <ProfilePhotoPicker

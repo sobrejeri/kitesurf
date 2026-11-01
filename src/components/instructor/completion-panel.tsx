@@ -1,3 +1,5 @@
+'use client';
+
 import Link from 'next/link';
 
 import { Icon } from '@/components/icon';
@@ -30,18 +32,25 @@ function CheckRow({item,audience}:{item:ProfileField;audience:'admin'|'instructo
     <span className="min-w-0 flex-1 text-[13px] text-ink">{item.label}</span>
     <FieldStatus state={item.state}/>
     {audience==='instructor'&&item.state==='missing'?(
-      <a href={item.anchor} aria-label={`Localizar campo: ${item.label}`}
+      <a href={item.anchor} aria-label={`Abrir campo: ${item.label}`}
+        onClick={()=>{
+          const target=document.querySelector(item.anchor);
+          const parent=target?.closest('details');
+          if(parent)parent.open=true;
+          target?.scrollIntoView({behavior:'smooth',block:'center'});
+        }}
         className="text-[12px] font-semibold text-brand underline">Editar</a>
     ):null}
   </li>;
 }
 
 export function InstructorCompletionPanel({
-  completion,audience,instructorId,
+  completion,audience,instructorId,yearsExperience,
 }:{
   completion:InstructorCompletion;
   audience:'admin'|'instructor';
   instructorId?:string;
+  yearsExperience?:number;
 }) {
   const progress=completion.percentage;
   return (
@@ -53,7 +62,7 @@ export function InstructorCompletionPanel({
               <p className="text-[11px] font-bold uppercase tracking-[1.4px] text-brand">Conferência do cadastro</p>
               <h2 className="mt-1 text-[20px] font-bold leading-tight text-ink">O que já está pronto?</h2>
               <p className="mt-1 text-[12px] leading-relaxed text-muted">
-                {completion.essentialsReady?'Dados essenciais completos':`${completion.essentialCount} de ${completion.required.length} dados essenciais preenchidos`}
+                {!completion.profileAvailable?'Dados ainda não verificados':completion.essentialsReady?'Dados essenciais completos':`${completion.essentialCount} de ${completion.required.length} dados essenciais preenchidos`}
                 {' · '}
                 {completion.documents.filter(d=>d.state==='approved').length} de 2 documentos aprovados
               </p>
@@ -103,9 +112,24 @@ export function InstructorCompletionPanel({
             <ul className="mt-2">
               {completion.recommended.map(item=><CheckRow key={item.key} item={item} audience={audience}/>)}
             </ul>
-            <p className="mt-2 text-[11px] leading-relaxed text-muted">
-              Experiência de zero anos é válida. Equipamento e veículo de apoio podem ser informados como “Não” sem deixar o cadastro pendente.
-            </p>
+            <h3 className="mt-5 text-[13px] font-bold text-ink">Informações declaradas</h3>
+          <ul className="mt-2">
+            <li className="flex flex-wrap items-center justify-between gap-2 border-b border-line py-2.5">
+              <span className="text-[13px] text-ink">Anos de experiência</span>
+              <Badge tone="quiet">{yearsExperience==null?'Não verificado':`${yearsExperience} ano(s)`}</Badge>
+            </li>
+            <li className="flex flex-wrap items-center justify-between gap-2 border-b border-line py-2.5">
+              <span className="text-[13px] text-ink">Equipamentos próprios</span>
+              <Badge tone="quiet">{completion.declarations===null?'Não verificado':completion.declarations.equipment?'Sim':'Não'}</Badge>
+            </li>
+            <li className="flex flex-wrap items-center justify-between gap-2 py-2.5">
+              <span className="text-[13px] text-ink">Veículo de apoio</span>
+              <Badge tone="quiet">{completion.declarations===null?'Não verificado':completion.declarations.supportVehicle?'Sim':'Não'}</Badge>
+            </li>
+          </ul>
+          <p className="mt-2 text-[11px] leading-relaxed text-muted">
+            Zero anos de experiência é válido. Responder “Não” para equipamento ou veículo não deixa o cadastro pendente.
+          </p>
           </div>
         </div>
         <div className="mt-4 rounded-[14px] border border-line bg-brand-wash p-3 text-[12px] leading-relaxed text-ink">
@@ -115,7 +139,7 @@ export function InstructorCompletionPanel({
               : 'Dados essenciais e documentos aprovados. Agora falta a decisão da administração.'
             : completion.essentialsReady&&!completion.documentsReady
               ? 'Seus dados essenciais estão completos. Falta concluir a análise dos documentos.'
-              : 'Confira os itens pendentes antes da aprovação. O botão de validação só deve ser liberado quando os requisitos estiverem completos.'}
+              : 'Confira os dados essenciais e acompanhe os documentos antes de solicitar a validação.'}
         </div>
       </details>
     </section>

@@ -92,7 +92,7 @@ export default async function InstructorDetailPage({ params }: { params: Promise
       </section>
 
       <div className="mt-4">
-        <InstructorCompletionPanel completion={completion} audience="admin" instructorId={row.id}/>
+        <InstructorCompletionPanel completion={completion} audience="admin" instructorId={row.id} yearsExperience={row.years_experience}/>
       </div>
 
       <div className="mt-4 grid gap-4 lg:grid-cols-2">
