@@ -10,6 +10,7 @@ const NAV: readonly WorkspaceNavItem[] = [
   { label: 'Receber solicitação', href: '/instrutor/solicitacao', icon: 'bell' },
   { label: 'Minha prioridade', href: '/instrutor/fila', icon: 'list', tab: true },
   { label: 'Agenda e bloqueios', href: '/instrutor/agenda', icon: 'calendar' },
+  { label: 'Pontos de encontro', href: '/instrutor/pontos', icon: 'pin', secondary: true },
   { label: 'Realizar e registrar aula', href: '/instrutor/aula', icon: 'kite', tab: true },
   { label: 'Meu financeiro', href: '/instrutor/financeiro', icon: 'wallet', tab: true },
   { label: 'Meu perfil profissional', href: '/instrutor/cadastro', icon: 'user' },

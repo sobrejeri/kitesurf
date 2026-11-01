@@ -27,6 +27,13 @@ export default async function BookingPage({ params }: { params: Promise<{ id: st
   if (!booking || booking.student_id !== viewer.id) notFound();
 
   const db = await createSupabaseServerClient();
+  const { data: pointRecord } = await db.from('bookings')
+    .select('meeting_point:meeting_points!bookings_meeting_point_id_fkey(title,details,latitude,longitude)')
+    .eq('id',booking.id).eq('student_id',viewer.id)
+    .maybeSingle<{
+      meeting_point: {title:string;details:string;latitude:number;longitude:number}|null
+    }>();
+  const meetingPoint = pointRecord?.meeting_point ?? null;
   const rated = booking.status === 'completed' ? await db.from('instructor_ratings')
     .select('stars,comment').eq('booking_id',booking.id).eq('student_id',viewer.id)
     .maybeSingle<{stars:number;comment:string}>() : null;
@@ -71,6 +78,17 @@ export default async function BookingPage({ params }: { params: Promise<{ id: st
               <KeyValue label="Total de horas" value={`${booking.total_hours}h`} icon="clock" />
               <KeyValue label="Equipamentos" value="Incluídos na sua aula" icon="shield" />
             </dl>
+            {!awaiting && meetingPoint ? (
+              <div className="mt-5 rounded-xl border border-line bg-brand-tint p-4">
+                <h3 className="text-[14px] font-bold text-ink">Ponto de encontro</h3>
+                <p className="mt-2 text-[13px] font-semibold text-brand">{meetingPoint.title}</p>
+                {meetingPoint.details ? <p className="mt-1 text-[12px] text-muted">{meetingPoint.details}</p> : null}
+                <a href={`https://www.google.com/maps?q=${meetingPoint.latitude},${meetingPoint.longitude}`}
+                  target="_blank" rel="noopener noreferrer" className="mt-2 inline-block text-[13px] font-semibold text-brand underline">
+                  Abrir localização no mapa
+                </a>
+              </div>
+            ) : null}
             <h3 className="mt-6 text-[14px]">Encontros</h3>
             <ul className="mt-3 grid gap-2">
               {booking.booking_meetings.map((meeting) => (

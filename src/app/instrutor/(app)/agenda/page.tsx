@@ -42,7 +42,10 @@ export default async function InstructorAgendaPage() {
               </li>)}
             </ul>
           )}
-          <ButtonLink href="/instrutor/disponibilidade" variant="ghost" className="mt-4">Configurar dias e turnos</ButtonLink>
+          <div className="mt-4 flex flex-wrap gap-2">
+            <ButtonLink href="/instrutor/disponibilidade" variant="ghost">Configurar dias e turnos</ButtonLink>
+            <ButtonLink href="/instrutor/pontos" variant="ghost">Definir pontos de encontro</ButtonLink>
+          </div>
         </Card>
         <Card>
           <h2 className="text-[18px] font-bold">Bloquear um período</h2>
