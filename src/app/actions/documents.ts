@@ -72,7 +72,7 @@ export async function registerInstructorDocumentUpload(input:{
   }).safeParse(input);
   if(!parsed.success)return {error:'Dados do documento inválidos. Escolha o arquivo novamente.'};
   const path=parsed.data.path;
-  const pattern=new RegExp('^'+viewer.id+'/[0-9a-f-]{36}\\.(pdf|jpg|png)
+  const pattern=new RegExp('^'+viewer.id+'/[0-9a-f-]{36}\\.(pdf|jpg|png)$');
   if(!pattern.test(path))return {error:'O documento não pertence a esta conta.'};
   const extension=path.split('.').pop();
   const mime=extension==='pdf'?'application/pdf':extension==='jpg'?'image/jpeg':'image/png';
