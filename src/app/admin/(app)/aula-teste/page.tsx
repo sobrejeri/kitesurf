@@ -24,6 +24,7 @@ export default async function AdminTestLessonPage() {
   ]);
   const studentNames=new Map((students.data??[]).map(p=>[p.id,p.full_name]));
   const instructorNames=new Map(instructors.map(p=>[p.id,p.profile?.full_name??p.id.slice(0,8)]));
+  const instructorData=new Map(instructors.map(p=>[p.id,p]));
   const ready=!students.error&&!tests.error;
 
   return <>
@@ -73,7 +74,10 @@ export default async function AdminTestLessonPage() {
           ):<Note tone="warning" className="mt-4">Cadastre uma conta de Aluno e um Instrutor, e ative pelo menos uma praia antes de testar.</Note>}
         </Card>
         <Card>
-          <h2 className="text-[18px] font-bold text-ink">Aulas de teste registradas</h2>
+          <div className="flex flex-wrap items-center justify-between gap-3">
+            <h2 className="text-[18px] font-bold text-ink">Aulas de teste registradas</h2>
+            <ButtonLink href="/admin/aula-teste" variant="ghost" size="sm">Atualizar dados</ButtonLink>
+          </div>
           {(tests.data??[]).length===0?<p className="mt-4 text-[13px] text-muted">Nenhuma aula teste registrada.</p>:(
             <ul className="mt-4 divide-y divide-line">
               {(tests.data??[]).map(b=><li key={b.id} className="py-4">
@@ -81,6 +85,16 @@ export default async function AdminTestLessonPage() {
                 <p className="mt-1 text-[12px] text-muted">
                   Instrutor: {instructorNames.get(b.instructor_id)??b.instructor_id.slice(0,8)}
                 </p>
+                {instructorData.get(b.instructor_id) ? (
+                  <div className="mt-2 rounded-xl border border-line p-3 text-[12px] text-muted">
+                    <strong className="block text-[12px] text-ink">Dados atuais do perfil</strong>
+                    <p>Situação: {instructorData.get(b.instructor_id)?.status === 'approved' ? 'Aprovado' : 'Em análise/pausado'}</p>
+                    <p>Experiência: {instructorData.get(b.instructor_id)?.years_experience ?? 0} ano(s)</p>
+                    <p>Praias: {instructorData.get(b.instructor_id)?.beaches.map(beach=>beach.name).join(', ') || 'Nenhuma selecionada'}</p>
+                    <p>Idiomas: {instructorData.get(b.instructor_id)?.languages.join(', ') || 'Nenhum informado'}</p>
+                    <p>Equipamentos: {instructorData.get(b.instructor_id)?.has_equipment ? 'Sim' : 'Não'}</p>
+                  </div>
+                ) : null}
                 <p className="text-[12px] text-muted">Aluno: {studentNames.get(b.student_id)??b.student_id.slice(0,8)}</p>
                 <p className="text-[12px] text-muted">Status: {b.status}</p>
                 {(b.booking_meetings??[]).map((m,i)=><p key={i} className="text-[12px] text-muted">
