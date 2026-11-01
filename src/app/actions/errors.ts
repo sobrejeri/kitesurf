@@ -3,6 +3,8 @@
  * message: the raw text can carry internal details and is only logged.
  */
 const KNOWN: readonly [RegExp, string][] = [
+  [/Instructor documents must be approved before activation/i,
+    'Antes de aprovar, confira e aprove a identidade e a certificação profissional do instrutor em Admin > Documentos.'],
   [/Unknown or inactive beach/i, 'Essa praia não está disponível. Escolha outra.'],
   [/Could not find the function .*create_booking|function .*create_booking.* does not exist/i,
     'O serviço de reservas precisa ser sincronizado com o banco de dados. Informe à administração.'],

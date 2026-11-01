@@ -67,5 +67,6 @@ export async function reviewInstructorDocument(_prev:ActionState,form:FormData):
   });
   if(error)return {error:friendlyError(error)};
   revalidatePath('/instrutor/documentos');revalidatePath('/admin/documentos');
-  return {ok:'Análise do documento registrada.'};
+  revalidatePath('/admin/instrutores/[id]','page');
+  return {ok:'Análise do documento registrada. Atualize o cadastro do instrutor para conferir a liberação.'};
 }

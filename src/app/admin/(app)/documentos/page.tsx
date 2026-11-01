@@ -1,4 +1,5 @@
 import type { Metadata } from 'next';
+import Link from 'next/link';
 
 import { reviewInstructorDocument } from '@/app/actions/documents';
 import { ActionForm } from '@/components/action-form';
@@ -12,13 +13,18 @@ type Doc={id:string;kind:string;status:string;storage_path:string;original_name:
 const KINDS:Record<string,string>={identity:'Identidade',certification:'Certificação',
   insurance:'Seguro',other:'Outro'};
 
-export default async function AdminDocumentsPage() {
+export default async function AdminDocumentsPage({
+  searchParams,
+}: {searchParams:Promise<{instrutor?:string}>}) {
+  const {instrutor}=await searchParams;
+  const instructorId=instrutor && /^[0-9a-f-]{36}$/i.test(instrutor) ? instrutor : null;
   const viewer=await requireRole(['admin']);
   if(viewer.role!=='admin')return <Note tone="warning">Área restrita à administração.</Note>;
   const db=await createSupabaseServerClient();
-  const {data,error}=await db.from('instructor_documents')
-    .select('id,kind,status,storage_path,original_name,instructor_id,review_notes')
-    .order('uploaded_at',{ascending:false}).limit(80).returns<Doc[]>();
+  let query=db.from('instructor_documents')
+    .select('id,kind,status,storage_path,original_name,instructor_id,review_notes');
+  if(instructorId)query=query.eq('instructor_id',instructorId);
+  const {data,error}=await query.order('uploaded_at',{ascending:false}).limit(80).returns<Doc[]>();
   if(error)return <Note tone="warning">O painel de documentos depende da migração 17.</Note>;
   const files=await Promise.all((data??[]).map(async doc=>{
     const signed=await db.storage.from('vento-instructor-documents')
@@ -29,14 +35,28 @@ export default async function AdminDocumentsPage() {
     <>
       <PageHeader eyebrow="Verificação administrativa" title="Documentos dos instrutores"
         lead="Analise cada documento. A aprovação é uma decisão operacional registrada no histórico."/>
+      {instructorId?(
+        <div className="mb-4 flex flex-wrap gap-3 text-[13px]">
+          <Link href={`/admin/instrutores/${instructorId}`} className="font-semibold text-brand underline">
+            Voltar ao cadastro do instrutor
+          </Link>
+          <Link href="/admin/documentos" className="text-muted underline">Ver todos os documentos</Link>
+        </div>
+      ):null}
       <Card>
-        {files.length===0?<p className="text-[13px] text-muted">Nenhum documento recebido.</p>:(
+        {files.length===0?<p className="text-[13px] text-muted">
+          {instructorId
+            ? 'Este instrutor ainda não enviou documentos. Peça que envie a identidade e a certificação em Mais → Meus documentos.'
+            : 'Nenhum documento recebido.'}
+        </p>:(
           <div className="grid gap-4">
             {files.map(d=>(
               <section key={d.id} className="rounded-xl border border-line p-4">
                 <strong className="text-[14px] text-ink">{KINDS[d.kind]??d.kind} · {d.original_name}</strong>
                 <p className="mt-1 break-all text-[11px] text-muted">Instrutor: {d.instructor_id}</p>
-                <p className="mt-1 text-[12px] text-brand">Situação: {d.status}</p>
+                <p className="mt-1 text-[12px] text-brand">
+                  Situação: {d.status==='approved'?'Aprovado':d.status==='pending'?'Aguardando análise':'Rejeitado'}
+                </p>
                 {d.href?<a href={d.href} target="_blank" rel="noopener noreferrer"
                   className="mt-2 inline-block text-[13px] font-semibold text-brand underline">Visualizar arquivo privado</a>:
                   <p className="text-[12px] text-muted">Arquivo indisponível nesta sessão.</p>}

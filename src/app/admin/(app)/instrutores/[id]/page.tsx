@@ -7,10 +7,17 @@ import { ActionForm } from '@/components/action-form';
 import { Panel, PhotoTile } from '@/components/admin/kit';
 import { INSTRUCTOR_STATUS } from '@/components/admin/labels';
 import { Icon, type IconName } from '@/components/icon';
-import { Badge, inputClass } from '@/components/ui';
+import { Badge, Note, inputClass } from '@/components/ui';
 import { requireRole } from '@/lib/auth';
 import { listAllBookings, listAllInstructors, listQueue } from '@/lib/data';
 import { initials } from '@/lib/people';
+import { createSupabaseServerClient } from '@/lib/supabase/server';
+
+type ReviewDoc = {kind:string;status:'pending'|'approved'|'rejected'};
+const REQUIRED_DOCS = [
+  {kind:'identity', label:'Documento de identidade'},
+  {kind:'certification', label:'Certificação profissional'},
+] as const;
 
 export const metadata: Metadata = { title: 'Instrutor' };
 
@@ -35,6 +42,25 @@ export default async function InstructorDetailPage({ params }: { params: Promise
   const position = queue.findIndex((item) => item.id === row.id) + 1;
   const theirs = bookings.filter((booking) => booking.instructor_id === row.id);
   const next = row.status === 'approved' ? 'paused' : 'approved';
+  const db = await createSupabaseServerClient();
+  const [documents, previousApproval] = await Promise.all([
+    db.from('instructor_documents').select('kind,status').eq('instructor_id',row.id)
+      .in('kind',['identity','certification']).returns<ReviewDoc[]>(),
+    db.from('instructors').select('approved_at').eq('id',row.id)
+      .maybeSingle<{approved_at:string|null}>(),
+  ]);
+  const checklist = REQUIRED_DOCS.map(item => {
+    const found=(documents.data??[]).filter(d=>d.kind===item.kind);
+    return {...item,
+      status: found.some(d=>d.status==='approved') ? 'approved'
+        : found.some(d=>d.status==='pending') ? 'pending'
+        : found.some(d=>d.status==='rejected') ? 'rejected' : 'missing',
+    };
+  });
+  const initialApproval = next==='approved' && !previousApproval.data?.approved_at;
+  const docsOk = !documents.error && checklist.every(d=>d.status==='approved');
+  const allowed = !previousApproval.error && (!initialApproval || docsOk);
+  const docsHref = `/admin/documentos?instrutor=${row.id}`;
 
   return (
     <>
@@ -83,22 +109,58 @@ export default async function InstructorDetailPage({ params }: { params: Promise
             <p className="mt-3 text-[12px] text-muted">O próprio instrutor marca as praias no perfil profissional.</p>
           </Panel>
 
+          <Panel title="Documentação obrigatória">
+            <p className="text-[12px] text-muted">
+              A primeira aprovação exige identidade e certificação profissional aprovadas pelo Admin.
+            </p>
+            {documents.error ? (
+              <Note tone="warning" className="mt-3">Não foi possível consultar os documentos deste instrutor.</Note>
+            ) : (
+              <ul className="mt-3 divide-y divide-line">
+                {checklist.map(item=>(
+                  <li key={item.kind} className="flex flex-wrap items-center justify-between gap-2 py-3">
+                    <span className="text-[13px] text-ink">{item.label}</span>
+                    <Badge tone={item.status==='approved'?'success':'warning'}>
+                      {item.status==='approved'?'Aprovado':item.status==='pending'?'Aguardando análise':item.status==='rejected'?'Rejeitado':'Não enviado'}
+                    </Badge>
+                  </li>
+                ))}
+              </ul>
+            )}
+            <Link href={docsHref} className="mt-3 inline-flex items-center gap-2 text-[13px] font-semibold text-brand underline">
+              <Icon name="file" className="!h-4 !w-4"/> Analisar documentos
+            </Link>
+          </Panel>
+
           <Panel title={row.status === 'pending' ? 'Analisar cadastro' : row.status === 'paused' ? 'Reativar' : 'Pausar instrutor'}>
-            <ActionForm
-              action={setInstructorStatus}
-              submitLabel={row.status === 'pending' ? 'Aprovar cadastro' : row.status === 'paused' ? 'Reativar' : 'Pausar'}
-              submitVariant={next === 'approved' ? 'primary' : 'soft'}
-              className="grid gap-3"
-            >
-              <input type="hidden" name="instructorId" value={row.id} />
-              <input type="hidden" name="status" value={next} />
-              <label className="grid gap-1.5 text-[12px] text-label">
-                Motivo (fica no histórico de auditoria)
-                <input name="reason" required minLength={3} className={inputClass} />
-              </label>
-            </ActionForm>
+            {previousApproval.error ? (
+              <Note tone="warning" className="mb-3">
+                Falha ao verificar a situação da primeira aprovação. Atualize a página.
+              </Note>
+            ) : initialApproval && !docsOk ? (
+              <Note tone="warning" className="mb-3" title="Aprovação bloqueada">
+                Peça ao instrutor que envie a identidade e a certificação em Mais → Meus documentos.
+                Analise os dois arquivos no Admin e volte aqui para aprovar.
+              </Note>
+            ) : null}
+            {allowed ? (
+              <ActionForm
+                action={setInstructorStatus}
+                submitLabel={row.status === 'pending' ? 'Aprovar cadastro' : row.status === 'paused' ? 'Reativar' : 'Pausar'}
+                submitVariant={next === 'approved' ? 'primary' : 'soft'}
+                className="grid gap-3"
+              >
+                <input type="hidden" name="instructorId" value={row.id} />
+                <input type="hidden" name="status" value={next} />
+                <label className="grid gap-1.5 text-[12px] text-label">
+                  Motivo (fica no histórico de auditoria)
+                  <input name="reason" required minLength={3} className={inputClass}
+                    placeholder="Ex.: documentos conferidos" />
+                </label>
+              </ActionForm>
+            ) : null}
             <p className="mt-3 text-[12px] text-muted">
-              A aprovação coloca o instrutor no final da fila. Pausar e reativar preservam a posição.
+              A primeira aprovação coloca o instrutor no final da fila. Pausar e reativar preservam a posição.
             </p>
           </Panel>
         </div>
