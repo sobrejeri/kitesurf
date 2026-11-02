@@ -10,8 +10,10 @@ const KNOWN: readonly [RegExp, string][] = [
   [/Select valid kite skills for the minutes taught/i,
     'Marque pelo menos uma etapa do kite para registrar uma aula com minutos realizados.'],
 
-  [/Instructor has a class or block at the selected time/i,
-    'Este instrutor não está disponível no horário escolhido. Confira os dias e horários configurados, bloqueios e aulas já agendadas. Selecione outro horário ou outro instrutor. Nenhuma aula foi criada.'],
+  [/Instructor has a class or block at (?:the|a) selected time/i,
+    'Um ou mais encontros estão fora da disponibilidade do instrutor, bloqueados ou com conflito de outra reserva. Confira todas as datas e horários na agenda; nenhuma reserva foi criada.'],
+  [/Demo meetings cannot overlap each other/i,
+    'Os encontros desta reserva de teste não podem acontecer em horários sobrepostos. Ajuste as datas ou a duração. Nenhuma reserva foi criada.'],
   [/A started test must be completed before cleanup/i,
     'Essa aula de teste já foi iniciada. Termine o registro da aula antes de encerrá-la.'],
 
