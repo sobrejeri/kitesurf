@@ -244,7 +244,7 @@ export default async function RunLessonPage({
                   <li key={meeting.id} className="py-3">
                     <Link
                       href={selected ? '/instrutor/aula#historico-aulas' :
-                        `/instrutor/aula?aula=${meeting.id}#historico-aulas`}
+                        `/instrutor/aula?aula=${meeting.id}#detalhes-aula`}
                       aria-current={selected ? 'page' : undefined}
                       className={
                         'press flex flex-wrap items-center justify-between gap-3 rounded-[14px] border p-3 ' +
