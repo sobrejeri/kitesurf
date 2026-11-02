@@ -1,4 +1,5 @@
 import type { Metadata } from 'next';
+import Link from 'next/link';
 
 import { assessStudentKiteLevel, recordMeeting, recordMeetingWithSkills, startMeeting } from '@/app/actions/instructor';
 import { ActionForm } from '@/components/action-form';
@@ -10,6 +11,7 @@ import { formatDateLong, formatMinutes, formatTime } from '@/lib/format';
 import { getInstructorStudentAvatarUrls } from '@/lib/instructor-student-photos';
 import { KITE_CURRICULA } from '@/lib/kite-steps';
 import { getMeetingKiteSkills } from '@/lib/meeting-skills';
+import { getBookingLevelAssessments } from '@/lib/booking-level-assessments';
 
 export const metadata: Metadata = { title: 'Realizar e registrar aula' };
 
@@ -20,25 +22,50 @@ export default async function RunLessonPage() {
     getInstructorStudentAvatarUrls(),
     getMeetingKiteSkills([]),
   ]);
+  const reviews = await getBookingLevelAssessments(bookings.map((b) => b.id));
   const todayInCeara = new Date().toLocaleDateString('en-CA', { timeZone: 'America/Fortaleza' });
   const cearaDay = (iso: string) => new Date(iso).toLocaleDateString('en-CA', { timeZone: 'America/Fortaleza' });
-  const completed = bookings.flatMap((booking) => booking.booking_meetings
-    .filter((meeting) => meeting.status === 'done')
-    .map((meeting) => ({ booking, meeting })))
+  const completed = bookings
+    .filter((booking) => booking.status === 'completed' && !reviews.assessments.has(booking.id))
+    .flatMap((booking) => {
+      const meeting = [...booking.booking_meetings]
+        .filter((m) => m.status === 'done')
+        .sort((a, b) => b.starts_at.localeCompare(a.starts_at))[0];
+      return meeting ? [{ booking, meeting }] : [];
+    })
     .sort((a, b) => b.meeting.starts_at.localeCompare(a.meeting.starts_at));
   const open = bookings
     .filter((booking) => booking.status === 'confirmed')
-    .flatMap((booking) => booking.booking_meetings.filter((m) => m.status === 'scheduled' || m.status === 'in_progress').map((meeting) => ({ booking, meeting })))
+    .flatMap((booking) => booking.booking_meetings
+      .filter((m) => m.status === 'scheduled' || m.status === 'in_progress')
+      .map((meeting) => ({ booking, meeting })))
     .sort((a, b) => a.meeting.starts_at.localeCompare(b.meeting.starts_at));
+  const due = open.filter(({ meeting }) => meeting.status === 'in_progress'
+    || cearaDay(meeting.starts_at) <= todayInCeara);
+  const future = open.filter(({ meeting }) => meeting.status === 'scheduled'
+    && cearaDay(meeting.starts_at) > todayInCeara);
+  const completedHistory = bookings.flatMap((booking) =>
+    booking.booking_meetings.filter((meeting) => meeting.status === 'done')
+      .map((meeting) => ({ booking, meeting })))
+    .sort((a, b) => b.meeting.starts_at.localeCompare(a.meeting.starts_at));
 
   return (
     <>
       <h1 className="text-[30px] font-bold leading-tight tracking-[-0.8px] text-ink md:text-[34px]">Registrar aula</h1>
-      <p className="mt-1 text-[13px] text-muted">Peça o código de presença ao aluno para iniciar. Ao final, registre os minutos realizados.</p>
+      <p className="mt-1 text-[13px] text-muted">Encontros liberados de todas as reservas.
+        Aulas de outros dias ficam na agenda; uma reserva não bloqueia a outra se os horários não coincidirem.</p>
+      <div className="mt-4 flex flex-wrap gap-3 text-[13px]">
+        <Link href="/instrutor/hoje" className="font-semibold text-brand underline">Meu dia</Link>
+        <Link href="/instrutor/agenda" className="font-semibold text-brand underline">Agenda completa</Link>
+        <Link href="/instrutor/fila" className="font-semibold text-brand underline">Fila de solicitações</Link>
+      </div>
 
       <div className="mt-6 grid gap-5">
-        {open.length === 0 ? <EmptyState>Nenhum encontro confirmado para registrar.</EmptyState> : null}
-        {open.map(({ booking, meeting }) => {
+        {due.length === 0 ? <EmptyState>
+          Nenhum encontro liberado para registrar hoje.
+          {future.length ? ' Confira abaixo suas próximas aulas.' : ' Consulte sua fila para novos atendimentos.'}
+        </EmptyState> : null}
+        {due.map(({ booking, meeting }) => {
           const canStart = cearaDay(meeting.starts_at) <= todayInCeara
             && booking.booking_meetings.every((previous) => previous.position >= meeting.position || previous.status === 'done');
           const studentName = booking.student?.full_name?.trim() || 'Aluno';
@@ -133,19 +160,47 @@ export default async function RunLessonPage() {
           </Card>
           );
         })}
-        <Note>Uma aula parcial devolve ao saldo o tempo que não foi realizado. O registro fica visível para o aluno.</Note>
-        {completed.length ? (
-          <section className="mt-4 grid gap-3">
-            <h2 className="text-[20px] font-bold text-ink">Avaliar nível após a aula</h2>
-            <p className="text-[12px] text-muted">
-              Indique o nível demonstrado pelo aluno. Isso atualiza seu selo e as opções
-              de futuras reservas, mas não representa certificação oficial.
-              A avaliação pode ser revista após outra aula concluída.
+        {future.length ? (
+          <details className="rounded-[20px] border border-line bg-surface p-4" open={due.length === 0}>
+            <summary className="cursor-pointer text-[16px] font-bold text-ink">
+              Próximos encontros · {future.length}
+            </summary>
+            <p className="mt-2 text-[12px] text-muted">
+              Uma aula em outro dia não impede que você atenda uma segunda reserva no intervalo.
             </p>
-            {completed.slice(0, 12).map(({ booking, meeting }) => (
+            <ul className="mt-3 divide-y divide-line">
+              {future.map(({ booking, meeting }) => (
+                <li key={meeting.id} className="flex flex-wrap items-center justify-between gap-2 py-3">
+                  <div>
+                    <p className="text-[13px] font-semibold text-ink">
+                      {booking.student?.full_name || 'Aluno'} · {booking.code}
+                    </p>
+                    <p className="text-[12px] text-muted">
+                      {formatDateLong(meeting.starts_at)} · {formatTime(meeting.starts_at)}
+                      {' · '}Encontro {meeting.position} de {booking.booking_meetings.length}
+                    </p>
+                  </div>
+                  <Badge tone="brand">Agendado</Badge>
+                </li>
+              ))}
+            </ul>
+          </details>
+        ) : null}
+        {due.length ? <Note>Ao concluir, registre minutos e etapas praticadas para atualizar a evolução do aluno.</Note> : null}
+        {!reviews.ready ? <Note tone="warning">
+          A avaliação final por reserva precisa da Migration 28 no Supabase.
+        </Note> : null}
+        {reviews.ready && completed.length ? (
+          <section className="mt-4 grid gap-3">
+            <h2 className="text-[20px] font-bold text-ink">Avaliações finais pendentes · {completed.length}</h2>
+            <p className="text-[12px] text-muted">
+              A avaliação aparece quando todos os encontros da reserva terminarem.
+              Depois de confirmar, ela sai das pendências e fica no histórico.
+            </p>
+            {completed.map(({ booking, meeting }) => (
               <Card key={'assess-' + meeting.id}>
                 <p className="text-[15px] font-bold text-ink">
-                  {booking.student?.full_name ?? 'Aluno'} · Encontro {meeting.position}
+                  {booking.student?.full_name ?? 'Aluno'} · Reserva {booking.code}
                 </p>
                 <p className="mt-1 text-[12px] text-muted">
                   {formatDateLong(meeting.starts_at)} · Aula {LEVEL_LABELS[booking.level]}
@@ -164,6 +219,29 @@ export default async function RunLessonPage() {
               </Card>
             ))}
           </section>
+        ) : null}
+        {completedHistory.length ? (
+          <details className="mt-2 rounded-[20px] border border-line bg-surface p-4">
+            <summary className="cursor-pointer text-[16px] font-bold text-ink">
+              Histórico de encontros realizados · {completedHistory.length}
+            </summary>
+            <ul className="mt-3 divide-y divide-line">
+              {completedHistory.map(({ booking, meeting }) => (
+                <li key={meeting.id} className="py-3">
+                  <p className="text-[13px] font-semibold text-ink">
+                    {booking.student?.full_name ?? 'Aluno'} · {booking.code}
+                  </p>
+                  <p className="mt-1 text-[12px] text-muted">
+                    {formatDateLong(meeting.starts_at)} · {formatMinutes(meeting.done_minutes)} realizados
+                    {' · '}Encontro {meeting.position} de {booking.booking_meetings.length}
+                  </p>
+                  <span className="mt-1 inline-block text-[11px] font-semibold text-brand">
+                    {reviews.assessments.has(booking.id) ? 'Nível avaliado' : 'Registro concluído'}
+                  </span>
+                </li>
+              ))}
+            </ul>
+          </details>
         ) : null}
       </div>
     </>
