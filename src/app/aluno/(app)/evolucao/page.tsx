@@ -6,7 +6,9 @@ import { StudentHero, SunsetEmpty } from '@/components/student/sunset';
 import { requireRole } from '@/lib/auth';
 import { learningBalance, listBookingsForStudent } from '@/lib/data';
 import { formatDateLong, formatMinutes, formatTime } from '@/lib/format';
-import { KITE_STEPS, kiteStageStatus } from '@/lib/kite-steps';
+import { KITE_CURRICULA, KITE_LEVEL_BADGES, kiteStageStatus } from '@/lib/kite-steps';
+import { KiteLevelMedal } from '@/components/student/kite-level-medal';
+import { getStudentKiteLevel } from '@/lib/student-kite-level';
 import { getMeetingKiteSkills } from '@/lib/meeting-skills';
 
 export const metadata: Metadata = { title: 'Minha evolução' };
@@ -33,10 +35,16 @@ function Stat({ label, value, hint, icon, href }: { label: string; value: string
 export default async function ProgressPage() {
   const viewer = await requireRole(['student'], '/aluno/evolucao');
   const bookings = await listBookingsForStudent(viewer.id);
+  const levelRecord = await getStudentKiteLevel(viewer.id);
+  const currentLevel = levelRecord.effective;
+  const currentCurriculum = KITE_CURRICULA[currentLevel];
   const balance = learningBalance(bookings);
   const meetingIds = bookings.flatMap((booking) => booking.booking_meetings.map((m) => m.id));
   const skills = await getMeetingKiteSkills(meetingIds);
   const allSkills = skills.rows;
+  const relevantMeetingIds = new Set(bookings.filter((booking) => booking.level === currentLevel)
+    .flatMap((booking) => booking.booking_meetings.filter((meeting) => meeting.status === 'done').map((meeting) => meeting.id)));
+  const currentSkills = allSkills.filter((entry) => relevantMeetingIds.has(entry.meeting_id));
   const todayInCeara = new Date().toLocaleDateString('en-CA', { timeZone: 'America/Fortaleza' });
   const dateInCeara = (iso: string) => new Date(iso).toLocaleDateString('en-CA', { timeZone: 'America/Fortaleza' });
   const encounters = bookings
@@ -160,7 +168,7 @@ export default async function ProgressPage() {
                       {meetingSkills.length ? (
                         <ul className="mt-3 grid gap-2">
                           {meetingSkills.map((skill) => {
-                            const step = KITE_STEPS.find((item) => item.id === skill.step_number);
+                            const step = KITE_CURRICULA[booking.level].find((item) => item.id === skill.step_number);
                             return step ? (
                               <li key={step.id} className="flex gap-2 text-[12px] text-ink">
                                 <Icon name="check" className="!h-4 !w-4 shrink-0 text-brand" />
@@ -202,16 +210,25 @@ export default async function ProgressPage() {
             <Icon name="flag" className="!h-7 !w-7 text-brand" />
             <div>
               <h2 className="text-[20px] font-bold text-ink">Seu caminho no kite</h2>
-              <p className="text-[13px] text-muted">As etapas que você vai trabalhar com seu instrutor.</p>
+              <div className="mt-2"><KiteLevelMedal level={currentLevel}
+                assessed={levelRecord.assessed !== null}/></div>
+              <p className="mt-2 text-[13px] text-muted">
+                {KITE_LEVEL_BADGES[currentLevel].detail}. As etapas abaixo correspondem
+                ao seu nível atual; o instrutor adapta a aula às condições.
+              </p>
             </div>
           </div>
+          <p className="mt-3 text-[12px] text-label">
+            Etapas avançadas podem representar especializações distintas;
+            não é obrigatório dominar todas para seguir uma modalidade.
+          </p>
           <p className="mt-3 text-[12px] text-label">
             As etapas são registradas pelo instrutor. Praticada indica desenvolvimento;
             concluída indica que a habilidade já foi alcançada.
           </p>
           <ol className="relative mt-5">
-            {KITE_STEPS.map((step, index) => {
-              const state = kiteStageStatus(allSkills, step.id);
+            {currentCurriculum.map((step, index) => {
+              const state = kiteStageStatus(currentSkills, step.id);
               return (
                 <li key={step.id} className="relative flex gap-4 pb-5 last:pb-0">
                   {index < KITE_STEPS.length - 1 ? (
