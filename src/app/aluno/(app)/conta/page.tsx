@@ -8,6 +8,7 @@ import { ProfileEditor } from '@/components/student/profile-editor';
 import { KiteLevelMedal } from '@/components/student/kite-level-medal';
 import { KiteLevelEditor } from '@/components/student/kite-level-editor';
 import { getStudentKiteLevel } from '@/lib/student-kite-level';
+import { KITE_LEVEL_BADGES } from '@/lib/kite-steps';
 import { ProfilePhotoPicker } from '@/components/profile-photo-picker';
 import { StudentHero, SunsetEmpty } from '@/components/student/sunset';
 import { ButtonLink } from '@/components/ui';
@@ -68,15 +69,23 @@ export default async function AccountPage() {
               enabled={avatarReady}
             />
             <div className="min-w-0 w-full flex-1">
-              <p className="break-words text-[19px] font-bold leading-tight text-ink">{viewer.fullName?.trim() || 'Aluno'}</p>
-              <div className="mt-2 flex flex-wrap items-center gap-2">
-                <KiteLevelMedal level={kiteLevel.effective} assessed={kiteLevel.assessed !== null} />
-                <span className="text-[11px] text-muted">
-                  {kiteLevel.assessed !== null ? 'Avaliado por instrutor' : 'Nível informado'}
-                </span>
+              <div className="flex flex-wrap items-center justify-center gap-x-2 gap-y-1 sm:justify-start">
+                <p className="min-w-0 break-words text-[21px] font-extrabold leading-tight text-ink">
+                  {viewer.fullName?.trim() || 'Aluno'}
+                </p>
+                <KiteLevelMedal
+                  level={kiteLevel.effective}
+                  assessed={kiteLevel.assessed !== null}
+                  compact
+                />
               </div>
-              <p className="mt-1 text-[13px] text-muted">{viewer.language} · Aluno</p>
-              <p className="mt-1 text-[12px] leading-relaxed text-label">{avatarUrl ? 'Use o + para trocar a foto.' : 'Toque no + para adicionar uma foto.'}</p>
+              <p className={
+                'mt-1 text-[14px] font-semibold ' +
+                (kiteLevel.effective === 'first_time' ? 'text-[#f8bc82]' :
+                  kiteLevel.effective === 'returning' ? 'text-[#d5e4f2]' : 'text-[#f8dd84]')
+              }>
+                {KITE_LEVEL_BADGES[kiteLevel.effective].label} · {KITE_LEVEL_BADGES[kiteLevel.effective].metal}
+              </p>
             </div>
             <div className="w-full sm:w-auto sm:basis-full">
               <ProfileEditor fullName={viewer.fullName} language={viewer.language} />
