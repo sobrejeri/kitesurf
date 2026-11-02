@@ -14,6 +14,8 @@ import { BOOKING_STATUS_LABELS, LEVEL_LABELS, MEETING_STATUS_LABELS, getBookingF
 import { formatDateLong, formatMinutes, formatMoney, formatTime } from '@/lib/format';
 import { getStudentBookingInstructorAvatar } from '@/lib/student-booking-avatar';
 import { createSupabaseServerClient } from '@/lib/supabase/server';
+import { listMeetingChanges } from '@/lib/meeting-changes';
+import { MeetingChangePanel } from '@/components/meeting-change-panel';
 
 export const metadata: Metadata = { title: 'Sua reserva' };
 
@@ -35,6 +37,7 @@ export default async function BookingPage({ params }: { params: Promise<{ id: st
       meeting_point: {title:string;details:string;latitude:number;longitude:number}|null
     }>();
   const meetingPoint = pointRecord?.meeting_point ?? null;
+  const changeRequests = await listMeetingChanges(booking.id);
   const rated = booking.status === 'completed' ? await db.from('instructor_ratings')
     .select('stars,comment').eq('booking_id',booking.id).eq('student_id',viewer.id)
     .maybeSingle<{stars:number;comment:string}>() : null;
@@ -161,12 +164,21 @@ export default async function BookingPage({ params }: { params: Promise<{ id: st
             <h3 className="mt-6 text-[14px]">Encontros</h3>
             <ul className="mt-3 grid gap-2">
               {booking.booking_meetings.map((meeting) => (
-                <li key={meeting.id} className="flex items-center justify-between gap-3 rounded-search border border-line px-4 py-3 text-[12px]">
-                  <span>
-                    <strong className="block font-[550]">{formatDateLong(meeting.starts_at)} · {formatTime(meeting.starts_at)}</strong>
-                    <span className="text-muted">{formatMinutes(meeting.minutes)}{meeting.status === 'done' ? ` · ${formatMinutes(meeting.done_minutes)} realizados` : ''}</span>
-                  </span>
-                  <Badge tone={meeting.status === 'done' ? 'quiet' : 'brand'}>{MEETING_STATUS_LABELS[meeting.status]}</Badge>
+                <li key={meeting.id} className="rounded-search border border-line px-4 py-3 text-[12px]">
+                  <div className="flex items-center justify-between gap-3">
+                    <span>
+                      <strong className="block font-[550]">{formatDateLong(meeting.starts_at)} · {formatTime(meeting.starts_at)}</strong>
+                      <span className="text-muted">{formatMinutes(meeting.minutes)}{meeting.status === 'done' ? ` · ${formatMinutes(meeting.done_minutes)} realizados` : ''}</span>
+                    </span>
+                    <Badge tone={meeting.status === 'done' ? 'quiet' : 'brand'}>{MEETING_STATUS_LABELS[meeting.status]}</Badge>
+                  </div>
+                  {booking.status==='confirmed' && meeting.status==='scheduled' ? (
+                    <MeetingChangePanel
+                      bookingId={booking.id} meeting={meeting}
+                      viewerId={viewer.id} bookingStatus={booking.status}
+                      changes={changeRequests}
+                    />
+                  ) : null}
                 </li>
               ))}
             </ul>
