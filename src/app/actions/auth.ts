@@ -65,6 +65,7 @@ const SignUp = z.strictObject({
   password: z.string().min(8).max(200),
   // Admin is not on this list on purpose: it is never self-assigned.
   role: z.enum(['student', 'instructor', 'partner']),
+  kiteLevel: z.enum(['first_time', 'returning', 'improving']).optional(),
 });
 
 export async function signUp(_prev: ActionState, form: FormData): Promise<ActionState> {
@@ -73,8 +74,12 @@ export async function signUp(_prev: ActionState, form: FormData): Promise<Action
     email: form.get('email'),
     password: form.get('password'),
     role: form.get('role'),
+    kiteLevel: form.get('kiteLevel') || undefined,
   });
-  if (!parsed.success) return { error: 'Confira nome, e-mail e uma senha de pelo menos 8 caracteres.' };
+  if (!parsed.success) return { error: 'Confira nome, e-mail, senha e nível de kitesurf.' };
+  if (parsed.data.role === 'student' && !parsed.data.kiteLevel) {
+    return { error: 'Escolha seu nível no kitesurf para criar a conta.' };
+  }
   const area = areaForRole(parsed.data.role);
 
   const supabase = await createSupabaseServerClient(area);
@@ -82,7 +87,9 @@ export async function signUp(_prev: ActionState, form: FormData): Promise<Action
     email: parsed.data.email,
     password: parsed.data.password,
     options: {
-      data: { full_name: parsed.data.fullName, role: parsed.data.role },
+      data: { full_name: parsed.data.fullName, role: parsed.data.role,
+        ...(parsed.data.role === 'student' ? { kite_level: parsed.data.kiteLevel } : {}),
+      },
       // The confirmation link signs the user in to the app they signed up in.
       emailRedirectTo: `${SITE_URL}/auth/confirm?area=${area}`,
     },
