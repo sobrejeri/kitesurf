@@ -59,12 +59,21 @@ function BookingPreview({
       aria-current={expanded ? 'page' : undefined}
       className={
         'press block rounded-[18px] border p-4 transition-colors ' +
-        (expanded ? 'border-brand bg-brand-tint' : 'border-line bg-surface')
+        (expanded
+          ? 'border-[#00e3ee] bg-[#07516c] shadow-[0_4px_18px_#00182777]'
+          : 'border-line bg-surface')
       }
     >
       <div className="flex items-start justify-between gap-2">
         <div className="min-w-0">
-          <p className="truncate text-[15px] font-bold text-ink">{booking.code}</p>
+          <div className="flex flex-wrap items-center gap-2">
+            <p className="min-w-0 truncate text-[15px] font-bold text-ink">{booking.code}</p>
+            {expanded ? (
+              <span className="rounded-full border border-[#00e3ee]/60 bg-[#00e3ee]/15 px-2 py-0.5 text-[10px] font-bold text-[#9af8fb]">
+                Detalhes abertos
+              </span>
+            ) : null}
+          </div>
           <p className="mt-1 text-[12px] text-label">
             {booking.beach?.name ?? 'Praia'} · {KITE_LEVEL_BADGES[booking.level].label}
           </p>
@@ -190,13 +199,16 @@ export default async function ProgressPage({
           <div className="mt-4 grid gap-3">
             {bookings.map((booking) => (
               <div id={`reserva-${booking.id}`} key={booking.id}
-                className="grid gap-2 scroll-mt-28">
+                className={'grid gap-2 scroll-mt-28 rounded-[22px] transition-colors ' +
+                  (selected?.id === booking.id
+                    ? 'bg-[#064862] p-1.5 ring-2 ring-[#00e3ee]/80 shadow-[0_12px_30px_#000e206e]'
+                    : '')}>
                 <BookingPreview booking={booking}
                   expanded={selected?.id === booking.id} />
                 {selected?.id === booking.id ? (
                   <>
         <section id="detalhes-reserva"
-          className="scroll-mt-5 rounded-[22px] border border-line bg-surface p-4">
+          className="scroll-mt-5 rounded-[20px] border border-[#12809a] bg-[#053954] p-4">
           <div className="flex flex-wrap items-center justify-between gap-2">
             <p className="text-[12px] font-semibold uppercase tracking-[0.08em] text-brand">
               Detalhes da reserva
