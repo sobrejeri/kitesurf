@@ -27,13 +27,12 @@ export default async function RunLessonPage() {
   const cearaDay = (iso: string) => new Date(iso).toLocaleDateString('en-CA', { timeZone: 'America/Fortaleza' });
   const completed = bookings
     .filter((booking) => booking.status === 'completed' && !reviews.assessments.has(booking.id))
-    .map((booking) => ({
-      booking,
-      meeting: [...booking.booking_meetings]
+    .flatMap((booking) => {
+      const meeting = [...booking.booking_meetings]
         .filter((m) => m.status === 'done')
-        .sort((a, b) => b.starts_at.localeCompare(a.starts_at))[0],
-    }))
-    .filter((row) => row.meeting !== undefined)
+        .sort((a, b) => b.starts_at.localeCompare(a.starts_at))[0];
+      return meeting ? [{ booking, meeting }] : [];
+    })
     .sort((a, b) => b.meeting.starts_at.localeCompare(a.meeting.starts_at));
   const open = bookings
     .filter((booking) => booking.status === 'confirmed')
