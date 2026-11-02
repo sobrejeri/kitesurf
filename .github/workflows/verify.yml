@@ -23,6 +23,8 @@ jobs:
       - run: pnpm install --frozen-lockfile
       - run: pnpm typecheck
       - run: pnpm lint
+      - name: Test Admin booking progress calculations
+        run: node --experimental-strip-types scripts/test-booking-progress.mjs
       - name: Check PostgREST relationship ambiguity
         run: node scripts/verify-postgrest-relationships.mjs
       - run: pnpm build
