@@ -199,3 +199,230 @@ begin
   return v_booking_id;
 end $$;
 
+
+-- Request a later day/time, or student-initiated cancellation.
+-- Both operations require the original class to be >=72h away.
+CREATE OR REPLACE FUNCTION public.request_meeting_change(
+ p_meeting_id uuid,p_new_start timestamptz,p_reason text
+) RETURNS uuid LANGUAGE plpgsql SECURITY DEFINER SET search_path='' AS $$
+DECLARE
+ v_user uuid:=public.require_role(ARRAY['student','instructor']::public.app_role[]);
+ b public.bookings; m public.booking_meetings;
+ v_kind text:=CASE WHEN p_new_start IS NULL THEN 'cancel' ELSE 'reschedule' END;
+ v_responder uuid; v_id uuid;
+BEGIN
+ SELECT bk.* INTO b FROM public.bookings bk
+ JOIN public.booking_meetings bm ON bm.booking_id=bk.id
+ WHERE bm.id=p_meeting_id;
+ IF b.id IS NULL OR b.status<>'confirmed' OR b.reassignment_pending
+   OR v_user NOT IN (b.student_id,b.instructor_id)
+ THEN RAISE EXCEPTION 'Confirmed meeting of this user not found'
+   USING errcode='42501'; END IF;
+ PERFORM 1 FROM public.instructors WHERE id=b.instructor_id FOR UPDATE;
+ SELECT * INTO b FROM public.bookings WHERE id=b.id FOR UPDATE;
+ SELECT * INTO m FROM public.booking_meetings
+   WHERE id=p_meeting_id AND booking_id=b.id FOR UPDATE;
+ IF b.status<>'confirmed' OR b.reassignment_pending OR m.status<>'scheduled' THEN
+   RAISE EXCEPTION 'Only scheduled confirmed meetings may be changed'
+   USING errcode='55000'; END IF;
+ IF now()>m.starts_at-interval '72 hours' THEN
+   RAISE EXCEPTION 'Meeting change must be requested 72 hours before'
+   USING errcode='22023'; END IF;
+ IF p_reason IS NULL OR length(trim(p_reason)) NOT BETWEEN 8 AND 500 THEN
+   RAISE EXCEPTION 'Change reason must have 8 to 500 characters'
+   USING errcode='22023'; END IF;
+ IF v_kind='cancel' AND v_user<>b.student_id THEN
+   RAISE EXCEPTION 'Instructor must withdraw instead of cancelling client booking'
+   USING errcode='42501'; END IF;
+ IF v_kind='reschedule' THEN
+   IF p_new_start<=m.starts_at OR p_new_start<now()+interval '72 hours'
+     OR p_new_start>now()+interval '90 days' THEN
+     RAISE EXCEPTION 'New date must be later than original and 72 hours ahead'
+     USING errcode='22023'; END IF;
+   IF EXISTS(
+     SELECT 1 FROM public.booking_meetings other
+     WHERE other.booking_id=b.id AND other.id<>m.id
+       AND (other.position<m.position AND
+         other.starts_at+make_interval(mins=>other.minutes)>p_new_start
+       OR other.position>m.position AND
+         other.starts_at<p_new_start+make_interval(mins=>m.minutes))
+   ) THEN RAISE EXCEPTION 'New meeting time changes booking order'
+     USING errcode='55000'; END IF;
+   IF NOT public.can_move_meeting(b.instructor_id,m.id,p_new_start,m.minutes) THEN
+     RAISE EXCEPTION 'Instructor unavailable for proposed meeting'
+     USING errcode='55000'; END IF;
+ END IF;
+ IF EXISTS(SELECT 1 FROM public.meeting_change_requests c
+   WHERE c.booking_id=b.id AND c.status IN ('pending','action_required')) THEN
+   RAISE EXCEPTION 'Another change request is waiting for approval'
+   USING errcode='55000'; END IF;
+ v_responder:=CASE WHEN v_user=b.student_id THEN b.instructor_id ELSE b.student_id END;
+ INSERT INTO public.meeting_change_requests(
+   booking_id,meeting_id,requester_id,responder_id,
+   original_starts_at,proposed_starts_at,reason,kind,expires_at
+ ) VALUES(
+   b.id,m.id,v_user,v_responder,m.starts_at,p_new_start,trim(p_reason),
+   v_kind,now()+interval '12 hours'
+ ) RETURNING id INTO v_id;
+ INSERT INTO public.app_notifications(recipient_id,category,title,body,href)
+ VALUES(v_responder,'booking','Solicitação de alteração de reserva',
+   'Responda em até 12 horas. Sem resposta, o aluno poderá cancelar ou buscar outro instrutor.',
+   CASE WHEN v_responder=b.student_id
+    THEN '/aluno/reserva/'||b.id::text
+    ELSE '/instrutor/aula?aba=proximas&aula='||m.id::text END);
+ PERFORM public.write_audit('meeting.change_requested','booking_meeting',m.id::text,
+   jsonb_build_object('starts_at',m.starts_at),
+   jsonb_build_object('kind',v_kind,'proposed_starts_at',p_new_start,'expires_at',now()+interval '12 hours'),
+   trim(p_reason));
+ RETURN v_id;
+END $$;
+
+CREATE OR REPLACE FUNCTION public.respond_meeting_change(
+ p_request_id uuid,p_accept boolean
+) RETURNS void LANGUAGE plpgsql SECURITY DEFINER SET search_path='' AS $$
+DECLARE
+ v_user uuid:=public.require_role(ARRAY['student','instructor']::public.app_role[]);
+ c public.meeting_change_requests; b public.bookings; m public.booking_meetings;
+BEGIN
+ SELECT * INTO c FROM public.meeting_change_requests WHERE id=p_request_id;
+ IF c.id IS NULL OR c.responder_id<>v_user THEN
+   RAISE EXCEPTION 'Meeting change not found for this user' USING errcode='42501';
+ END IF;
+ SELECT * INTO b FROM public.bookings WHERE id=c.booking_id;
+ PERFORM 1 FROM public.instructors WHERE id=b.instructor_id FOR UPDATE;
+ SELECT * INTO b FROM public.bookings WHERE id=c.booking_id FOR UPDATE;
+ SELECT * INTO c FROM public.meeting_change_requests WHERE id=p_request_id FOR UPDATE;
+ SELECT * INTO m FROM public.booking_meetings WHERE id=c.meeting_id FOR UPDATE;
+ IF c.status<>'pending' THEN
+   RAISE EXCEPTION 'Meeting change already decided' USING errcode='55000'; END IF;
+ IF now()>=c.expires_at THEN
+   RAISE EXCEPTION 'Meeting change response deadline expired' USING errcode='55000'; END IF;
+ IF b.status<>'confirmed' OR b.reassignment_pending OR m.status<>'scheduled'
+   OR m.starts_at<>c.original_starts_at THEN
+   RAISE EXCEPTION 'Meeting no longer eligible for change' USING errcode='55000'; END IF;
+ IF p_accept IS NULL THEN
+   RAISE EXCEPTION 'Choose accept or reject' USING errcode='22023'; END IF;
+ IF p_accept AND c.kind='reschedule' THEN
+   IF c.proposed_starts_at<=m.starts_at
+      OR c.proposed_starts_at<now()+interval '24 hours'
+      OR NOT public.can_move_meeting(
+       b.instructor_id,m.id,c.proposed_starts_at,m.minutes)
+      OR EXISTS(SELECT 1 FROM public.booking_meetings other
+        WHERE other.booking_id=b.id AND other.id<>m.id
+          AND (other.position<m.position AND
+            other.starts_at+make_interval(mins=>other.minutes)>c.proposed_starts_at
+          OR other.position>m.position AND
+            other.starts_at<c.proposed_starts_at+make_interval(mins=>m.minutes)))
+   THEN RAISE EXCEPTION 'Proposed time is no longer available'
+      USING errcode='55000'; END IF;
+   UPDATE public.booking_meetings SET starts_at=c.proposed_starts_at WHERE id=m.id;
+ ELSIF p_accept AND c.kind='cancel' THEN
+   IF EXISTS(SELECT 1 FROM public.booking_meetings
+     WHERE booking_id=b.id AND status='in_progress') THEN
+     RAISE EXCEPTION 'Finish ongoing lesson before cancellation'
+     USING errcode='55000'; END IF;
+   UPDATE public.booking_meetings SET status='cancelled'
+     WHERE booking_id=b.id AND status='scheduled';
+   UPDATE public.bookings SET status='cancelled',cancelled_at=now()
+     WHERE id=b.id;
+ END IF;
+ UPDATE public.meeting_change_requests
+   SET status=CASE WHEN p_accept THEN 'accepted' ELSE 'rejected' END,
+       responded_at=now() WHERE id=c.id;
+ INSERT INTO public.app_notifications(recipient_id,category,title,body,href)
+ VALUES(c.requester_id,'booking',
+   CASE WHEN p_accept THEN 'Solicitação aceita' ELSE 'Solicitação recusada' END,
+   CASE WHEN p_accept AND c.kind='cancel'
+       THEN 'A reserva foi cancelada. Valores pagos precisam de análise de reembolso.'
+     WHEN p_accept THEN 'Novo dia ou horário aprovado. Consulte a agenda atualizada.'
+     ELSE 'A alteração foi recusada. O horário original permanece.' END,
+   CASE WHEN c.requester_id=b.student_id
+     THEN '/aluno/reserva/'||b.id::text
+     ELSE '/instrutor/aula?aba=proximas&aula='||m.id::text END);
+ PERFORM public.write_audit('meeting.change_responded','booking_meeting',m.id::text,
+   jsonb_build_object('kind',c.kind,'original_starts_at',c.original_starts_at),
+   jsonb_build_object('accepted',p_accept,'new_start',c.proposed_starts_at));
+END $$;
+
+-- Student can choose cancellation or a queue transfer during the extra 12h.
+CREATE FUNCTION public.choose_meeting_change_outcome(
+ p_request_id uuid,p_choice text
+) RETURNS uuid LANGUAGE plpgsql SECURITY DEFINER SET search_path='' AS $$
+DECLARE
+ v_user uuid:=public.require_role(ARRAY['student']::public.app_role[]);
+ c public.meeting_change_requests; b public.bookings;
+ v_request uuid;
+BEGIN
+ SELECT * INTO c FROM public.meeting_change_requests WHERE id=p_request_id;
+ IF c.id IS NULL THEN RAISE EXCEPTION 'Meeting change not found'
+   USING errcode='P0002'; END IF;
+ SELECT * INTO b FROM public.bookings WHERE id=c.booking_id FOR UPDATE;
+ SELECT * INTO c FROM public.meeting_change_requests WHERE id=c.id FOR UPDATE;
+ IF b.student_id<>v_user OR b.status<>'confirmed' OR b.reassignment_pending
+   OR c.status<>'action_required'
+   OR now()>=c.choice_until
+   OR p_choice NOT IN('cancel','new_instructor')
+ THEN RAISE EXCEPTION 'Student decision window unavailable'
+   USING errcode='55000'; END IF;
+ IF EXISTS(SELECT 1 FROM public.booking_meetings
+   WHERE booking_id=b.id AND status='in_progress') THEN
+   RAISE EXCEPTION 'Finish ongoing lesson before cancellation or reassignment'
+   USING errcode='55000'; END IF;
+ IF p_choice='cancel' THEN
+   UPDATE public.booking_meetings SET status='cancelled'
+     WHERE booking_id=b.id AND status='scheduled';
+   UPDATE public.bookings SET status='cancelled',cancelled_at=now() WHERE id=b.id;
+   UPDATE public.meeting_change_requests
+     SET status='cancelled_by_student',responded_at=now() WHERE id=c.id;
+ ELSE
+   UPDATE public.meeting_change_requests
+     SET status='sent_to_queue',responded_at=now() WHERE id=c.id;
+   v_request:=public.requeue_confirmed_booking(b.id,
+      'Student chose another instructor after an unanswered request');
+ END IF;
+ PERFORM public.write_audit('meeting.student_decision','booking',b.id::text,
+   jsonb_build_object('request',c.id),
+   jsonb_build_object('choice',p_choice,'new_request',v_request),
+   CASE WHEN p_choice='cancel' THEN 'Revisar reembolso' ELSE NULL END);
+ RETURN v_request;
+END $$;
+
+-- Instructor only leaves the reservation; the booking remains confirmed and
+-- goes to the next available instructor without asking the student to pay again.
+CREATE FUNCTION public.instructor_leave_booking(
+ p_booking_id uuid,p_reason text
+) RETURNS uuid LANGUAGE plpgsql SECURITY DEFINER SET search_path='' AS $$
+DECLARE
+ v_user uuid:=public.require_role(ARRAY['instructor']::public.app_role[]);
+ b public.bookings; v_first timestamptz; v_request uuid;
+BEGIN
+ SELECT * INTO b FROM public.bookings WHERE id=p_booking_id FOR UPDATE;
+ IF b.id IS NULL OR b.instructor_id<>v_user
+   OR b.status<>'confirmed' OR b.reassignment_pending THEN
+   RAISE EXCEPTION 'Only assigned instructor can withdraw'
+     USING errcode='42501'; END IF;
+ IF p_reason IS NULL OR length(trim(p_reason)) NOT BETWEEN 8 AND 500 THEN
+   RAISE EXCEPTION 'Change reason must have 8 to 500 characters'
+     USING errcode='22023'; END IF;
+ IF EXISTS(SELECT 1 FROM public.booking_meetings
+   WHERE booking_id=b.id AND status='in_progress') THEN
+   RAISE EXCEPTION 'Finish ongoing lesson before changing instructor'
+     USING errcode='55000'; END IF;
+ SELECT min(starts_at) INTO v_first FROM public.booking_meetings
+   WHERE booking_id=b.id AND status='scheduled';
+ IF v_first IS NULL OR v_first<now()+interval '72 hours' THEN
+   RAISE EXCEPTION 'Meeting change must be requested 72 hours before'
+     USING errcode='22023'; END IF;
+ UPDATE public.meeting_change_requests SET status='rejected',responded_at=now()
+   WHERE booking_id=b.id AND status='pending';
+ v_request:=public.requeue_confirmed_booking(b.id,
+   'Instructor withdrew: '||trim(p_reason));
+ RETURN v_request;
+END $$;
+REVOKE ALL ON FUNCTION public.choose_meeting_change_outcome(uuid,text),
+ public.instructor_leave_booking(uuid,text)
+ FROM PUBLIC,anon,authenticated;
+GRANT EXECUTE ON FUNCTION public.choose_meeting_change_outcome(uuid,text),
+ public.instructor_leave_booking(uuid,text)
+ TO authenticated;
+
