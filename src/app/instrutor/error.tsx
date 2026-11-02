@@ -15,6 +15,10 @@ export default function InstructorAreaError({
     console.error('[instructor-area] Unable to render', error);
   }, [error]);
 
+  const diagnosticCode = error.digest && /^[A-Za-z0-9@_-]{1,64}$/.test(error.digest)
+    ? error.digest
+    : null;
+
   return (
     <main className="theme-sunset min-h-screen bg-canvas px-4 py-16 text-ink">
       <section role="alert" className="mx-auto max-w-lg rounded-[26px] border border-line bg-surface p-7 shadow-card">
@@ -30,6 +34,11 @@ export default function InstructorAreaError({
         </button>
         <a href="/instrutor/documentos" className="mt-4 block text-sm font-semibold text-brand underline">Conferir meus documentos</a>
         <a href="/instrutor/central" className="mt-3 block text-sm font-semibold text-brand underline">Abrir central do instrutor</a>
+        {diagnosticCode ? (
+          <p className="mt-5 break-all border-t border-line pt-4 text-[11px] text-muted">
+            Código para suporte: <code>{diagnosticCode}</code>
+          </p>
+        ) : null}
       </section>
     </main>
   );
