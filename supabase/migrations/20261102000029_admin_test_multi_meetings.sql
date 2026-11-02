@@ -19,7 +19,6 @@ DECLARE
   v_booking_id uuid;
   v_code text;
   v_meeting jsonb;
-  v_previous jsonb;
   v_start timestamptz;
   v_end timestamptz;
   v_hours integer;
@@ -89,34 +88,29 @@ BEGIN
         USING errcode='22023';
     END IF;
 
-    IF EXISTS (
-      SELECT 1 FROM jsonb_array_elements(p_meetings) other
-      WHERE (other.value->>'starts_at') IS NOT NULL
-        AND other.value <> v_meeting
-        AND (other.value->>'starts_at') ~
-          '^[0-9]{4}-[0-9]{2}-[0-9]{2}T[0-9]{2}:[0-9]{2}:[0-9]{2}-03:00$'
-        AND (other.value->>'hours') ~ '^[1-8]$'
-        AND tstzrange(v_start,v_end,'[)') &&
-          tstzrange(
-            (other.value->>'starts_at')::timestamptz,
-            (other.value->>'starts_at')::timestamptz
-              + make_interval(hours => (other.value->>'hours')::integer),
-            '[)'
-          )
-    ) THEN
-      RAISE EXCEPTION 'Demo meetings cannot overlap each other'
-        USING errcode='55000';
-    END IF;
+
   END LOOP;
 
-  -- Exact duplicate JSON objects are also overlaps (they have equality).
-  IF (
-    SELECT count(*) FROM jsonb_array_elements(p_meetings)
-  ) <> (
-    SELECT count(DISTINCT item.value)
-    FROM jsonb_array_elements(p_meetings) AS item
+  -- Pairwise overlapping checks after all payload entries have been validated.
+  -- Using ordinality catches both identical meetings and partially overlapping.
+  IF EXISTS (
+    SELECT 1
+    FROM jsonb_array_elements(p_meetings) WITH ORDINALITY a(item, pos)
+    JOIN jsonb_array_elements(p_meetings) WITH ORDINALITY b(item, pos)
+      ON a.pos < b.pos
+    WHERE tstzrange(
+        (a.item->>'starts_at')::timestamptz,
+        (a.item->>'starts_at')::timestamptz
+          + make_interval(hours => (a.item->>'hours')::integer),
+        '[)'
+      ) && tstzrange(
+        (b.item->>'starts_at')::timestamptz,
+        (b.item->>'starts_at')::timestamptz
+          + make_interval(hours => (b.item->>'hours')::integer),
+        '[)'
+      )
   ) THEN
-    RAISE EXCEPTION 'Duplicate demo meetings'
+    RAISE EXCEPTION 'Demo meetings cannot overlap each other'
       USING errcode='55000';
   END IF;
 
