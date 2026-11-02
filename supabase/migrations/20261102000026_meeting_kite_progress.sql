@@ -165,7 +165,7 @@ CREATE OR REPLACE FUNCTION public.start_ordered_meeting(
   p_meeting_id uuid, p_presence_code text
 ) RETURNS void
 LANGUAGE plpgsql SECURITY DEFINER SET search_path = ''
-AS $
+AS $ordered$
 DECLARE
   v_instructor uuid := public.require_role(ARRAY['instructor']::public.app_role[]);
   v_meeting public.booking_meetings;
@@ -197,7 +197,7 @@ BEGIN
   END IF;
   PERFORM public.start_meeting(p_meeting_id,p_presence_code);
 END;
-$;
+$ordered$;
 REVOKE ALL ON FUNCTION public.start_ordered_meeting(uuid,text) FROM PUBLIC, anon;
 GRANT EXECUTE ON FUNCTION public.start_ordered_meeting(uuid,text) TO authenticated;
 
