@@ -161,7 +161,7 @@ export default async function RunLessonPage({
               </Link>
               {expanded && activeTab !== 'concluidas' ? (
                 <>
-      {selected && activeTab !== 'concluidas' ? (() => {
+      {selected ? (() => {
         const { booking, meeting } = selected;
         const canStart = mayStartInstructorLesson(selected, todayInCeara, cearaDay);
         const studentName = booking.student?.full_name?.trim() || 'Aluno';
