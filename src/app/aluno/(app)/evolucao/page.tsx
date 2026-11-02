@@ -6,7 +6,6 @@ import { StudentHero } from '@/components/student/sunset';
 import { KiteLevelMedal } from '@/components/student/kite-level-medal';
 import { requireRole } from '@/lib/auth';
 import {
-  BOOKING_STATUS_LABELS,
   listBookingsForStudent,
   type StudentBooking,
 } from '@/lib/data';
@@ -16,7 +15,7 @@ import {
   selectedStudentBooking,
 } from '@/lib/booking-cycle';
 import { getBookingProgress } from '@/lib/booking-progress';
-import { getBookingLevelAssessments } from '@/lib/booking-level-assessments';
+import { getBookingLevelAssessments, type BookingLevelAssessment } from '@/lib/booking-level-assessments';
 import { getMeetingKiteSkills } from '@/lib/meeting-skills';
 import { formatDateLong, formatMinutes, formatTime } from '@/lib/format';
 import { KITE_CURRICULA, KITE_LEVEL_BADGES, kiteStageStatus } from '@/lib/kite-steps';
@@ -132,7 +131,7 @@ export default async function ProgressPage({
     ])
     : [
       { ready: true, rows: [] },
-      { ready: true, assessments: new Map() },
+      { ready: true, assessments: new Map<string, BookingLevelAssessment>() },
     ];
   const assessment = selected ? reviews.assessments.get(selected.id) : undefined;
   const registeredSkills = skills.rows;
