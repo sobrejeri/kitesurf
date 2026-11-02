@@ -295,7 +295,9 @@ BEGIN
     RAISE EXCEPTION 'Change reason must have 8 to 500 characters'
       USING errcode='22023'; END IF;
   IF EXISTS(SELECT 1 FROM public.meeting_change_requests
-     WHERE booking_id=b.id AND status='pending') THEN
+     WHERE booking_id=b.id AND (status='pending'
+       OR (resolution IS NULL AND choice_expires_at IS NOT NULL
+         AND choice_expires_at>now()))) THEN
     RAISE EXCEPTION 'Another change request is waiting for approval'
       USING errcode='55000'; END IF;
   IF EXISTS(SELECT 1 FROM public.booking_meetings other
