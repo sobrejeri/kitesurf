@@ -9,20 +9,31 @@ import { requireRole } from '@/lib/auth';
 import { LEVEL_LABELS, MEETING_STATUS_LABELS, listBookingsForInstructor } from '@/lib/data';
 import { formatDateLong, formatMinutes, formatTime } from '@/lib/format';
 import { getInstructorStudentAvatarUrls } from '@/lib/instructor-student-photos';
-import { KITE_CURRICULA } from '@/lib/kite-steps';
+import { KITE_CURRICULA, KITE_LEVEL_BADGES } from '@/lib/kite-steps';
+import { findCompletedInstructorMeeting, listCompletedInstructorMeetings } from '@/lib/instructor-completed-meetings';
 import { getMeetingKiteSkills } from '@/lib/meeting-skills';
 import { getBookingLevelAssessments } from '@/lib/booking-level-assessments';
 
 export const metadata: Metadata = { title: 'Realizar e registrar aula' };
 
-export default async function RunLessonPage() {
+export default async function RunLessonPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ aula?: string }>;
+}) {
   const viewer = await requireRole(['instructor'], '/instrutor/aula');
-  const [bookings, studentPhotos, skills] = await Promise.all([
+  const [bookings, studentPhotos, params] = await Promise.all([
     listBookingsForInstructor(viewer.id),
     getInstructorStudentAvatarUrls(),
-    getMeetingKiteSkills([]),
+    searchParams,
   ]);
-  const reviews = await getBookingLevelAssessments(bookings.map((b) => b.id));
+  // The student/meeting ID is resolved only from this authenticated instructor's bookings.
+  const completedHistory = listCompletedInstructorMeetings(bookings);
+  const selectedHistory = findCompletedInstructorMeeting(completedHistory, params.aula);
+  const [skills, reviews] = await Promise.all([
+    getMeetingKiteSkills(selectedHistory ? [selectedHistory.meeting.id] : []),
+    getBookingLevelAssessments(bookings.map((b) => b.id)),
+  ]);
   const todayInCeara = new Date().toLocaleDateString('en-CA', { timeZone: 'America/Fortaleza' });
   const cearaDay = (iso: string) => new Date(iso).toLocaleDateString('en-CA', { timeZone: 'America/Fortaleza' });
   const completed = bookings
@@ -44,11 +55,6 @@ export default async function RunLessonPage() {
     || cearaDay(meeting.starts_at) <= todayInCeara);
   const future = open.filter(({ meeting }) => meeting.status === 'scheduled'
     && cearaDay(meeting.starts_at) > todayInCeara);
-  const completedHistory = bookings.flatMap((booking) =>
-    booking.booking_meetings.filter((meeting) => meeting.status === 'done')
-      .map((meeting) => ({ booking, meeting })))
-    .sort((a, b) => b.meeting.starts_at.localeCompare(a.meeting.starts_at));
-
   return (
     <>
       <h1 className="text-[30px] font-bold leading-tight tracking-[-0.8px] text-ink md:text-[34px]">Registrar aula</h1>
@@ -221,26 +227,158 @@ export default async function RunLessonPage() {
           </section>
         ) : null}
         {completedHistory.length ? (
-          <details className="mt-2 rounded-[20px] border border-line bg-surface p-4">
+          <details id="historico-aulas"
+            className="mt-2 scroll-mt-5 rounded-[20px] border border-line bg-surface p-4"
+            open={Boolean(selectedHistory)}>
             <summary className="cursor-pointer text-[16px] font-bold text-ink">
               Histórico de encontros realizados · {completedHistory.length}
             </summary>
+            <p className="mt-2 text-[12px] text-muted">
+              Toque em Ver detalhes para consultar os registros de cada aula finalizada.
+            </p>
             <ul className="mt-3 divide-y divide-line">
-              {completedHistory.map(({ booking, meeting }) => (
-                <li key={meeting.id} className="py-3">
-                  <p className="text-[13px] font-semibold text-ink">
-                    {booking.student?.full_name ?? 'Aluno'} · {booking.code}
-                  </p>
-                  <p className="mt-1 text-[12px] text-muted">
-                    {formatDateLong(meeting.starts_at)} · {formatMinutes(meeting.done_minutes)} realizados
-                    {' · '}Encontro {meeting.position} de {booking.booking_meetings.length}
-                  </p>
-                  <span className="mt-1 inline-block text-[11px] font-semibold text-brand">
-                    {reviews.assessments.has(booking.id) ? 'Nível avaliado' : 'Registro concluído'}
-                  </span>
-                </li>
-              ))}
+              {completedHistory.map(({ booking, meeting }) => {
+                const selected = selectedHistory?.meeting.id === meeting.id;
+                const studentName = booking.student?.full_name?.trim() || 'Aluno';
+                return (
+                  <li key={meeting.id} className="py-3">
+                    <Link
+                      href={selected ? '/instrutor/aula#historico-aulas' :
+                        `/instrutor/aula?aula=${meeting.id}#detalhes-aula`}
+                      aria-current={selected ? 'page' : undefined}
+                      className={
+                        'press flex flex-wrap items-center justify-between gap-3 rounded-[14px] border p-3 ' +
+                        (selected ? 'border-brand bg-brand-tint' : 'border-line bg-surface')
+                      }>
+                      <span className="flex min-w-0 items-center gap-3">
+                        <InstructorStudentPhoto
+                          url={studentPhotos.get(booking.student_id) ?? null}
+                          name={studentName} size={40}
+                        />
+                        <span className="min-w-0">
+                          <strong className="block break-words text-[13px] text-ink">
+                            {studentName} · {booking.code}
+                          </strong>
+                          <span className="mt-1 block text-[12px] text-muted">
+                            {formatDateLong(meeting.starts_at)} · {formatMinutes(meeting.done_minutes)}
+                            {' · '}Encontro {meeting.position} de {booking.booking_meetings.length}
+                          </span>
+                        </span>
+                      </span>
+                      <span className="shrink-0 text-[12px] font-bold text-brand">
+                        {selected ? 'Fechar detalhes' : 'Ver detalhes ›'}
+                      </span>
+                    </Link>
+                  </li>
+                );
+              })}
             </ul>
+            {selectedHistory ? (() => {
+              const { booking, meeting } = selectedHistory;
+              const studentName = booking.student?.full_name?.trim() || 'Aluno';
+              const recorded = skills.rows.filter((skill) => skill.meeting_id === meeting.id);
+              const assessment = reviews.assessments.get(booking.id);
+              const evaluatedSteps = KITE_CURRICULA[booking.level].filter((step) =>
+                recorded.some((skill) => skill.step_number === step.id));
+              return (
+                <section id="detalhes-aula"
+                  className="mt-4 scroll-mt-5 rounded-[18px] border border-brand bg-surface p-4">
+                  <div className="flex flex-wrap items-center justify-between gap-2">
+                    <h3 className="text-[17px] font-bold text-ink">
+                      Detalhes do encontro {meeting.position}
+                    </h3>
+                    <Badge tone="success">Concluído</Badge>
+                  </div>
+                  <div className="mt-4 flex items-center gap-3">
+                    <InstructorStudentPhoto
+                      url={studentPhotos.get(booking.student_id) ?? null}
+                      name={studentName} size={48} />
+                    <div className="min-w-0">
+                      <p className="text-[14px] font-semibold text-ink">{studentName}</p>
+                      <p className="text-[12px] text-muted">
+                        {booking.code} · {booking.beach?.name ?? 'Praia'}
+                      </p>
+                    </div>
+                  </div>
+                  <p className="mt-3 text-[12px] text-label">
+                    {formatDateLong(meeting.starts_at)} às {formatTime(meeting.starts_at)}
+                    {' · '}{LEVEL_LABELS[booking.level]} · {booking.language}
+                  </p>
+                  <div className="mt-4 grid grid-cols-2 gap-2">
+                    <div className="rounded-[14px] border border-line bg-surface p-3">
+                      <p className="text-[11px] text-muted">Tempo previsto</p>
+                      <strong className="tabular mt-1 block text-[19px] text-ink">
+                        {formatMinutes(meeting.minutes)}
+                      </strong>
+                    </div>
+                    <div className="rounded-[14px] border border-line bg-surface p-3">
+                      <p className="text-[11px] text-muted">Tempo realizado</p>
+                      <strong className="tabular mt-1 block text-[19px] text-ink">
+                        {formatMinutes(meeting.done_minutes)}
+                      </strong>
+                    </div>
+                  </div>
+                  {booking.is_test ? <div className="mt-3"><Badge tone="warning">AULA TESTE</Badge></div> : null}
+                  {meeting.note?.trim() ? (
+                    <div className="mt-4">
+                      <h4 className="text-[13px] font-semibold text-ink">Observações registradas</h4>
+                      <p className="mt-2 whitespace-pre-wrap break-words text-[13px] text-label">
+                        {meeting.note}
+                      </p>
+                    </div>
+                  ) : null}
+                  <div className="mt-4 border-t border-line pt-4">
+                    <h4 className="text-[15px] font-bold text-ink">
+                      Etapas trabalhadas · {evaluatedSteps.length}
+                    </h4>
+                    {skills.ready ? (
+                      evaluatedSteps.length ? (
+                        <ul className="mt-3 grid gap-2">
+                          {evaluatedSteps.map((step) => {
+                            const mastered = recorded.some((skill) =>
+                              skill.step_number === step.id && skill.result === 'mastered');
+                            return (
+                              <li key={step.id} className="rounded-[12px] border border-line p-3">
+                                <p className="text-[13px] font-semibold text-ink">
+                                  {step.id}. {step.title}
+                                </p>
+                                <p className="mt-1 text-[12px] font-semibold text-brand">
+                                  {mastered ? 'Concluída' : 'Praticada'}
+                                </p>
+                              </li>
+                            );
+                          })}
+                        </ul>
+                      ) : (
+                        <p className="mt-2 text-[12px] text-muted">
+                          Nenhuma etapa individual foi registrada neste encontro.
+                        </p>
+                      )
+                    ) : (
+                      <p className="mt-2 text-[12px] text-muted">
+                        Não foi possível carregar as etapas. Os demais dados da aula permanecem disponíveis.
+                      </p>
+                    )}
+                  </div>
+                  {assessment && booking.status === 'completed' ? (
+                    <div className="mt-4 border-t border-line pt-3">
+                      <p className="text-[13px] font-semibold text-ink">
+                        Avaliação final da reserva:
+                        {' '}{KITE_LEVEL_BADGES[assessment.assessed_level].label}
+                        {' · '}{KITE_LEVEL_BADGES[assessment.assessed_level].metal}
+                      </p>
+                      <p className="mt-1 text-[11px] text-muted">
+                        Avaliação feita ao concluir a reserva, não certificação oficial.
+                      </p>
+                    </div>
+                  ) : null}
+                  <Link href="/instrutor/aula#historico-aulas"
+                    className="mt-5 inline-block text-[13px] font-bold text-brand underline">
+                    Fechar detalhes
+                  </Link>
+                </section>
+              );
+            })() : null}
           </details>
         ) : null}
       </div>

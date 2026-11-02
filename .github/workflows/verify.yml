@@ -27,6 +27,8 @@ jobs:
         run: node --experimental-strip-types scripts/test-booking-progress.mjs
       - name: Test student multi-booking and history separation
         run: node --experimental-strip-types scripts/test-booking-cycle.mjs
+      - name: Test instructor completed lesson detail selection
+        run: node --experimental-strip-types scripts/test-instructor-completed-meetings.mjs
       - name: Check PostgREST relationship ambiguity
         run: node scripts/verify-postgrest-relationships.mjs
       - run: pnpm build
