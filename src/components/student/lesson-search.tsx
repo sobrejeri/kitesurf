@@ -4,7 +4,8 @@ import Link from 'next/link';
 import { useState } from 'react';
 
 import { LANGUAGES, MAX_HOURS, MIN_HOURS } from '@/data/demo';
-import { type Beach, type QuoteRow } from '@/lib/data-labels';
+import { type Beach, type QuoteRow, type LessonLevel } from '@/lib/data-labels';
+import { allowedLessonLevels, KITE_CURRICULA, KITE_LEVEL_BADGES } from '@/lib/kite-steps';
 import { lessonDate } from '@/lib/dates';
 import { formatMoney } from '@/lib/format';
 
@@ -29,8 +30,8 @@ function SearchRow({ label, icon, children, chevron = true }: { label: string; i
 const controlClass =
   'w-full appearance-none bg-transparent text-[16px] font-bold text-ink focus:outline-none lg:text-[15px]';
 
-const LEVELS: readonly { id: string; title: string }[] = [
-  { id: 'first_time', title: 'Primeira vez' },
+const LEVELS: readonly { id: LessonLevel; title: string }[] = [
+  { id: 'first_time', title: 'Iniciante' },
   { id: 'returning', title: 'Intermediário' },
   { id: 'improving', title: 'Avançado' },
 ];
@@ -43,13 +44,16 @@ export function LessonSearch({
   defaultDate,
   quotes,
   beaches,
+  studentLevel,
 }: {
   defaultDate: string;
   quotes: readonly QuoteRow[];
   beaches: readonly Beach[];
+  studentLevel: LessonLevel;
 }) {
   const [hours, setHours] = useState(2);
-  const [level, setLevel] = useState('first_time');
+  const [level, setLevel] = useState<LessonLevel>(studentLevel);
+  const options = allowedLessonLevels(studentLevel);
   const [date, setDate] = useState(defaultDate);
   const [dateError, setDateError] = useState('');
   const quote = quotes.find((row) => row.hours === hours);
@@ -75,7 +79,7 @@ export function LessonSearch({
         {/* Three plain choices in one segmented control. */}
         <fieldset className="grid grid-cols-3 gap-1 rounded-full bg-sand p-1">
           <legend className="sr-only">Seu nível no kite</legend>
-          {LEVELS.map((item) => {
+          {LEVELS.filter((item) => options.includes(item.id)).map((item) => {
             const on = level === item.id;
             return (
               <label
@@ -88,6 +92,19 @@ export function LessonSearch({
             );
           })}
         </fieldset>
+
+        <div className="rounded-[15px] border border-[#16819b]/60 bg-[#073c53] px-3 py-3">
+          <p className="text-[12px] font-semibold text-[#b6e7ed]">
+            Aula {KITE_LEVEL_BADGES[level].label} · {KITE_LEVEL_BADGES[level].detail}
+          </p>
+          <p className="mt-1 text-[11px] text-[#d2ecf3]">
+            {KITE_CURRICULA[level].slice(0, 3).map((item) => item.title).join(' · ')}.
+            O instrutor ajustará os exercícios conforme sua segurança e as condições do mar.
+          </p>
+          <p className="mt-1 text-[11px] text-[#a8ccd7]">
+            Perfil: {KITE_LEVEL_BADGES[studentLevel].label}. As opções exibidas respeitam seu nível atual.
+          </p>
+        </div>
 
         <div className="grid gap-2.5 lg:grid-cols-3 lg:gap-0 lg:divide-x lg:divide-line lg:rounded-[18px] lg:bg-sand">
           <SearchRow label="Sua praia" icon="pin">
