@@ -248,7 +248,7 @@ export default async function BookingPage({ params }: { params: Promise<{ id: st
               </p>
               <p className="mt-3 text-[11px] text-muted">Reserva {booking.code}</p>
             </Card>
-          )}
+          ) : null}
           <Card>
             <div className="flex items-center justify-between">
               <span className="text-[13px] text-label">{booking.is_test ? 'Simulação' : 'Pagamento'}</span>
