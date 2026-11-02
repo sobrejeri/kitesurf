@@ -1,6 +1,7 @@
 import type { Metadata } from 'next';
 
 import { FilterList, type FilterEntry } from '@/components/admin/filter-list';
+import { BookingProgress } from '@/components/admin/booking-progress';
 import { AdminTitle, ListCard } from '@/components/admin/kit';
 import { BOOKING_STATUS } from '@/components/admin/labels';
 import { Icon } from '@/components/icon';
@@ -49,6 +50,7 @@ export default async function BookingsPage() {
             </div>
             <p className="tabular self-end text-[16px] font-bold text-ink">{formatMoney(booking.total_cents)}</p>
           </div>
+          <BookingProgress meetings={booking.booking_meetings} bookingStatus={booking.status} />
         </ListCard>
       ),
     };
