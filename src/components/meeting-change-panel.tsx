@@ -1,7 +1,8 @@
 import { ActionForm } from '@/components/action-form';
 import { Icon } from '@/components/icon';
+import { MeetingChangeDatePicker } from '@/components/meeting-change-date-picker';
 import { requestMeetingChange, respondMeetingChange, resolveStudentChange } from '@/app/actions/meeting-change';
-import { Badge, Note, Field, inputClass, textareaClass } from '@/components/ui';
+import { Badge, Note, Field, textareaClass } from '@/components/ui';
 import type { Meeting } from '@/lib/data';
 import type { MeetingChangeRead } from '@/lib/meeting-changes';
 import { formatDateLong, formatTime } from '@/lib/format';
@@ -59,11 +60,17 @@ export function MeetingChangePanel({
     && r.choice_expires_at && !r.resolution
     && Date.parse(r.choice_expires_at)>now
   ) : null;
-  const eligible=Date.parse(meeting.starts_at)>=now+72*3600000;
-  const firstAvailable=Math.max(Date.parse(meeting.starts_at)+60_000,now+72*3600000);
-  const proposed=localDateTime(new Date(Math.max(
-    Date.parse(meeting.starts_at)+7*86400000,now+4*86400000
-  )));
+  const firstAvailable=Math.max(
+    Date.parse(meeting.starts_at)+60_000,
+    Math.ceil((now+72*3600000)/60_000)*60_000,
+  );
+  const lastAvailable=Math.floor((now+90*86400000)/60_000)*60_000;
+  const eligible=Date.parse(meeting.starts_at)>=now+72*3600000
+    && firstAvailable<=lastAvailable;
+  const proposed=localDateTime(new Date(Math.min(lastAvailable,Math.max(
+    Date.parse(meeting.starts_at)+7*86400000,now+4*86400000,
+    firstAvailable,
+  ))));
   const history=changes.rows.filter(r=>r.meeting_id===meeting.id && r.status!=='pending');
 
   if(decision) {
@@ -171,12 +178,12 @@ export function MeetingChangePanel({
               className="grid min-w-0 gap-3">
               <input type="hidden" name="meetingId" value={meeting.id}/>
               <input type="hidden" name="bookingId" value={bookingId}/>
-              <Field label="Nova data e horário (Ceará)">
-                <input type="datetime-local" name="proposedDate" required
-                  min={localDateTime(new Date(firstAvailable))}
-                  defaultValue={proposed}
-                  className={inputClass+' meeting-change-datetime block min-w-0 max-w-full [color-scheme:dark]'}/>
-              </Field>
+              <MeetingChangeDatePicker
+                initial={proposed}
+                min={localDateTime(new Date(firstAvailable))}
+                max={localDateTime(new Date(lastAvailable))}
+                role={viewerRole}
+              />
               <Field label="Motivo">
                 <textarea name="reason" required minLength={8} maxLength={500}
                   rows={2} className={textareaClass+' min-w-0 min-h-[88px] resize-y'}
