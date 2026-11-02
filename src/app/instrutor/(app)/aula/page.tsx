@@ -226,14 +226,20 @@ export default async function RunLessonPage({
               ) : null}
               {meeting.status==='scheduled' && booking.status==='confirmed'
                   && booking.booking_meetings.every(m=>m.status==='scheduled')
-                  && booking.booking_meetings.every(m=>Date.parse(m.starts_at)>=Date.now()+72*3600000) ? (
+                  && (booking.booking_meetings.every(m=>Date.parse(m.starts_at)>=Date.now()+72*3600000)
+                     || changeRequests.rows.some(r=>r.requester_id===viewer.id
+                      && (r.status==='rejected'||r.status==='expired')
+                      && !r.resolution && r.choice_expires_at
+                      && Date.parse(r.choice_expires_at)>Date.now())) ? (
                 <details className="mt-4 rounded-xl border border-orange-600/45 bg-surface p-3">
                   <summary className="cursor-pointer text-[13px] font-semibold text-brand">
                     Não posso atender · liberar para outro instrutor
                   </summary>
                   <p className="mt-2 text-[12px] text-muted">
-                    Disponível até 72 horas antes do primeiro encontro. Sua atribuição
-                    será encerrada, mas o aluno manterá a reserva, datas e valores.
+                    A desistência exige 72 horas de antecedência ou uma solicitação
+                    feita nesse prazo e recusada/sem resposta, ainda dentro da sua
+                    janela de decisão. Sua atribuição será encerrada, mas o aluno manterá
+                    a reserva, datas e valores.
                     A plataforma a oferecerá ao próximo instrutor disponível da fila.
                   </p>
                   <ActionForm action={releaseMyBooking} submitLabel="Liberar minha reserva"
