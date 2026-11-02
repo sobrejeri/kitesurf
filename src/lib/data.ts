@@ -121,7 +121,7 @@ function normalise(raw: RawBooking): Booking {
  */
 export type StudentBooking = Pick<
   Booking,
-  'id' | 'status' | 'is_test' | 'student_id' | 'instructor_id' | 'beach_id' | 'total_hours' |
+  'id' | 'status' | 'is_test' | 'student_id' | 'instructor_id' | 'beach_id' | 'level' | 'total_hours' |
   'created_at' | 'booking_meetings' | 'beach' | 'instructor'
 >;
 
@@ -133,10 +133,10 @@ export async function listBookingsForStudent(studentId: string): Promise<Student
   const read = (columns: string) => supabase.from('bookings').select(columns)
     .eq('student_id', studentId).order('created_at', { ascending: false })
     .returns<StudentBookingBase[]>();
-  const result = await read('id, status, is_test, student_id, instructor_id, beach_id, total_hours, created_at');
+  const result = await read('id, status, is_test, student_id, instructor_id, beach_id, level, total_hours, created_at');
   let bookings: StudentBookingBase[];
   if (missingTestColumn(result.error)) {
-    const old = await read('id, status, student_id, instructor_id, beach_id, total_hours, created_at');
+    const old = await read('id, status, student_id, instructor_id, beach_id, level, total_hours, created_at');
     if (old.error) throw new Error('Não foi possível consultar suas reservas.');
     bookings = (old.data ?? []).map((b) => ({ ...b, is_test: false }));
   } else if (result.error) {
