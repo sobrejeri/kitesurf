@@ -117,7 +117,7 @@ export default async function RunLessonPage({
 
             return (
               <div key={meeting.id} id={`aula-${meeting.id}`}
-                className="grid gap-2 scroll-mt-5">
+                className="grid gap-2 scroll-mt-28">
               <Link href={target}
                 aria-current={expanded ? 'page' : undefined}
                 className={'press block rounded-[20px] border p-4 shadow-card sm:p-5 ' +
