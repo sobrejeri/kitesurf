@@ -363,6 +363,7 @@ export default async function ProgressPage({
               const minutes = done.reduce((sum, meeting) => sum + meeting.done_minutes, 0);
               const completedSteps = allSkills.filter((skill) =>
                 done.some((meeting) => meeting.id === skill.meeting_id));
+              const evaluation = reviews.assessments.get(booking.id);
               return (
                 <details key={booking.id} className="rounded-[16px] border border-line bg-surface p-4">
                   <summary className="cursor-pointer">
@@ -375,8 +376,8 @@ export default async function ProgressPage({
                       {' · '}{booking.beach?.name ?? 'Praia'}
                     </span>
                     <span className="mt-1 block text-[11px] text-muted">
-                      {reviews.assessments.get(booking.id)
-                        ? `Nível avaliado: ${KITE_LEVEL_BADGES[reviews.assessments.get(booking.id)!.assessed_level].label}`
+                      {evaluation
+                        ? `Nível avaliado: ${KITE_LEVEL_BADGES[evaluation.assessed_level].label}`
                         : reviews.ready ? 'Avaliação de nível ainda não registrada' : 'Toque para ver seu desempenho'}
                     </span>
                   </summary>
