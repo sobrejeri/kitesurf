@@ -158,7 +158,9 @@ BEGIN
       SELECT 1 FROM public.meeting_change_requests c
       WHERE c.booking_id=b.id AND c.requester_id IN (b.student_id,b.instructor_id)
         AND c.status IN ('expired','rejected') AND c.resolution IS NULL
-        AND c.choice_expires_at>now()
+        -- Student's automatic fallback runs AFTER their 12h window.
+        -- Instructor may opt out only DURING their own 12h decision window.
+        AND (c.requester_id=b.student_id OR c.choice_expires_at>now())
         AND c.requested_at<=c.original_starts_at-interval '72 hours'
     ) THEN RAISE EXCEPTION 'Valid advance notice not found'
       USING errcode='42501'; END IF;
