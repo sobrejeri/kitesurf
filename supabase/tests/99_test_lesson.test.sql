@@ -36,6 +36,18 @@ begin
 
   perform pg_temp.act_as('00000000-0000-0000-0000-00000000000a');
   v_id:=public.create_admin_test_lesson(v_instructor,v_student,v_beach,v_start,2);
+
+  -- A second attempt at the same instructor and interval must be rejected.
+  -- A business conflict is not an unexpected technical failure.
+  begin
+    perform public.create_admin_test_lesson(v_instructor,v_student,v_beach,v_start,2);
+    raise exception 'A simultaneous test lesson was incorrectly accepted';
+  exception
+    when sqlstate '55000' then
+      if SQLERRM <> 'Instructor has a class or block at the selected time' then
+        raise exception 'Unexpected 55000 in test booking: %', SQLERRM;
+      end if;
+  end;
   perform pg_temp.reset();
 
   assert exists(select 1 from public.bookings
