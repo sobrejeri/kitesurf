@@ -3,23 +3,26 @@ import Link from 'next/link';
 
 import { assessStudentKiteLevel, recordMeeting, recordMeetingWithSkills, startMeeting } from '@/app/actions/instructor';
 import { ActionForm } from '@/components/action-form';
-import { Badge, Card, EmptyState, Field, Note, inputClass, textareaClass } from '@/components/ui';
+import { Badge, Card, DateTile, EmptyState, Field, Note, inputClass, textareaClass } from '@/components/ui';
 import { InstructorStudentPhoto } from '@/components/instructor/student-photo';
 import { requireRole } from '@/lib/auth';
 import { LEVEL_LABELS, MEETING_STATUS_LABELS, listBookingsForInstructor } from '@/lib/data';
-import { formatDateLong, formatMinutes, formatTime } from '@/lib/format';
+import { getBookingProgress } from '@/lib/booking-progress';
+import { formatDateLong, formatDay, formatMinutes, formatMonthTag, formatTime } from '@/lib/format';
 import { getInstructorStudentAvatarUrls } from '@/lib/instructor-student-photos';
 import { KITE_CURRICULA, KITE_LEVEL_BADGES } from '@/lib/kite-steps';
 import { findCompletedInstructorMeeting, listCompletedInstructorMeetings } from '@/lib/instructor-completed-meetings';
 import { getMeetingKiteSkills } from '@/lib/meeting-skills';
+import { groupInstructorLessons, resolveInstructorLessonTab, selectInstructorLesson, mayStartInstructorLesson } from '@/lib/instructor-lesson-tabs';
 import { getBookingLevelAssessments } from '@/lib/booking-level-assessments';
 
-export const metadata: Metadata = { title: 'Realizar e registrar aula' };
+
+export const metadata: Metadata = { title: 'Aulas do instrutor' };
 
 export default async function RunLessonPage({
   searchParams,
 }: {
-  searchParams: Promise<{ aula?: string }>;
+  searchParams: Promise<{ aba?: string; aula?: string }>;
 }) {
   const viewer = await requireRole(['instructor'], '/instrutor/aula');
   const [bookings, studentPhotos, params] = await Promise.all([
@@ -27,15 +30,20 @@ export default async function RunLessonPage({
     getInstructorStudentAvatarUrls(),
     searchParams,
   ]);
-  // The student/meeting ID is resolved only from this authenticated instructor's bookings.
+  const groups = groupInstructorLessons(bookings);
+  const activeTab = resolveInstructorLessonTab(params.aba, params.aula, groups);
+  const selected = selectInstructorLesson(groups, activeTab, params.aula);
   const completedHistory = listCompletedInstructorMeetings(bookings);
-  const selectedHistory = findCompletedInstructorMeeting(completedHistory, params.aula);
+  const selectedHistory = activeTab === 'concluidas'
+    ? findCompletedInstructorMeeting(completedHistory, selected?.meeting.id)
+    : null;
   const [skills, reviews] = await Promise.all([
     getMeetingKiteSkills(selectedHistory ? [selectedHistory.meeting.id] : []),
-    getBookingLevelAssessments(bookings.map((b) => b.id)),
+    getBookingLevelAssessments(bookings.map((booking) => booking.id)),
   ]);
   const todayInCeara = new Date().toLocaleDateString('en-CA', { timeZone: 'America/Fortaleza' });
-  const cearaDay = (iso: string) => new Date(iso).toLocaleDateString('en-CA', { timeZone: 'America/Fortaleza' });
+  const cearaDay = (iso: string) =>
+    new Date(iso).toLocaleDateString('en-CA', { timeZone: 'America/Fortaleza' });
   const completed = bookings
     .filter((booking) => booking.status === 'completed' && !reviews.assessments.has(booking.id))
     .flatMap((booking) => {
@@ -45,59 +53,168 @@ export default async function RunLessonPage({
       return meeting ? [{ booking, meeting }] : [];
     })
     .sort((a, b) => b.meeting.starts_at.localeCompare(a.meeting.starts_at));
-  const open = bookings
-    .filter((booking) => booking.status === 'confirmed')
-    .flatMap((booking) => booking.booking_meetings
-      .filter((m) => m.status === 'scheduled' || m.status === 'in_progress')
-      .map((meeting) => ({ booking, meeting })))
-    .sort((a, b) => a.meeting.starts_at.localeCompare(b.meeting.starts_at));
-  const due = open.filter(({ meeting }) => meeting.status === 'in_progress'
-    || cearaDay(meeting.starts_at) <= todayInCeara);
-  const future = open.filter(({ meeting }) => meeting.status === 'scheduled'
-    && cearaDay(meeting.starts_at) > todayInCeara);
+
+  const tabs = [
+    { id: 'proximas' as const, title: 'Próximas', count: groups.proximas.length },
+    { id: 'andamento' as const, title: 'Em andamento', count: groups.andamento.length },
+    { id: 'concluidas' as const, title: 'Concluídas', count: groups.concluidas.length },
+  ];
+
   return (
     <>
-      <h1 className="text-[30px] font-bold leading-tight tracking-[-0.8px] text-ink md:text-[34px]">Registrar aula</h1>
-      <p className="mt-1 text-[13px] text-muted">Encontros liberados de todas as reservas.
-        Aulas de outros dias ficam na agenda; uma reserva não bloqueia a outra se os horários não coincidirem.</p>
-      <div className="mt-4 flex flex-wrap gap-3 text-[13px]">
+      <h1 className="text-[30px] font-bold leading-tight tracking-[-0.8px] text-ink md:text-[34px]">
+        Minhas aulas
+      </h1>
+      <p className="mt-2 text-[13px] leading-relaxed text-muted">
+        Organize seus encontros por status, escolha o aluno e toque para iniciar,
+        continuar o registro ou consultar uma aula finalizada.
+      </p>
+      <div className="mt-4 flex flex-wrap gap-x-4 gap-y-2 text-[13px]">
         <Link href="/instrutor/hoje" className="font-semibold text-brand underline">Meu dia</Link>
         <Link href="/instrutor/agenda" className="font-semibold text-brand underline">Agenda completa</Link>
         <Link href="/instrutor/fila" className="font-semibold text-brand underline">Fila de solicitações</Link>
       </div>
 
-      <div className="mt-6 grid gap-5">
-        {due.length === 0 ? <EmptyState>
-          Nenhum encontro liberado para registrar hoje.
-          {future.length ? ' Confira abaixo suas próximas aulas.' : ' Consulte sua fila para novos atendimentos.'}
-        </EmptyState> : null}
-        {due.map(({ booking, meeting }) => {
-          const canStart = cearaDay(meeting.starts_at) <= todayInCeara
-            && booking.booking_meetings.every((previous) => previous.position >= meeting.position || previous.status === 'done');
-          const studentName = booking.student?.full_name?.trim() || 'Aluno';
-          return (
-          <Card key={meeting.id}>
-            <div className="flex flex-wrap items-start justify-between gap-3">
-              <div className="flex items-center gap-3">
-                <InstructorStudentPhoto url={studentPhotos.get(booking.student_id) ?? null} name={studentName} size={48} />
-                <div>
-                  <p className="font-[550]">{studentName}</p>
-                  <p className="text-[11px] text-muted">
-                    {LEVEL_LABELS[booking.level]} · {booking.language} · {(booking.beach?.name ?? '—')}
+      <nav aria-label="Filtrar aulas por status"
+        className="mt-6 grid grid-cols-3 gap-1 rounded-[18px] border border-line bg-surface p-1.5">
+        {tabs.map((tab) => (
+          <Link key={tab.id} href={'/instrutor/aula?aba=' + tab.id}
+            aria-current={activeTab === tab.id ? 'page' : undefined}
+            className={'press flex min-h-14 flex-col items-center justify-center gap-0.5 rounded-[13px] px-1 py-2 text-center ' +
+              (activeTab === tab.id
+                ? 'bg-brand text-on-brand shadow-button'
+                : 'text-label hover:bg-brand-tint')}>
+            <span className="text-[12px] font-bold leading-tight sm:text-[13px]">{tab.title}</span>
+            <span className="tabular text-[11px] opacity-80">{tab.count}</span>
+          </Link>
+        ))}
+      </nav>
+
+      <div id="lista-aulas" className="mt-5 scroll-mt-5 grid gap-3">
+        {groups[activeTab].length === 0 ? (
+          <EmptyState>
+            {activeTab === 'proximas'
+              ? 'Nenhuma aula agendada no momento. Novas reservas confirmadas aparecerão aqui.'
+              : activeTab === 'andamento'
+                ? 'Nenhuma aula em andamento. Ao confirmar a presença, a aula iniciada aparecerá aqui.'
+                : 'Nenhuma aula concluída para consultar.'}
+          </EmptyState>
+        ) : (
+          groups[activeTab].map(({ booking, meeting }) => {
+            const expanded = selected?.meeting.id === meeting.id;
+            const studentName = booking.student?.full_name?.trim() || 'Aluno';
+            const progress = getBookingProgress(booking.booking_meetings);
+            const statusTone = meeting.status === 'done' ? 'success'
+              : meeting.status === 'in_progress' ? 'warning' : 'brand';
+            const actionLabel = expanded ? 'Fechar detalhes'
+              : meeting.status === 'done' ? 'Ver detalhes'
+                : meeting.status === 'in_progress' ? 'Continuar aula'
+                  : mayStartInstructorLesson({ booking, meeting }, todayInCeara, cearaDay)
+                    ? 'Abrir e iniciar' : 'Ver agendamento';
+            const target = expanded
+              ? '/instrutor/aula?aba=' + activeTab + '#lista-aulas'
+              : '/instrutor/aula?aba=' + activeTab + '&aula=' + meeting.id + '#detalhes-aula';
+
+            return (
+              <Link key={meeting.id} href={target}
+                aria-current={expanded ? 'page' : undefined}
+                className={'press block rounded-[20px] border p-4 shadow-card sm:p-5 ' +
+                  (expanded ? 'border-brand bg-brand-tint' : 'border-line bg-surface')}>
+                <div className="flex items-start gap-3">
+                  <DateTile day={formatDay(meeting.starts_at)}
+                    month={formatMonthTag(meeting.starts_at)} />
+                  <div className="min-w-0 flex-1">
+                    <div className="flex flex-wrap items-center gap-1.5">
+                      <Badge tone={statusTone}>{MEETING_STATUS_LABELS[meeting.status]}</Badge>
+                      {booking.is_test ? <Badge tone="warning">AULA TESTE</Badge> : null}
+                    </div>
+                    <p className="mt-2 break-words text-[15px] font-bold text-ink">
+                      {studentName}
+                    </p>
+                    <p className="mt-1 text-[12px] text-muted">
+                      {formatTime(meeting.starts_at)} · {formatMinutes(meeting.minutes)}
+                      {' · '}{booking.beach?.name ?? 'Praia'}
+                    </p>
+                  </div>
+                </div>
+                <div className="mt-3 flex flex-wrap items-center justify-between gap-2">
+                  <p className="text-[12px] text-label">
+                    {booking.code} · Encontro {meeting.position} de {booking.booking_meetings.length}
+                  </p>
+                  <span className="text-[12px] font-bold text-brand">{actionLabel} ›</span>
+                </div>
+                {progress.total > 1 ? (
+                  <div className="mt-3 border-t border-line pt-3">
+                    <div className="flex items-center justify-between gap-2 text-[11px] text-muted">
+                      <span>Progresso da reserva</span>
+                      <span className="tabular">{progress.completed}/{progress.total} concluídos</span>
+                    </div>
+                    <div className="mt-2 flex h-1.5 w-full overflow-hidden rounded-full bg-track"
+                      role="progressbar" aria-label="Encontros concluídos"
+                      aria-valuemin={0} aria-valuemax={100} aria-valuenow={progress.percent}>
+                      <span className="h-full bg-brand" style={{ width: progress.percent + '%' }} />
+                    </div>
+                  </div>
+                ) : null}
+              </Link>
+            );
+          })
+        )}
+      </div>
+
+      {activeTab === 'proximas' ? (
+        <p className="mt-4 text-[12px] leading-relaxed text-muted">
+          A aula só pode ser iniciada no dia permitido, com o código de presença do aluno
+          e após os encontros anteriores da mesma reserva. Depois de iniciada,
+          ela passa para a aba Em andamento.
+        </p>
+      ) : null}
+      {activeTab === 'andamento' ? (
+        <p className="mt-4 text-[12px] leading-relaxed text-muted">
+          Escolha a aula para registrar os minutos efetivamente realizados e as etapas praticadas.
+          Se ainda não terminou, deixe-a em andamento para continuar mais tarde.
+        </p>
+      ) : null}
+
+      {selected && activeTab !== 'concluidas' ? (() => {
+        const { booking, meeting } = selected;
+        const canStart = mayStartInstructorLesson(selected, todayInCeara, cearaDay);
+        const studentName = booking.student?.full_name?.trim() || 'Aluno';
+        return (
+          <Card className="mt-5" as="section">
+            <div id="detalhes-aula" className="scroll-mt-5">
+              <div className="flex flex-wrap items-center justify-between gap-2">
+                <h2 className="text-[19px] font-bold text-ink">
+                  {meeting.status === 'in_progress' ? 'Continuar aula' : 'Iniciar aula'}
+                </h2>
+                <Badge tone={meeting.status === 'in_progress' ? 'warning' : 'brand'}>
+                  {MEETING_STATUS_LABELS[meeting.status]}
+                </Badge>
+              </div>
+              <div className="mt-4 flex items-center gap-3">
+                <InstructorStudentPhoto url={studentPhotos.get(booking.student_id) ?? null}
+                  name={studentName} size={48} />
+                <div className="min-w-0">
+                  <p className="text-[15px] font-semibold text-ink">{studentName}</p>
+                  <p className="text-[12px] text-muted">
+                    {booking.code} · Encontro {meeting.position} de {booking.booking_meetings.length}
                   </p>
                 </div>
               </div>
-              <span className="flex flex-wrap justify-end gap-1.5">
-                {booking.is_test ? <Badge tone="warning">AULA TESTE</Badge> : null}
-                {booking.with_transport ? <Badge tone="warning">Com transporte</Badge> : null}
-                <Badge tone={meeting.status === 'in_progress' ? 'warning' : 'brand'}>{MEETING_STATUS_LABELS[meeting.status]}</Badge>
-              </span>
-            </div>
-            <p className="mt-4 text-[13px] font-[550]">
-              {formatDateLong(meeting.starts_at)} · {formatTime(meeting.starts_at)} · {formatMinutes(meeting.minutes)}
-            </p>
-            <p className="text-[12px] text-muted">Reserva {booking.code} · encontro {meeting.position} de {booking.booking_meetings.length}</p>
-
+              <p className="mt-3 text-[13px] text-label">
+                {formatDateLong(meeting.starts_at)} · {formatTime(meeting.starts_at)}
+                {' · '}{formatMinutes(meeting.minutes)}
+              </p>
+              <p className="mt-1 text-[12px] text-muted">
+                {LEVEL_LABELS[booking.level]} · {booking.language} · {booking.beach?.name ?? 'Praia'}
+              </p>
+              {booking.is_test ? <div className="mt-2"><Badge tone="warning">AULA TESTE</Badge></div> : null}
+              {meeting.status === 'in_progress' ? (
+                <Note className="mt-4" title="Aula iniciada">
+                  A presença já foi confirmada. Preencha os minutos e etapas quando terminar;
+                  até registrar a conclusão, este encontro continuará Em andamento.
+                </Note>
+              ) : null}
             <div className="mt-5 border-t border-line pt-5">
               {meeting.status === 'scheduled' && !canStart ? (
                 <Note tone="warning">
@@ -163,116 +280,19 @@ export default async function RunLessonPage({
                 </ActionForm>
               )}
             </div>
+              <Link href={'/instrutor/aula?aba=' + activeTab + '#lista-aulas'}
+                className="mt-4 inline-block text-[13px] font-bold text-brand underline">
+                Fechar detalhes
+              </Link>
+            </div>
           </Card>
-          );
-        })}
-        {future.length ? (
-          <details className="rounded-[20px] border border-line bg-surface p-4" open={due.length === 0}>
-            <summary className="cursor-pointer text-[16px] font-bold text-ink">
-              Próximos encontros · {future.length}
-            </summary>
-            <p className="mt-2 text-[12px] text-muted">
-              Uma aula em outro dia não impede que você atenda uma segunda reserva no intervalo.
-            </p>
-            <ul className="mt-3 divide-y divide-line">
-              {future.map(({ booking, meeting }) => (
-                <li key={meeting.id} className="flex flex-wrap items-center justify-between gap-2 py-3">
-                  <div>
-                    <p className="text-[13px] font-semibold text-ink">
-                      {booking.student?.full_name || 'Aluno'} · {booking.code}
-                    </p>
-                    <p className="text-[12px] text-muted">
-                      {formatDateLong(meeting.starts_at)} · {formatTime(meeting.starts_at)}
-                      {' · '}Encontro {meeting.position} de {booking.booking_meetings.length}
-                    </p>
-                  </div>
-                  <Badge tone="brand">Agendado</Badge>
-                </li>
-              ))}
-            </ul>
-          </details>
-        ) : null}
-        {due.length ? <Note>Ao concluir, registre minutos e etapas praticadas para atualizar a evolução do aluno.</Note> : null}
-        {!reviews.ready ? <Note tone="warning">
-          A avaliação final por reserva precisa da Migration 28 no Supabase.
-        </Note> : null}
-        {reviews.ready && completed.length ? (
-          <section className="mt-4 grid gap-3">
-            <h2 className="text-[20px] font-bold text-ink">Avaliações finais pendentes · {completed.length}</h2>
-            <p className="text-[12px] text-muted">
-              A avaliação aparece quando todos os encontros da reserva terminarem.
-              Depois de confirmar, ela sai das pendências e fica no histórico.
-            </p>
-            {completed.map(({ booking, meeting }) => (
-              <Card key={'assess-' + meeting.id}>
-                <p className="text-[15px] font-bold text-ink">
-                  {booking.student?.full_name ?? 'Aluno'} · Reserva {booking.code}
-                </p>
-                <p className="mt-1 text-[12px] text-muted">
-                  {formatDateLong(meeting.starts_at)} · Aula {LEVEL_LABELS[booking.level]}
-                </p>
-                <ActionForm action={assessStudentKiteLevel}
-                  submitLabel="Confirmar avaliação de nível" className="mt-3 grid gap-3">
-                  <input name="meetingId" type="hidden" value={meeting.id}/>
-                  <Field label="Nível demonstrado pelo aluno">
-                    <select name="kiteLevel" className={inputClass} defaultValue={booking.level}>
-                      <option value="first_time">Iniciante · Bronze</option>
-                      <option value="returning">Intermediário · Prata</option>
-                      <option value="improving">Avançado · Ouro</option>
-                    </select>
-                  </Field>
-                </ActionForm>
-              </Card>
-            ))}
-          </section>
-        ) : null}
-        {completedHistory.length ? (
-          <details id="historico-aulas"
-            className="mt-2 scroll-mt-5 rounded-[20px] border border-line bg-surface p-4"
-            open={Boolean(selectedHistory)}>
-            <summary className="cursor-pointer text-[16px] font-bold text-ink">
-              Histórico de encontros realizados · {completedHistory.length}
-            </summary>
-            <p className="mt-2 text-[12px] text-muted">
-              Toque em Ver detalhes para consultar os registros de cada aula finalizada.
-            </p>
-            <ul className="mt-3 divide-y divide-line">
-              {completedHistory.map(({ booking, meeting }) => {
-                const selected = selectedHistory?.meeting.id === meeting.id;
-                const studentName = booking.student?.full_name?.trim() || 'Aluno';
-                return (
-                  <li key={meeting.id} className="py-3">
-                    <Link
-                      href={selected ? '/instrutor/aula#historico-aulas' :
-                        `/instrutor/aula?aula=${meeting.id}#detalhes-aula`}
-                      aria-current={selected ? 'page' : undefined}
-                      className={
-                        'press flex flex-wrap items-center justify-between gap-3 rounded-[14px] border p-3 ' +
-                        (selected ? 'border-brand bg-brand-tint' : 'border-line bg-surface')
-                      }>
-                      <span className="flex min-w-0 items-center gap-3">
-                        <InstructorStudentPhoto
-                          url={studentPhotos.get(booking.student_id) ?? null}
-                          name={studentName} size={40}
-                        />
-                        <span className="min-w-0">
-                          <strong className="block break-words text-[13px] text-ink">
-                            {studentName} · {booking.code}
-                          </strong>
-                          <span className="mt-1 block text-[12px] text-muted">
-                            {formatDateLong(meeting.starts_at)} · {formatMinutes(meeting.done_minutes)}
-                            {' · '}Encontro {meeting.position} de {booking.booking_meetings.length}
-                          </span>
-                        </span>
-                      </span>
-                      <span className="shrink-0 text-[12px] font-bold text-brand">
-                        {selected ? 'Fechar detalhes' : 'Ver detalhes ›'}
-                      </span>
-                    </Link>
-                  </li>
-                );
-              })}
-            </ul>
+        );
+      })() : null}
+
+      {activeTab === 'concluidas' ? (
+        <div id="historico-aulas" className="mt-5 scroll-mt-5 grid gap-4">
+          {selectedHistory ? (
+            <div className="rounded-[20px] border border-line bg-surface p-4">
             {selectedHistory ? (() => {
               const { booking, meeting } = selectedHistory;
               const studentName = booking.student?.full_name?.trim() || 'Aluno';
@@ -372,16 +392,51 @@ export default async function RunLessonPage({
                       </p>
                     </div>
                   ) : null}
-                  <Link href="/instrutor/aula#historico-aulas"
+                  <Link href="/instrutor/aula?aba=concluidas#historico-aulas"
                     className="mt-5 inline-block text-[13px] font-bold text-brand underline">
                     Fechar detalhes
                   </Link>
                 </section>
               );
             })() : null}
-          </details>
+            </div>
+          ) : null}
+          {!reviews.ready ? (
+            <Note tone="warning">As avaliações finais dependem da Migration 28 no Supabase.</Note>
+          ) : null}
+        {reviews.ready && completed.length ? (
+          <section className="mt-4 grid gap-3">
+            <h2 className="text-[20px] font-bold text-ink">Avaliações finais pendentes · {completed.length}</h2>
+            <p className="text-[12px] text-muted">
+              A avaliação aparece quando todos os encontros da reserva terminarem.
+              Depois de confirmar, ela sai das pendências e fica no histórico.
+            </p>
+            {completed.map(({ booking, meeting }) => (
+              <Card key={'assess-' + meeting.id}>
+                <p className="text-[15px] font-bold text-ink">
+                  {booking.student?.full_name ?? 'Aluno'} · Reserva {booking.code}
+                </p>
+                <p className="mt-1 text-[12px] text-muted">
+                  {formatDateLong(meeting.starts_at)} · Aula {LEVEL_LABELS[booking.level]}
+                </p>
+                <ActionForm action={assessStudentKiteLevel}
+                  submitLabel="Confirmar avaliação de nível" className="mt-3 grid gap-3">
+                  <input name="meetingId" type="hidden" value={meeting.id}/>
+                  <Field label="Nível demonstrado pelo aluno">
+                    <select name="kiteLevel" className={inputClass} defaultValue={booking.level}>
+                      <option value="first_time">Iniciante · Bronze</option>
+                      <option value="returning">Intermediário · Prata</option>
+                      <option value="improving">Avançado · Ouro</option>
+                    </select>
+                  </Field>
+                </ActionForm>
+              </Card>
+            ))}
+          </section>
         ) : null}
-      </div>
+
+        </div>
+      ) : null}
     </>
   );
 }
