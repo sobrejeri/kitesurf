@@ -112,11 +112,13 @@ export default async function RunLessonPage({
                   : mayStartInstructorLesson({ booking, meeting }, todayInCeara, cearaDay)
                     ? 'Abrir e iniciar' : 'Ver agendamento';
             const target = expanded
-              ? '/instrutor/aula?aba=' + activeTab + '#lista-aulas'
-              : '/instrutor/aula?aba=' + activeTab + '&aula=' + meeting.id + '#detalhes-aula';
+              ? '/instrutor/aula?aba=' + activeTab + '#aula-' + meeting.id
+              : '/instrutor/aula?aba=' + activeTab + '&aula=' + meeting.id + '#aula-' + meeting.id;
 
             return (
-              <Link key={meeting.id} href={target}
+              <div key={meeting.id} id={`aula-${meeting.id}`}
+                className="grid gap-2 scroll-mt-28">
+              <Link href={target}
                 aria-current={expanded ? 'page' : undefined}
                 className={'press block rounded-[20px] border p-4 shadow-card sm:p-5 ' +
                   (expanded ? 'border-brand bg-brand-tint' : 'border-line bg-surface')}>
@@ -157,31 +159,14 @@ export default async function RunLessonPage({
                   </div>
                 ) : null}
               </Link>
-            );
-          })
-        )}
-      </div>
-
-      {activeTab === 'proximas' ? (
-        <p className="mt-4 text-[12px] leading-relaxed text-muted">
-          A aula só pode ser iniciada no dia permitido, com o código de presença do aluno
-          e após os encontros anteriores da mesma reserva. Depois de iniciada,
-          ela passa para a aba Em andamento.
-        </p>
-      ) : null}
-      {activeTab === 'andamento' ? (
-        <p className="mt-4 text-[12px] leading-relaxed text-muted">
-          Escolha a aula para registrar os minutos efetivamente realizados e as etapas praticadas.
-          Se ainda não terminou, deixe-a em andamento para continuar mais tarde.
-        </p>
-      ) : null}
-
-      {selected && activeTab !== 'concluidas' ? (() => {
+              {expanded && activeTab !== 'concluidas' ? (
+                <>
+      {selected ? (() => {
         const { booking, meeting } = selected;
         const canStart = mayStartInstructorLesson(selected, todayInCeara, cearaDay);
         const studentName = booking.student?.full_name?.trim() || 'Aluno';
         return (
-          <Card className="mt-5" as="section">
+          <Card as="section">
             <div id="detalhes-aula" className="scroll-mt-5">
               <div className="flex flex-wrap items-center justify-between gap-2">
                 <h2 className="text-[19px] font-bold text-ink">
@@ -280,7 +265,7 @@ export default async function RunLessonPage({
                 </ActionForm>
               )}
             </div>
-              <Link href={'/instrutor/aula?aba=' + activeTab + '#lista-aulas'}
+              <Link href={'/instrutor/aula?aba=' + activeTab + '#aula-' + meeting.id}
                 className="mt-4 inline-block text-[13px] font-bold text-brand underline">
                 Fechar detalhes
               </Link>
@@ -288,9 +273,10 @@ export default async function RunLessonPage({
           </Card>
         );
       })() : null}
-
-      {activeTab === 'concluidas' ? (
-        <div id="historico-aulas" className="mt-5 scroll-mt-5 grid gap-4">
+                </>
+              ) : null}
+              {expanded && activeTab === 'concluidas' ? (
+                <>
           {selectedHistory ? (
             <div className="rounded-[20px] border border-line bg-surface p-4">
             {selectedHistory ? (() => {
@@ -302,7 +288,7 @@ export default async function RunLessonPage({
                 recorded.some((skill) => skill.step_number === step.id));
               return (
                 <section id="detalhes-aula"
-                  className="mt-4 scroll-mt-5 rounded-[18px] border border-brand bg-surface p-4">
+                  className="scroll-mt-5 rounded-[18px] border border-brand bg-surface p-4">
                   <div className="flex flex-wrap items-center justify-between gap-2">
                     <h3 className="text-[17px] font-bold text-ink">
                       Detalhes do encontro {meeting.position}
@@ -392,7 +378,7 @@ export default async function RunLessonPage({
                       </p>
                     </div>
                   ) : null}
-                  <Link href="/instrutor/aula?aba=concluidas#historico-aulas"
+                  <Link href={'/instrutor/aula?aba=concluidas#aula-' + meeting.id}
                     className="mt-5 inline-block text-[13px] font-bold text-brand underline">
                     Fechar detalhes
                   </Link>
@@ -401,6 +387,30 @@ export default async function RunLessonPage({
             })() : null}
             </div>
           ) : null}
+                </>
+              ) : null}
+              </div>
+            );
+          })
+        )}
+      </div>
+
+      {activeTab === 'proximas' ? (
+        <p className="mt-4 text-[12px] leading-relaxed text-muted">
+          A aula só pode ser iniciada no dia permitido, com o código de presença do aluno
+          e após os encontros anteriores da mesma reserva. Depois de iniciada,
+          ela passa para a aba Em andamento.
+        </p>
+      ) : null}
+      {activeTab === 'andamento' ? (
+        <p className="mt-4 text-[12px] leading-relaxed text-muted">
+          Escolha a aula para registrar os minutos efetivamente realizados e as etapas praticadas.
+          Se ainda não terminou, deixe-a em andamento para continuar mais tarde.
+        </p>
+      ) : null}
+
+      {activeTab === 'concluidas' ? (
+        <div id="historico-aulas" className="mt-5 scroll-mt-5 grid gap-4">
           {!reviews.ready ? (
             <Note tone="warning">As avaliações finais dependem da Migration 28 no Supabase.</Note>
           ) : null}

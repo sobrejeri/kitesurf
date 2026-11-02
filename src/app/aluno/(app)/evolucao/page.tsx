@@ -54,8 +54,8 @@ function BookingPreview({
 
   return (
     <Link
-      href={expanded ? '/aluno/evolucao#minhas-reservas' :
-        `/aluno/evolucao?reserva=${booking.id}#detalhes-reserva`}
+      href={expanded ? `/aluno/evolucao#reserva-${booking.id}` :
+        `/aluno/evolucao?reserva=${booking.id}#reserva-${booking.id}`}
       aria-current={expanded ? 'page' : undefined}
       className={
         'press block rounded-[18px] border p-4 transition-colors ' +
@@ -189,21 +189,19 @@ export default async function ProgressPage({
         ) : (
           <div className="mt-4 grid gap-3">
             {bookings.map((booking) => (
-              <BookingPreview key={booking.id} booking={booking}
-                expanded={selected?.id === booking.id} />
-            ))}
-          </div>
-        )}
-      </section>
-
-      {selected ? (
+              <div id={`reserva-${booking.id}`} key={booking.id}
+                className="grid gap-2 scroll-mt-28">
+                <BookingPreview booking={booking}
+                  expanded={selected?.id === booking.id} />
+                {selected?.id === booking.id ? (
+                  <>
         <section id="detalhes-reserva"
-          className="mt-4 scroll-mt-5 rounded-[22px] border border-line bg-surface p-4">
+          className="scroll-mt-5 rounded-[22px] border border-line bg-surface p-4">
           <div className="flex flex-wrap items-center justify-between gap-2">
             <p className="text-[12px] font-semibold uppercase tracking-[0.08em] text-brand">
               Detalhes da reserva
             </p>
-            <Link href="/aluno/evolucao#minhas-reservas"
+            <Link href={`/aluno/evolucao#reserva-${selected.id}`}
               className="text-[13px] font-semibold text-brand underline">
               Fechar detalhes
             </Link>
@@ -391,7 +389,14 @@ export default async function ProgressPage({
             </Link>
           </div>
         </section>
-      ) : null}
+                  </>
+                ) : null}
+              </div>
+            ))}
+          </div>
+        )}
+      </section>
+
     </>
   );
 }
