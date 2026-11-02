@@ -3,6 +3,13 @@
  * message: the raw text can carry internal details and is only logged.
  */
 const KNOWN: readonly [RegExp, string][] = [
+  [/Meeting day has not arrived/i,
+    'Este encontro só pode ser iniciado a partir do dia agendado. Confira a data da aula.'],
+  [/Finish the previous meeting first/i,
+    'Conclua e registre o encontro anterior antes de iniciar o próximo.'],
+  [/Select valid kite skills for the minutes taught/i,
+    'Marque pelo menos uma etapa do kite para registrar uma aula com minutos realizados.'],
+
   [/Instructor has a class or block at the selected time/i,
     'Este instrutor não está disponível no horário escolhido. Confira os dias e horários configurados, bloqueios e aulas já agendadas. Selecione outro horário ou outro instrutor. Nenhuma aula foi criada.'],
   [/A started test must be completed before cleanup/i,

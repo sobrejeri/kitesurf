@@ -16,10 +16,19 @@ export async function startMeeting(_prev: ActionState, form: FormData): Promise<
   if (!parsed.success) return { error: 'Informe o código de 4 dígitos.' };
 
   const supabase = await createSupabaseServerClient();
-  const { error } = await supabase.rpc('start_meeting', {
+  let { error } = await supabase.rpc('start_ordered_meeting', {
     p_meeting_id: parsed.data.meetingId,
     p_presence_code: parsed.data.presenceCode,
   });
+  // During rollout, keep existing lessons operable until Migration 26 is
+  // applied. Once installed, PostgreSQL enforces the day and sequence checks.
+  if (error && (error.code === 'PGRST202' || error.code === '42883')) {
+    const legacy = await supabase.rpc('start_meeting', {
+      p_meeting_id: parsed.data.meetingId,
+      p_presence_code: parsed.data.presenceCode,
+    });
+    error = legacy.error;
+  }
   if (error) return { error: friendlyError(error) };
   revalidatePath('/instrutor/aula');
   return { ok: 'Presença confirmada. Bom vento!' };
@@ -99,4 +108,56 @@ export async function updateInstructorProfile(_prev: ActionState, form: FormData
   return { ok: transportUnavailable
     ? 'Perfil salvo. A opção de veículo de apoio ainda depende da atualização do banco.'
     : 'Perfil salvo. A operação analisa seu cadastro antes de liberar pedidos.' };
+}
+
+
+/**
+ * Record the minutes plus the six kite stages as one atomic DB operation.
+ * A stage can be practised or mastered. Nothing is unlocked for the student
+ * before the instructor closes the meeting.
+ */
+export async function recordMeetingWithSkills(_prev: ActionState, form: FormData): Promise<ActionState> {
+  await requireRole(['instructor']);
+  const parsed = z.strictObject({
+    meetingId: z.uuid(),
+    doneMinutes: z.coerce.number().int().min(0).max(480),
+  }).safeParse({
+    meetingId: form.get('meetingId'),
+    doneMinutes: form.get('doneMinutes'),
+  });
+  if (!parsed.success) return { error: 'Confira os minutos realizados.' };
+
+  const practiced: number[] = [];
+  const mastered: number[] = [];
+  for (let step = 1; step <= 6; step++) {
+    const value = form.get('step' + step);
+    if (value !== 'none' && value !== 'practiced' && value !== 'mastered') {
+      return { error: 'Confira a evolução de cada etapa do kite.' };
+    }
+    if (value === 'practiced') practiced.push(step);
+    if (value === 'mastered') mastered.push(step);
+  }
+  if (parsed.data.doneMinutes > 0 && practiced.length + mastered.length === 0) {
+    return { error: 'Marque pelo menos uma etapa trabalhada nesta aula.' };
+  }
+  if (parsed.data.doneMinutes === 0 && practiced.length + mastered.length > 0) {
+    return { error: 'Não é possível registrar etapas com zero minutos realizados.' };
+  }
+
+  const db = await createSupabaseServerClient();
+  const { error } = await db.rpc('record_meeting_with_skills', {
+    p_meeting_id: parsed.data.meetingId,
+    p_done_minutes: parsed.data.doneMinutes,
+    p_practiced_steps: practiced,
+    p_mastered_steps: mastered,
+  });
+  if (error) {
+    console.error('[instructor.meeting.skills]', { code: error.code, message: error.message });
+    return { error: friendlyError(error) };
+  }
+  revalidatePath('/instrutor/aula');
+  revalidatePath('/instrutor/hoje');
+  revalidatePath('/aluno/evolucao');
+  revalidatePath('/aluno/aulas');
+  return { ok: 'Encontro registrado! As etapas trabalhadas já aparecem na evolução do aluno.' };
 }

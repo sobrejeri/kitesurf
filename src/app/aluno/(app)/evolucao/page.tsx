@@ -5,18 +5,12 @@ import { Icon, type IconName } from '@/components/icon';
 import { StudentHero, SunsetEmpty } from '@/components/student/sunset';
 import { requireRole } from '@/lib/auth';
 import { learningBalance, listBookingsForStudent } from '@/lib/data';
-import { formatDateLong, formatMinutes } from '@/lib/format';
+import { formatDateLong, formatMinutes, formatTime } from '@/lib/format';
+import { KITE_STEPS, kiteStageStatus } from '@/lib/kite-steps';
+import { getMeetingKiteSkills } from '@/lib/meeting-skills';
 
 export const metadata: Metadata = { title: 'Minha evolução' };
 
-const STEPS = [
-  ['Conhecer os equipamentos', 'Entenda o kite, a prancha e os acessórios.'],
-  ['Entender o vento e a janela de voo', 'Como o vento funciona e a zona segura de pilotagem.'],
-  ['Controlar o kite', 'Exercícios de controle na areia e na água, com segurança.'],
-  ['Body drag', 'Ganhe confiança no mar controlando o kite com o corpo.'],
-  ['Waterstart', 'Aprenda a levantar da água e começar a velejar.'],
-  ['Primeiros bordos', 'Mantenha o controle e faça seus primeiros percursos.'],
-] as const;
 
 function Stat({ label, value, hint, icon, href }: { label: string; value: string; hint: string; icon: IconName; href: string }) {
   return (
@@ -40,6 +34,24 @@ export default async function ProgressPage() {
   const viewer = await requireRole(['student'], '/aluno/evolucao');
   const bookings = await listBookingsForStudent(viewer.id);
   const balance = learningBalance(bookings);
+  const meetingIds = bookings.flatMap((booking) => booking.booking_meetings.map((m) => m.id));
+  const skills = await getMeetingKiteSkills(meetingIds);
+  const allSkills = skills.rows;
+  const todayInCeara = new Date().toLocaleDateString('en-CA', { timeZone: 'America/Fortaleza' });
+  const dateInCeara = (iso: string) => new Date(iso).toLocaleDateString('en-CA', { timeZone: 'America/Fortaleza' });
+  const encounters = bookings
+    .filter((booking) => booking.status === 'confirmed' || booking.status === 'completed')
+    .flatMap((booking) => booking.booking_meetings.map((meeting) => {
+      const priorComplete = booking.booking_meetings
+        .every((previous) => previous.position >= meeting.position || previous.status === 'done');
+      const unlocked = meeting.status === 'done' || meeting.status === 'in_progress'
+        || (meeting.status === 'scheduled' && priorComplete && dateInCeara(meeting.starts_at) <= todayInCeara);
+      return {
+        booking, meeting, unlocked, priorComplete,
+        skills: allSkills.filter((r) => r.meeting_id === meeting.id),
+      };
+    }))
+    .sort((a, b) => a.meeting.starts_at.localeCompare(b.meeting.starts_at));
   const donePercent = balance.contracted ? Math.round((balance.done / balance.contracted) * 100) : 0;
   const history = bookings
     .flatMap((booking) =>
@@ -97,6 +109,92 @@ export default async function ProgressPage() {
         <Stat label="Saldo disponível" value={formatMinutes(balance.available)} hint="Para os próximos encontros" icon="wallet" href="/aluno/reservar" />
       </div>
 
+      <section className="mt-5 rounded-[22px] border border-line bg-surface p-5">
+        <h2 className="flex items-center gap-3 text-[19px] font-bold text-ink">
+          <Icon name="calendar" className="!h-6 !w-6 text-brand" />
+          Sua evolução por encontro
+        </h2>
+        <p className="mt-2 text-[13px] text-muted">
+          Cada aula fica disponível no dia marcado e após a conclusão da anterior.
+          O instrutor registra o que foi praticado ao encerrar cada encontro.
+        </p>
+        {encounters.length === 0 ? (
+          <p className="mt-4 rounded-xl border border-line p-4 text-[13px] text-muted">
+            Você ainda não tem encontros confirmados.
+          </p>
+        ) : (
+          <ol className="mt-5 grid gap-3">
+            {encounters.map(({ booking, meeting, unlocked, priorComplete, skills: meetingSkills }) => {
+              const done = meeting.status === 'done';
+              const inProgress = meeting.status === 'in_progress';
+              const locked = !unlocked;
+              return (
+                <li key={meeting.id} className={
+                  'rounded-[17px] border p-4 ' +
+                  (done ? 'border-[#1aa691] bg-[#053c42]' :
+                    inProgress ? 'border-[#e78936] bg-[#41301d]' :
+                    locked ? 'border-line bg-surface/75' : 'border-brand bg-brand-tint')
+                }>
+                  <div className="flex flex-wrap items-center justify-between gap-2">
+                    <strong className="text-[15px] font-bold text-ink">
+                      Encontro {meeting.position} de {booking.booking_meetings.length}
+                    </strong>
+                    <span className={
+                      'rounded-full px-3 py-1 text-[11px] font-bold ' +
+                      (done ? 'bg-[#126553] text-[#bdffe7]' :
+                        inProgress ? 'bg-[#87521f] text-[#fff1d5]' :
+                        locked ? 'bg-sand text-label' : 'bg-brand-tint text-brand')
+                    }>
+                      {done ? 'Concluído' : inProgress ? 'Em aula' : locked ? 'Bloqueado' : 'Disponível'}
+                    </span>
+                  </div>
+                  <p className="mt-1 text-[12px] text-label">
+                    {formatDateLong(meeting.starts_at)} às {formatTime(meeting.starts_at)}
+                    {' · '}{formatMinutes(meeting.minutes)} agendados
+                  </p>
+                  {done ? (
+                    <>
+                      <p className="mt-2 text-[13px] font-semibold text-brand">
+                        {formatMinutes(meeting.done_minutes)} realizados
+                      </p>
+                      {meetingSkills.length ? (
+                        <ul className="mt-3 grid gap-2">
+                          {meetingSkills.map((skill) => {
+                            const step = KITE_STEPS.find((item) => item.id === skill.step_number);
+                            return step ? (
+                              <li key={step.id} className="flex gap-2 text-[12px] text-ink">
+                                <Icon name="check" className="!h-4 !w-4 shrink-0 text-brand" />
+                                <span>{step.title} · {skill.result === 'mastered' ? 'Concluída' : 'Praticada'}</span>
+                              </li>
+                            ) : null;
+                          })}
+                        </ul>
+                      ) : (
+                        <p className="mt-2 text-[12px] text-muted">
+                          {skills.ready
+                            ? 'Nenhuma etapa individual foi registrada neste encontro.'
+                            : 'O detalhamento das etapas estará disponível após a atualização do sistema.'}
+                        </p>
+                      )}
+                    </>
+                  ) : locked ? (
+                    <p className="mt-2 text-[12px] text-muted">
+                      {priorComplete ? 'Disponível a partir do dia agendado.' :
+                        'Conclua o encontro anterior para liberar esta etapa.'}
+                    </p>
+                  ) : (
+                    <p className="mt-2 text-[12px] text-label">
+                      {inProgress ? 'O instrutor está realizando este encontro.' :
+                        'O encontro está disponível; as etapas aparecerão após o registro do instrutor.'}
+                    </p>
+                  )}
+                </li>
+              );
+            })}
+          </ol>
+        )}
+      </section>
+
       <div className="mt-5 grid gap-5 lg:grid-cols-[1.3fr_1fr]">
         <section className="relative overflow-hidden rounded-[22px] border border-line bg-surface p-5">
           <span className="absolute -bottom-16 -right-16 h-56 w-56 rounded-full bg-[radial-gradient(circle,#ff7a1a33,transparent_65%)]" aria-hidden="true" />
@@ -107,21 +205,37 @@ export default async function ProgressPage() {
               <p className="text-[13px] text-muted">As etapas que você vai trabalhar com seu instrutor.</p>
             </div>
           </div>
+          <p className="mt-3 text-[12px] text-label">
+            As etapas são registradas pelo instrutor. Praticada indica desenvolvimento;
+            concluída indica que a habilidade já foi alcançada.
+          </p>
           <ol className="relative mt-5">
-            {STEPS.map(([title, body], index) => (
-              <li key={title} className="relative flex gap-4 pb-5 last:pb-0">
-                {index < STEPS.length - 1 ? (
-                  <span className={`absolute left-[19px] top-10 h-[calc(100%-40px)] w-px ${index === 0 ? 'bg-brand' : 'bg-line-ghost'}`} aria-hidden="true" />
-                ) : null}
-                <span className={`grid h-10 w-10 shrink-0 place-items-center rounded-full text-[15px] font-semibold ${index === 0 ? 'bg-brand text-white shadow-button' : 'bg-sand text-label'}`}>
-                  {index + 1}
-                </span>
-                <span className="pt-1">
-                  <strong className="block text-[15px] font-semibold text-ink">{title}</strong>
-                  <span className="text-[13px] text-muted">{body}</span>
-                </span>
-              </li>
-            ))}
+            {KITE_STEPS.map((step, index) => {
+              const state = kiteStageStatus(allSkills, step.id);
+              return (
+                <li key={step.id} className="relative flex gap-4 pb-5 last:pb-0">
+                  {index < KITE_STEPS.length - 1 ? (
+                    <span className="absolute left-[19px] top-10 h-[calc(100%-40px)] w-px bg-line-ghost"
+                      aria-hidden="true" />
+                  ) : null}
+                  <span className={
+                    'relative grid h-10 w-10 shrink-0 place-items-center rounded-full text-[15px] font-semibold ' +
+                    (state === 'mastered' ? 'bg-[#159c84] text-white' :
+                      state === 'practiced' ? 'bg-brand text-white' : 'bg-sand text-label')
+                  }>
+                    {state === 'mastered' ? <Icon name="check" className="!h-5 !w-5" /> : step.id}
+                  </span>
+                  <span className="min-w-0 pt-1">
+                    <strong className="block text-[15px] font-semibold text-ink">{step.title}</strong>
+                    <span className="mt-1 block text-[13px] text-muted">{step.description}</span>
+                    <span className="mt-2 block text-[11px] font-bold text-brand">
+                      {state === 'mastered' ? 'Concluída' :
+                        state === 'practiced' ? 'Em desenvolvimento' : 'Ainda não trabalhada'}
+                    </span>
+                  </span>
+                </li>
+              );
+            })}
           </ol>
         </section>
 
