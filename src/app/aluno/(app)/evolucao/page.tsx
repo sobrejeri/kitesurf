@@ -56,7 +56,7 @@ function BookingPreview({
   return (
     <Link
       href={expanded ? '/aluno/evolucao#minhas-reservas' :
-        ${/aluno/evolucao?reserva=${booking.id}#detalhes-reserva}}
+        `/aluno/evolucao?reserva=${booking.id}#detalhes-reserva`}
       aria-current={expanded ? 'page' : undefined}
       className={
         'press block rounded-[18px] border p-4 transition-colors ' +
@@ -65,20 +65,20 @@ function BookingPreview({
     >
       <div className="flex items-start justify-between gap-2">
         <div className="min-w-0">
-          <p className="truncate text-[15px] font-bold text-ink">${booking.code}</p>
+          <p className="truncate text-[15px] font-bold text-ink">{booking.code}</p>
           <p className="mt-1 text-[12px] text-label">
-            ${booking.beach?.name ?? 'Praia'} · ${KITE_LEVEL_BADGES[booking.level].label}
+            {booking.beach?.name ?? 'Praia'} · {KITE_LEVEL_BADGES[booking.level].label}
           </p>
         </div>
         <ProgressStatus label={label} />
       </div>
       <div className="mt-3 flex items-center justify-between gap-2 text-[12px] text-muted">
         <span>
-          ${formatMinutes(booking.total_hours * 60)} contratadas
-          {next ? ${ · Próximo: ${formatDateLong(next.starts_at)}} : ''}
+          {formatMinutes(booking.total_hours * 60)} contratadas
+          {next ? ` · Próximo: ${formatDateLong(next.starts_at)}` : ''}
         </span>
         <span className="shrink-0 font-semibold text-brand">
-          ${expanded ? 'Fechar' : 'Ver detalhes'} <span aria-hidden="true">›</span>
+          {expanded ? 'Fechar' : 'Ver detalhes'} <span aria-hidden="true">›</span>
         </span>
       </div>
       {booking.status !== 'awaiting_payment' && booking.status !== 'cancelled' &&
@@ -88,10 +88,10 @@ function BookingPreview({
             role="progressbar" aria-label="Progresso dos encontros"
             aria-valuemin={0} aria-valuemax={100} aria-valuenow={progress.percent}>
             <span className="block h-full rounded-full bg-brand"
-              style={{ width: ${progress.percent}% }} />
+              style={{ width: `${progress.percent}%` }} />
           </div>
           <span className="tabular shrink-0 text-[11px] text-label">
-            ${progress.completed}/${progress.total} encontros
+            {progress.completed}/{progress.total} encontros
           </span>
         </div>
       ) : null}
@@ -102,8 +102,8 @@ function BookingPreview({
 function ReservationMetric({ label, value }: { label: string; value: string }) {
   return (
     <div className="rounded-[15px] border border-line bg-surface p-3">
-      <p className="text-[12px] text-muted">${label}</p>
-      <p className="tabular mt-1 text-[21px] font-bold text-ink">${value}</p>
+      <p className="text-[12px] text-muted">{label}</p>
+      <p className="tabular mt-1 text-[21px] font-bold text-ink">{value}</p>
     </div>
   );
 }
@@ -174,7 +174,7 @@ export default async function ProgressPage({
         className="relative -mt-2 scroll-mt-6 rounded-[22px] border border-line bg-surface p-4">
         <div className="flex items-center justify-between gap-3">
           <h2 className="text-[18px] font-bold text-ink">Minhas reservas</h2>
-          <span className="text-[12px] text-muted">${bookings.length} no total</span>
+          <span className="text-[12px] text-muted">{bookings.length} no total</span>
         </div>
         <p className="mt-1 text-[12px] text-muted">
           Toque em uma reserva para consultar os detalhes. As outras ficam recolhidas.
@@ -210,13 +210,13 @@ export default async function ProgressPage({
             </Link>
           </div>
           <div className="mt-2 flex flex-wrap items-center justify-between gap-3">
-            <h2 className="break-all text-[20px] font-extrabold text-ink">${selected.code}</h2>
+            <h2 className="break-all text-[20px] font-extrabold text-ink">{selected.code}</h2>
             <ProgressStatus label={evolutionBookingStatus(selected)} />
           </div>
           <p className="mt-2 text-[13px] text-muted">
-            ${selected.beach?.name ?? 'Praia'} · ${KITE_LEVEL_BADGES[selected.level].label}
+            {selected.beach?.name ?? 'Praia'} · {KITE_LEVEL_BADGES[selected.level].label}
             {selected.instructor?.full_name
-              ? ${ · Instrutor: ${selected.instructor.full_name}} : ''}
+              ? ` · Instrutor: ${selected.instructor.full_name}` : ''}
           </p>
 
           {selected.status === 'awaiting_payment' ? (
@@ -239,21 +239,21 @@ export default async function ProgressPage({
           <div className="mt-4">
             <div className="flex items-center justify-between gap-2">
               <p className="text-[13px] font-semibold text-ink">Horas realizadas</p>
-              <span className="tabular text-[14px] font-extrabold text-brand">${percentHours}%</span>
+              <span className="tabular text-[14px] font-extrabold text-brand">{percentHours}%</span>
             </div>
             <div className="mt-2 h-2 w-full overflow-hidden rounded-full bg-track"
               role="progressbar" aria-label="Horas realizadas na reserva selecionada"
               aria-valuemin={0} aria-valuemax={100} aria-valuenow={percentHours}>
               <span className="block h-full rounded-full bg-brand"
-                style={{ width: ${percentHours}% }} />
+                style={{ width: `${percentHours}%` }} />
             </div>
           </div>
 
           {assessment ? (
             <div className="mt-4 rounded-[16px] border border-line bg-brand-tint p-3">
               <p className="text-[13px] font-bold text-ink">
-                Avaliação final do instrutor: ${KITE_LEVEL_BADGES[assessment.assessed_level].label}
-                {' · '}${KITE_LEVEL_BADGES[assessment.assessed_level].metal}
+                Avaliação final do instrutor: {KITE_LEVEL_BADGES[assessment.assessed_level].label}
+                {' · '}{KITE_LEVEL_BADGES[assessment.assessed_level].metal}
               </p>
               <p className="mt-1 text-[12px] text-muted">
                 Registrada após a conclusão da reserva. Não é uma certificação externa.
@@ -264,7 +264,7 @@ export default async function ProgressPage({
           <div className="mt-5 border-t border-line pt-4">
             <h3 className="flex items-center gap-2 text-[17px] font-bold text-ink">
               <Icon name="calendar" className="!h-5 !w-5 text-brand" />
-              Encontros · ${sortedMeetings.length}
+              Encontros · {sortedMeetings.length}
             </h3>
             {sortedMeetings.length === 0 ? (
               <p className="mt-2 text-[13px] text-muted">
@@ -295,18 +295,18 @@ export default async function ProgressPage({
                       className="rounded-[14px] border border-line bg-surface p-3">
                       <div className="flex flex-wrap items-center justify-between gap-2">
                         <strong className="text-[13px] font-bold text-ink">
-                          Encontro ${meeting.position}
+                          Encontro {meeting.position}
                         </strong>
-                        <span className="text-[11px] font-semibold text-brand">${status}</span>
+                        <span className="text-[11px] font-semibold text-brand">{status}</span>
                       </div>
                       <p className="mt-1 text-[12px] text-muted">
-                        ${formatDateLong(meeting.starts_at)} às ${formatTime(meeting.starts_at)}
-                        {' · '}${formatMinutes(meeting.minutes)} previstas
+                        {formatDateLong(meeting.starts_at)} às {formatTime(meeting.starts_at)}
+                        {' · '}{formatMinutes(meeting.minutes)} previstas
                       </p>
                       {done ? (
                         <>
                           <p className="mt-1 text-[12px] font-semibold text-ink">
-                            ${formatMinutes(meeting.done_minutes)} realizadas
+                            {formatMinutes(meeting.done_minutes)} realizadas
                           </p>
                           {practiced.length ? (
                             <ul className="mt-2 grid gap-1">
@@ -315,7 +315,7 @@ export default async function ProgressPage({
                                   (candidate) => candidate.id === skill.step_number);
                                 return step ? (
                                   <li key={skill.step_number} className="text-[12px] text-label">
-                                    ${step.title} · ${skill.result === 'mastered'
+                                    {step.title} · {skill.result === 'mastered'
                                       ? 'Concluída' : 'Praticada'}
                                   </li>
                                 ) : null;
@@ -323,7 +323,7 @@ export default async function ProgressPage({
                             </ul>
                           ) : (
                             <p className="mt-2 text-[12px] text-muted">
-                              ${skills.ready ? 'Nenhuma etapa individual registrada.'
+                              {skills.ready ? 'Nenhuma etapa individual registrada.'
                                 : 'O detalhamento das habilidades não está disponível.'}
                             </p>
                           )}
@@ -347,7 +347,7 @@ export default async function ProgressPage({
                       assessed={assessment?.assessed_level === selected.level}/>
                   </div>
                   <p className="mt-2 text-[12px] text-muted">
-                    ${KITE_LEVEL_BADGES[selected.level].detail}.
+                    {KITE_LEVEL_BADGES[selected.level].detail}.
                     As habilidades abaixo pertencem somente a esta reserva.
                   </p>
                 </div>
@@ -363,17 +363,17 @@ export default async function ProgressPage({
                           : state === 'practiced' ? 'bg-brand text-white'
                           : 'bg-sand text-label')
                       }>
-                        ${state === 'mastered' ? <Icon name="check" className="!h-4 !w-4"/> : step.id}
+                        {state === 'mastered' ? <Icon name="check" className="!h-4 !w-4"/> : step.id}
                       </span>
                       <span className="min-w-0">
                         <strong className="block text-[14px] font-semibold text-ink">
-                          ${step.title}
+                          {step.title}
                         </strong>
                         <span className="mt-0.5 block text-[12px] text-muted">
-                          ${step.description}
+                          {step.description}
                         </span>
                         <span className="mt-1 block text-[11px] font-bold text-brand">
-                          ${state === 'mastered' ? 'Concluída'
+                          {state === 'mastered' ? 'Concluída'
                             : state === 'practiced' ? 'Em desenvolvimento'
                             : finished ? 'Não registrada nesta reserva' : 'Ainda não trabalhada'}
                         </span>
@@ -386,7 +386,7 @@ export default async function ProgressPage({
           ) : null}
 
           <div className="mt-5 border-t border-line pt-3">
-            <Link href={${/aluno/reserva/${selected.id}}}
+            <Link href={`/aluno/reserva/${selected.id}`}
               className="text-[13px] font-semibold text-brand underline">
               Consultar reserva e instrutor
             </Link>
