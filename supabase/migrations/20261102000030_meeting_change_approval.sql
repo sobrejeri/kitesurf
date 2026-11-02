@@ -282,12 +282,11 @@ GRANT EXECUTE ON FUNCTION public.request_meeting_change(uuid,timestamptz,text),
 -- Only schedule automatically if pg_cron is already enabled. See SQL below
 -- for activation; local isolated CI PostgreSQL typically has no pg_cron.
 DO $$
-DECLARE v_schema text;
 BEGIN
-  SELECT n.nspname INTO v_schema FROM pg_extension e
-   JOIN pg_namespace n ON n.oid=e.extnamespace WHERE e.extname='pg_cron';
-  IF v_schema IS NOT NULL THEN
-    EXECUTE format('SELECT %I.schedule($1,$2,$3)',v_schema)
+  -- pg_cron is often installed in pg_catalog, while its scheduling function
+  -- lives in the "cron" schema. Check the function, not the extension schema.
+  IF to_regprocedure('cron.schedule(text,text,text)') IS NOT NULL THEN
+    EXECUTE 'SELECT cron.schedule($1,$2,$3)'
       USING 'vento-meeting-change-expiry','*/5 * * * *',
         'SELECT public.expire_meeting_change_requests()';
   END IF;
