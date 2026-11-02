@@ -52,7 +52,7 @@ export default async function BookingPage({ params }: { params: Promise<{ id: st
     ? {
       eyebrow: 'Aguardando pagamento',
       title: 'Falta só confirmar o pagamento.',
-      lead: 'Confira os dados da reserva e conclua o pagamento de teste, quando disponível.',
+      lead: 'Confira os dados da reserva e conclua a etapa de pagamento para garantir a aula.',
     }
     : booking.status === 'cancelled'
       ? {
@@ -238,7 +238,7 @@ export default async function BookingPage({ params }: { params: Promise<{ id: st
               )}
             </Card>
           ) : null}
-          {awaiting ? null : (
+          {booking.status === 'confirmed' ? (
             <Card className="text-center">
               <Eyebrow>Na hora da aula</Eyebrow>
               <h2 className="mt-2 text-[16px]">Seu código de presença</h2>
@@ -252,7 +252,7 @@ export default async function BookingPage({ params }: { params: Promise<{ id: st
           <Card>
             <div className="flex items-center justify-between">
               <span className="text-[13px] text-label">{booking.is_test ? 'Simulação' : 'Pagamento'}</span>
-              <Badge tone={booking.is_test || awaiting ? 'warning' : 'success'}>{booking.is_test ? 'Sem cobrança' : awaiting ? 'Pendente' : 'Confirmado'}</Badge>
+              <Badge tone={booking.is_test || awaiting || booking.status === 'cancelled' ? 'warning' : 'success'}>{booking.is_test ? 'Sem cobrança' : awaiting ? 'Pendente' : booking.status === 'cancelled' ? 'Reserva cancelada' : 'Confirmado'}</Badge>
             </div>
             <div className="mt-4 flex items-center justify-between">
               <span className="text-[13px] text-label">Total da reserva</span>
