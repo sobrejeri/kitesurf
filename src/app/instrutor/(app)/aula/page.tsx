@@ -14,6 +14,7 @@ import { KITE_CURRICULA, KITE_LEVEL_BADGES } from '@/lib/kite-steps';
 import { findCompletedInstructorMeeting, listCompletedInstructorMeetings } from '@/lib/instructor-completed-meetings';
 import { getMeetingKiteSkills } from '@/lib/meeting-skills';
 import { listMeetingChanges } from '@/lib/meeting-changes';
+import { releaseMyBooking } from '@/app/actions/meeting-change';
 import { MeetingChangePanel } from '@/components/meeting-change-panel';
 import { groupInstructorLessons, resolveInstructorLessonTab, selectInstructorLesson, mayStartInstructorLesson } from '@/lib/instructor-lesson-tabs';
 import { getBookingLevelAssessments } from '@/lib/booking-level-assessments';
@@ -222,6 +223,28 @@ export default async function RunLessonPage({
                   bookingStatus={booking.status}
                   changes={changeRequests}
                 />
+              ) : null}
+              {meeting.status==='scheduled' && booking.status==='confirmed'
+                  && booking.booking_meetings.every(m=>m.status==='scheduled')
+                  && booking.booking_meetings.every(m=>Date.parse(m.starts_at)>=Date.now()+72*3600000) ? (
+                <details className="mt-4 rounded-xl border border-orange-600/45 bg-surface p-3">
+                  <summary className="cursor-pointer text-[13px] font-semibold text-brand">
+                    Não posso atender · liberar para outro instrutor
+                  </summary>
+                  <p className="mt-2 text-[12px] text-muted">
+                    Disponível até 72 horas antes do primeiro encontro. Sua atribuição
+                    será encerrada, mas o aluno manterá a reserva, datas e valores.
+                    A plataforma a oferecerá ao próximo instrutor disponível da fila.
+                  </p>
+                  <ActionForm action={releaseMyBooking} submitLabel="Liberar minha reserva"
+                    className="mt-3 grid gap-3">
+                    <input type="hidden" name="bookingId" value={booking.id}/>
+                    <Field label="Motivo da indisponibilidade">
+                      <textarea name="reason" minLength={8} maxLength={500}
+                        required rows={3} className={textareaClass}/>
+                    </Field>
+                  </ActionForm>
+                </details>
               ) : null}
               {meeting.status === 'in_progress' ? (
                 <Note className="mt-4" title="Aula iniciada">
