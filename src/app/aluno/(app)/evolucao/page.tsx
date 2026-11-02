@@ -5,7 +5,7 @@ import { Icon, type IconName } from '@/components/icon';
 import { StudentHero, SunsetEmpty } from '@/components/student/sunset';
 import { requireRole } from '@/lib/auth';
 import { learningBalance, listBookingsForStudent } from '@/lib/data';
-import { activeStudentBookings, bookingIsFinished } from '@/lib/booking-cycle';
+import { activeBookingStageMeetingIds, activeStudentBookings, bookingIsFinished } from '@/lib/booking-cycle';
 import { formatDateLong, formatMinutes, formatTime } from '@/lib/format';
 import { KITE_CURRICULA, KITE_LEVEL_BADGES, kiteStageStatus } from '@/lib/kite-steps';
 import { KiteLevelMedal } from '@/components/student/kite-level-medal';
@@ -61,11 +61,7 @@ export default async function ProgressPage({
   const allSkills = skills.rows;
   // Only the selected active reservation can update the active learning path.
   // Finished bookings remain accessible in the separate historical reports.
-  const relevantMeetingIds = new Set(
-    selected?.booking_meetings
-      .filter((meeting) => meeting.status === 'done')
-      .map((meeting) => meeting.id) ?? [],
-  );
+  const relevantMeetingIds = new Set(activeBookingStageMeetingIds(selected));
   const currentSkills = allSkills.filter((entry) => relevantMeetingIds.has(entry.meeting_id));
   const todayInCeara = new Date().toLocaleDateString('en-CA', { timeZone: 'America/Fortaleza' });
   const dateInCeara = (iso: string) => new Date(iso).toLocaleDateString('en-CA', { timeZone: 'America/Fortaleza' });
