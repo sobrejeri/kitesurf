@@ -156,5 +156,50 @@ CREATE POLICY vento_student_avatar_booked_instructor_select
     AND public.instructor_can_read_student_avatar(name)
   );
 
+
+-- New entry point for day-by-day lessons. The existing start_meeting keeps
+-- validating the student's presence code and instructor authorization.
+-- The new endpoint additionally requires the scheduled Ceará date to have
+-- arrived and every earlier encounter of this booking to be completed.
+CREATE OR REPLACE FUNCTION public.start_ordered_meeting(
+  p_meeting_id uuid, p_presence_code text
+) RETURNS void
+LANGUAGE plpgsql SECURITY DEFINER SET search_path = ''
+AS $
+DECLARE
+  v_instructor uuid := public.require_role(ARRAY['instructor']::public.app_role[]);
+  v_meeting public.booking_meetings;
+  v_booking public.bookings;
+BEGIN
+  SELECT * INTO v_meeting
+    FROM public.booking_meetings WHERE id=p_meeting_id FOR UPDATE;
+  SELECT * INTO v_booking
+    FROM public.bookings WHERE id=v_meeting.booking_id FOR UPDATE;
+  IF v_meeting.id IS NULL OR v_booking.instructor_id IS DISTINCT FROM v_instructor THEN
+    RAISE EXCEPTION 'Meeting not found' USING errcode='P0002';
+  END IF;
+  IF v_meeting.status <> 'scheduled' OR v_booking.status <> 'confirmed' THEN
+    RAISE EXCEPTION 'Meeting cannot be started' USING errcode='55000';
+  END IF;
+  IF (v_meeting.starts_at AT TIME ZONE 'America/Fortaleza')::date
+      > (now() AT TIME ZONE 'America/Fortaleza')::date THEN
+    RAISE EXCEPTION 'Meeting day has not arrived'
+      USING errcode='55000';
+  END IF;
+  IF EXISTS (
+    SELECT 1 FROM public.booking_meetings previous
+    WHERE previous.booking_id=v_meeting.booking_id
+      AND previous.position<v_meeting.position
+      AND previous.status <> 'done'
+  ) THEN
+    RAISE EXCEPTION 'Finish the previous meeting first'
+      USING errcode='55000';
+  END IF;
+  PERFORM public.start_meeting(p_meeting_id,p_presence_code);
+END;
+$;
+REVOKE ALL ON FUNCTION public.start_ordered_meeting(uuid,text) FROM PUBLIC, anon;
+GRANT EXECUTE ON FUNCTION public.start_ordered_meeting(uuid,text) TO authenticated;
+
 NOTIFY pgrst, 'reload schema';
 COMMIT;
