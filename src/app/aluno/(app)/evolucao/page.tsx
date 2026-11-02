@@ -11,6 +11,7 @@ import { KITE_CURRICULA, KITE_LEVEL_BADGES, kiteStageStatus } from '@/lib/kite-s
 import { KiteLevelMedal } from '@/components/student/kite-level-medal';
 import { getStudentKiteLevel } from '@/lib/student-kite-level';
 import { getMeetingKiteSkills } from '@/lib/meeting-skills';
+import { getBookingLevelAssessments } from '@/lib/booking-level-assessments';
 
 export const metadata: Metadata = { title: 'Minha evolução' };
 
@@ -53,7 +54,10 @@ export default async function ProgressPage({
   // remain in History and never contaminate the new reservation's percentage.
   const balance = learningBalance(selected ? [selected] : []);
   const meetingIds = bookings.flatMap((booking) => booking.booking_meetings.map((m) => m.id));
-  const skills = await getMeetingKiteSkills(meetingIds);
+  const [skills, reviews] = await Promise.all([
+    getMeetingKiteSkills(meetingIds),
+    getBookingLevelAssessments(finished.map((booking) => booking.id)),
+  ]);
   const allSkills = skills.rows;
   const relevantMeetingIds = new Set(
     (selected ? [selected] : finished.filter((booking) => booking.level === currentLevel))
@@ -370,7 +374,11 @@ export default async function ProgressPage({
                       {done.length} encontro(s) · {formatMinutes(minutes)} realizados
                       {' · '}{booking.beach?.name ?? 'Praia'}
                     </span>
-                    <span className="mt-1 block text-[11px] text-muted">Toque para ver seu desempenho</span>
+                    <span className="mt-1 block text-[11px] text-muted">
+                      {reviews.assessments.get(booking.id)
+                        ? `Nível avaliado: ${KITE_LEVEL_BADGES[reviews.assessments.get(booking.id)!.assessed_level].label}`
+                        : reviews.ready ? 'Avaliação de nível ainda não registrada' : 'Toque para ver seu desempenho'}
+                    </span>
                   </summary>
                   <div className="mt-4 border-t border-line pt-3">
                     <h3 className="text-[13px] font-bold text-ink">Habilidades registradas</h3>
