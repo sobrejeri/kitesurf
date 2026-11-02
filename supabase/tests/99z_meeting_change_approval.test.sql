@@ -85,6 +85,10 @@ BEGIN
     'Student can reject instructor request';
   ASSERT (SELECT starts_at FROM public.booking_meetings WHERE id=v_meeting)=v_next,
     'Rejection preserves existing date';
+  -- Simulate the instructor's unused 12h decision window ending before a new
+  -- student request on the same booking can be opened.
+  UPDATE public.meeting_change_requests SET choice_expires_at=NULL
+    WHERE id=v_second;
 
   PERFORM pg_temp.as_user_30(v_student);
   v_request:=public.request_meeting_change(
