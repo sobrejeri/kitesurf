@@ -58,8 +58,10 @@ export async function createAdminTestLesson(_prev:ActionState,form:FormData):Pro
     ||meeting.epoch>now+60*86400000))
     return {error:'Cada encontro deve ser agendado com 1 hora de antecedência e até 60 dias.'};
   const chronological=[...slots].sort((a,b)=>a.epoch-b.epoch);
-  if(chronological.some((meeting,index)=>index>0
-    &&meeting.epoch<chronological[index-1].epoch+chronological[index-1].hours*3600000))
+  if(chronological.some((meeting,index)=>{
+    const previous=chronological[index-1];
+    return previous ? meeting.epoch<previous.epoch+previous.hours*3600000 : false;
+  }))
     return {error:'Os encontros desta reserva não podem ter horários sobrepostos.'};
 
   const db=await createSupabaseServerClient();
@@ -71,14 +73,15 @@ export async function createAdminTestLesson(_prev:ActionState,form:FormData):Pro
   });
   if(error){
     // Before migration 29, legacy single-class tests still work.
-    if(chronological.length===1 &&
-      error.code==='PGRST202' && /create_admin_test_booking/i.test(error.message)){
+    const first=chronological[0];
+    if(first && error.code==='PGRST202' &&
+      /create_admin_test_booking/i.test(error.message)){
       const legacy=await db.rpc('create_admin_test_lesson',{
         p_instructor_id:parsed.data.instructorId,
         p_student_id:parsed.data.studentId,
         p_beach_id:parsed.data.beachId,
-        p_starts_at:chronological[0].starts_at,
-        p_hours:chronological[0].hours,
+        p_starts_at:first.starts_at,
+        p_hours:first.hours,
       });
       if(legacy.error){
         console.error('[admin.test_lesson.create.legacy]',{
