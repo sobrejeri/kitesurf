@@ -5,6 +5,7 @@ import { ActionForm } from '@/components/action-form';
 import { ButtonLink, Card, Note, PageHeader, inputClass } from '@/components/ui';
 import { requireRole } from '@/lib/auth';
 import { listActiveBeaches, listAllInstructors } from '@/lib/data';
+import { lessonDate } from '@/lib/dates';
 import { formatDateLong, formatTime } from '@/lib/format';
 import { createSupabaseServerClient } from '@/lib/supabase/server';
 
@@ -60,7 +61,16 @@ export default async function AdminTestLessonPage() {
               <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
                 <div>
                   <label htmlFor="test-date" className="text-[13px] font-semibold">Data e horário (Ceará)</label>
-                  <input id="test-date" name="start" type="datetime-local" required className={inputClass}/>
+                  <input
+                    id="test-date"
+                    name="start"
+                    type="datetime-local"
+                    required
+                    defaultValue={`${lessonDate(1)}T11:00`}
+                    min={`${lessonDate()}T00:00`}
+                    max={`${lessonDate(60)}T23:59`}
+                    className={inputClass + ' [color-scheme:dark]'}
+                  />
                 </div>
                 <div>
                   <label htmlFor="test-hours" className="text-[13px] font-semibold">Duração da aula</label>
@@ -69,7 +79,15 @@ export default async function AdminTestLessonPage() {
                   </select>
                 </div>
               </div>
-              <p className="text-[12px] text-muted">Escolha pelo menos uma hora de antecedência e um horário sem conflito.</p>
+              <p className="text-[12px] text-muted">
+                A data sugerida é amanhã às 11h, horário do Ceará; ela não garante disponibilidade.
+                A aula só é criada se estiver dentro da agenda semanal do instrutor,
+                sem bloqueios ou outras aulas sobrepostas. Confira a{' '}
+                <a href="/admin/agenda" className="font-semibold text-brand underline">
+                  agenda dos instrutores
+                </a>{' '}
+                antes de agendar. Mínimo de uma hora de antecedência.
+              </p>
             </ActionForm>
           ):<Note tone="warning" className="mt-4">Cadastre uma conta de Aluno e um Instrutor, e ative pelo menos uma praia antes de testar.</Note>}
         </Card>
