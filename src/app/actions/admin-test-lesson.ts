@@ -74,7 +74,7 @@ export async function createAdminTestLesson(_prev:ActionState,form:FormData):Pro
   if(error){
     // Before migration 29, legacy single-class tests still work.
     const first=chronological[0];
-    if(first && error.code==='PGRST202' &&
+    if(chronological.length===1 && first && error.code==='PGRST202' &&
       /create_admin_test_booking/i.test(error.message)){
       const legacy=await db.rpc('create_admin_test_lesson',{
         p_instructor_id:parsed.data.instructorId,
