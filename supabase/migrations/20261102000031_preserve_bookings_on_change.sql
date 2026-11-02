@@ -67,6 +67,16 @@ BEGIN
   IF b.status<>'confirmed' OR b.instructor_id IS NOT NULL
      OR r.expires_at<=now() THEN
     UPDATE public.booking_reassignments SET status='unfilled' WHERE id=r.id;
+    IF b.status='confirmed' AND b.instructor_id IS NULL THEN
+      INSERT INTO public.app_notifications(recipient_id,category,title,body,href)
+        VALUES(b.student_id,'booking','Novo instrutor ainda não encontrado',
+          'A equipe vai verificar sua reserva. Nenhum pagamento ou cancelamento foi realizado.',
+          '/aluno/reserva/'||b.id::text);
+      INSERT INTO public.app_notifications(recipient_id,category,title,body,href)
+        SELECT id,'booking','Reserva aguardando instrutor',
+          'Uma reserva não encontrou substituto na fila dentro do prazo. Verifique a agenda.',
+          '/admin/reservas' FROM public.profiles WHERE role='admin';
+    END IF;
     RETURN NULL;
   END IF;
   UPDATE public.booking_reassignment_offers SET status='expired',responded_at=now()
@@ -143,6 +153,14 @@ BEGIN
     RAISE EXCEPTION 'Reassignment requires 72 hours notice'
       USING errcode='22023'; END IF;
   v_previous:=b.instructor_id;
+  -- An existing change request must not open a second decision after release.
+  UPDATE public.meeting_change_requests SET
+    status=CASE WHEN status='pending' THEN 'rejected' ELSE status END,
+    resolution='replacement_requested',
+    choice_expires_at=NULL,
+    responded_at=coalesce(responded_at,now())
+    WHERE booking_id=b.id AND (status='pending' OR choice_expires_at IS NOT NULL)
+      AND resolution IS NULL;
   UPDATE public.bookings SET instructor_id=NULL WHERE id=b.id;
   INSERT INTO public.booking_reassignments(booking_id,previous_instructor)
     VALUES(b.id,v_previous) RETURNING id INTO r;
@@ -437,6 +455,32 @@ REVOKE EXECUTE ON FUNCTION public.advance_booking_reassignment(uuid),
 GRANT EXECUTE ON FUNCTION public.release_my_booking(uuid,text),
  public.respond_booking_reassignment(uuid,boolean),
  public.resolve_student_change(uuid,text) TO authenticated;
+
+-- Private offer data, visible only to the instructor who received an active offer.
+CREATE FUNCTION public.my_booking_reassignment_offers()
+RETURNS TABLE(
+  offer_id uuid, booking_code text, expires_at timestamptz,
+  beach_name text, lesson_level public.lesson_level,
+  lesson_language text, total_hours smallint, with_transport boolean,
+  meetings jsonb, instructor_net_cents integer
+) LANGUAGE sql STABLE SECURITY DEFINER SET search_path='' AS $
+ SELECT o.id,b.code,o.expires_at,be.name,b.level,b.language,b.total_hours,
+   b.with_transport,
+   (SELECT coalesce(jsonb_agg(jsonb_build_object('starts_at',m.starts_at,
+      'hours',m.minutes/60) ORDER BY m.position),'[]'::jsonb)
+    FROM public.booking_meetings m WHERE m.booking_id=b.id AND m.status='scheduled'),
+   b.instructor_net_cents
+ FROM public.booking_reassignment_offers o
+ JOIN public.booking_reassignments r ON r.id=o.reassignment_id
+ JOIN public.bookings b ON b.id=r.booking_id
+ JOIN public.beaches be ON be.id=b.beach_id
+ WHERE o.instructor_id=auth.uid() AND o.status='offered'
+   AND o.expires_at>now() AND r.status='searching' AND b.status='confirmed'
+   AND b.instructor_id IS NULL;
+$;
+REVOKE EXECUTE ON FUNCTION public.my_booking_reassignment_offers()
+ FROM PUBLIC,anon,authenticated;
+GRANT EXECUTE ON FUNCTION public.my_booking_reassignment_offers() TO authenticated;
 
 -- Job name preserved from Migration 30; no duplicate cron jobs. If pg_cron
 -- unavailable, execute the explicit setup SQL after enabling the extension.
