@@ -32,7 +32,7 @@ DECLARE
   v_change uuid;
 BEGIN
   SELECT id INTO v_beach FROM public.beaches WHERE slug='prea';
-  v_start:=(((now() AT TIME ZONE 'America/Fortaleza')::date+70)::timestamp
+  v_start:=(((now() AT TIME ZONE 'America/Fortaleza')::date+35)::timestamp
      +interval '11 hours') AT TIME ZONE 'America/Fortaleza';
   PERFORM pg_temp.as_31(v_admin);
   v_booking:=public.create_admin_test_booking(v_instructor,v_student,v_beach,
