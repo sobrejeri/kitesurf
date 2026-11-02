@@ -20,7 +20,7 @@ export function AdminTestMeetingFields({
   maxDate: string;
 }) {
   const [slots, setSlots] = useState<Slot[]>([
-    { id: 0, start: suggestedDates[0], hours: 2 },
+    { id: 0, start: suggestedDates[0] ?? '', hours: 2 },
   ]);
   const total = slots.reduce((sum, slot) => sum + slot.hours, 0);
 
