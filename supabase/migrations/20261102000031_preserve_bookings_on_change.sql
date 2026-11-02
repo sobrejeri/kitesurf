@@ -476,7 +476,7 @@ RETURNS TABLE(
   beach_name text, lesson_level public.lesson_level,
   lesson_language text, total_hours smallint, with_transport boolean,
   meetings jsonb, instructor_net_cents integer
-) LANGUAGE sql STABLE SECURITY DEFINER SET search_path='' AS $
+) LANGUAGE sql STABLE SECURITY DEFINER SET search_path='' AS $offers_function$
  SELECT o.id,b.code,o.expires_at,be.name,b.level,b.language,b.total_hours,
    b.with_transport,
    (SELECT coalesce(jsonb_agg(jsonb_build_object('starts_at',m.starts_at,
