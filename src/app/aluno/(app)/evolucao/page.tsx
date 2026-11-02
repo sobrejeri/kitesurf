@@ -316,7 +316,7 @@ export default async function ProgressPage({
                 assessed={levelRecord.assessed === currentLevel}/></div>
               <p className="mt-2 text-[13px] text-muted">
                 {KITE_LEVEL_BADGES[currentLevel].detail}.
-                As etapas abaixo acompanham somente esta reserva: {selected.code}.
+                As etapas abaixo acompanham somente a reserva selecionada: {selected?.code ?? ''}.
               </p>
             </div>
           </div>
