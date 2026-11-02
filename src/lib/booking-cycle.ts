@@ -26,3 +26,28 @@ export function activeBookingStageMeetingIds(
     .filter((meeting) => meeting.status === 'done')
     .map((meeting) => meeting.id) ?? [];
 }
+
+/**
+ * Booking details are opt-in: visiting the Evolution tab alone never expands
+ * an unfinished or completed class. The ID must belong to the student-scoped
+ * list returned under RLS.
+ */
+export function selectedStudentBooking(
+  bookings: readonly StudentBooking[],
+  bookingId?: string,
+): StudentBooking | null {
+  if (!bookingId) return null;
+  return bookings.find((booking) => booking.id === bookingId) ?? null;
+}
+
+/** Display the status of a booking rather than labeling all records as active. */
+export function evolutionBookingStatus(
+  booking: Pick<Booking, 'status' | 'booking_meetings'>,
+) {
+  if (booking.status === 'cancelled') return 'Cancelada';
+  if (bookingIsFinished(booking)) return 'Concluída';
+  if (booking.status === 'awaiting_payment') return 'Aguardando pagamento';
+  if (booking.booking_meetings.some((meeting) => meeting.status === 'in_progress')) return 'Em aula';
+  if (booking.booking_meetings.some((meeting) => meeting.status === 'done')) return 'Em andamento';
+  return 'Confirmada';
+}
