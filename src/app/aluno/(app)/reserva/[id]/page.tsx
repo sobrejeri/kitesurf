@@ -189,7 +189,8 @@ export default async function BookingPage({ params }: { params: Promise<{ id: st
                   {booking.status==='confirmed' && booking.instructor_id!==null && meeting.status==='scheduled' ? (
                     <MeetingChangePanel
                       bookingId={booking.id} meeting={meeting}
-                      viewerId={viewer.id} bookingStatus={booking.status}
+                      viewerId={viewer.id}
+                      viewerRole="student" bookingStatus={booking.status}
                       changes={changeRequests}
                     />
                   ) : null}
