@@ -7,11 +7,12 @@ import { rateInstructor } from '@/app/actions/ratings';
 import { ActionForm } from '@/components/action-form';
 import { Icon } from '@/components/icon';
 import { StudentHero } from '@/components/student/sunset';
-import { Avatar, Badge, ButtonLink, Card, Eyebrow, KeyValue, Note, ProgressBar } from '@/components/ui';
+import { StudentInstructorPhoto } from '@/components/student/instructor-photo';
+import { Badge, ButtonLink, Card, Eyebrow, Note, ProgressBar } from '@/components/ui';
 import { requireRole } from '@/lib/auth';
 import { BOOKING_STATUS_LABELS, LEVEL_LABELS, MEETING_STATUS_LABELS, getBookingForViewer, learningBalance } from '@/lib/data';
 import { formatDateLong, formatMinutes, formatMoney, formatTime } from '@/lib/format';
-import { initials } from '@/lib/people';
+import { getStudentBookingInstructorAvatar } from '@/lib/student-booking-avatar';
 import { createSupabaseServerClient } from '@/lib/supabase/server';
 
 export const metadata: Metadata = { title: 'Sua reserva' };
@@ -42,18 +43,50 @@ export default async function BookingPage({ params }: { params: Promise<{ id: st
   const donePercent = balance.contracted ? Math.round((balance.done / balance.contracted) * 100) : 0;
   const reservedPercent = balance.contracted ? Math.round((balance.scheduled / balance.contracted) * 100) : 0;
   const instructorName = booking.instructor?.full_name ?? 'Instrutor a confirmar';
+  const avatarUrl = booking.instructor_id
+    ? await getStudentBookingInstructorAvatar(booking.id)
+    : null;
+
+  // Do not announce cancelled/completed bookings as "confirmed".
+  const heroCopy = booking.status === 'awaiting_payment'
+    ? {
+      eyebrow: 'Aguardando pagamento',
+      title: 'Falta só confirmar o pagamento.',
+      lead: 'Confira os dados da reserva e conclua a etapa de pagamento para garantir a aula.',
+    }
+    : booking.status === 'cancelled'
+      ? {
+        eyebrow: 'Reserva cancelada',
+        title: booking.is_test ? 'Aula teste cancelada.' : 'Sua reserva foi cancelada.',
+        lead: 'Esta reserva não está mais ativa. Consulte os detalhes e as regras de cancelamento.',
+      }
+      : booking.status === 'completed'
+        ? {
+          eyebrow: booking.is_test ? 'Aula de demonstração' : 'Aula concluída',
+          title: booking.is_test ? 'Aula teste concluída.' : 'Sua aula foi concluída.',
+          lead: 'Confira os registros e acompanhe sua evolução no kite.',
+        }
+        : {
+          eyebrow: booking.is_test ? 'Aula de demonstração' : 'Seu próximo bordo',
+          title: booking.is_test ? 'Sua aula teste está agendada.' : 'Sua aula está confirmada.',
+          lead: booking.is_test
+            ? 'Esta aula é uma simulação sem cobrança. Confira os detalhes e o horário combinado.'
+            : 'Tudo organizado. Confira os detalhes e encontre seu instrutor.',
+        };
+
+  const statusStyles: Record<typeof booking.status, string> = {
+    awaiting_payment: 'border-[#b98b40] bg-[#423418] text-[#ffdfa0]',
+    confirmed: 'border-[#3a9d8b] bg-[#0c514c] text-[#bcfff1]',
+    completed: 'border-[#428da6] bg-[#104960] text-[#c0efff]',
+    cancelled: 'border-[#a46c75] bg-[#4b2835] text-[#ffdce3]',
+  };
 
   return (
     <>
       <StudentHero
-        eyebrow="Seu próximo bordo"
-        title={awaiting ? 'Falta só o pagamento.' : 'Sua aula está confirmada.'}
-        highlight={awaiting ? 'pagamento.' : 'confirmada.'}
-        lead={
-          awaiting
-            ? `${instructorName} está reservado para você. Confirme o pagamento para garantir a aula.`
-            : 'Tudo organizado. Confira os detalhes e encontre seu instrutor.'
-        }
+        eyebrow={heroCopy.eyebrow}
+        title={heroCopy.title}
+        lead={heroCopy.lead}
         compact
         image="lesson"
       />
@@ -61,22 +94,58 @@ export default async function BookingPage({ params }: { params: Promise<{ id: st
       <div className="mt-6 grid gap-5 lg:grid-cols-[1.5fr_1fr]">
         <div className="grid content-start gap-5">
           <Card>
-            <div className="flex items-start justify-between gap-3">
-              <h2 className="text-[16px]">Aula particular de kitesurf</h2>
-              <span className="flex flex-wrap gap-2"><Badge tone={awaiting ? 'warning' : 'success'}>{BOOKING_STATUS_LABELS[booking.status]}</Badge>{booking.is_test ? <Badge tone="warning">AULA TESTE</Badge> : null}</span>
-            </div>
-            <div className="mt-4 flex items-center gap-3">
-              <Avatar initials={initials(booking.instructor?.full_name)} tone="a3" size={44} />
-              <div className="flex-1">
-                <p className="font-[550]">{instructorName}</p>
-                <p className="text-[11px] text-muted">Seu instrutor · {booking.language}</p>
+            <div className="border-b border-[#16728a]/60 pb-4">
+              <p className="text-[11px] font-bold uppercase tracking-[.18em] text-[#56dce7]">
+                Detalhes da reserva
+              </p>
+              <h2 className="mt-2 text-[21px] font-extrabold leading-[1.2] tracking-[-.5px] text-ink sm:text-[23px]">
+                Aula particular de kitesurf
+              </h2>
+              <div className="mt-3 flex flex-wrap items-center gap-2">
+                <span
+                  className={'inline-flex min-h-8 items-center gap-1.5 rounded-full border px-3 py-1 text-[12px] font-bold ' + statusStyles[booking.status]}
+                >
+                  <Icon name={booking.status === 'confirmed' || booking.status === 'completed' ? 'check' : booking.status === 'cancelled' ? 'back' : 'clock'}
+                    className="!h-3.5 !w-3.5" />
+                  {BOOKING_STATUS_LABELS[booking.status]}
+                </span>
+                {booking.is_test ? (
+                  <span className="inline-flex min-h-8 items-center rounded-full border border-[#b97743] bg-[#382e29] px-3 py-1 text-[12px] font-semibold text-[#ffd1a9]">
+                    Aula teste · sem cobrança
+                  </span>
+                ) : null}
               </div>
             </div>
-            <dl className="mt-5 grid gap-4 sm:grid-cols-2">
-              <KeyValue label="Praia" value={(booking.beach?.name ?? '—')} icon="pin" />
-              <KeyValue label="Seu momento" value={LEVEL_LABELS[booking.level]} icon="kite" />
-              <KeyValue label="Total de horas" value={`${booking.total_hours}h`} icon="clock" />
-              <KeyValue label="Equipamentos" value="Incluídos na sua aula" icon="shield" />
+
+            <div className="mt-5 flex items-center gap-3 rounded-[18px] border border-[#16748e] bg-[#063e59] p-3">
+              <StudentInstructorPhoto name={instructorName} url={avatarUrl} />
+              <div className="min-w-0 flex-1">
+                <p className="text-[11px] font-medium text-[#bad5e3]">Seu instrutor</p>
+                <p className="mt-0.5 truncate text-[17px] font-bold leading-tight text-white">
+                  {instructorName}
+                </p>
+                <p className="mt-1 text-[12px] text-[#b9d5e5]">Idioma: {booking.language}</p>
+              </div>
+            </div>
+
+            <dl className="mt-5 grid grid-cols-1 gap-3 sm:grid-cols-2">
+              {([
+                ['Praia', booking.beach?.name ?? 'Não definida', 'pin'],
+                ['Seu nível', LEVEL_LABELS[booking.level], 'kite'],
+                ['Duração total', formatMinutes(booking.total_hours * 60), 'clock'],
+                ['Equipamentos', 'Inclusos na aula', 'shield'],
+              ] as const).map(([label, value, icon]) => (
+                <div key={label}
+                  className="flex min-w-0 items-center gap-3 rounded-[15px] border border-[#126887]/70 bg-[#053650]/70 px-3 py-3">
+                  <span className="grid h-10 w-10 shrink-0 place-items-center rounded-xl bg-[#0a526d] text-[#36d9e9]">
+                    <Icon name={icon} className="!h-5 !w-5" />
+                  </span>
+                  <div className="min-w-0">
+                    <dt className="text-[12px] font-medium text-[#bad0e1]">{label}</dt>
+                    <dd className="mt-0.5 break-words text-[15px] font-bold leading-snug text-[#f6fbff]">{value}</dd>
+                  </div>
+                </div>
+              ))}
             </dl>
             {!awaiting && meetingPoint ? (
               <div className="mt-5 rounded-xl border border-line bg-brand-tint p-4">
@@ -169,7 +238,7 @@ export default async function BookingPage({ params }: { params: Promise<{ id: st
               )}
             </Card>
           ) : null}
-          {awaiting ? null : (
+          {booking.status === 'confirmed' ? (
             <Card className="text-center">
               <Eyebrow>Na hora da aula</Eyebrow>
               <h2 className="mt-2 text-[16px]">Seu código de presença</h2>
@@ -179,11 +248,11 @@ export default async function BookingPage({ params }: { params: Promise<{ id: st
               </p>
               <p className="mt-3 text-[11px] text-muted">Reserva {booking.code}</p>
             </Card>
-          )}
+          ) : null}
           <Card>
             <div className="flex items-center justify-between">
               <span className="text-[13px] text-label">{booking.is_test ? 'Simulação' : 'Pagamento'}</span>
-              <Badge tone={booking.is_test || awaiting ? 'warning' : 'success'}>{booking.is_test ? 'Sem cobrança' : awaiting ? 'Pendente' : 'Confirmado'}</Badge>
+              <Badge tone={booking.is_test || awaiting || booking.status === 'cancelled' ? 'warning' : 'success'}>{booking.is_test ? 'Sem cobrança' : awaiting ? 'Pendente' : booking.status === 'cancelled' ? 'Reserva cancelada' : 'Confirmado'}</Badge>
             </div>
             <div className="mt-4 flex items-center justify-between">
               <span className="text-[13px] text-label">Total da reserva</span>
