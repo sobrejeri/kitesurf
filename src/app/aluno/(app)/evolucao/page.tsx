@@ -190,7 +190,7 @@ export default async function ProgressPage({
           <div className="mt-4 grid gap-3">
             {bookings.map((booking) => (
               <div id={`reserva-${booking.id}`} key={booking.id}
-                className="grid gap-2 scroll-mt-5">
+                className="grid gap-2 scroll-mt-28">
                 <BookingPreview booking={booking}
                   expanded={selected?.id === booking.id} />
                 {selected?.id === booking.id ? (
