@@ -23,6 +23,8 @@ jobs:
       - run: pnpm install --frozen-lockfile
       - run: pnpm typecheck
       - run: pnpm lint
+      - name: Check PostgREST relationship ambiguity
+        run: node scripts/verify-postgrest-relationships.mjs
       - run: pnpm build
       - name: Install isolated PostgreSQL tooling
         run: sudo apt-get update && sudo apt-get install -y postgresql
