@@ -192,7 +192,7 @@ BEGIN
 END $$;
 
 CREATE FUNCTION public.release_my_booking(p_booking_id uuid,p_reason text)
-RETURNS uuid LANGUAGE plpgsql SECURITY DEFINER SET search_path='' AS $$
+RETURNS uuid LANGUAGE plpgsql SECURITY DEFINER SET search_path='' AS $release_fn$
 DECLARE uid uuid:=public.require_role(ARRAY['instructor']::public.app_role[]);
   b public.bookings; r uuid; v_valid_notice boolean;
 BEGIN
@@ -211,7 +211,7 @@ BEGIN
   ) INTO v_valid_notice;
   r:=public.begin_booking_reassignment(p_booking_id,trim(p_reason),v_valid_notice);
   RETURN r;
-END $;
+END $release_fn$;
 
 CREATE FUNCTION public.respond_booking_reassignment(
  p_offer_id uuid,p_accept boolean
