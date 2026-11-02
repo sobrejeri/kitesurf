@@ -128,7 +128,7 @@ BEGIN
   RETURN NULL;
 END $$;
 
-CREATE FUNCTION public.begin_booking_reassignment(p_booking_id uuid,p_reason text)
+CREATE FUNCTION public.begin_booking_reassignment(p_booking_id uuid,p_reason text,p_prior_notice boolean DEFAULT false)
 RETURNS uuid LANGUAGE plpgsql SECURITY DEFINER SET search_path='' AS $$
 DECLARE b public.bookings; r uuid; v_previous uuid;
 BEGIN
@@ -144,14 +144,27 @@ BEGIN
     WHERE booking_id=b.id AND status IN ('done','in_progress')) THEN
     RAISE EXCEPTION 'Partially performed booking needs admin reassignment'
       USING errcode='55000'; END IF;
-  IF NOT EXISTS(SELECT 1 FROM public.booking_meetings
-    WHERE booking_id=b.id AND status='scheduled' AND starts_at>=now()+interval '72 hours') THEN
-    RAISE EXCEPTION 'Reassignment requires 72 hours notice'
+  IF NOT p_prior_notice THEN
+    IF NOT EXISTS(SELECT 1 FROM public.booking_meetings
+      WHERE booking_id=b.id AND status='scheduled') OR EXISTS(
+      SELECT 1 FROM public.booking_meetings WHERE booking_id=b.id
+        AND status='scheduled' AND starts_at<now()+interval '72 hours'
+    ) THEN RAISE EXCEPTION 'Reassignment requires 72 hours notice'
       USING errcode='22023'; END IF;
-  IF EXISTS(SELECT 1 FROM public.booking_meetings
-    WHERE booking_id=b.id AND status='scheduled' AND starts_at<now()+interval '72 hours') THEN
-    RAISE EXCEPTION 'Reassignment requires 72 hours notice'
-      USING errcode='22023'; END IF;
+  ELSE
+    -- The original 72h notice was met. Waiting 12h + 12h must not
+    -- invalidate a previously timely cancellation/replacement request.
+    IF NOT EXISTS(
+      SELECT 1 FROM public.meeting_change_requests c
+      WHERE c.booking_id=b.id AND c.requester_id=b.student_id
+        AND c.status IN ('expired','rejected') AND c.resolution IS NULL
+        AND c.requested_at<=c.original_starts_at-interval '72 hours'
+    ) THEN RAISE EXCEPTION 'Valid advance notice not found'
+      USING errcode='42501'; END IF;
+    IF EXISTS(SELECT 1 FROM public.booking_meetings WHERE booking_id=b.id
+      AND status='scheduled' AND starts_at<=now()) THEN
+      RAISE EXCEPTION 'Meeting has already started' USING errcode='55000'; END IF;
+  END IF;
   v_previous:=b.instructor_id;
   -- An existing change request must not open a second decision after release.
   UPDATE public.meeting_change_requests SET
@@ -385,7 +398,7 @@ BEGIN
       jsonb_build_object('status','confirmed'),jsonb_build_object('status','cancelled'),
       'Revisar pagamento e possível reembolso; nenhum estorno foi emitido.');
   ELSE
-    PERFORM public.begin_booking_reassignment(b.id,'Solicitação de novo instrutor pelo aluno.');
+    PERFORM public.begin_booking_reassignment(b.id,'Solicitação de novo instrutor pelo aluno.',true);
     UPDATE public.meeting_change_requests SET resolution='replacement_requested' WHERE id=r.id;
   END IF;
 END $$;
@@ -426,8 +439,8 @@ BEGIN
         WHERE booking_id=b.id AND status IN ('done','in_progress'))
       AND NOT EXISTS(SELECT 1 FROM public.booking_meetings
         WHERE booking_id=b.id AND status='scheduled'
-          AND starts_at<now()+interval '72 hours') THEN
-      PERFORM public.begin_booking_reassignment(b.id,'Sem escolha do aluno: buscar substituto.');
+          AND starts_at<=now()) THEN
+      PERFORM public.begin_booking_reassignment(b.id,'Sem escolha do aluno: buscar substituto.',true);
       UPDATE public.meeting_change_requests SET resolution='replacement_requested' WHERE id=r.id;
     ELSE
       -- Preserve booking and flag for admin review when unsafe to transfer.
@@ -447,7 +460,7 @@ BEGIN
 END $$;
 
 REVOKE EXECUTE ON FUNCTION public.advance_booking_reassignment(uuid),
-  public.begin_booking_reassignment(uuid,text),
+  public.begin_booking_reassignment(uuid,text,boolean),
   public.release_my_booking(uuid,text),
   public.respond_booking_reassignment(uuid,boolean),
   public.resolve_student_change(uuid,text)
