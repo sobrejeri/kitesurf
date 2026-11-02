@@ -1,4 +1,4 @@
--- Migration 30: mutual date changes, single pending request, 48h expiry.
+-- Migrations 30-31: mutual later-only dates, 12h response, 12h choice, preserve sale.
 \set ON_ERROR_STOP on
 BEGIN;
 
@@ -76,7 +76,7 @@ BEGIN
 
   PERFORM pg_temp.as_user_30(v_instructor);
   v_second:=public.request_meeting_change(
-    v_meeting,v_start,'Instrutor precisa alterar o dia por imprevisto.');
+    v_meeting,v_next+interval '7 days','Instrutor precisa alterar o dia por imprevisto.');
   PERFORM pg_temp.reset_user_30();
   PERFORM pg_temp.as_user_30(v_student);
   PERFORM public.respond_meeting_change(v_second,false);
@@ -85,6 +85,10 @@ BEGIN
     'Student can reject instructor request';
   ASSERT (SELECT starts_at FROM public.booking_meetings WHERE id=v_meeting)=v_next,
     'Rejection preserves existing date';
+  -- Simulate the instructor's unused 12h decision window ending before a new
+  -- student request on the same booking can be opened.
+  UPDATE public.meeting_change_requests SET choice_expires_at=NULL
+    WHERE id=v_second;
 
   PERFORM pg_temp.as_user_30(v_student);
   v_request:=public.request_meeting_change(
@@ -94,18 +98,29 @@ BEGIN
   UPDATE public.meeting_change_requests SET expires_at=now()-interval '1 minute'
     WHERE id=v_request;
   ASSERT public.expire_meeting_change_requests()>=1,
-    'Scheduled sweep should process expired request';
+    'Scheduled sweep should process 12h response deadline';
   ASSERT (SELECT status FROM public.meeting_change_requests WHERE id=v_request)='expired',
-    'Request expires';
-  ASSERT (SELECT status FROM public.bookings WHERE id=v_booking)='cancelled',
-    'Booking cancelled after 48h without answer';
-  ASSERT (SELECT status FROM public.booking_meetings WHERE id=v_meeting)='cancelled',
-    'Remaining meeting cancelled without deleting history';
+    'Change request expires but booking does not';
+  ASSERT (SELECT status FROM public.bookings WHERE id=v_booking)='confirmed',
+    'Booking must survive a missing instructor response';
+  ASSERT (SELECT choice_expires_at FROM public.meeting_change_requests WHERE id=v_request)>now(),
+    'Student receives a new 12h decision window';
   ASSERT EXISTS(SELECT 1 FROM public.app_notifications
-    WHERE recipient_id=v_student AND title='Prazo de reagendamento encerrado'),
-    'Student must be notified on timeout';
-  ASSERT EXISTS(SELECT 1 FROM public.app_notifications
-    WHERE recipient_id=v_instructor AND title='Prazo de reagendamento encerrado'),
-    'Instructor must be notified on timeout';
+    WHERE recipient_id=v_student AND title='Prazo de resposta encerrado'),
+    'Student is notified about choice window';
+
+  -- No student decision: default to transfer, not automatic cancellation.
+  UPDATE public.meeting_change_requests SET choice_expires_at=now()-interval '1 minute'
+    WHERE id=v_request;
+  ASSERT public.expire_meeting_change_requests()>=1,
+    'Scheduled sweep should preserve sale through instructor reassignment';
+  ASSERT (SELECT status FROM public.bookings WHERE id=v_booking)='confirmed',
+    'Booking stays confirmed after both 12-hour windows';
+  ASSERT (SELECT instructor_id FROM public.bookings WHERE id=v_booking) IS NULL,
+    'The original teacher is released to allow a replacement';
+  ASSERT (SELECT status FROM public.booking_meetings WHERE id=v_meeting)='scheduled',
+    'The student appointment stays scheduled';
+  ASSERT (SELECT resolution FROM public.meeting_change_requests WHERE id=v_request)
+    ='replacement_requested', 'Choice records automatic queue handoff';
 END $$;
 ROLLBACK;
