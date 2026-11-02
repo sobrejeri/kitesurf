@@ -1,5 +1,5 @@
 import assert from 'node:assert/strict';
-import { activeBookingStageMeetingIds, activeStudentBookings, bookingIsFinished } from '../src/lib/booking-cycle.ts';
+import { activeBookingStageMeetingIds, activeStudentBookings, bookingIsFinished, selectedStudentBooking, evolutionBookingStatus } from '../src/lib/booking-cycle.ts';
 
 function booking(id, status, starts, meetingStatuses) {
   return {
@@ -41,3 +41,18 @@ assert.deepEqual(activeBookingStageMeetingIds(ongoingB), [],
 assert.deepEqual(activeBookingStageMeetingIds(completed), ['old-0'],
   'Historical meetings are retained for archive reports');
 console.log('PASS: current bookings use only their own skill stages; finished skills stay in history');
+
+assert.equal(selectedStudentBooking([ongoingA, completed], undefined), null,
+  'Evolution tab must not auto-expand a reservation');
+assert.equal(selectedStudentBooking([ongoingA, completed], 'unknown'), null,
+  'A guessed or foreign booking ID cannot open details');
+assert.equal(selectedStudentBooking([ongoingA, completed], 'old')?.id, 'old',
+  'A finished reservation must be selectable explicitly');
+assert.equal(selectedStudentBooking([ongoingA, completed], 'A')?.id, 'A',
+  'An active reservation must be selectable explicitly');
+assert.equal(evolutionBookingStatus(ongoingA), 'Em andamento');
+assert.equal(evolutionBookingStatus(ongoingB), 'Confirmada');
+assert.equal(evolutionBookingStatus(completed), 'Concluída');
+assert.equal(evolutionBookingStatus(waitingPayment), 'Aguardando pagamento');
+assert.equal(evolutionBookingStatus(booking('cancel', 'cancelled', [], [])), 'Cancelada');
+console.log('PASS: compact previews open only selected bookings with correct statuses');
