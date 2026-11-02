@@ -17,3 +17,12 @@ export function activeStudentBookings(bookings: readonly StudentBooking[]): Stud
       return nextDate(a).localeCompare(nextDate(b)) || b.created_at.localeCompare(a.created_at);
     });
 }
+
+/** Only completed meetings from the selected active booking advance its path. */
+export function activeBookingStageMeetingIds(
+  booking: Pick<Booking, 'booking_meetings'> | null,
+): string[] {
+  return booking?.booking_meetings
+    .filter((meeting) => meeting.status === 'done')
+    .map((meeting) => meeting.id) ?? [];
+}
