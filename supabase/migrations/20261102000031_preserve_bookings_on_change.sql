@@ -490,7 +490,7 @@ RETURNS TABLE(
  WHERE o.instructor_id=auth.uid() AND o.status='offered'
    AND o.expires_at>now() AND r.status='searching' AND b.status='confirmed'
    AND b.instructor_id IS NULL;
-$;
+$offers_function$;
 REVOKE EXECUTE ON FUNCTION public.my_booking_reassignment_offers()
  FROM PUBLIC,anon,authenticated;
 GRANT EXECUTE ON FUNCTION public.my_booking_reassignment_offers() TO authenticated;
