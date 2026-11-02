@@ -75,7 +75,9 @@ const BOOKING_COLUMNS = `
   booking_meetings ( id, position, starts_at, minutes, status, done_minutes, note ),
   beach:beaches ( name ),
   student:profiles!bookings_student_id_fkey ( full_name ),
-  instructor:instructors ( profile:profiles ( full_name ) )
+  -- Explicit FK required since Migration 27 also links profiles.kite_assessed_by
+  -- to instructors; PostgREST otherwise raises PGRST201 for BOTH workspaces.
+  instructor:instructors ( profile:profiles!instructors_id_fkey ( full_name ) )
 `;
 
 // Transport fields were added after the original booking schema. A missing
@@ -331,8 +333,10 @@ export interface InstructorRow {
   profile: { full_name: string } | null;
 }
 
+// Avoid ambiguous embedding (PGRST201): Migration 27 added
+// profiles.kite_assessed_by -> instructors, so the original 1:1 join needs its FK.
 const INSTRUCTOR_COLUMNS =
-  'id, status, years_experience, languages, has_equipment, has_support_vehicle, queue_position, profile:profiles ( full_name ), instructor_beaches ( beach:beaches ( id, name ) )';
+  'id, status, years_experience, languages, has_equipment, has_support_vehicle, queue_position, profile:profiles!instructors_id_fkey ( full_name ), instructor_beaches ( beach:beaches ( id, name ) )';
 const LEGACY_INSTRUCTOR_COLUMNS = INSTRUCTOR_COLUMNS.replace(', has_support_vehicle', '');
 
 interface RawInstructor extends Omit<InstructorRow, 'beaches'> {
