@@ -1,4 +1,5 @@
 import type { Metadata } from 'next';
+import Link from 'next/link';
 
 import { blockInstructorTime, unblockInstructorTime } from '@/app/actions/availability';
 import { ActionForm } from '@/components/action-form';
@@ -37,8 +38,16 @@ export default async function InstructorAgendaPage() {
           {future.length === 0 ? <p className="mt-4 text-[13px] text-muted">Nenhuma aula confirmada para os próximos dias.</p> : (
             <ul className="mt-3 divide-y divide-line">
               {future.map(m => <li key={m.id} className="py-3 text-[13px]">
-                <strong className="block text-ink">{formatDateLong(m.starts_at)} · {formatTime(m.starts_at)}</strong>
-                <span className="text-muted">{m.isTest ? '[AULA TESTE] · ' : ''}{m.student} · {m.beach} · {m.minutes / 60}h · {m.code}</span>
+                <Link href={'/instrutor/aula?aba=' + (m.status === 'in_progress' ? 'andamento' : 'proximas') + '&aula=' + m.id + '#detalhes-aula'}
+                  className="press flex items-center justify-between gap-3 rounded-[14px] p-2 hover:bg-brand-tint">
+                  <span className="min-w-0">
+                    <strong className="block text-ink">{formatDateLong(m.starts_at)} · {formatTime(m.starts_at)}</strong>
+                    <span className="text-muted">{m.isTest ? '[AULA TESTE] · ' : ''}{m.student} · {m.beach} · {m.minutes / 60}h · {m.code}</span>
+                  </span>
+                  <span className="shrink-0 text-[12px] font-semibold text-brand">
+                    {m.status === 'in_progress' ? 'Continuar ›' : 'Ver aula ›'}
+                  </span>
+                </Link>
               </li>)}
             </ul>
           )}

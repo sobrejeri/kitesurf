@@ -70,7 +70,7 @@ export default async function InstructorTodayPage() {
           <ul className="grid gap-3">
             {upcoming.slice(0, 8).map(({ booking, meeting }) => (
               <li key={meeting.id}>
-                <ListCard href="/instrutor/aula">
+                <ListCard href={'/instrutor/aula?aba=' + (meeting.status === 'in_progress' ? 'andamento' : 'proximas') + '&aula=' + meeting.id + '#detalhes-aula'}>
                   <div className="flex items-center gap-3">
                     <DateTile day={formatDay(meeting.starts_at)} month={formatMonthTag(meeting.starts_at)} />
                     <div className="min-w-0 flex-1">
