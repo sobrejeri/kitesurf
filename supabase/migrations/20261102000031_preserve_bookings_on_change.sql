@@ -156,8 +156,9 @@ BEGIN
     -- invalidate a previously timely cancellation/replacement request.
     IF NOT EXISTS(
       SELECT 1 FROM public.meeting_change_requests c
-      WHERE c.booking_id=b.id AND c.requester_id=b.student_id
+      WHERE c.booking_id=b.id AND c.requester_id IN (b.student_id,b.instructor_id)
         AND c.status IN ('expired','rejected') AND c.resolution IS NULL
+        AND c.choice_expires_at>now()
         AND c.requested_at<=c.original_starts_at-interval '72 hours'
     ) THEN RAISE EXCEPTION 'Valid advance notice not found'
       USING errcode='42501'; END IF;
@@ -191,7 +192,7 @@ END $$;
 CREATE FUNCTION public.release_my_booking(p_booking_id uuid,p_reason text)
 RETURNS uuid LANGUAGE plpgsql SECURITY DEFINER SET search_path='' AS $$
 DECLARE uid uuid:=public.require_role(ARRAY['instructor']::public.app_role[]);
-  b public.bookings; r uuid;
+  b public.bookings; r uuid; v_valid_notice boolean;
 BEGIN
   SELECT * INTO b FROM public.bookings WHERE id=p_booking_id;
   IF b.id IS NULL OR b.instructor_id IS DISTINCT FROM uid THEN
@@ -199,9 +200,16 @@ BEGIN
   IF p_reason IS NULL OR length(trim(p_reason)) NOT BETWEEN 8 AND 500 THEN
     RAISE EXCEPTION 'Cancellation reason must have 8 to 500 characters'
       USING errcode='22023'; END IF;
-  r:=public.begin_booking_reassignment(p_booking_id,trim(p_reason));
+  SELECT EXISTS(
+    SELECT 1 FROM public.meeting_change_requests c
+    WHERE c.booking_id=b.id AND c.requester_id=uid
+      AND c.status IN ('rejected','expired') AND c.resolution IS NULL
+      AND c.choice_expires_at>now()
+      AND c.requested_at<=c.original_starts_at-interval '72 hours'
+  ) INTO v_valid_notice;
+  r:=public.begin_booking_reassignment(p_booking_id,trim(p_reason),v_valid_notice);
   RETURN r;
-END $$;
+END $;
 
 CREATE FUNCTION public.respond_booking_reassignment(
  p_offer_id uuid,p_accept boolean
@@ -348,7 +356,7 @@ BEGIN
   UPDATE public.meeting_change_requests SET
     status=CASE WHEN p_accept THEN 'accepted' ELSE 'rejected' END,
     responded_at=now(),
-    choice_expires_at=CASE WHEN NOT p_accept AND r.requester_id=b.student_id
+    choice_expires_at=CASE WHEN NOT p_accept
       THEN now()+interval '12 hours' ELSE NULL END
     WHERE id=r.id;
   INSERT INTO public.app_notifications(recipient_id,category,title,body,href)
@@ -415,8 +423,7 @@ BEGIN
   LOOP
     SELECT * INTO b FROM public.bookings WHERE id=r.booking_id;
     UPDATE public.meeting_change_requests SET status='expired',responded_at=now(),
-       choice_expires_at=CASE WHEN requester_id=b.student_id
-           THEN now()+interval '12 hours' ELSE NULL END
+       choice_expires_at=now()+interval '12 hours'
       WHERE id=r.id;
     INSERT INTO public.app_notifications(recipient_id,category,title,body,href)
       VALUES(r.requester_id,'booking','Prazo de resposta encerrado',
@@ -431,6 +438,7 @@ BEGIN
   FOR r IN SELECT * FROM public.meeting_change_requests
     WHERE status IN ('expired','rejected') AND resolution IS NULL
       AND choice_expires_at IS NOT NULL AND choice_expires_at<=now()
+      AND requester_id=(SELECT student_id FROM public.bookings WHERE id=booking_id)
     ORDER BY choice_expires_at FOR UPDATE SKIP LOCKED
   LOOP
     SELECT * INTO b FROM public.bookings WHERE id=r.booking_id;
