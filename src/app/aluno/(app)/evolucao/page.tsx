@@ -5,6 +5,7 @@ import { Icon, type IconName } from '@/components/icon';
 import { StudentHero, SunsetEmpty } from '@/components/student/sunset';
 import { requireRole } from '@/lib/auth';
 import { learningBalance, listBookingsForStudent } from '@/lib/data';
+import { activeStudentBookings, bookingIsFinished } from '@/lib/booking-cycle';
 import { formatDateLong, formatMinutes, formatTime } from '@/lib/format';
 import { KITE_CURRICULA, KITE_LEVEL_BADGES, kiteStageStatus } from '@/lib/kite-steps';
 import { KiteLevelMedal } from '@/components/student/kite-level-medal';
@@ -32,23 +33,38 @@ function Stat({ label, value, hint, icon, href }: { label: string; value: string
   );
 }
 
-export default async function ProgressPage() {
+export default async function ProgressPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ reserva?: string }>;
+}) {
   const viewer = await requireRole(['student'], '/aluno/evolucao');
-  const bookings = await listBookingsForStudent(viewer.id);
-  const levelRecord = await getStudentKiteLevel(viewer.id);
-  const currentLevel = levelRecord.effective;
+  const [bookings, params, levelRecord] = await Promise.all([
+    listBookingsForStudent(viewer.id), searchParams, getStudentKiteLevel(viewer.id),
+  ]);
+  const active = activeStudentBookings(bookings);
+  const selected = active.find((booking) => booking.id === params.reserva) ?? active[0] ?? null;
+  const finished = bookings.filter(bookingIsFinished)
+    .sort((a, b) => b.created_at.localeCompare(a.created_at));
+  const awaitingPayment = bookings.filter((booking) => booking.status === 'awaiting_payment');
+  const currentLevel = selected?.level ?? levelRecord.effective;
   const currentCurriculum = KITE_CURRICULA[currentLevel];
-  const balance = learningBalance(bookings);
+  // Each new booking starts its own dashboard at zero; completed bookings
+  // remain in History and never contaminate the new reservation's percentage.
+  const balance = learningBalance(selected ? [selected] : []);
   const meetingIds = bookings.flatMap((booking) => booking.booking_meetings.map((m) => m.id));
   const skills = await getMeetingKiteSkills(meetingIds);
   const allSkills = skills.rows;
-  const relevantMeetingIds = new Set(bookings.filter((booking) => booking.level === currentLevel)
-    .flatMap((booking) => booking.booking_meetings.filter((meeting) => meeting.status === 'done').map((meeting) => meeting.id)));
+  const relevantMeetingIds = new Set(
+    (selected ? [selected] : finished.filter((booking) => booking.level === currentLevel))
+      .flatMap((booking) => booking.booking_meetings
+        .filter((meeting) => meeting.status === 'done').map((meeting) => meeting.id)),
+  );
   const currentSkills = allSkills.filter((entry) => relevantMeetingIds.has(entry.meeting_id));
   const todayInCeara = new Date().toLocaleDateString('en-CA', { timeZone: 'America/Fortaleza' });
   const dateInCeara = (iso: string) => new Date(iso).toLocaleDateString('en-CA', { timeZone: 'America/Fortaleza' });
-  const encounters = bookings
-    .filter((booking) => booking.status === 'confirmed' || booking.status === 'completed')
+  const encounters = (selected ? [selected] : [])
+    .filter((booking) => booking.status === 'confirmed')
     .flatMap((booking) => booking.booking_meetings.map((meeting) => {
       const priorComplete = booking.booking_meetings
         .every((previous) => previous.position >= meeting.position || previous.status === 'done');
@@ -61,7 +77,7 @@ export default async function ProgressPage() {
     }))
     .sort((a, b) => a.meeting.starts_at.localeCompare(b.meeting.starts_at));
   const donePercent = balance.contracted ? Math.round((balance.done / balance.contracted) * 100) : 0;
-  const history = bookings
+  const history = (selected ? [selected] : [])
     .flatMap((booking) =>
       booking.booking_meetings
         .filter((meeting) => meeting.status === 'done')
@@ -69,6 +85,8 @@ export default async function ProgressPage() {
     )
     .sort((a, b) => b.starts_at.localeCompare(a.starts_at));
   const ring = 2 * Math.PI * 42;
+  const lifetimeMinutes = finished.flatMap((booking) => booking.booking_meetings)
+    .reduce((sum, meeting) => sum + (meeting.status === 'done' ? meeting.done_minutes : 0), 0);
 
   return (
     <>
@@ -77,13 +95,56 @@ export default async function ProgressPage() {
         eyebrow="Sua evolução no mar"
         title="Minha evolução"
         highlight="evolução"
-        lead="Cada hora no mar te leva mais longe. Acompanhe sua jornada aqui."
+        lead="Cada reserva tem seu próprio progresso. Suas conquistas anteriores ficam guardadas no histórico."
         compact
       />
 
+      <section className="relative -mt-2 rounded-[22px] border border-line bg-surface p-4">
+        <h2 className="text-[17px] font-bold text-ink">Reserva em andamento</h2>
+        {active.length ? (
+          <div className="mt-3 grid gap-2">
+            {active.map((booking) => (
+              <Link key={booking.id} href={`/aluno/evolucao?reserva=${booking.id}`}
+                aria-current={selected?.id === booking.id ? 'page' : undefined}
+                className={
+                  'flex items-center justify-between gap-2 rounded-[14px] border px-4 py-3 ' +
+                  (selected?.id === booking.id ? 'border-brand bg-brand-tint' :
+                    'border-line bg-surface')
+                }>
+                <span className="min-w-0">
+                  <strong className="block truncate text-[13px] text-ink">{booking.code}</strong>
+                  <span className="text-[12px] text-muted">
+                    {booking.beach?.name ?? 'Praia'} · {booking.booking_meetings.length} encontro(s)
+                  </span>
+                </span>
+                <span className="shrink-0 text-[12px] font-semibold text-brand">
+                  {selected?.id === booking.id ? 'Selecionada' : 'Ver progresso'}
+                </span>
+              </Link>
+            ))}
+          </div>
+        ) : (
+          <div className="mt-3 rounded-[14px] border border-line bg-surface p-4">
+            <p className="text-[13px] text-muted">
+              Nenhuma reserva em andamento. O próximo agendamento começa com seu próprio contador,
+              enquanto as aulas finalizadas ficam no histórico abaixo.
+            </p>
+            <Link href="/aluno/reservar" className="mt-3 inline-block text-[13px] font-bold text-brand underline">
+              Reservar nova aula
+            </Link>
+          </div>
+        )}
+        {awaitingPayment.length ? (
+          <p className="mt-3 text-[12px] text-muted">
+            {awaitingPayment.length} reserva(s) aguardando pagamento.
+            Elas aparecerão aqui depois da confirmação.
+          </p>
+        ) : null}
+      </section>
+
       <section className="relative -mt-2 rounded-[22px] border border-line bg-surface p-5">
         <p className="flex items-center gap-2.5 text-[17px] font-semibold text-ink">
-          <Icon name="waves" className="!h-6 !w-6 text-brand" /> Seu tempo no mar
+          <Icon name="waves" className="!h-6 !w-6 text-brand" /> Tempo desta reserva
         </p>
         <div className="mt-4 flex items-center gap-4">
           <div className="min-w-0 flex-1">
@@ -111,7 +172,7 @@ export default async function ProgressPage() {
       </section>
 
       <div className="mt-4 grid grid-cols-2 gap-3 lg:grid-cols-4">
-        <Stat label="Horas contratadas" value={formatMinutes(balance.contracted)} hint="Reservas confirmadas" icon="calendar" href="/aluno/aulas" />
+        <Stat label="Horas desta reserva" value={formatMinutes(balance.contracted)} hint="Reservas confirmadas" icon="calendar" href="/aluno/aulas" />
         <Stat label="Horas realizadas" value={formatMinutes(balance.done)} hint={`${history.length} registro(s) de aula`} icon="chart" href="/aluno/evolucao" />
         <Stat label="Horas agendadas" value={formatMinutes(balance.scheduled)} hint="Próximos encontros" icon="calendar" href="/aluno/aulas" />
         <Stat label="Saldo disponível" value={formatMinutes(balance.available)} hint="Para os próximos encontros" icon="wallet" href="/aluno/reservar" />
@@ -120,7 +181,7 @@ export default async function ProgressPage() {
       <section className="mt-5 rounded-[22px] border border-line bg-surface p-5">
         <h2 className="flex items-center gap-3 text-[19px] font-bold text-ink">
           <Icon name="calendar" className="!h-6 !w-6 text-brand" />
-          Sua evolução por encontro
+          Encontros desta reserva
         </h2>
         <p className="mt-2 text-[13px] text-muted">
           Cada aula fica disponível no dia marcado e após a conclusão da anterior.
@@ -128,7 +189,9 @@ export default async function ProgressPage() {
         </p>
         {encounters.length === 0 ? (
           <p className="mt-4 rounded-xl border border-line p-4 text-[13px] text-muted">
-            Você ainda não tem encontros confirmados.
+            {selected
+              ? 'Esta reserva ainda não possui encontros confirmados.'
+              : 'Escolha uma reserva em andamento para acompanhar os encontros.'}
           </p>
         ) : (
           <ol className="mt-5 grid gap-3">
@@ -213,8 +276,9 @@ export default async function ProgressPage() {
               <div className="mt-2"><KiteLevelMedal level={currentLevel}
                 assessed={levelRecord.assessed !== null}/></div>
               <p className="mt-2 text-[13px] text-muted">
-                {KITE_LEVEL_BADGES[currentLevel].detail}. As etapas abaixo correspondem
-                ao seu nível atual; o instrutor adapta a aula às condições.
+                {KITE_LEVEL_BADGES[currentLevel].detail}. {selected
+                  ? 'As etapas são mostradas para esta reserva, sem misturar os resultados de outras.'
+                  : 'Histórico das habilidades já registradas no seu nível atual.'}
               </p>
             </div>
           </div>
@@ -275,6 +339,78 @@ export default async function ProgressPage() {
           )}
         </section>
       </div>
+
+      <section className="mt-5 rounded-[22px] border border-line bg-surface p-5">
+        <h2 className="flex items-center gap-3 text-[19px] font-bold text-ink">
+          <Icon name="check" className="!h-6 !w-6 text-brand" />
+          Reservas finalizadas · {finished.length}
+        </h2>
+        <p className="mt-2 text-[12px] text-muted">
+          Seus resultados não são apagados. Total realizado em reservas finalizadas:
+          {' '}{formatMinutes(lifetimeMinutes)}.
+        </p>
+        {finished.length === 0 ? (
+          <p className="mt-4 text-[13px] text-muted">Suas reservas finalizadas aparecerão aqui.</p>
+        ) : (
+          <div className="mt-4 grid gap-3">
+            {finished.map((booking) => {
+              const done = booking.booking_meetings
+                .filter((meeting) => meeting.status === 'done');
+              const minutes = done.reduce((sum, meeting) => sum + meeting.done_minutes, 0);
+              const completedSteps = allSkills.filter((skill) =>
+                done.some((meeting) => meeting.id === skill.meeting_id));
+              return (
+                <details key={booking.id} className="rounded-[16px] border border-line bg-surface p-4">
+                  <summary className="cursor-pointer">
+                    <span className="flex flex-wrap items-center justify-between gap-2">
+                      <span className="font-bold text-ink">{booking.code} · {KITE_LEVEL_BADGES[booking.level].label}</span>
+                      <span className="text-[11px] font-bold text-[#61d8ac]">Finalizada</span>
+                    </span>
+                    <span className="mt-2 block text-[12px] text-label">
+                      {done.length} encontro(s) · {formatMinutes(minutes)} realizados
+                      {' · '}{booking.beach?.name ?? 'Praia'}
+                    </span>
+                    <span className="mt-1 block text-[11px] text-muted">Toque para ver seu desempenho</span>
+                  </summary>
+                  <div className="mt-4 border-t border-line pt-3">
+                    <h3 className="text-[13px] font-bold text-ink">Habilidades registradas</h3>
+                    {completedSteps.length ? (
+                      <ul className="mt-2 grid gap-2">
+                        {KITE_CURRICULA[booking.level].map((step) => {
+                          const state = kiteStageStatus(completedSteps, step.id);
+                          return state === 'pending' ? null : (
+                            <li key={step.id} className="text-[12px] text-label">
+                              <span className="font-semibold text-brand">{step.title}</span>
+                              {' · '}{state === 'mastered' ? 'Concluída' : 'Praticada'}
+                            </li>
+                          );
+                        })}
+                      </ul>
+                    ) : (
+                      <p className="mt-2 text-[12px] text-muted">
+                        Nenhuma habilidade individual foi registrada nesta reserva.
+                      </p>
+                    )}
+                    <h3 className="mt-4 text-[13px] font-bold text-ink">Encontros realizados</h3>
+                    <ul className="mt-2 grid gap-2">
+                      {done.map((meeting) => (
+                        <li key={meeting.id} className="text-[12px] text-label">
+                          Encontro {meeting.position}: {formatDateLong(meeting.starts_at)}
+                          {' · '}{formatMinutes(meeting.done_minutes)} realizados
+                        </li>
+                      ))}
+                    </ul>
+                    <Link href={`/aluno/reserva/${booking.id}`}
+                      className="mt-4 inline-block text-[13px] font-bold text-brand underline">
+                      Consultar reserva e instrutor
+                    </Link>
+                  </div>
+                </details>
+              );
+            })}
+          </div>
+        )}
+      </section>
     </>
   );
 }
