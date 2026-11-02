@@ -2,6 +2,7 @@ import type { Metadata } from 'next';
 
 import { createAdminTestLesson, cancelAdminTestLesson } from '@/app/actions/admin-test-lesson';
 import { ActionForm } from '@/components/action-form';
+import { AdminTestMeetingFields } from '@/components/admin/test-meeting-fields';
 import { ButtonLink, Card, Note, PageHeader, inputClass } from '@/components/ui';
 import { requireRole } from '@/lib/auth';
 import { listActiveBeaches, listAllInstructors } from '@/lib/data';
@@ -11,7 +12,7 @@ import { createSupabaseServerClient } from '@/lib/supabase/server';
 
 export const metadata: Metadata={title:'Agendar aula de teste'};
 type Profile={id:string;full_name:string};
-type TestBooking={id:string;code:string;instructor_id:string;student_id:string;status:string;booking_meetings:{starts_at:string;minutes:number}[]};
+type TestBooking={id:string;code:string;instructor_id:string;student_id:string;status:string;booking_meetings:{id:string;position:number;starts_at:string;minutes:number;status:string;done_minutes:number}[]};
 
 export default async function AdminTestLessonPage() {
   await requireRole(['admin']);
@@ -20,7 +21,7 @@ export default async function AdminTestLessonPage() {
     listAllInstructors(),
     listActiveBeaches(),
     db.from('profiles').select('id,full_name').eq('role','student').order('full_name').limit(100).returns<Profile[]>(),
-    db.from('bookings').select('id,code,instructor_id,student_id,status,booking_meetings(starts_at,minutes)')
+    db.from('bookings').select('id,code,instructor_id,student_id,status,booking_meetings(id,position,starts_at,minutes,status,done_minutes)')
       .eq('is_test',true).order('created_at',{ascending:false}).limit(20).returns<TestBooking[]>(),
   ]);
   const studentNames=new Map((students.data??[]).map(p=>[p.id,p.full_name]));
@@ -30,18 +31,18 @@ export default async function AdminTestLessonPage() {
 
   return <>
     <PageHeader eyebrow="Homologação interna" title="Agendar uma aula teste"
-      lead="Simule uma aula confirmada para conferir se ela aparece no Meu dia, Agenda, Registro de aulas e conta do aluno."/>
+      lead="Crie uma reserva demonstrativa com 1 a 4 encontros para testar agenda, evolução, avaliações e conclusão da reserva."/>
     <Note tone="warning" className="mb-4">
-      Esta é uma aula de demonstração: não cobra o aluno, não gera comissão nem repasse.
+      Esta é uma reserva demonstrativa: não cobra o aluno e não gera pagamento nem repasse.
       Apenas contas existentes podem participar. O Instrutor verá o compromisso real na agenda.
-      Agende em um horário livre e cancele depois de testar.
+      Escolha horários livres; os encontros já concluídos permanecem no histórico.
     </Note>
     {!ready?<Note tone="warning">Este painel depende da migração 20 do Supabase e de permissão administrativa.</Note>:(
       <div className="grid gap-4 lg:grid-cols-2">
         <Card>
-          <h2 className="text-[18px] font-bold text-ink">Nova aula de demonstração</h2>
+          <h2 className="text-[18px] font-bold text-ink">Nova reserva de demonstração</h2>
           {students.data?.length&&instructors.length&&beaches.length?(
-            <ActionForm action={createAdminTestLesson} submitLabel="Agendar aula teste" className="mt-4 grid gap-3">
+            <ActionForm action={createAdminTestLesson} submitLabel="Criar reserva teste" className="mt-4 grid gap-3">
               <label htmlFor="test-instructor" className="text-[13px] font-semibold">Instrutor para verificar</label>
               <select id="test-instructor" name="instructorId" className={inputClass} required>
                 {instructors.map(i=><option key={i.id} value={i.id}>
@@ -58,42 +59,27 @@ export default async function AdminTestLessonPage() {
               <select id="test-beach" name="beachId" className={inputClass} required>
                 {beaches.map(b=><option key={b.id} value={b.id}>{b.name}</option>)}
               </select>
-              <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
-                <div>
-                  <label htmlFor="test-date" className="text-[13px] font-semibold">Data e horário (Ceará)</label>
-                  <input
-                    id="test-date"
-                    name="start"
-                    type="datetime-local"
-                    required
-                    defaultValue={`${lessonDate(1)}T11:00`}
-                    min={`${lessonDate()}T00:00`}
-                    max={`${lessonDate(60)}T23:59`}
-                    className={inputClass + ' [color-scheme:dark]'}
-                  />
-                </div>
-                <div>
-                  <label htmlFor="test-hours" className="text-[13px] font-semibold">Duração da aula</label>
-                  <select id="test-hours" name="hours" defaultValue="2" className={inputClass}>
-                    {[1,2,3,4,5,6,7,8].map(n=><option key={n} value={n}>{n}h</option>)}
-                  </select>
-                </div>
-              </div>
+              <AdminTestMeetingFields
+                suggestedDates={[lessonDate(1),lessonDate(3),lessonDate(5),lessonDate(7)]
+                  .map(day=>day+'T11:00')}
+                minDate={lessonDate()+'T00:00'}
+                maxDate={lessonDate(60)+'T23:59'}
+              />
               <p className="text-[12px] text-muted">
-                A data sugerida é amanhã às 11h, horário do Ceará; ela não garante disponibilidade.
-                A aula só é criada se estiver dentro da agenda semanal do instrutor,
+                As datas sugeridas são alternadas, às 11h no Ceará. Elas não garantem disponibilidade.
+                A reserva só é criada se cada encontro estiver dentro da agenda semanal do instrutor,
                 sem bloqueios ou outras aulas sobrepostas. Confira a{' '}
                 <a href="/admin/agenda" className="font-semibold text-brand underline">
                   agenda dos instrutores
                 </a>{' '}
-                antes de agendar. Mínimo de uma hora de antecedência.
+                antes de agendar. Máximo de 4 encontros e 8h no total, com uma hora de antecedência.
               </p>
             </ActionForm>
           ):<Note tone="warning" className="mt-4">Cadastre uma conta de Aluno e um Instrutor, e ative pelo menos uma praia antes de testar.</Note>}
         </Card>
         <Card>
           <div className="flex flex-wrap items-center justify-between gap-3">
-            <h2 className="text-[18px] font-bold text-ink">Aulas de teste registradas</h2>
+            <h2 className="text-[18px] font-bold text-ink">Reservas de teste registradas</h2>
             <ButtonLink href="/admin/aula-teste" variant="ghost" size="sm">Atualizar dados</ButtonLink>
           </div>
           {(tests.data??[]).length===0?<p className="mt-4 text-[13px] text-muted">Nenhuma aula teste registrada.</p>:(
@@ -115,9 +101,18 @@ export default async function AdminTestLessonPage() {
                 ) : null}
                 <p className="text-[12px] text-muted">Aluno: {studentNames.get(b.student_id)??b.student_id.slice(0,8)}</p>
                 <p className="text-[12px] text-muted">Status: {b.status}</p>
-                {(b.booking_meetings??[]).map((m,i)=><p key={i} className="text-[12px] text-muted">
-                  {formatDateLong(m.starts_at)} · {formatTime(m.starts_at)} · {m.minutes/60}h
-                </p>)}
+                <p className="mt-2 text-[12px] font-semibold text-ink">
+                  {(b.booking_meetings??[]).length} encontros ·{' '}
+                  {(b.booking_meetings??[]).reduce((total,m)=>total+m.minutes,0)/60}h
+                </p>
+                {[...(b.booking_meetings??[])]
+                  .sort((a,b)=>a.position-b.position)
+                  .map(m=><p key={m.id} className="text-[12px] text-muted">
+                    Encontro {m.position} · {formatDateLong(m.starts_at)} · {formatTime(m.starts_at)}
+                    {' · '}{m.minutes/60}h · {m.status==='done'
+                      ? 'Realizado ('+m.done_minutes+'min)' : m.status==='scheduled'
+                        ? 'Agendado' : m.status==='in_progress' ? 'Em aula' : 'Cancelado'}
+                  </p>)}
                 <div className="mt-3 flex flex-wrap gap-2">
                   <ButtonLink href={'/admin/reservas/'+b.id} variant="ghost" size="sm">Conferir detalhes</ButtonLink>
                   {b.status==='confirmed'?<ActionForm action={cancelAdminTestLesson} submitLabel="Encerrar teste" submitVariant="danger">
