@@ -1,6 +1,6 @@
 import type { Metadata } from 'next';
 
-import { recordMeeting, recordMeetingWithSkills, startMeeting } from '@/app/actions/instructor';
+import { assessStudentKiteLevel, recordMeeting, recordMeetingWithSkills, startMeeting } from '@/app/actions/instructor';
 import { ActionForm } from '@/components/action-form';
 import { Badge, Card, EmptyState, Field, Note, inputClass, textareaClass } from '@/components/ui';
 import { InstructorStudentPhoto } from '@/components/instructor/student-photo';
@@ -8,7 +8,7 @@ import { requireRole } from '@/lib/auth';
 import { LEVEL_LABELS, MEETING_STATUS_LABELS, listBookingsForInstructor } from '@/lib/data';
 import { formatDateLong, formatMinutes, formatTime } from '@/lib/format';
 import { getInstructorStudentAvatarUrls } from '@/lib/instructor-student-photos';
-import { KITE_STEPS } from '@/lib/kite-steps';
+import { KITE_CURRICULA } from '@/lib/kite-steps';
 import { getMeetingKiteSkills } from '@/lib/meeting-skills';
 
 export const metadata: Metadata = { title: 'Realizar e registrar aula' };
@@ -22,6 +22,10 @@ export default async function RunLessonPage() {
   ]);
   const todayInCeara = new Date().toLocaleDateString('en-CA', { timeZone: 'America/Fortaleza' });
   const cearaDay = (iso: string) => new Date(iso).toLocaleDateString('en-CA', { timeZone: 'America/Fortaleza' });
+  const completed = bookings.flatMap((booking) => booking.booking_meetings
+    .filter((meeting) => meeting.status === 'done')
+    .map((meeting) => ({ booking, meeting })))
+    .sort((a, b) => b.meeting.starts_at.localeCompare(a.meeting.starts_at));
   const open = bookings
     .filter((booking) => booking.status === 'confirmed')
     .flatMap((booking) => booking.booking_meetings.filter((m) => m.status === 'scheduled' || m.status === 'in_progress').map((meeting) => ({ booking, meeting })))
@@ -94,7 +98,7 @@ export default async function RunLessonPage() {
                         As etapas aparecerão na evolução dele quando concluir a aula.
                       </p>
                       <div className="mt-3 grid gap-3">
-                        {KITE_STEPS.map((step) => (
+                        {KITE_CURRICULA[booking.level].map((step) => (
                           <div key={step.id} className="rounded-[16px] border border-line bg-surface p-3">
                             <p className="text-[14px] font-semibold text-ink">
                               <span className="mr-2 text-brand">{step.id}.</span>{step.title}
@@ -130,6 +134,37 @@ export default async function RunLessonPage() {
           );
         })}
         <Note>Uma aula parcial devolve ao saldo o tempo que não foi realizado. O registro fica visível para o aluno.</Note>
+        {completed.length ? (
+          <section className="mt-4 grid gap-3">
+            <h2 className="text-[20px] font-bold text-ink">Avaliar nível após a aula</h2>
+            <p className="text-[12px] text-muted">
+              Indique o nível demonstrado pelo aluno. Isso atualiza seu selo e as opções
+              de futuras reservas, mas não representa certificação oficial.
+              A avaliação pode ser revista após outra aula concluída.
+            </p>
+            {completed.slice(0, 12).map(({ booking, meeting }) => (
+              <Card key={'assess-' + meeting.id}>
+                <p className="text-[15px] font-bold text-ink">
+                  {booking.student?.full_name ?? 'Aluno'} · Encontro {meeting.position}
+                </p>
+                <p className="mt-1 text-[12px] text-muted">
+                  {formatDateLong(meeting.starts_at)} · Aula {LEVEL_LABELS[booking.level]}
+                </p>
+                <ActionForm action={assessStudentKiteLevel}
+                  submitLabel="Confirmar avaliação de nível" className="mt-3 grid gap-3">
+                  <input name="meetingId" type="hidden" value={meeting.id}/>
+                  <Field label="Nível demonstrado pelo aluno">
+                    <select name="kiteLevel" className={inputClass} defaultValue={booking.level}>
+                      <option value="first_time">Iniciante · Bronze</option>
+                      <option value="returning">Intermediário · Prata</option>
+                      <option value="improving">Avançado · Ouro</option>
+                    </select>
+                  </Field>
+                </ActionForm>
+              </Card>
+            ))}
+          </section>
+        ) : null}
       </div>
     </>
   );

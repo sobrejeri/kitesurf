@@ -5,6 +5,9 @@ import { uploadStudentAvatar } from '@/app/actions/student';
 import { Icon } from '@/components/icon';
 import { createSupabaseServerClient } from '@/lib/supabase/server';
 import { ProfileEditor } from '@/components/student/profile-editor';
+import { KiteLevelMedal } from '@/components/student/kite-level-medal';
+import { KiteLevelEditor } from '@/components/student/kite-level-editor';
+import { getStudentKiteLevel } from '@/lib/student-kite-level';
 import { ProfilePhotoPicker } from '@/components/profile-photo-picker';
 import { StudentHero, SunsetEmpty } from '@/components/student/sunset';
 import { ButtonLink } from '@/components/ui';
@@ -25,6 +28,7 @@ export default async function AccountPage() {
       .maybeSingle<{ avatar_path: string | null }>(),
   ]);
   const avatarReady = !avatarRecord.error;
+  const kiteLevel = await getStudentKiteLevel(viewer.id);
   let avatarUrl: string | null = null;
   if (avatarRecord.data?.avatar_path) {
     try {
@@ -65,6 +69,12 @@ export default async function AccountPage() {
             />
             <div className="min-w-0 w-full flex-1">
               <p className="break-words text-[19px] font-bold leading-tight text-ink">{viewer.fullName?.trim() || 'Aluno'}</p>
+              <div className="mt-2 flex flex-wrap items-center gap-2">
+                <KiteLevelMedal level={kiteLevel.effective} assessed={kiteLevel.assessed !== null} />
+                <span className="text-[11px] text-muted">
+                  {kiteLevel.assessed !== null ? 'Avaliado por instrutor' : 'Nível informado'}
+                </span>
+              </div>
               <p className="mt-1 text-[13px] text-muted">{viewer.language} · Aluno</p>
               <p className="mt-1 text-[12px] leading-relaxed text-label">{avatarUrl ? 'Use o + para trocar a foto.' : 'Toque no + para adicionar uma foto.'}</p>
             </div>
@@ -72,6 +82,8 @@ export default async function AccountPage() {
               <ProfileEditor fullName={viewer.fullName} language={viewer.language} />
             </div>
           </div>
+          <KiteLevelEditor reported={kiteLevel.reported} assessed={kiteLevel.assessed}
+            ready={kiteLevel.ready} />
           <dl className="mt-5 divide-y divide-line border-y border-line text-[14px]">
             <div className="flex items-center gap-3 py-3.5">
               <Icon name="mail" className="!h-5 !w-5 text-label" />

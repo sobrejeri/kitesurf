@@ -6,6 +6,7 @@ import { HighlightTitle, StudentHero } from '@/components/student/sunset';
 import { getViewer } from '@/lib/auth';
 import { getQuoteTable, listActiveBeaches, type Beach, type QuoteRow } from '@/lib/data';
 import { lessonDate } from '@/lib/dates';
+import { getStudentKiteLevel } from '@/lib/student-kite-level';
 import { supabaseConfig } from '@/lib/env';
 
 export const metadata: Metadata = { title: 'Explorar' };
@@ -38,6 +39,7 @@ async function loadBeaches(): Promise<Beach[]> {
 export default async function StudentHomePage() {
   const [quotes, beaches, viewer] = await Promise.all([loadQuotes(), loadBeaches(), getViewer()]);
   const firstName = viewer?.fullName.split(' ')[0];
+  const kiteLevel = viewer?.role === 'student' ? await getStudentKiteLevel(viewer.id) : null;
 
   return (
     <>
@@ -49,7 +51,8 @@ export default async function StudentHomePage() {
         lead={`${firstName ? `${firstName}, aulas` : 'Aulas'} de kitesurf para todos os níveis, no seu ritmo, com instrutores experientes.`}
       />
 
-      <LessonSearch defaultDate={lessonDate(1)} quotes={quotes} beaches={beaches} />
+      <LessonSearch defaultDate={lessonDate(1)} quotes={quotes} beaches={beaches}
+        studentLevel={kiteLevel?.effective ?? 'first_time'} />
 
 
       <section className="relative mt-8 overflow-hidden rounded-[22px] border border-line bg-surface p-5 md:p-7">

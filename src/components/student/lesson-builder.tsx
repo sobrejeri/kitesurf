@@ -6,6 +6,7 @@ import { createBooking } from '@/app/actions/booking';
 import { LANGUAGES } from '@/data/demo';
 import { LEVEL_LABELS, type Beach, type LessonLevel, type QuoteRow } from '@/lib/data-labels';
 import { lessonDate } from '@/lib/dates';
+import { allowedLessonLevels, KITE_CURRICULA, KITE_LEVEL_BADGES } from '@/lib/kite-steps';
 import { formatMoney } from '@/lib/format';
 
 import { Icon, type IconName } from '../icon';
@@ -94,16 +95,19 @@ export function LessonBuilder({
   quotes,
   beaches,
   defaults,
+  studentLevel,
 }: {
   quotes: readonly QuoteRow[];
   beaches: readonly Beach[];
   defaults: BuilderDefaults;
+  studentLevel: LessonLevel;
 }) {
   const [state, formAction, pending] = useActionState(createBooking, {});
   const [step, setStep] = useState<1 | 2>(1);
   const [beachId, setBeachId] = useState(defaults.beachId);
   const beachName = beaches.find((beach) => beach.id === beachId)?.name ?? '—';
   const [level, setLevel] = useState<LessonLevel>(defaults.level);
+  const allowed = allowedLessonLevels(studentLevel);
   const [language, setLanguage] = useState(defaults.language);
   const [meetings, setMeetings] = useState<Meeting[]>([
     { id: 1, date: defaults.date, start: '09:00', hours: defaults.hours },
@@ -122,7 +126,7 @@ export function LessonBuilder({
   const hoursFullyDistributed = remainingHours === 0;
   const canAddMeeting = meetings.length < selectedHours &&
     (remainingHours > 0 || meetings.some((meeting) => meeting.hours > 1));
-  const valid = hoursFullyDistributed && Boolean(beachId) && datesValid;
+  const valid = hoursFullyDistributed && Boolean(beachId) && datesValid && allowed.includes(level);
 
   function update(id: number, patch: Partial<Meeting>) {
     // The select options already cap each meeting, but validate state updates too.
@@ -234,7 +238,8 @@ export function LessonBuilder({
                   </Field>
                   <Field label="Nível" icon="kite">
                     <select className={inputClass} value={level} onChange={(e) => setLevel(e.target.value as LessonLevel)}>
-                      {Object.entries(LEVEL_LABELS).map(([id, label]) => (
+                      {Object.entries(LEVEL_LABELS).filter(([id]) =>
+                        allowed.includes(id as LessonLevel)).map(([id, label]) => (
                         <option key={id} value={id}>{label}</option>
                       ))}
                     </select>
@@ -248,6 +253,28 @@ export function LessonBuilder({
                   </Field>
                 </div>
               ) : null}
+            </Card>
+
+            <Card className="!p-4">
+              <p className="text-[14px] font-extrabold text-ink">
+                O que esta aula oferece · {KITE_LEVEL_BADGES[level].label}
+              </p>
+              <p className="mt-1 text-[12px] text-muted">
+                {KITE_LEVEL_BADGES[level].detail}. A sequência é uma referência,
+                não uma garantia de aprender todas as etapas em uma única aula.
+              </p>
+              <ul className="mt-3 grid gap-1.5">
+                {KITE_CURRICULA[level].map((item) => (
+                  <li key={item.id} className="flex gap-2 text-[12px] text-label">
+                    <span className="font-bold text-brand">{item.id}.</span>
+                    {item.title}
+                  </li>
+                ))}
+              </ul>
+              <p className="mt-2 text-[11px] text-muted">
+                O instrutor define atividades compatíveis com suas habilidades
+                e com o vento e o mar no dia.
+              </p>
             </Card>
 
             {/* Optional add-on: the instructor's own support vehicle. */}

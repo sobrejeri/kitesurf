@@ -7,6 +7,8 @@ import { z } from 'zod';
 
 import { requireRole } from '@/lib/auth';
 import { lessonDate } from '@/lib/dates';
+import { getStudentKiteLevel } from '@/lib/student-kite-level';
+import { isAllowedLessonLevel } from '@/lib/kite-steps';
 import { LESSON_UTC_OFFSET } from '@/lib/format';
 import { createSupabaseServerClient } from '@/lib/supabase/server';
 
@@ -36,7 +38,7 @@ const CreateBooking = z.strictObject({
 });
 
 export async function createBooking(_prev: ActionState, form: FormData): Promise<ActionState> {
-  await requireRole(['student'], '/aluno/reservar');
+  const viewer = await requireRole(['student'], '/aluno/reservar');
 
   let meetings: unknown;
   try {
@@ -55,6 +57,13 @@ export async function createBooking(_prev: ActionState, form: FormData): Promise
   });
   if (!parsed.success) return { error: 'Confira praia, nível, idioma e os encontros.' };
 
+  const studentLevel = await getStudentKiteLevel(viewer.id);
+  if (!isAllowedLessonLevel(studentLevel.effective, parsed.data.level)) {
+    return { error: 'Esse tipo de aula não está disponível para seu nível atual. Atualize seu perfil ou escolha uma aula compatível.' };
+  }
+  if (!studentLevel.ready) {
+    return { error: 'Atualize o banco de dados para configurar seu nível e continuar a reserva.' };
+  }
   const totalHours = parsed.data.meetings.reduce((sum, meeting) => sum + meeting.hours, 0);
   if (totalHours > 8) return { error: 'Cada reserva tem de 1 a 8 horas no total.' };
   if (parsed.data.expectedHours !== undefined && totalHours !== parsed.data.expectedHours) {

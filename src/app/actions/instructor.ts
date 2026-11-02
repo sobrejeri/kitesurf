@@ -161,3 +161,31 @@ export async function recordMeetingWithSkills(_prev: ActionState, form: FormData
   revalidatePath('/aluno/aulas');
   return { ok: 'Encontro registrado! As etapas trabalhadas já aparecem na evolução do aluno.' };
 }
+
+
+/** Only the assigned instructor of a completed encounter may assess the student's level. */
+export async function assessStudentKiteLevel(
+  _previous: ActionState, form: FormData,
+): Promise<ActionState> {
+  await requireRole(['instructor']);
+  const parsed = z.strictObject({
+    meetingId: z.uuid(),
+    kiteLevel: z.enum(['first_time', 'returning', 'improving']),
+  }).safeParse({
+    meetingId: form.get('meetingId'),
+    kiteLevel: form.get('kiteLevel'),
+  });
+  if (!parsed.success) return { error: 'Escolha um nível válido para esta aula.' };
+  const db = await createSupabaseServerClient();
+  const { error } = await db.rpc('assess_student_kite_level', {
+    p_meeting_id: parsed.data.meetingId,
+    p_level: parsed.data.kiteLevel,
+  });
+  if (error) return { error: friendlyError(error) };
+  revalidatePath('/instrutor/aula');
+  revalidatePath('/aluno/conta');
+  revalidatePath('/aluno/inicio');
+  revalidatePath('/aluno/reservar');
+  revalidatePath('/aluno/evolucao');
+  return { ok: 'Nível do aluno avaliado e atualizado para suas próximas reservas.' };
+}
