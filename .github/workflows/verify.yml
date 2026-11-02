@@ -25,6 +25,8 @@ jobs:
       - run: pnpm lint
       - name: Test Admin booking progress calculations
         run: node --experimental-strip-types scripts/test-booking-progress.mjs
+      - name: Test student multi-booking and history separation
+        run: node --experimental-strip-types scripts/test-booking-cycle.mjs
       - name: Check PostgREST relationship ambiguity
         run: node scripts/verify-postgrest-relationships.mjs
       - run: pnpm build
