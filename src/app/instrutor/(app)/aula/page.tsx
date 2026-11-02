@@ -13,6 +13,8 @@ import { getInstructorStudentAvatarUrls } from '@/lib/instructor-student-photos'
 import { KITE_CURRICULA, KITE_LEVEL_BADGES } from '@/lib/kite-steps';
 import { findCompletedInstructorMeeting, listCompletedInstructorMeetings } from '@/lib/instructor-completed-meetings';
 import { getMeetingKiteSkills } from '@/lib/meeting-skills';
+import { listMeetingChanges } from '@/lib/meeting-changes';
+import { MeetingChangePanel } from '@/components/meeting-change-panel';
 import { groupInstructorLessons, resolveInstructorLessonTab, selectInstructorLesson, mayStartInstructorLesson } from '@/lib/instructor-lesson-tabs';
 import { getBookingLevelAssessments } from '@/lib/booking-level-assessments';
 
@@ -37,6 +39,9 @@ export default async function RunLessonPage({
   const selectedHistory = activeTab === 'concluidas'
     ? findCompletedInstructorMeeting(completedHistory, selected?.meeting.id)
     : null;
+  const changeRequests = selected && activeTab !== 'concluidas'
+    ? await listMeetingChanges(selected.booking.id)
+    : { ready: true as const, rows: [] };
   const [skills, reviews] = await Promise.all([
     getMeetingKiteSkills(selectedHistory ? [selectedHistory.meeting.id] : []),
     getBookingLevelAssessments(bookings.map((booking) => booking.id)),
@@ -110,7 +115,9 @@ export default async function RunLessonPage({
               : meeting.status === 'done' ? 'Ver detalhes'
                 : meeting.status === 'in_progress' ? 'Continuar aula'
                   : mayStartInstructorLesson({ booking, meeting }, todayInCeara, cearaDay)
-                    ? 'Abrir e iniciar' : 'Ver agendamento';
+                    ? 'Abrir e iniciar'
+                    : Date.parse(meeting.starts_at) - Date.now() <= 24*3600000
+                      ? 'Preparar aula' : 'Ver agendamento';
             const target = expanded
               ? '/instrutor/aula?aba=' + activeTab + '#aula-' + meeting.id
               : '/instrutor/aula?aba=' + activeTab + '&aula=' + meeting.id + '#aula-' + meeting.id;
@@ -180,7 +187,10 @@ export default async function RunLessonPage({
             <div id="detalhes-aula" className="scroll-mt-5">
               <div className="flex flex-wrap items-center justify-between gap-2">
                 <h2 className="text-[19px] font-bold text-ink">
-                  {meeting.status === 'in_progress' ? 'Continuar aula' : 'Iniciar aula'}
+                  {meeting.status === 'in_progress' ? 'Continuar aula'
+                    : canStart ? 'Iniciar aula'
+                      : Date.parse(meeting.starts_at)-Date.now() <= 24*3600000
+                        ? 'Preparar aula' : 'Detalhes da aula'}
                 </h2>
                 <Badge tone={meeting.status === 'in_progress' ? 'warning' : 'brand'}>
                   {MEETING_STATUS_LABELS[meeting.status]}
@@ -204,6 +214,15 @@ export default async function RunLessonPage({
                 {LEVEL_LABELS[booking.level]} · {booking.language} · {booking.beach?.name ?? 'Praia'}
               </p>
               {booking.is_test ? <div className="mt-2"><Badge tone="warning">AULA TESTE</Badge></div> : null}
+              {meeting.status === 'scheduled' ? (
+                <MeetingChangePanel
+                  bookingId={booking.id}
+                  meeting={meeting}
+                  viewerId={viewer.id}
+                  bookingStatus={booking.status}
+                  changes={changeRequests}
+                />
+              ) : null}
               {meeting.status === 'in_progress' ? (
                 <Note className="mt-4" title="Aula iniciada">
                   A presença já foi confirmada. Preencha os minutos e etapas quando terminar;
@@ -213,8 +232,9 @@ export default async function RunLessonPage({
             <div className="mt-5 border-t border-line pt-5">
               {meeting.status === 'scheduled' && !canStart ? (
                 <Note tone="warning">
-                  Este encontro será liberado no dia agendado, após a conclusão dos encontros anteriores.
-                  A data prevista é {formatDateLong(meeting.starts_at)}.
+                  Você pode consultar os detalhes e preparar a aula com antecedência.
+                  O início real exige o dia agendado, o código de presença e a conclusão
+                  dos encontros anteriores. Data prevista: {formatDateLong(meeting.starts_at)}.
                 </Note>
               ) : meeting.status === 'scheduled' ? (
                 <ActionForm action={startMeeting} submitLabel="Confirmar presença e iniciar" className="flex flex-wrap items-end gap-3">

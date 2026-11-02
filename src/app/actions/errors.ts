@@ -3,6 +3,23 @@
  * message: the raw text can carry internal details and is only logged.
  */
 const KNOWN: readonly [RegExp, string][] = [
+  [/Meeting change must be requested 72 hours before/i,
+    'Alterações precisam ser solicitadas com pelo menos 3 dias (72 horas) de antecedência da aula original.'],
+  [/Propose a new date at least 72 hours away/i,
+    'Escolha uma nova data pelo menos 72 horas à frente, dentro dos próximos 90 dias.'],
+  [/Another change request is waiting for approval/i,
+    'Já existe uma mudança pendente nesta reserva. Aguarde a resposta antes de solicitar outra.'],
+  [/Change reason must have/i,
+    'Escreva um motivo com 8 a 500 caracteres.'],
+  [/New meeting time changes booking order/i,
+    'A nova data não pode ultrapassar ou anteceder os outros encontros desta reserva.'],
+  [/Instructor unavailable for proposed meeting|Proposed time is no longer available/i,
+    'A nova data não está disponível na agenda do instrutor. Escolha outro horário.'],
+  [/Meeting change already decided|Meeting change response deadline expired/i,
+    'Esta solicitação já foi respondida ou ultrapassou o prazo de 48 horas.'],
+  [/Only scheduled confirmed meetings may be changed|Meeting no longer eligible for change/i,
+    'Apenas aulas agendadas de reservas confirmadas podem ser reagendadas.'],
+
   [/Meeting day has not arrived/i,
     'Este encontro só pode ser iniciado a partir do dia agendado. Confira a data da aula.'],
   [/Finish the previous meeting first/i,
