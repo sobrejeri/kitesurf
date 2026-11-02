@@ -3,6 +3,11 @@
  * message: the raw text can carry internal details and is only logged.
  */
 const KNOWN: readonly [RegExp, string][] = [
+  [/Instructor has a class or block at the selected time/i,
+    'Este instrutor não está disponível no horário escolhido. Confira os dias e horários configurados, bloqueios e aulas já agendadas. Selecione outro horário ou outro instrutor. Nenhuma aula foi criada.'],
+  [/A started test must be completed before cleanup/i,
+    'Essa aula de teste já foi iniciada. Termine o registro da aula antes de encerrá-la.'],
+
   [/Partner profile must be completed before approval/i,
     'A pousada ainda precisa preencher responsável, telefone, cidade e endereço antes da aprovação.'],
   [/Approved establishment identity requires admin review/i,
