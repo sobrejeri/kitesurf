@@ -263,8 +263,8 @@ CREATE OR REPLACE FUNCTION public.request_meeting_change(
 DECLARE uid uuid:=public.require_role(ARRAY['student','instructor']::public.app_role[]);
   b public.bookings; m public.booking_meetings; v_responder uuid; v_id uuid;
 BEGIN
-  SELECT b.* INTO b FROM public.bookings b
-    JOIN public.booking_meetings bm ON bm.booking_id=b.id WHERE bm.id=p_meeting_id;
+  SELECT existing.* INTO b FROM public.bookings existing
+    JOIN public.booking_meetings bm ON bm.booking_id=existing.id WHERE bm.id=p_meeting_id;
   IF b.id IS NULL OR b.status<>'confirmed' OR b.instructor_id IS NULL
     OR uid NOT IN (b.student_id,b.instructor_id) THEN
     RAISE EXCEPTION 'Booking not owned by this participant' USING errcode='42501'; END IF;
