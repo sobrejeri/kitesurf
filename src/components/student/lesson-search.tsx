@@ -170,7 +170,7 @@ function Stepper({ hours, onChange }: { hours: number; onChange: (next: number) 
         aria-label="Menos uma hora"
         disabled={hours <= MIN_HOURS}
         onClick={() => onChange(hours - 1)}
-        className="press grid h-10 w-10 place-items-center rounded-full bg-[#e6ecf3] text-ink disabled:opacity-40"
+        className="press grid h-10 w-10 place-items-center rounded-full border-2 border-[#ff7a1a] bg-[#12324a] text-[#ff9b51] shadow-[0_0_0_2px_rgba(255,122,26,0.12)] transition-colors focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#00e3ee] disabled:cursor-not-allowed disabled:border-[#a76b47] disabled:bg-[#17364d] disabled:text-[#edb38b] disabled:shadow-none"
       >
         <Icon name="minus" className="!h-5 !w-5" />
       </button>
