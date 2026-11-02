@@ -98,6 +98,14 @@ BEGIN
       USING errcode='55000';
   END IF;
 
+  IF EXISTS (
+    SELECT 1 FROM public.booking_level_assessments
+    WHERE booking_id=v_booking.id
+  ) THEN
+    RAISE EXCEPTION 'Booking already assessed'
+      USING errcode='55000';
+  END IF;
+
   v_student := v_booking.student_id;
   SELECT assessed_kite_level INTO v_previous_level
   FROM public.profiles WHERE id=v_student FOR UPDATE;
@@ -105,11 +113,7 @@ BEGIN
   INSERT INTO public.booking_level_assessments(
     booking_id,meeting_id,instructor_id,student_id,assessed_level
   )
-  VALUES(v_booking.id,p_meeting_id,v_instructor,v_student,p_level)
-  ON CONFLICT (booking_id) DO UPDATE
-    SET meeting_id=EXCLUDED.meeting_id,
-        assessed_level=EXCLUDED.assessed_level,
-        assessed_at=now();
+  VALUES(v_booking.id,p_meeting_id,v_instructor,v_student,p_level);
 
   UPDATE public.profiles
     SET assessed_kite_level=p_level,
