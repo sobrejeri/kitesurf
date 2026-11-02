@@ -220,6 +220,7 @@ export default async function RunLessonPage({
                   bookingId={booking.id}
                   meeting={meeting}
                   viewerId={viewer.id}
+                  viewerRole="instructor"
                   bookingStatus={booking.status}
                   changes={changeRequests}
                 />
