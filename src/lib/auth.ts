@@ -66,7 +66,7 @@ export const getViewer = cache(async (): Promise<Viewer | null> => {
 
   return {
     id: userId,
-    email: typeof claims.claims.email === 'string' ? claims.claims.email : null,
+    email: typeof claims?.claims?.email === 'string' ? claims.claims.email : null,
     role: profile.role,
     fullName: profile.full_name,
     language: profile.language,
