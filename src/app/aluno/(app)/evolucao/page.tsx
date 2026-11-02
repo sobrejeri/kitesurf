@@ -231,7 +231,7 @@ export default async function ProgressPage() {
               const state = kiteStageStatus(currentSkills, step.id);
               return (
                 <li key={step.id} className="relative flex gap-4 pb-5 last:pb-0">
-                  {index < KITE_STEPS.length - 1 ? (
+                  {index < currentCurriculum.length - 1 ? (
                     <span className="absolute left-[19px] top-10 h-[calc(100%-40px)] w-px bg-line-ghost"
                       aria-hidden="true" />
                   ) : null}
