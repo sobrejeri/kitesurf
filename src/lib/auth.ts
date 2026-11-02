@@ -32,20 +32,41 @@ export const getViewer = cache(async (): Promise<Viewer | null> => {
   await connection();
   if (!supabaseConfig) return null;
   const supabase = await createSupabaseServerClient();
-  const { data: claims } = await supabase.auth.getClaims();
+  let claims: Awaited<ReturnType<typeof supabase.auth.getClaims>>['data'];
+  try {
+    const result = await supabase.auth.getClaims();
+    claims = result.data;
+    if (result.error) {
+      console.error('[auth.viewer] JWT validation failed', {
+        code: result.error.code,
+        name: result.error.name,
+      });
+    }
+  } catch (error) {
+    console.error('[auth.viewer] Failed to read login session', {
+      name: error instanceof Error ? error.name : 'unknown',
+    });
+    throw error;
+  }
   const userId = claims?.claims?.sub;
   if (!userId) return null;
 
-  const { data: profile } = await supabase
+  const { data: profile, error: profileError } = await supabase
     .from('profiles')
     .select('role, full_name, language')
     .eq('id', userId)
     .single<{ role: AppRole; full_name: string; language: string }>();
+  if (profileError) {
+    console.error('[auth.viewer] Profile lookup failed', {
+      code: profileError.code,
+      message: profileError.message,
+    });
+  }
   if (!profile) return null;
 
   return {
     id: userId,
-    email: typeof claims.claims.email === 'string' ? claims.claims.email : null,
+    email: typeof claims?.claims?.email === 'string' ? claims.claims.email : null,
     role: profile.role,
     fullName: profile.full_name,
     language: profile.language,
