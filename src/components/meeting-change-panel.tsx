@@ -1,4 +1,5 @@
 import { ActionForm } from '@/components/action-form';
+import { Icon } from '@/components/icon';
 import { requestMeetingChange, respondMeetingChange, resolveStudentChange } from '@/app/actions/meeting-change';
 import { Badge, Note, Field, inputClass, textareaClass } from '@/components/ui';
 import type { Meeting } from '@/lib/data';
@@ -147,33 +148,43 @@ export function MeetingChangePanel({
           Outra alteração desta reserva está aguardando resposta.
         </p>
       ) : eligible ? (
-        <details className="group rounded-[16px] border border-line bg-surface px-3.5 py-3">
-          <summary className="flex cursor-pointer list-none items-center justify-between gap-2 text-[13px] font-semibold text-brand [&::-webkit-details-marker]:hidden">
-            <span>Alterar data ou horário</span>
-            <span className="text-[11px] font-normal text-muted group-open:hidden">Abrir</span>
-            <span className="hidden text-[11px] font-normal text-muted group-open:inline">Fechar</span>
+        <details className="group min-w-0 w-full">
+          <summary className="flex min-h-12 cursor-pointer list-none items-center justify-between gap-3 rounded-xl bg-brand-tint px-3.5 py-3 text-[14px] font-semibold hover:bg-brand-wash focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand [&::-webkit-details-marker]:hidden">
+            <span className={viewerRole==='student'?'text-[#65e0e9]':'text-brand'}>
+              Alterar data ou horário
+            </span>
+            <Icon name="chevronDown"
+              className={`!h-4 !w-4 text-muted transition-transform group-open:rotate-180`}/>
           </summary>
-          <div className="mt-3 border-t border-line pt-3">
-            <p className="mb-3 text-[12px] text-muted">
+          <div className="min-w-0 px-0.5 pt-3">
+            <p className="mb-3 text-[12px] leading-relaxed text-muted">
               {viewerRole==='instructor'
                 ? 'Proponha uma data posterior. O aluno terá 12 horas para responder.'
                 : 'Escolha uma data posterior. O instrutor terá 12 horas para responder.'}
             </p>
             <ActionForm action={requestMeetingChange}
-              submitLabel="Enviar solicitação" className="grid gap-3">
+              submitLabel="Enviar solicitação"
+              wideSubmit
+              submitClassName={viewerRole==='student'
+                ? 'meeting-change-student-submit !min-h-12 !text-[15px] !font-semibold'
+                : '!min-h-12 !text-[15px] !font-semibold'}
+              className="grid min-w-0 gap-3">
               <input type="hidden" name="meetingId" value={meeting.id}/>
               <input type="hidden" name="bookingId" value={bookingId}/>
-              <Field label="Nova data e horário (Ceará)" hint="Apenas datas posteriores; solicite com 72h de antecedência.">
+              <Field label="Nova data e horário (Ceará)">
                 <input type="datetime-local" name="proposedDate" required
                   min={localDateTime(new Date(firstAvailable))}
                   defaultValue={proposed}
-                  className={inputClass+' [color-scheme:dark]'}/>
+                  className={inputClass+' meeting-change-datetime block min-w-0 max-w-full [color-scheme:dark]'}/>
               </Field>
               <Field label="Motivo">
                 <textarea name="reason" required minLength={8} maxLength={500}
-                  rows={2} className={textareaClass}
-                  placeholder="Explique brevemente a necessidade da alteração."/>
+                  rows={2} className={textareaClass+' min-w-0 min-h-[88px] resize-y'}
+                  placeholder="Explique brevemente o motivo da alteração."/>
               </Field>
+              <p className="text-[11px] leading-relaxed text-muted">
+                Solicite com pelo menos 72 horas de antecedência. Não é permitido antecipar a aula.
+              </p>
             </ActionForm>
           </div>
         </details>
