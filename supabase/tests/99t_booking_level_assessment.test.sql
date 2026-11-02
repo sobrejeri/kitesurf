@@ -50,6 +50,13 @@ BEGIN
   PERFORM public.assess_student_kite_level(v_meeting.id,'returning');
   ASSERT (SELECT count(*) FROM public.booking_level_assessments
     WHERE booking_id=v_booking.id) = 1, 'One booking must have exactly one review';
+  BEGIN
+    PERFORM public.assess_student_kite_level(v_meeting.id,'improving');
+    RAISE EXCEPTION 'Same booking assessed twice';
+  EXCEPTION WHEN sqlstate '55000' THEN
+    ASSERT SQLERRM='Booking already assessed',
+      'Wrong duplicate assessment error';
+  END;
   EXECUTE 'RESET ROLE';
 
   PERFORM set_config('request.jwt.claim.sub',v_booking.student_id::text,true);
