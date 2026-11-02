@@ -47,4 +47,20 @@ assert.ok(student.includes('selected?.id === booking.id ? ('),
 assert.ok(student.includes('getMeetingKiteSkills(selected.booking_meetings.map'),
   'Student skill lookup stays scoped to the selected booking');
 
+
+for (const [source, type, accent, detailBg] of [
+  [student, 'student', 'ring-[#00e3ee]/80', 'bg-[#053954]'],
+  [instructor, 'instructor', 'ring-[#ff8a3d]/80', 'bg-[#191c2b]'],
+]) {
+  assert.ok(source.includes(accent),
+    type + ' selected card must have an accessible high-contrast focus outline');
+  assert.ok(source.includes(detailBg),
+    type + ' expanded detail panel must visually match its selected card');
+  assert.ok(source.includes('Detalhes abertos'),
+    type + ' selected card must identify its expansion state in text');
+}
+assert.ok(student.includes('selected?.id === booking.id') &&
+  instructor.includes('const expanded = selected?.meeting.id === meeting.id;'),
+  'Selection styles must not make unselected reservations look active');
+
 console.log('PASS: student and instructor details render inline with their selected cards');
