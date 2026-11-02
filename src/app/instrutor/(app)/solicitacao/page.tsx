@@ -34,14 +34,15 @@ export default async function RequestPage() {
     .eq('instructor_id',viewer.id).eq('status','offered')
     .gt('expires_at',new Date().toISOString()).order('created_at',{ascending:true}).returns<Offer[]>();
   if (error) return <Note tone="warning">O painel de solicitações ainda depende da migração SQL de ofertas. Verifique a etapa 4.</Note>;
-  const transferResponse = await db.rpc('my_booking_reassignment_offers')
-    .returns<{
-      offer_id:string;booking_code:string;expires_at:string;beach_name:string;
-      lesson_level:LessonLevel;lesson_language:string;total_hours:number;
-      with_transport:boolean;instructor_net_cents:number;
-      meetings:{starts_at:string;hours:number}[];
-    }[]>();
-  const reassignments = transferResponse.data ?? [];
+  const transferResponse = await db.rpc('my_booking_reassignment_offers');
+  type ReassignmentOffer = {
+    offer_id:string;booking_code:string;expires_at:string;beach_name:string;
+    lesson_level:LessonLevel;lesson_language:string;total_hours:number;
+    with_transport:boolean;instructor_net_cents:number;
+    meetings:{starts_at:string;hours:number}[];
+  };
+  const reassignments:ReassignmentOffer[] = Array.isArray(transferResponse.data)
+    ? transferResponse.data as ReassignmentOffer[] : [];
   const beaches = await db.from('beaches').select('id,name').returns<{id:string;name:string}[]>();
   const names = new Map((beaches.data??[]).map(b=>[b.id,b.name]));
   return (
