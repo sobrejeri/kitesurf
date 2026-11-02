@@ -5,7 +5,7 @@ import { Icon, type IconName } from '@/components/icon';
 import { StudentHero, SunsetEmpty } from '@/components/student/sunset';
 import { requireRole } from '@/lib/auth';
 import { learningBalance, listBookingsForStudent } from '@/lib/data';
-import { activeStudentBookings, bookingIsFinished } from '@/lib/booking-cycle';
+import { activeBookingStageMeetingIds, activeStudentBookings, bookingIsFinished } from '@/lib/booking-cycle';
 import { formatDateLong, formatMinutes, formatTime } from '@/lib/format';
 import { KITE_CURRICULA, KITE_LEVEL_BADGES, kiteStageStatus } from '@/lib/kite-steps';
 import { KiteLevelMedal } from '@/components/student/kite-level-medal';
@@ -59,11 +59,9 @@ export default async function ProgressPage({
     getBookingLevelAssessments(finished.map((booking) => booking.id)),
   ]);
   const allSkills = skills.rows;
-  const relevantMeetingIds = new Set(
-    (selected ? [selected] : finished.filter((booking) => booking.level === currentLevel))
-      .flatMap((booking) => booking.booking_meetings
-        .filter((meeting) => meeting.status === 'done').map((meeting) => meeting.id)),
-  );
+  // Only the selected active reservation can update the active learning path.
+  // Finished bookings remain accessible in the separate historical reports.
+  const relevantMeetingIds = new Set(activeBookingStageMeetingIds(selected));
   const currentSkills = allSkills.filter((entry) => relevantMeetingIds.has(entry.meeting_id));
   const todayInCeara = new Date().toLocaleDateString('en-CA', { timeZone: 'America/Fortaleza' });
   const dateInCeara = (iso: string) => new Date(iso).toLocaleDateString('en-CA', { timeZone: 'America/Fortaleza' });
@@ -146,6 +144,8 @@ export default async function ProgressPage({
         ) : null}
       </section>
 
+      {selected ? (
+        <>
       <section className="relative -mt-2 rounded-[22px] border border-line bg-surface p-5">
         <p className="flex items-center gap-2.5 text-[17px] font-semibold text-ink">
           <Icon name="waves" className="!h-6 !w-6 text-brand" /> Tempo desta reserva
@@ -181,6 +181,41 @@ export default async function ProgressPage({
         <Stat label="Horas agendadas" value={formatMinutes(balance.scheduled)} hint="Próximos encontros" icon="calendar" href="/aluno/aulas" />
         <Stat label="Saldo disponível" value={formatMinutes(balance.available)} hint="Para os próximos encontros" icon="wallet" href="/aluno/reservar" />
       </div>
+
+        </>
+      ) : (
+        <section className="mt-4 rounded-[22px] border border-line bg-surface p-5">
+          <div className="flex items-start gap-3">
+            <Icon name={finished.length ? 'check' : 'flag'} className="!h-7 !w-7 shrink-0 text-brand" />
+            <div className="min-w-0">
+              <h2 className="text-[20px] font-bold text-ink">
+                {finished.length ? 'Seu ciclo foi concluído!' : 'Sua próxima jornada começa aqui'}
+              </h2>
+              <p className="mt-2 text-[13px] leading-relaxed text-muted">
+                {finished.length
+                  ? 'Não há aulas em andamento. As etapas que você praticou já estão registradas no histórico, sem aparecer como uma atividade pendente.'
+                  : 'Quando você confirmar uma reserva, as etapas do nível escolhido aparecerão aqui. Cada nova reserva começa com um progresso próprio.'}
+              </p>
+              {finished.length ? (
+                <p className="mt-2 text-[13px] font-semibold text-label">
+                  {finished.length} {finished.length === 1 ? 'reserva finalizada' : 'reservas finalizadas'}
+                  {' · '}{formatMinutes(lifetimeMinutes)} de aulas realizadas
+                </p>
+              ) : null}
+              <div className="mt-4 flex flex-wrap gap-x-5 gap-y-2 text-[13px] font-bold">
+                {finished.length ? (
+                  <a href="#reservas-finalizadas" className="text-brand underline underline-offset-4">
+                    Ver meu desempenho nas reservas finalizadas
+                  </a>
+                ) : null}
+                <Link href="/aluno/reservar" className="text-brand underline underline-offset-4">
+                  Agendar nova aula
+                </Link>
+              </div>
+            </div>
+          </div>
+        </section>
+      )}
 
       <section className="mt-5 rounded-[22px] border border-line bg-surface p-5">
         <h2 className="flex items-center gap-3 text-[19px] font-bold text-ink">
@@ -276,20 +311,21 @@ export default async function ProgressPage({
           <div className="relative flex items-start gap-3">
             <Icon name="flag" className="!h-7 !w-7 text-brand" />
             <div>
-              <h2 className="text-[20px] font-bold text-ink">Seu caminho no kite</h2>
+              <h2 className="text-[20px] font-bold text-ink">Etapas desta reserva</h2>
               <div className="mt-2"><KiteLevelMedal level={currentLevel}
-                assessed={levelRecord.assessed !== null}/></div>
+                assessed={levelRecord.assessed === currentLevel}/></div>
               <p className="mt-2 text-[13px] text-muted">
-                {KITE_LEVEL_BADGES[currentLevel].detail}. {selected
-                  ? 'As etapas são mostradas para esta reserva, sem misturar os resultados de outras.'
-                  : 'Histórico das habilidades já registradas no seu nível atual.'}
+                {KITE_LEVEL_BADGES[currentLevel].detail}.
+                As etapas abaixo acompanham somente a reserva selecionada: {selected?.code ?? ''}.
               </p>
             </div>
           </div>
-          <p className="mt-3 text-[12px] text-label">
-            Etapas avançadas podem representar especializações distintas;
-            não é obrigatório dominar todas para seguir uma modalidade.
-          </p>
+          {currentLevel === 'improving' ? (
+            <p className="mt-3 text-[12px] text-label">
+              Modalidades avançadas são especializações independentes;
+              não é obrigatório dominar todas.
+            </p>
+          ) : null}
           <p className="mt-3 text-[12px] text-label">
             As etapas são registradas pelo instrutor. Praticada indica desenvolvimento;
             concluída indica que a habilidade já foi alcançada.
@@ -344,7 +380,7 @@ export default async function ProgressPage({
         </section>
       </div>
 
-      <section className="mt-5 rounded-[22px] border border-line bg-surface p-5">
+      <section id="reservas-finalizadas" className="mt-5 scroll-mt-6 rounded-[22px] border border-line bg-surface p-5">
         <h2 className="flex items-center gap-3 text-[19px] font-bold text-ink">
           <Icon name="check" className="!h-6 !w-6 text-brand" />
           Reservas finalizadas · {finished.length}

@@ -1,5 +1,5 @@
 import assert from 'node:assert/strict';
-import { activeStudentBookings, bookingIsFinished } from '../src/lib/booking-cycle.ts';
+import { activeBookingStageMeetingIds, activeStudentBookings, bookingIsFinished } from '../src/lib/booking-cycle.ts';
 
 function booking(id, status, starts, meetingStatuses) {
   return {
@@ -31,4 +31,13 @@ assert.deepEqual(
 assert.equal(activeStudentBookings([completed, anotherCompleted, waitingPayment]).length, 0);
 assert.equal(ongoingA.booking_meetings[0].status, 'done'); // day 1 stays complete
 assert.equal(ongoingA.booking_meetings[1].status, 'scheduled'); // day 2 stays scheduled
-console.log('PASS: current reservations stay separate and completed bookings move to history');
+// Completed booking skill records must not be carried into a new booking or
+// shown as in-progress after the last reservation has finished.
+assert.deepEqual(activeBookingStageMeetingIds(null), [], 'Empty current path must have no skills');
+assert.deepEqual(activeBookingStageMeetingIds(ongoingA), ['A-0'],
+  'Current path must contain only completed meetings in selected booking');
+assert.deepEqual(activeBookingStageMeetingIds(ongoingB), [],
+  'New booking must begin with no completed skill stages');
+assert.deepEqual(activeBookingStageMeetingIds(completed), ['old-0'],
+  'Historical meetings are retained for archive reports');
+console.log('PASS: current bookings use only their own skill stages; finished skills stay in history');
