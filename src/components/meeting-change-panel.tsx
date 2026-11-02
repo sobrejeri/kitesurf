@@ -55,8 +55,8 @@ export function MeetingChangePanel({
           <Badge tone="warning">Sua escolha · 12 horas</Badge>
           <p className="text-[12px] text-muted">
             A alteração não foi aprovada. Escolha até
-            {' '}{formatDateLong(studentDecision.choice_expires_at!)} às
-            {' '}{formatTime(studentDecision.choice_expires_at!)}.
+            {' '}{formatDateLong(studentDecision.choice_expires_at ?? studentDecision.expires_at)} às
+            {' '}{formatTime(studentDecision.choice_expires_at ?? studentDecision.expires_at)}.
             O horário original continua reservado enquanto você decide.
           </p>
           <div className="grid gap-2 sm:grid-cols-2">
