@@ -63,6 +63,21 @@ BEGIN
   END;
   PERFORM pg_temp.reset_31();
 
+  -- Control the recipient's availability deterministically; other tests may
+  -- have saved a narrow weekly schedule for the substitute.
+  UPDATE public.instructors SET status='approved',languages=ARRAY['Português'],
+    has_support_vehicle=true WHERE id=v_substitute;
+  INSERT INTO public.instructor_beaches(instructor_id,beach_id)
+    VALUES(v_substitute,v_beach) ON CONFLICT DO NOTHING;
+  INSERT INTO public.instructor_schedule_settings(instructor_id,buffer_minutes)
+    VALUES(v_substitute,0) ON CONFLICT(instructor_id) DO UPDATE SET buffer_minutes=0;
+  DELETE FROM public.instructor_weekly_hours WHERE instructor_id=v_substitute;
+  INSERT INTO public.instructor_weekly_hours(instructor_id,weekday,opens_at,closes_at)
+    SELECT v_substitute,d,'00:00'::time,'23:59'::time FROM generate_series(0,6) AS d;
+  DELETE FROM public.instructor_time_off WHERE instructor_id=v_substitute
+    AND tstzrange(starts_at,ends_at,'[)')
+      && tstzrange(v_start,v_start+interval '2 hours','[)');
+
   PERFORM pg_temp.as_31(v_instructor);
   PERFORM public.release_my_booking(v_booking,'Instrutor indisponível para esse dia.');
   PERFORM pg_temp.reset_31();
