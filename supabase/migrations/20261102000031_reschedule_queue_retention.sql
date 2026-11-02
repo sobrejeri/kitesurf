@@ -109,3 +109,93 @@ REVOKE ALL ON FUNCTION public.requeue_confirmed_booking(uuid,text)
 
 -- New SQL version of acceptance only for offers linked to an existing booking:
 -- the legacy function is replaced below by an injected branch.
+CREATE OR REPLACE FUNCTION public.accept_instructor_offer(p_offer_id uuid) returns uuid
+language plpgsql security definer set search_path='' as $$
+declare uid uuid:=public.require_role(array['instructor']::public.app_role[]);
+  req_id uuid; r public.instructor_requests; o public.instructor_offers;
+  price public.price_versions; partner public.partners; instructor public.instructors;
+  total_lesson integer; total_transport integer; split record; v_booking_id uuid;
+  meeting jsonb; position integer:=0;
+begin
+  select request_id into req_id from public.instructor_offers
+    where id=p_offer_id and instructor_id=uid;
+  if req_id is null then raise exception 'Offer not found' using errcode='P0002'; end if;
+  select * into r from public.instructor_requests where id=req_id for update;
+  select * into o from public.instructor_offers where id=p_offer_id for update;
+  if r.status<>'searching' or o.status<>'offered' or o.expires_at<=now() or r.expires_at<=now() then
+    perform public.advance_instructor_offer(req_id);
+    return null;
+  end if;
+  select * into instructor from public.instructors where id=uid for update;
+  if instructor.status<>'approved' or not public.instructor_can_attend(uid,r.meetings)
+    or not exists(select 1 from public.instructor_beaches ib
+      where ib.instructor_id=uid and ib.beach_id=r.beach_id)
+    or r.language<>all(instructor.languages)
+    or (r.with_transport and not instructor.has_support_vehicle) then
+    update public.instructor_offers set status='declined',responded_at=now() where id=o.id;
+    perform public.advance_instructor_offer(req_id);
+    return null;
+  end if;
+  -- A queued replacement inherits the original booking and payment.
+  IF r.booking_id IS NOT NULL THEN
+    PERFORM 1 FROM public.bookings b
+      WHERE b.id=r.booking_id AND b.status='confirmed'
+        AND b.reassignment_pending AND b.instructor_id IS NULL
+      FOR UPDATE;
+    IF NOT FOUND THEN
+      UPDATE public.instructor_offers SET status='expired',responded_at=now()
+        WHERE id=o.id;
+      UPDATE public.instructor_requests SET status='expired'
+        WHERE id=r.id;
+      RETURN NULL;
+    END IF;
+    -- Financial columns and all scheduled/completed meeting records stay intact.
+    UPDATE public.bookings SET instructor_id=uid,reassignment_pending=false
+      WHERE id=r.booking_id AND status='confirmed' AND instructor_id IS NULL
+        AND reassignment_pending;
+    UPDATE public.instructor_requests SET status='accepted' WHERE id=r.id;
+    UPDATE public.instructor_offers SET status='accepted',responded_at=now()
+      WHERE id=o.id;
+    INSERT INTO public.app_notifications(recipient_id,category,title,body,href)
+      VALUES(r.student_id,'booking','Novo instrutor confirmado',
+        'Outro instrutor aceitou sua reserva. As aulas e o valor contratado foram mantidos.',
+        '/aluno/reserva/'||r.booking_id::text);
+    PERFORM public.write_audit('booking.instructor_reassigned','booking',
+      r.booking_id::text,NULL,jsonb_build_object('instructor',uid,'request_id',r.id));
+    RETURN r.booking_id;
+  END IF;
+  select * into price from public.price_versions where id=r.price_version_id;
+  if price.id is null then raise exception 'Price version unavailable' using errcode='P0002'; end if;
+  if r.partner_code is not null
+     and not exists(select 1 from public.bookings already
+      where already.student_id=r.student_id and already.status in ('confirmed','completed')) then
+    select * into partner from public.partners where code=r.partner_code and status='approved';
+  end if;
+  total_lesson:=r.total_hours*price.hourly_rate_cents;
+  total_transport:=case when r.with_transport then r.total_hours*price.transport_hourly_cents else 0 end;
+  select * into split from public.split_total(total_lesson,price.platform_commission_bps,partner.commission_bps);
+  insert into public.bookings
+    (code,student_id,instructor_id,partner_id,price_version_id,beach_id,level,language,total_hours,
+     hourly_rate_cents,with_transport,transport_hourly_cents,transport_cents,total_cents,
+     partner_cents,platform_cents,instructor_net_cents,presence_code)
+  values('VNT-'||nextval('public.booking_code_seq'),r.student_id,uid,partner.id,price.id,
+     r.beach_id,r.level,r.language,r.total_hours,price.hourly_rate_cents,
+     r.with_transport,case when r.with_transport then price.transport_hourly_cents else 0 end,
+     total_transport,total_lesson+total_transport,split.partner_cents,split.platform_cents,
+     split.instructor_net_cents+total_transport,
+     lpad(floor(random()*10000)::integer::text,4,'0'))
+  returning id into v_booking_id;
+  for meeting in select value from jsonb_array_elements(r.meetings)
+    order by (value->>'starts_at')::timestamptz loop
+    position:=position+1;
+    insert into public.booking_meetings(booking_id,position,starts_at,minutes)
+      values(v_booking_id,position,(meeting->>'starts_at')::timestamptz,(meeting->>'hours')::integer*60);
+  end loop;
+  update public.instructor_requests set status='accepted',booking_id=v_booking_id
+    where id=r.id;
+  update public.instructor_offers set status='accepted',responded_at=now() where id=o.id;
+  perform public.write_audit('offer.accepted','instructor_offer',o.id::text,null,
+    jsonb_build_object('booking',v_booking_id));
+  return v_booking_id;
+end $$;
+
