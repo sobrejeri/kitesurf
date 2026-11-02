@@ -25,6 +25,8 @@ jobs:
       - run: pnpm lint
       - name: Test Admin booking progress calculations
         run: node --experimental-strip-types scripts/test-booking-progress.mjs
+      - name: Diagnose Admin demo multi-meeting schedule conflicts
+        run: node --experimental-strip-types scripts/test-admin-demo-schedule.mjs
       - name: Test student multi-booking and history separation
         run: node --experimental-strip-types scripts/test-booking-cycle.mjs
       - name: Test instructor completed lesson detail selection
