@@ -256,7 +256,13 @@ export async function listAllBookings(limit = 100): Promise<Booking[]> {
     if (old.error) throw old.error;
     return (old.data ?? []).map((b) => normalise({ ...b, is_test: false }));
   }
-  if (result.error) throw result.error;
+  if (result.error) {
+    console.error('[admin-bookings] Read failed', {
+      code: result.error.code,
+      message: result.error.message,
+    });
+    throw result.error;
+  }
   return (result.data ?? []).map(normalise);
 }
 
