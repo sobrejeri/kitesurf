@@ -104,3 +104,19 @@ export async function uploadStudentAvatar(_previous: ActionState, form: FormData
     return { error: 'Não foi possível atualizar sua foto agora. Tente novamente.' };
   }
 }
+
+
+/** Update only the student's own declared level. Instructor assessments stay intact. */
+export async function updateMyKiteLevel(_previous: ActionState, form: FormData): Promise<ActionState> {
+  await requireRole(['student']);
+  const parsed = z.enum(['first_time','returning','improving']).safeParse(form.get('kiteLevel'));
+  if (!parsed.success) return { error: 'Escolha Iniciante, Intermediário ou Avançado.' };
+  const db = await createSupabaseServerClient();
+  const { error } = await db.rpc('set_my_kite_level', { p_level: parsed.data });
+  if (error) return { error: friendlyError(error) };
+  revalidatePath('/aluno/conta');
+  revalidatePath('/aluno/evolucao');
+  revalidatePath('/aluno/inicio');
+  revalidatePath('/aluno/reservar');
+  return { ok: 'Seu nível informado foi atualizado. Avaliações do instrutor permanecem registradas.' };
+}
