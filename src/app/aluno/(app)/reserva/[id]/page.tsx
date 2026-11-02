@@ -38,6 +38,10 @@ export default async function BookingPage({ params }: { params: Promise<{ id: st
     }>();
   const meetingPoint = pointRecord?.meeting_point ?? null;
   const changeRequests = await listMeetingChanges(booking.id);
+  const {data:reassignmentState} = await db.from('booking_reassignments')
+    .select('status').eq('booking_id',booking.id)
+    .order('created_at',{ascending:false}).limit(1).maybeSingle<{status:string}>();
+
   const rated = booking.status === 'completed' ? await db.from('instructor_ratings')
     .select('stars,comment').eq('booking_id',booking.id).eq('student_id',viewer.id)
     .maybeSingle<{stars:number;comment:string}>() : null;
@@ -51,7 +55,10 @@ export default async function BookingPage({ params }: { params: Promise<{ id: st
     : null;
 
   // Do not announce cancelled/completed bookings as "confirmed".
-  const heroCopy = booking.status === 'awaiting_payment'
+  const heroCopy = booking.status==='confirmed' && booking.instructor_id===null
+    ? {eyebrow:'Reserva mantida',title:'Buscando novo instrutor.',
+        lead:'Seus encontros, valores e código de reserva foram preservados. Você receberá uma notificação quando outro profissional aceitar.'}
+    : booking.status === 'awaiting_payment'
     ? {
       eyebrow: 'Aguardando pagamento',
       title: 'Falta só confirmar o pagamento.',
@@ -150,6 +157,13 @@ export default async function BookingPage({ params }: { params: Promise<{ id: st
                 </div>
               ))}
             </dl>
+            {booking.status==='confirmed' && booking.instructor_id===null ? (
+              <Note tone="warning" className="mt-4">
+                {reassignmentState?.status==='unfilled'
+                  ? 'Ainda não encontramos instrutor disponível. A equipe precisa verificar a fila; sua reserva não foi cancelada.'
+                  : 'Buscando outro instrutor na fila. Sua reserva permanece confirmada, mas os encontros só poderão acontecer após uma nova atribuição.'}
+              </Note>
+            ) : null}
             {!awaiting && meetingPoint ? (
               <div className="mt-5 rounded-xl border border-line bg-brand-tint p-4">
                 <h3 className="text-[14px] font-bold text-ink">Ponto de encontro</h3>
@@ -172,7 +186,7 @@ export default async function BookingPage({ params }: { params: Promise<{ id: st
                     </span>
                     <Badge tone={meeting.status === 'done' ? 'quiet' : 'brand'}>{MEETING_STATUS_LABELS[meeting.status]}</Badge>
                   </div>
-                  {booking.status==='confirmed' && meeting.status==='scheduled' ? (
+                  {booking.status==='confirmed' && booking.instructor_id!==null && meeting.status==='scheduled' ? (
                     <MeetingChangePanel
                       bookingId={booking.id} meeting={meeting}
                       viewerId={viewer.id} bookingStatus={booking.status}
