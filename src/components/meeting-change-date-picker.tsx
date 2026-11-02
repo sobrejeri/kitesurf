@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useId, useState } from 'react';
 
 import { Icon } from '@/components/icon';
 import { inputClass } from '@/components/ui';
@@ -49,6 +49,7 @@ export function MeetingChangeDatePicker({
   max: string;
   role: Role;
 }) {
+  const dateLabelId = useId();
   const firstDay = min.slice(0, 10);
   const lastDay = max.slice(0, 10);
   const initialDay = initial.slice(0, 10);
@@ -79,12 +80,12 @@ export function MeetingChangeDatePicker({
   return (
     <div className="grid min-w-0 gap-3">
       <div>
-        <label className="mb-1.5 block text-[12px] font-medium text-label" id="reschedule-day-label">
+        <label className="mb-1.5 block text-[12px] font-medium text-label" id={dateLabelId}>
           Nova data
         </label>
         <button
           type="button"
-          aria-labelledby="reschedule-day-label"
+          aria-labelledby={dateLabelId}
           aria-expanded={expanded}
           onClick={() => setExpanded(open => !open)}
           className="flex min-h-12 w-full min-w-0 items-center justify-between gap-2 rounded-input border border-line-input bg-surface px-3.5 text-left text-[15px] font-medium text-ink-strong"
