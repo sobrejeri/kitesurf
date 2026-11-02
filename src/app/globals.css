@@ -166,6 +166,36 @@ summary {
   padding-bottom: max(env(safe-area-inset-bottom), 8px);
 }
 
+/* Keep the native iOS date/time picker inside narrow booking cards. */
+.meeting-change-datetime {
+  display: block;
+  width: 100%;
+  min-width: 0;
+  max-width: 100%;
+  box-sizing: border-box;
+  overflow: hidden;
+}
+
+.meeting-change-datetime::-webkit-datetime-edit,
+.meeting-change-datetime::-webkit-date-and-time-value {
+  min-width: 0;
+  max-width: 100%;
+  text-align: left;
+}
+
+/* Student actions use ocean cyan; the instructor keeps the orange theme. */
+.theme-beach .meeting-change-student-submit {
+  background-image: none;
+  background-color: #5edce8;
+  color: #052d42;
+  border-color: transparent;
+}
+
+.theme-beach .meeting-change-student-submit:hover {
+  background-image: none;
+  background-color: #7be9f0;
+}
+
 /* Room for the fixed tab bar under the last card. */
 @utility pb-tabbar {
   padding-bottom: calc(96px + env(safe-area-inset-bottom));
