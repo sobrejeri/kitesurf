@@ -67,6 +67,8 @@ export interface Booking {
   instructor: { full_name: string } | null;
 }
 
+// Migration 27 adds profiles.kite_assessed_by -> instructors; specify the
+// original FK to avoid PostgREST PGRST201 ambiguous relationship errors.
 const BOOKING_COLUMNS = `
   id, code, status, is_test, beach_id, level, language, total_hours, hourly_rate_cents,
   with_transport, transport_hourly_cents, transport_cents, total_cents,
@@ -75,8 +77,6 @@ const BOOKING_COLUMNS = `
   booking_meetings ( id, position, starts_at, minutes, status, done_minutes, note ),
   beach:beaches ( name ),
   student:profiles!bookings_student_id_fkey ( full_name ),
-  -- Explicit FK required since Migration 27 also links profiles.kite_assessed_by
-  -- to instructors; PostgREST otherwise raises PGRST201 for BOTH workspaces.
   instructor:instructors ( profile:profiles!instructors_id_fkey ( full_name ) )
 `;
 
