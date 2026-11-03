@@ -212,7 +212,7 @@ export default async function BookingPage({ params }: { params: Promise<{ id: st
                   Conversar com meu instrutor
                 </ButtonLink>
               ) : null}
-              {(booking.status === 'confirmed' || booking.status === 'completed') && booking.instructor_id ? (
+              {booking.status === 'completed' && booking.instructor_id ? (
                 <ButtonLink
                   href={`/aluno/reservar?instrutor=${booking.instructor_id}&praia=${booking.beach_id}&nivel=${booking.level}&idioma=${encodeURIComponent(booking.language)}&horas=${booking.total_hours}`}
                   variant="ghost"
@@ -222,22 +222,12 @@ export default async function BookingPage({ params }: { params: Promise<{ id: st
                   Contratar este instrutor novamente
                 </ButtonLink>
               ) : null}
-              <ButtonLink
+              <Link
                 href="/aluno/ocorrencias"
-                variant="ghost"
-                icon="info"
-                className={reservationActionClass}
+                className="mx-auto inline-flex min-h-11 items-center justify-center px-2 py-2 text-center text-[13px] font-medium leading-snug text-[#73e1eb] underline underline-offset-4 transition-colors hover:text-white focus-visible:rounded-lg focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#73e1eb]"
               >
                 Imprevistos, cancelamento ou ausência
-              </ButtonLink>
-              <ButtonLink
-                href="/aluno/politicas"
-                variant="ghost"
-                icon="book"
-                className={reservationActionClass}
-              >
-                Consultar regras da reserva
-              </ButtonLink>
+              </Link>
             </nav>
           </Card>
 
