@@ -66,17 +66,6 @@ export function AreaLogin({
       <ActionForm action={signIn} submitLabel="Entrar" className="grid gap-4" wideSubmit>
         <input type="hidden" name="area" value={area} />
         <input type="hidden" name="next" value={next ?? ''} />
-        {area === 'aluno' ? (
-          <Field label="Qual é seu nível no kitesurf?"
-            hint="Obrigatório. É uma autoavaliação, não um certificado. O instrutor poderá avaliar seu nível após a aula.">
-            <select name="kiteLevel" required defaultValue="" className={inputClass}>
-              <option value="" disabled>Selecione seu nível</option>
-              <option value="first_time">Iniciante · Bronze</option>
-              <option value="returning">Intermediário · Prata</option>
-              <option value="improving">Avançado · Ouro</option>
-            </select>
-          </Field>
-        ) : null}
         <Field label="E-mail">
           <input name="email" type="email" required autoComplete="email" className={inputClass} />
         </Field>
@@ -113,6 +102,17 @@ export function AreaSignup({ area }: { area: Exclude<AppArea, 'admin'> }) {
         <Field label={area === 'pousada' ? 'Seu nome (responsável)' : 'Nome'}>
           <input name="fullName" required minLength={2} maxLength={120} autoComplete="name" className={inputClass} />
         </Field>
+        {area === 'aluno' ? (
+          <Field label="Qual é seu nível no kitesurf?"
+            hint="Obrigatório. É uma autoavaliação, não um certificado. O instrutor poderá avaliar seu nível após a aula.">
+            <select name="kiteLevel" required defaultValue="" className={inputClass}>
+              <option value="" disabled>Selecione seu nível</option>
+              <option value="first_time">Iniciante · Bronze</option>
+              <option value="returning">Intermediário · Prata</option>
+              <option value="improving">Avançado · Ouro</option>
+            </select>
+          </Field>
+        ) : null}
         <Field label="E-mail">
           <input name="email" type="email" required autoComplete="email" className={inputClass} />
         </Field>
