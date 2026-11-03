@@ -7,6 +7,7 @@ import { z } from 'zod';
 
 import { requireRole } from '@/lib/auth';
 import { lessonDate } from '@/lib/dates';
+import { findMeetingOverlap } from '@/lib/meeting-conflicts';
 import { getStudentKiteLevel } from '@/lib/student-kite-level';
 import { isAllowedLessonLevel } from '@/lib/kite-steps';
 import { LESSON_UTC_OFFSET } from '@/lib/format';
@@ -71,6 +72,10 @@ export async function createBooking(_prev: ActionState, form: FormData): Promise
   }
   if (parsed.data.meetings.some((meeting) => meeting.date < lessonDate())) {
     return { error: 'Não é possível reservar uma aula em uma data anterior a hoje.' };
+  }
+  const overlap = findMeetingOverlap(parsed.data.meetings);
+  if (overlap) {
+    return { error: `Os encontros ${overlap[0] + 1} e ${overlap[1] + 1} estão no mesmo período. Altere o dia ou horário antes de buscar o instrutor.` };
   }
 
   const referral = (await cookies()).get('vento_ref')?.value ?? null;
