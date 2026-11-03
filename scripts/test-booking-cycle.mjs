@@ -64,9 +64,9 @@ const actionsEnd = reservationPage.indexOf('</nav>', actionsStart);
 assert.ok(actionsStart >= 0 && actionsEnd > actionsStart,
   'Student reservation should expose an accessible, labeled action group');
 const actionMarkup = reservationPage.slice(actionsStart, actionsEnd);
-assert.match(actionMarkup, /className="mt-5 grid w-full gap-2\\.5"/,
+assert.ok(actionMarkup.includes('className="mt-5 grid w-full gap-2.5"'),
   'Reservation actions should be stacked and full width');
-assert.equal((actionMarkup.match(/className=\\{reservationActionClass\\}/g) ?? []).length, 2,
+assert.equal(actionMarkup.split('className={reservationActionClass}').length-1, 2,
   'Only chat and completed-booking rehire should remain as full-width buttons');
 assert.ok(actionMarkup.includes("booking.status === 'completed' && booking.instructor_id ?"),
   'Rehire button must only be available after the entire booking is completed');
