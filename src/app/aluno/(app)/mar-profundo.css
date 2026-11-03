@@ -458,3 +458,62 @@ body:has(.theme-mar-profundo) { background: #001a30; color: #f6fbff; }
   .theme-mar-profundo .desktop-levels-card{background:#fff;border:1px solid #e4ebf5;border-radius:17px;box-shadow:0 4px 20px #315b9717;}
   .theme-mar-profundo .desktop-levels-card img{height:160px;object-fit:cover;width:100%;}
 }
+
+/* Desktop search: level | beach/date/language | hours | search action. */
+@media (min-width:1024px) {
+ .theme-mar-profundo #buscar-aula {
+   display:grid;grid-template-columns:180px minmax(0,1fr) 164px 180px;
+   column-gap:9px;row-gap:0;align-items:center;
+   margin-top:12px;padding:15px 16px 9px;
+   border:1px solid #e0e8f4;border-radius:16px;
+   background:#fff;box-shadow:0 7px 24px #2b54891c;
+ }
+ .theme-mar-profundo .vento-search-level{min-width:0;grid-column:1;grid-row:1;}
+ .theme-mar-profundo .vento-search-level-heading{margin-bottom:4px;}
+ .theme-mar-profundo .vento-search-level fieldset{background:#f1f4fb;border-radius:10px;padding:3px;}
+ .theme-mar-profundo .vento-search-level fieldset label {
+   height:auto;min-height:37px;border-radius:8px;font-size:10px;
+ }
+ .theme-mar-profundo .vento-search-curriculum{display:none;}
+ .theme-mar-profundo .vento-search-fields{
+   min-width:0;grid-column:2;grid-row:1;
+   background:#f5f7fc;border:1px solid #e4eaf5;border-radius:11px;
+ }
+ .theme-mar-profundo .vento-search-fields label{min-width:0;gap:5px;padding:6px;}
+ .theme-mar-profundo .vento-search-fields label>svg{width:15px !important;height:15px !important;}
+ .theme-mar-profundo .vento-search-fields label>span{min-width:0;}
+ .theme-mar-profundo .vento-search-fields select,
+ .theme-mar-profundo .vento-search-fields input{min-width:0;font-size:12px;}
+ .theme-mar-profundo .vento-search-fields label span.block{font-size:10px;}
+ .theme-mar-profundo .vento-search-hours{
+   min-width:0;grid-column:3;grid-row:1;
+   flex-direction:column;justify-content:center;gap:0;
+   padding:4px 3px;background:#f5f7fc;border-radius:11px;
+ }
+ .theme-mar-profundo .vento-search-hours>svg{display:none;}
+ .theme-mar-profundo .vento-search-hours>span{flex:none;font-size:11px;}
+ .theme-mar-profundo .vento-search-hours output{min-width:47px;font-size:15px;}
+ .theme-mar-profundo .vento-search-hours output span{display:none;}
+ .theme-mar-profundo .vento-search-hours button{height:32px;width:32px;}
+ .theme-mar-profundo .vento-search-submit{
+   grid-column:4;grid-row:1;min-width:0;
+   min-height:52px !important;gap:5px;padding:8px;
+   font-size:12px !important;
+ }
+ .theme-mar-profundo .vento-search-submit svg{width:16px !important;}
+ .theme-mar-profundo .vento-search-price{
+   grid-column:1/-1;grid-row:2;text-align:left;
+   border-top:1px solid #edf1f8;
+   padding:8px 0 1px;margin-top:7px;
+   font-size:12px;color:#718198;
+ }
+ .theme-mar-profundo .mar-profundo-page .rounded-card{
+   background:#fff;border-color:#dfe8f3;box-shadow:0 8px 30px #315b9717;
+ }
+}
+@media (min-width:1024px) and (max-width:1130px){
+ .theme-mar-profundo #buscar-aula{
+   grid-template-columns:164px minmax(0,1fr) 146px 157px;column-gap:6px;
+ }
+ .theme-mar-profundo .vento-search-submit{font-size:11px !important;}
+}
