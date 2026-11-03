@@ -200,3 +200,241 @@ body:has(.theme-mar-profundo) { background: #001a30; color: #f6fbff; }
 @media (prefers-reduced-motion: reduce) {
   .mar-profundo-page * { scroll-behavior: auto; }
 }
+
+
+/* ---------------------------------------------------------------------------
+ * Explorar home poster — high-energy kite campaign inspired by the user's
+ * reference. Text, icons and the CTA remain accessible, responsive DOM.
+ * Scope all rules to the poster; other StudentHero instances are unchanged.
+ * ------------------------------------------------------------------------- */
+.vento-home-poster {
+  isolation: isolate;
+  min-height: 560px;
+  background: #003b5d;
+  box-shadow: inset 0 0 0 1px #39cde32c;
+}
+.vento-home-poster-photo {
+  object-position: 61% 38%;
+  filter: saturate(1.72) contrast(1.16) brightness(1.05);
+  transform: scale(1.035);
+}
+.vento-home-poster-shade {
+  background:
+    linear-gradient(90deg, #001324eb 0%, #002c46d4 38%, #00365679 68%, #002b4545 100%),
+    linear-gradient(180deg, #001a2ea1 0%, #00223805 36%, #001b30d6 100%);
+}
+.vento-home-poster-glow {
+  background:
+    radial-gradient(ellipse 65% 45% at 92% 15%, #ffc56f49, transparent 70%),
+    radial-gradient(ellipse 55% 35% at 76% 75%, #00eeed33, transparent 75%);
+  mix-blend-mode: screen;
+}
+.vento-home-poster-content {
+  box-sizing: border-box;
+  max-width: 680px;
+  padding: calc(env(safe-area-inset-top) + 101px) 20px 69px;
+}
+.vento-home-poster-brush {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  max-width: 100%;
+  margin: 0;
+  padding: 8px 17px 7px 10px;
+  transform: rotate(-2deg);
+  color: #061d30;
+  font-family: var(--font-script), cursive;
+  font-size: clamp(21px, 5.8vw, 31px);
+  font-weight: 800;
+  line-height: .95;
+  text-shadow: none;
+}
+.vento-home-poster-brush::before {
+  content: '';
+  position: absolute;
+  z-index: -1;
+  inset: 2px 0 1px;
+  background: #ff9714;
+  clip-path: polygon(2% 15%, 100% 0, 96% 13%, 100% 83%, 84% 87%, 11% 100%, 0 91%, 5% 59%, 0 48%);
+  box-shadow: 0 7px 12px #040f2040;
+}
+.vento-home-poster-brush .icon { color: #072238; }
+.vento-home-poster-title {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  margin: 16px 0 0;
+  max-width: 620px;
+  color: #fff;
+  line-height: .94;
+  text-shadow: 0 3px 14px #00162584;
+}
+.vento-home-poster-intro {
+  display: block;
+  font-family: var(--font-display), sans-serif;
+  font-size: clamp(31px, 8.4vw, 53px);
+  font-weight: 900;
+  letter-spacing: -.062em;
+}
+.vento-home-poster-bordo {
+  position: relative;
+  display: block;
+  margin-left: -3px;
+  margin-top: 0;
+  font-family: var(--font-display), sans-serif;
+  font-size: clamp(66px, 18vw, 117px);
+  font-weight: 1000;
+  font-style: italic;
+  letter-spacing: -.09em;
+  line-height: .98;
+  transform: skewX(-5deg);
+  -webkit-text-stroke: .5px #fff;
+}
+.vento-home-poster-bordo::after {
+  content: '';
+  position: absolute;
+  left: 10%;
+  right: -1%;
+  bottom: 0;
+  height: 5px;
+  background: #ff9819;
+  transform: rotate(-4deg);
+  border-radius: 100%;
+}
+.vento-home-poster-script {
+  display: block;
+  margin: -4px 0 0 29px;
+  color: #ff991e;
+  font-family: var(--font-script), cursive;
+  font-size: clamp(49px, 13vw, 90px);
+  font-weight: 800;
+  line-height: .9;
+  letter-spacing: -.025em;
+  transform: rotate(-4deg);
+  text-shadow: 0 3px 12px #0018298c;
+}
+.vento-home-poster-description {
+  max-width: 40ch;
+  margin: 20px 0 0;
+  padding-left: 11px;
+  border-left: 3px solid #ff9a24;
+  color: #f6faff;
+  font-size: clamp(13px, 3.7vw, 17px);
+  line-height: 1.42;
+  text-shadow: 0 1px 7px #001321bf;
+}
+.vento-home-poster-highlights {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px 8px;
+  margin: 22px 0 18px;
+  padding: 0;
+  list-style: none;
+}
+.vento-home-poster-highlights li {
+  display: flex;
+  min-width: 0;
+  align-items: center;
+  gap: 8px;
+  color: #fff;
+  font-size: 12px;
+  font-weight: 750;
+  line-height: 1.15;
+  text-shadow: 0 1px 6px #001322ba;
+}
+.vento-home-poster-highlight-icon {
+  display: grid;
+  flex: 0 0 35px;
+  height: 35px;
+  place-items: center;
+  border: 2px solid #ff981c;
+  border-radius: 50%;
+  background: #003551a8;
+  color: #ffaf36;
+}
+.vento-home-poster-cta {
+  display: flex;
+  min-height: 52px;
+  width: 100%;
+  max-width: 470px;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  padding: 12px 15px;
+  border: 2px solid #ffb455;
+  border-radius: 9999px;
+  background: linear-gradient(100deg, #ff800d, #ffb012 58%, #ff7905);
+  box-shadow: 0 5px 0 #9d4304, 0 12px 29px #001b30a8, inset 0 1px 0 #ffffff80;
+  color: #092336;
+  font-family: var(--font-display), sans-serif;
+  font-size: clamp(13px, 3.6vw, 18px);
+  font-weight: 900;
+  line-height: 1.15;
+  text-align: center;
+  text-decoration: none;
+  text-transform: uppercase;
+  letter-spacing: -.025em;
+}
+.vento-home-poster-cta .icon:last-child {
+  margin-left: auto;
+  border-radius: 50%;
+  background: #fff2d4;
+}
+.vento-home-poster-cta:hover {
+  background: linear-gradient(100deg, #ff941f, #ffc03f, #ff8c11);
+}
+.vento-home-poster-cta:focus-visible {
+  outline: 3px solid #fff;
+  outline-offset: 3px;
+}
+.vento-home-poster-wave {
+  height: 52px;
+}
+#buscar-aula {
+  scroll-margin-top: calc(70px + env(safe-area-inset-top));
+}
+@media (min-width: 768px) {
+  .vento-home-poster {
+    min-height: 515px;
+  }
+  .vento-home-poster-photo {
+    object-position: 66% 40%;
+  }
+  .vento-home-poster-shade {
+    background:
+      linear-gradient(90deg, #001321f4 0%, #00263ee4 35%, #002b4766 61%, #002f4920 100%),
+      linear-gradient(0deg, #001a30d1 0%, transparent 55%);
+  }
+  .vento-home-poster-content {
+    padding: 49px 35px 73px;
+    max-width: 62%;
+  }
+  .vento-home-poster-title { margin-top: 12px; }
+  .vento-home-poster-description { margin-top: 16px; }
+  .vento-home-poster-highlights {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 15px;
+    max-width: 510px;
+    margin-top: 22px;
+  }
+  .vento-home-poster-cta { min-height: 56px; }
+  .vento-home-poster-wave { height: 55px; }
+}
+@media (min-width: 1100px) {
+  .vento-home-poster {
+    min-height: 540px;
+  }
+  .vento-home-poster-content { max-width: 64%; }
+  .vento-home-poster-highlights {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    max-width: 740px;
+  }
+}
+@media (max-width: 359px) {
+  .vento-home-poster-content { padding-inline: 16px; }
+  .vento-home-poster-brush { font-size: 19px; }
+  .vento-home-poster-script { margin-left: 12px; }
+  .vento-home-poster-highlights li { font-size: 11px; }
+}

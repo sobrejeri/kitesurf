@@ -2,7 +2,8 @@ import type { Metadata } from 'next';
 
 import { Icon, type IconName } from '@/components/icon';
 import { LessonSearch } from '@/components/student/lesson-search';
-import { HighlightTitle, StudentHero } from '@/components/student/sunset';
+import { HighlightTitle } from '@/components/student/sunset';
+import { HomePosterHero } from '@/components/student/home-poster-hero';
 import { getViewer } from '@/lib/auth';
 import { getQuoteTable, listActiveBeaches, type Beach, type QuoteRow } from '@/lib/data';
 import { lessonDate } from '@/lib/dates';
@@ -43,13 +44,7 @@ export default async function StudentHomePage() {
 
   return (
     <>
-      <StudentHero
-        eyebrow="Liberdade em cada rajada"
-        title="Seu próximo bordo começa aqui."
-        highlight="aqui."
-        script
-        lead={`${firstName ? `${firstName}, aulas` : 'Aulas'} de kitesurf para todos os níveis, no seu ritmo, com instrutores experientes.`}
-      />
+      <HomePosterHero firstName={firstName} />
 
       <LessonSearch defaultDate={lessonDate(1)} quotes={quotes} beaches={beaches}
         studentLevel={kiteLevel?.effective ?? 'first_time'} />
