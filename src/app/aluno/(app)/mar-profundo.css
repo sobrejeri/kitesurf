@@ -176,19 +176,19 @@ body:has(.theme-mar-profundo) { background: #001a30; color: #f6fbff; }
 .mar-profundo-page .btn-primary:disabled { opacity: .45; }
 
 /* Fixed ocean tab bar, with the active tab picked out in cyan. */
-.theme-mar-profundo nav[aria-label="Navegação do aluno"] {
+.theme-mar-profundo > nav[aria-label="Navegação do aluno"] {
   background: #001a30f5 !important;
   border-color: #009bb9;
   border-radius: 28px 28px 0 0;
   box-shadow: 0 -8px 36px #001122aa, 0 -1px 9px #00d9e738;
 }
-.theme-mar-profundo nav[aria-label="Navegação do aluno"] a[aria-current="page"] {
+.theme-mar-profundo > nav[aria-label="Navegação do aluno"] a[aria-current="page"] {
   color: #00e8ee;
 }
-.theme-mar-profundo nav[aria-label="Navegação do aluno"] a[aria-current="page"] span:last-child {
+.theme-mar-profundo > nav[aria-label="Navegação do aluno"] a[aria-current="page"] span:last-child {
   background: #00e8ee;
 }
-.theme-mar-profundo nav[aria-label="Navegação do aluno"] a:not([aria-current="page"]) {
+.theme-mar-profundo > nav[aria-label="Navegação do aluno"] a:not([aria-current="page"]) {
   color: #c2d2e0;
 }
 @media (min-width: 768px) {
@@ -420,4 +420,41 @@ body:has(.theme-mar-profundo) { background: #001a30; color: #f6fbff; }
 }
 @media (prefers-reduced-motion: reduce) {
   .vento-home-poster * { animation: none !important; transition: none !important; }
+}
+
+/* Desktop-only sketch: clear background and a clean brand-blue workspace. */
+@media (min-width: 1024px) {
+  .theme-beach.theme-mar-profundo {
+    --color-brand:#3556d5; --color-brand-hover:#2846bb; --color-on-brand:#fff;
+    --color-brand-soft:#e6edff; --color-brand-tint:#edf2ff;
+    --color-brand-wash:#f0f3ff; --color-ink:#1c3355;
+    --color-ink-strong:#102744; --color-label:#556b85;
+    --color-muted:#718198; --color-subtle:#899ab1;
+    --color-faint:#a1acc0; --color-surface:#fff;
+    --color-canvas:#f5f7fc; --color-backdrop:#f5f7fc;
+    --color-sand:#f2f5fb; --color-line:#dce5f1;
+    --color-line-input:#d1def0; --color-line-ghost:#e1e8f4;
+    --color-chrome:#fff; --color-logo-ink:#203756;
+    --color-note-line:#dce5f1; --color-note-ink:#536a82;
+    --color-track:#e6eef8;
+    --shadow-card:0 8px 30px #2a569518;
+    --shadow-search:0 12px 32px #315b9718;
+    background:#f5f7fc; color-scheme:light;
+  }
+  body:has(.theme-mar-profundo) {background:#f5f7fc;color:#1c3355;}
+  .theme-mar-profundo .text-brand,.theme-mar-profundo .text-sunrise{color:#3556d5;}
+  .theme-mar-profundo .btn-primary{background:#3556d5;border-color:#3556d5;color:#fff;box-shadow:0 6px 16px #3556d52a;}
+  .theme-mar-profundo .glass{background:#fff;}
+  .theme-mar-profundo header nav[aria-label="Navegação do aluno"]{background:transparent !important;box-shadow:none !important;border-radius:0 !important;}
+  .theme-mar-profundo header nav[aria-label="Navegação do aluno"] a[aria-current="page"]{color:#3556d5;border-color:#3556d5;}
+  .theme-mar-profundo header nav[aria-label="Navegação do aluno"] a:not([aria-current="page"]){color:#6b7d96;}
+  .theme-mar-profundo .vento-home-poster{height:205px;min-height:205px;border-radius:18px;box-shadow:none;}
+  .theme-mar-profundo .vento-home-poster-photo{object-position:60% 52%;filter:saturate(1.16) contrast(1.04);}
+  .theme-mar-profundo .vento-home-poster-shade{background:linear-gradient(90deg,#04304adc 0%,#07516c83 42%,transparent 81%);}
+  .theme-mar-profundo .vento-home-poster-content{padding:35px 28px;max-width:62%;height:100%;}
+  .theme-mar-profundo .vento-home-poster-title{margin:0;font-size:clamp(27px,3vw,36px);font-weight:800;letter-spacing:-.045em;line-height:1.1;}
+  .theme-mar-profundo .vento-home-perks{display:none;}
+  .theme-mar-profundo .student-journey{display:none;}
+  .theme-mar-profundo .desktop-levels-card{background:#fff;border:1px solid #e4ebf5;border-radius:17px;box-shadow:0 4px 20px #315b9717;}
+  .theme-mar-profundo .desktop-levels-card img{height:160px;object-fit:cover;width:100%;}
 }
