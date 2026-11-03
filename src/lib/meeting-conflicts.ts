@@ -16,10 +16,10 @@ function interval(slot: MeetingSlot): [number, number] {
 /** Return indices of the first pair that overlaps, including across midnight. */
 export function findMeetingOverlap(slots: readonly MeetingSlot[]): [number, number] | null {
   for (let i = 0; i < slots.length; i++) {
-    const [aStart, aEnd] = interval(slots[i]);
+    const [aStart, aEnd] = interval(slots[i]!);
     if (!Number.isFinite(aStart) || !Number.isFinite(aEnd)) continue;
     for (let j = i + 1; j < slots.length; j++) {
-      const [bStart, bEnd] = interval(slots[j]);
+      const [bStart, bEnd] = interval(slots[j]!);
       if (Number.isFinite(bStart) && Number.isFinite(bEnd)
           && aStart < bEnd && bStart < aEnd) return [i, j];
     }
