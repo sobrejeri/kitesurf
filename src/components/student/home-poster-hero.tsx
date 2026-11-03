@@ -1,7 +1,7 @@
 import { Icon, type IconName } from '@/components/icon';
 
 /**
- * Landing-page poster: real DOM text, accessible action and an existing
+ * Compact mobile campaign poster: real DOM text and an existing
  * editorial photograph. The supplied mockup is a reference, not a screenshot
  * baked into the page (so copy and layout can reflow on phones).
  */
@@ -32,8 +32,10 @@ export function HomePosterHero({ firstName }: { firstName?: string }) {
 
         <h1 id="vento-home-title" className="vento-home-poster-title">
           <span className="vento-home-poster-intro">Seu próximo</span>
-          <span className="vento-home-poster-bordo">BORDO</span>
-          <span className="vento-home-poster-script">começa aqui!</span>
+          <span className="vento-home-poster-titleline">
+            <span className="vento-home-poster-bordo">BORDO</span>
+            <span className="vento-home-poster-script">começa aqui!</span>
+          </span>
         </h1>
 
         <p className="vento-home-poster-description">
@@ -52,11 +54,6 @@ export function HomePosterHero({ firstName }: { firstName?: string }) {
           ))}
         </ul>
 
-        <a className="vento-home-poster-cta press" href="#buscar-aula">
-          <Icon name="calendar" className="!h-6 !w-6" />
-          <span>Agende sua aula agora</span>
-          <Icon name="arrow" className="!h-6 !w-6" />
-        </a>
       </div>
 
       <svg className="vento-home-poster-wave pointer-events-none absolute bottom-0 left-0 z-10 w-full" viewBox="0 0 1200 70" preserveAspectRatio="none" aria-hidden="true">
