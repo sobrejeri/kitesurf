@@ -45,6 +45,11 @@ BEGIN
   SELECT * INTO next_lesson FROM public.booking_meetings
     WHERE booking_id=lesson.booking_id AND position=2;
   IF next_lesson.id IS NOT NULL THEN
+    -- Keep the ordering fixture non-overlapping: the first encounter remains
+    -- in progress, but its scheduled window ended long before the next one.
+    UPDATE public.booking_meetings
+      SET starts_at=now()-interval '12 hours'
+      WHERE id=lesson.id;
     UPDATE public.booking_meetings
       SET status='scheduled', starts_at=now()-interval '15 minutes'
       WHERE id=next_lesson.id;
