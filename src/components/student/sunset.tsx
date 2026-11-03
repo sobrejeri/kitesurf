@@ -57,7 +57,7 @@ export type HeroImage = 'coast' | 'lesson' | 'ocean';
 const IMAGES: Readonly<Record<HeroImage, { src: string; position: string }>> = {
   coast: { src: '/images/prea-coast.webp', position: '70% 40%' },
   lesson: { src: '/images/kite-lesson.webp', position: '60% 30%' },
-  ocean: { src: '/images/mar-profundo-kite.webp', position: '64% 35%' },
+  ocean: { src: '/images/prea-coast.webp', position: '65% 45%' },
 };
 
 /**
