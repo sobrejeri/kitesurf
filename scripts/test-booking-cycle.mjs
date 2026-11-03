@@ -62,21 +62,24 @@ const reservationPage = readFileSync('src/app/aluno/(app)/reserva/[id]/page.tsx'
 const actionsStart = reservationPage.indexOf('<nav aria-label="Ações da reserva"');
 const actionsEnd = reservationPage.indexOf('</nav>', actionsStart);
 assert.ok(actionsStart >= 0 && actionsEnd > actionsStart,
-  'Student reservation should expose a single, labeled action group');
+  'Student reservation should expose an accessible, labeled action group');
 const actionMarkup = reservationPage.slice(actionsStart, actionsEnd);
-assert.match(actionMarkup, /className="mt-5 grid w-full gap-2\.5"/,
-  'Reservation actions should be stacked and full width instead of irregular wrapping');
-assert.equal((actionMarkup.match(/className=\{reservationActionClass\}/g) ?? []).length, 4,
-  'All four reservation actions must share the same size, padding and text treatment');
-assert.ok(reservationPage.includes("const reservationActionClass =") &&
-  reservationPage.includes("'w-full min-w-0 !min-h-12"),
-  'Shared action styling must maintain accessible touch targets');
+assert.match(actionMarkup, /className="mt-5 grid w-full gap-2\\.5"/,
+  'Reservation actions should be stacked and full width');
+assert.equal((actionMarkup.match(/className=\\{reservationActionClass\\}/g) ?? []).length, 2,
+  'Only chat and completed-booking rehire should remain as full-width buttons');
+assert.ok(actionMarkup.includes("booking.status === 'completed' && booking.instructor_id ?"),
+  'Rehire button must only be available after the entire booking is completed');
+assert.ok(!actionMarkup.includes("booking.status === 'confirmed' ||"),
+  'Confirmed or ongoing bookings must not show rehire button');
 assert.ok(actionMarkup.includes('href={`/aluno/atendimento/${booking.id}`}') &&
-  actionMarkup.includes('href="/aluno/ocorrencias"') &&
-  actionMarkup.includes('href="/aluno/politicas"') &&
   actionMarkup.includes('href={`/aluno/reservar?instrutor='),
-  'Standardizing button appearance must not remove existing destinations');
-assert.ok(actionMarkup.includes("!awaiting && booking.status !== 'cancelled'") &&
-  actionMarkup.includes("booking.instructor_id ?"),
-  'Reservation actions must preserve their existing availability conditions');
-console.log('PASS: student reservation actions share consistent full-width button styling and keep their links');
+  'Chat and rehire destinations should remain unchanged');
+assert.ok(actionMarkup.includes('<Link') &&
+  actionMarkup.includes('href="/aluno/ocorrencias"') &&
+  actionMarkup.includes('underline underline-offset-4'),
+  'Cancellation and unforeseen events should be a simple accessible text link');
+assert.ok(!actionMarkup.includes('href="/aluno/politicas"') &&
+  !actionMarkup.includes('Consultar regras da reserva'),
+  'Redundant rules action must be removed from booking detail actions');
+console.log('PASS: booking actions show primary chat, completed-only rehire and subtle issue link');
