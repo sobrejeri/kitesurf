@@ -200,7 +200,8 @@ export function StudentShell({
               <Icon name="bell" />
             </Link>
             {signedIn ? (
-              <Link href="/aluno/conta" className="flex items-center gap-2.5">
+              <>
+                <Link href="/aluno/conta" className="flex items-center gap-2.5">
                 {photoUrl ? (
                   <span className="inline-block h-10 w-10 shrink-0 overflow-hidden rounded-full border-2 border-[#d8e4ef] bg-sand">
                     <img src={photoUrl} alt="" className="h-full w-full object-cover" />
@@ -216,6 +217,7 @@ export function StudentShell({
                   Sair
                 </button>
               </form>
+              </>
             ) : (
               <Link href="/aluno/entrar" className="btn-primary press rounded-full px-5 py-2 text-[13px] font-[650] text-white">
                 Entrar
