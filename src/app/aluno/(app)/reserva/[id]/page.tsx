@@ -21,6 +21,11 @@ export const metadata: Metadata = { title: 'Sua reserva' };
 
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
+// Reservation actions share a full-width, thumb-friendly button style on mobile.
+// Keep the Vento UI kit's pill shape; only the primary chat action is filled.
+const reservationActionClass =
+  'w-full min-w-0 !min-h-12 !px-4 !py-3 text-center !text-[13px] !font-semibold leading-snug sm:!text-[14px]';
+
 export default async function BookingPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
   const viewer = await requireRole(['student'], `/aluno/reserva/${id}`);
@@ -197,21 +202,43 @@ export default async function BookingPage({ params }: { params: Promise<{ id: st
                 </li>
               ))}
             </ul>
-            <div className="mt-5 flex flex-wrap gap-2">
-              <ButtonLink href="/aluno/ocorrencias" variant="ghost" size="sm">Vento, cancelamento ou ausência</ButtonLink>
+            <nav aria-label="Ações da reserva" className="mt-5 grid w-full gap-2.5">
               {!awaiting && booking.status !== 'cancelled' ? (
-                <ButtonLink href={`/aluno/atendimento/${booking.id}`} size="sm">Conversar com meu instrutor</ButtonLink>
+                <ButtonLink
+                  href={`/aluno/atendimento/${booking.id}`}
+                  icon="chat"
+                  className={reservationActionClass}
+                >
+                  Conversar com meu instrutor
+                </ButtonLink>
               ) : null}
               {(booking.status === 'confirmed' || booking.status === 'completed') && booking.instructor_id ? (
                 <ButtonLink
                   href={`/aluno/reservar?instrutor=${booking.instructor_id}&praia=${booking.beach_id}&nivel=${booking.level}&idioma=${encodeURIComponent(booking.language)}&horas=${booking.total_hours}`}
-                  variant="ghost" size="sm"
+                  variant="ghost"
+                  icon="refresh"
+                  className={reservationActionClass}
                 >
                   Contratar este instrutor novamente
                 </ButtonLink>
               ) : null}
-              <ButtonLink href="/aluno/politicas" variant="text" size="sm">Consultar regras</ButtonLink>
-            </div>
+              <ButtonLink
+                href="/aluno/ocorrencias"
+                variant="ghost"
+                icon="info"
+                className={reservationActionClass}
+              >
+                Imprevistos, cancelamento ou ausência
+              </ButtonLink>
+              <ButtonLink
+                href="/aluno/politicas"
+                variant="ghost"
+                icon="book"
+                className={reservationActionClass}
+              >
+                Consultar regras da reserva
+              </ButtonLink>
+            </nav>
           </Card>
 
           <Card>
