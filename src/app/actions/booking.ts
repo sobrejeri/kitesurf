@@ -77,6 +77,10 @@ export async function createBooking(_prev: ActionState, form: FormData): Promise
   if (overlap) {
     return { error: `Os encontros ${overlap[0] + 1} e ${overlap[1] + 1} estão no mesmo período. Altere o dia ou horário antes de buscar o instrutor.` };
   }
+  if (parsed.data.meetings.some((meeting) =>
+    Date.parse(`${meeting.date}T${meeting.start}:00${LESSON_UTC_OFFSET}`) < Date.now() + 60 * 60_000)) {
+    return { error: 'Agende cada encontro com pelo menos 1 hora de antecedência no horário do Ceará.' };
+  }
 
   const referral = (await cookies()).get('vento_ref')?.value ?? null;
 
