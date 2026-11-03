@@ -15,7 +15,9 @@ const HIGHLIGHTS: readonly { label: string; icon: IconName }[] = [
 export function HomePosterHero({ firstName }: { firstName?: string }) {
   return (
     <section className="vento-home-poster relative -mx-4 overflow-hidden md:mx-0 md:mt-2 md:rounded-[26px]" aria-labelledby="vento-home-title">
-      <img
+      <picture className="absolute inset-0 block">
+        <source media="(min-width: 1024px)" srcSet="/images/prea-coast.webp" />
+        <img
         src="/images/kite-lesson.webp"
         alt=""
         aria-hidden="true"
@@ -25,30 +27,35 @@ export function HomePosterHero({ firstName }: { firstName?: string }) {
         fetchPriority="high"
         decoding="async"
         className="vento-home-poster-photo absolute inset-0 h-full w-full object-cover"
-      />
+        />
+      </picture>
       <div className="vento-home-poster-shade absolute inset-0" aria-hidden="true" />
       <div className="vento-home-poster-glow pointer-events-none absolute inset-0" aria-hidden="true" />
 
       <div className="vento-home-poster-content relative z-10">
-        <p className="vento-home-poster-brush">
+        <p className="vento-home-poster-brush lg:hidden">
           <Icon name="kite" className="!h-6 !w-6 shrink-0" />
           <span>Liberdade em cada rajada</span>
         </p>
 
         <h1 id="vento-home-title" className="vento-home-poster-title">
-          <span className="vento-home-poster-intro">Seu próximo</span>
-          <span className="vento-home-poster-titleline">
+          <span className="vento-home-poster-intro lg:hidden">Seu próximo</span>
+          <span className="vento-home-poster-titleline lg:hidden">
             <span className="vento-home-poster-bordo">BORDO</span>
             <span className="vento-home-poster-script">começa aqui!</span>
           </span>
+          <span className="hidden lg:block">Seu próximo bordo<br />começa aqui.</span>
         </h1>
+        <p className="mt-3 hidden text-[15px] font-semibold text-white lg:block">
+          Escolha suas horas e encontre seu instrutor.
+        </p>
 
-        <p className="vento-home-poster-description">
+        <p className="vento-home-poster-description lg:hidden">
           {firstName ? `${firstName}, viva` : 'Viva'} o melhor do kitesurf.
           Aulas para todos os níveis, no seu ritmo, com instrutores experientes.
         </p>
 
-        <ul className="vento-home-poster-highlights" aria-label="Vantagens das aulas">
+        <ul className="vento-home-poster-highlights lg:hidden" aria-label="Vantagens das aulas">
           {HIGHLIGHTS.map((highlight) => (
             <li key={highlight.label}>
               <span className="vento-home-poster-highlight-icon" aria-hidden="true">
@@ -61,7 +68,7 @@ export function HomePosterHero({ firstName }: { firstName?: string }) {
 
       </div>
 
-      <svg className="vento-home-poster-wave pointer-events-none absolute bottom-0 left-0 z-10 w-full" viewBox="0 0 1200 70" preserveAspectRatio="none" aria-hidden="true">
+      <svg className="vento-home-poster-wave pointer-events-none absolute bottom-0 left-0 z-10 w-full lg:hidden" viewBox="0 0 1200 70" preserveAspectRatio="none" aria-hidden="true">
         <path d="M0 35C170 80 330 20 530 42S900 9 1200 35V70H0Z" fill="#ff8c16" />
         <path d="M0 45C170 88 330 28 530 52S900 18 1200 45V70H0Z" fill="#00bfcf" />
         <path d="M0 55C190 91 350 37 550 59S935 30 1200 56V70H0Z" fill="#001a30" />

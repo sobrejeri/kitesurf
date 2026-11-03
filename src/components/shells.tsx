@@ -50,7 +50,7 @@ export function TopBar({ viewer, signOut }: { viewer: TopBarViewer | null; signO
   const areas = viewer ? AREAS.filter((area) => viewer.role === 'admin' || area.role === viewer.role) : [];
   const app = areaFromPath(pathname);
   // The login screens are full-screen app screens of their own.
-  if (pathname === '/entrar' || /^\/[a-z]+\/(entrar|criar-conta)/.test(pathname)) return null;
+  if (pathname === '/entrar' || /^\/[a-z]+\/(entrar|criar-conta)/.test(pathname) || app === 'aluno') return null;
   return (
     <div className="sticky top-0 z-40 hidden h-14 items-center justify-between gap-3 border-b border-line bg-chrome px-6 text-[12px] text-label lg:flex">
       {areas.length > 1 ? (
@@ -158,12 +158,14 @@ export function StudentShell({
   initials,
   signedIn,
   signOut,
+  photoUrl,
 }: {
   children: React.ReactNode;
   name: string;
   initials: string;
   signedIn: boolean;
   signOut: () => Promise<void>;
+  photoUrl?: string | null;
 }) {
   const pathname = usePathname();
   const subpage = STUDENT_SUBPAGES.some((route) => pathname.startsWith(route));
@@ -173,8 +175,8 @@ export function StudentShell({
 
   return (
     <div className="theme-beach theme-mar-profundo min-h-dvh bg-canvas text-ink">
-      <header className="hidden border-b border-line bg-chrome md:block">
-        <div className="mx-auto flex h-[76px] max-w-6xl items-center justify-between gap-6 px-8">
+      <header className="hidden border-b border-line bg-chrome md:block lg:sticky lg:top-0 lg:z-40 lg:border-[#e5eaf4] lg:bg-white">
+        <div className="mx-auto flex h-[76px] max-w-6xl items-center justify-between gap-6 px-8 lg:h-[70px]">
           <Link href="/aluno/inicio" aria-label="Vento — início">
             <StudentBrand />
           </Link>
@@ -198,13 +200,24 @@ export function StudentShell({
               <Icon name="bell" />
             </Link>
             {signedIn ? (
-              <Link href="/aluno/conta" className="flex items-center gap-2.5">
-                <Avatar initials={initials} size={36} />
+              <>
+                <Link href="/aluno/conta" className="flex items-center gap-2.5">
+                {photoUrl ? (
+                  <span className="inline-block h-10 w-10 shrink-0 overflow-hidden rounded-full border-2 border-[#d8e4ef] bg-sand">
+                    <img src={photoUrl} alt="" className="h-full w-full object-cover" />
+                  </span>
+                ) : <Avatar initials={initials} size={40} />}
                 <span className="text-[12px] leading-tight">
-                  <strong className="block font-[550] text-ink">{name}</strong>
+                  <strong className="block font-semibold text-ink">{name}</strong>
                   <span className="text-[11px] text-muted">Seu espaço no kite</span>
                 </span>
               </Link>
+              <form action={signOut}>
+                <button type="submit" className="rounded-full border border-line px-3 py-2 text-[12px] font-semibold text-muted hover:text-brand">
+                  Sair
+                </button>
+              </form>
+              </>
             ) : (
               <Link href="/aluno/entrar" className="btn-primary press rounded-full px-5 py-2 text-[13px] font-[650] text-white">
                 Entrar
