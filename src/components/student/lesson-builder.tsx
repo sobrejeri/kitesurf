@@ -8,7 +8,7 @@ import { LEVEL_LABELS, type Beach, type LessonLevel, type QuoteRow } from '@/lib
 import { lessonDate } from '@/lib/dates';
 import { findMeetingOverlap, nextMeetingDay } from '@/lib/meeting-conflicts';
 import { allowedLessonLevels, KITE_CURRICULA, KITE_LEVEL_BADGES } from '@/lib/kite-steps';
-import { formatMoney } from '@/lib/format';
+import { formatMoney, LESSON_UTC_OFFSET } from '@/lib/format';
 
 import { Icon, type IconName } from '../icon';
 import { Button, Card, Field, Note, inputClass } from '../ui';
@@ -124,11 +124,13 @@ export function LessonBuilder({
   const remainingHours = selectedHours - totalHours;
   const quote = quotes.find((row) => row.hours === selectedHours);
   const datesValid = meetings.every((meeting) => meeting.date >= lessonDate());
+  const startTimesValid = meetings.every((meeting) =>
+    Date.parse(`${meeting.date}T${meeting.start}:00${LESSON_UTC_OFFSET}`) >= Date.now() + 60 * 60_000);
   const overlap = findMeetingOverlap(meetings);
   const hoursFullyDistributed = remainingHours === 0;
   const canAddMeeting = meetings.length < selectedHours &&
     (remainingHours > 0 || meetings.some((meeting) => meeting.hours > 1));
-  const valid = hoursFullyDistributed && Boolean(beachId) && datesValid && !overlap && allowed.includes(level);
+  const valid = hoursFullyDistributed && Boolean(beachId) && datesValid && startTimesValid && !overlap && allowed.includes(level);
 
   function update(id: number, patch: Partial<Meeting>) {
     // The select options already cap each meeting, but validate state updates too.
@@ -408,6 +410,9 @@ export function LessonBuilder({
                 </p>
               ) : null}
               {!datesValid ? <p role="alert" className="mt-3 text-[12px] text-warning">Selecione hoje ou uma data futura para todos os encontros.</p> : null}
+              {!startTimesValid ? <p role="alert" className="mt-3 text-[12px] text-warning">
+                Cada encontro deve começar com pelo menos 1 hora de antecedência (horário do Ceará).
+              </p> : null}
               {!hoursFullyDistributed ? (
                 <p role="status" className="mt-3 text-[12px] text-warning">
                   Defina as {remainingHours}h restantes antes de continuar.
