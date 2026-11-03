@@ -1,4 +1,5 @@
 import assert from 'node:assert/strict';
+import { readFileSync } from 'node:fs';
 import { activeBookingStageMeetingIds, activeStudentBookings, bookingIsFinished, selectedStudentBooking, evolutionBookingStatus } from '../src/lib/booking-cycle.ts';
 
 function booking(id, status, starts, meetingStatuses) {
@@ -56,3 +57,26 @@ assert.equal(evolutionBookingStatus(completed), 'Concluída');
 assert.equal(evolutionBookingStatus(waitingPayment), 'Aguardando pagamento');
 assert.equal(evolutionBookingStatus(booking('cancel', 'cancelled', [], [])), 'Cancelada');
 console.log('PASS: compact previews open only selected bookings with correct statuses');
+
+const reservationPage = readFileSync('src/app/aluno/(app)/reserva/[id]/page.tsx', 'utf8');
+const actionsStart = reservationPage.indexOf('<nav aria-label="Ações da reserva"');
+const actionsEnd = reservationPage.indexOf('</nav>', actionsStart);
+assert.ok(actionsStart >= 0 && actionsEnd > actionsStart,
+  'Student reservation should expose a single, labeled action group');
+const actionMarkup = reservationPage.slice(actionsStart, actionsEnd);
+assert.match(actionMarkup, /className="mt-5 grid w-full gap-2\.5"/,
+  'Reservation actions should be stacked and full width instead of irregular wrapping');
+assert.equal((actionMarkup.match(/className=\{reservationActionClass\}/g) ?? []).length, 4,
+  'All four reservation actions must share the same size, padding and text treatment');
+assert.ok(reservationPage.includes("const reservationActionClass =") &&
+  reservationPage.includes("'w-full min-w-0 !min-h-12"),
+  'Shared action styling must maintain accessible touch targets');
+assert.ok(actionMarkup.includes('href={`/aluno/atendimento/${booking.id}`}') &&
+  actionMarkup.includes('href="/aluno/ocorrencias"') &&
+  actionMarkup.includes('href="/aluno/politicas"') &&
+  actionMarkup.includes('href={`/aluno/reservar?instrutor='),
+  'Standardizing button appearance must not remove existing destinations');
+assert.ok(actionMarkup.includes("!awaiting && booking.status !== 'cancelled'") &&
+  actionMarkup.includes("booking.instructor_id ?"),
+  'Reservation actions must preserve their existing availability conditions');
+console.log('PASS: student reservation actions share consistent full-width button styling and keep their links');
