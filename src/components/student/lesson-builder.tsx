@@ -6,6 +6,7 @@ import { createBooking } from '@/app/actions/booking';
 import { LANGUAGES } from '@/data/demo';
 import { LEVEL_LABELS, type Beach, type LessonLevel, type QuoteRow } from '@/lib/data-labels';
 import { lessonDate } from '@/lib/dates';
+import { findMeetingOverlap, nextMeetingDay } from '@/lib/meeting-conflicts';
 import { allowedLessonLevels, KITE_CURRICULA, KITE_LEVEL_BADGES } from '@/lib/kite-steps';
 import { formatMoney } from '@/lib/format';
 
@@ -123,10 +124,11 @@ export function LessonBuilder({
   const remainingHours = selectedHours - totalHours;
   const quote = quotes.find((row) => row.hours === selectedHours);
   const datesValid = meetings.every((meeting) => meeting.date >= lessonDate());
+  const overlap = findMeetingOverlap(meetings);
   const hoursFullyDistributed = remainingHours === 0;
   const canAddMeeting = meetings.length < selectedHours &&
     (remainingHours > 0 || meetings.some((meeting) => meeting.hours > 1));
-  const valid = hoursFullyDistributed && Boolean(beachId) && datesValid && allowed.includes(level);
+  const valid = hoursFullyDistributed && Boolean(beachId) && datesValid && !overlap && allowed.includes(level);
 
   function update(id: number, patch: Partial<Meeting>) {
     // The select options already cap each meeting, but validate state updates too.
@@ -157,7 +159,7 @@ export function LessonBuilder({
 
     const id = Math.max(...next.map((meeting) => meeting.id)) + 1;
     const last = next[next.length - 1];
-    setMeetings([...next, { id, date: last?.date ?? defaults.date, start: '09:00', hours: 1 }]);
+    setMeetings([...next, { id, date: nextMeetingDay(last?.date ?? defaults.date), start: '09:00', hours: 1 }]);
     setOpen(id);
   }
 
@@ -399,6 +401,12 @@ export function LessonBuilder({
                   {meetings.length} encontro(s). O total contratado permanece em {selectedHours}h.
                 </p>
               </div>
+              {overlap ? (
+                <p role="alert" className="mt-3 rounded-xl border border-warning/35 bg-warning/10 p-3 text-[13px] font-semibold text-warning">
+                  Os encontros {overlap[0] + 1} e {overlap[1] + 1} têm horários sobrepostos.
+                  Escolha outro dia ou um horário após o término do primeiro.
+                </p>
+              ) : null}
               {!datesValid ? <p role="alert" className="mt-3 text-[12px] text-warning">Selecione hoje ou uma data futura para todos os encontros.</p> : null}
               {!hoursFullyDistributed ? (
                 <p role="status" className="mt-3 text-[12px] text-warning">
