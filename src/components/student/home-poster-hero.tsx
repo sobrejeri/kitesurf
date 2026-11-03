@@ -2,7 +2,7 @@ import { Icon, type IconName } from '@/components/icon';
 
 /**
  * Compact mobile campaign poster: real DOM text and an existing
- * editorial photograph. The supplied mockup is a reference, not a screenshot
+ * high-resolution local lesson photograph. The supplied mockup is a reference, not a screenshot
  * baked into the page (so copy and layout can reflow on phones).
  */
 const HIGHLIGHTS: readonly { label: string; icon: IconName }[] = [
@@ -16,9 +16,14 @@ export function HomePosterHero({ firstName }: { firstName?: string }) {
   return (
     <section className="vento-home-poster relative -mx-4 overflow-hidden md:mx-0 md:mt-2 md:rounded-[26px]" aria-labelledby="vento-home-title">
       <img
-        src="/images/mar-profundo-kite.webp"
+        src="/images/kite-lesson.webp"
         alt=""
         aria-hidden="true"
+        width={1254}
+        height={1254}
+        loading="eager"
+        fetchPriority="high"
+        decoding="async"
         className="vento-home-poster-photo absolute inset-0 h-full w-full object-cover"
       />
       <div className="vento-home-poster-shade absolute inset-0" aria-hidden="true" />
