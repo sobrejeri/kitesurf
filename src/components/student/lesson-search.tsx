@@ -61,6 +61,7 @@ export function LessonSearch({
   return (
     <>
       <form
+        id="buscar-aula"
         action="/aluno/reservar"
         onSubmit={(event) => {
           if (date < lessonDate()) {
