@@ -10,6 +10,11 @@ Escopo: aluno, instrutor, administrador e pousada. Checkout permanece desativado
 - Calendário do aluno desabilita dias anteriores à data local.
 - Causa do pedido invisível ao instrutor identificada na política RLS. Proprietário executou a correção 33. Uma nova solicitação ficou visível e foi aceita pelo instrutor, gerando VNT-1005.
 - Aula concluída TEST-1001 abriu a própria reserva na evolução, com encontro, horas e avaliação. As reservas preexistentes foram preservadas.
+- Aula em andamento TEST-1002 permaneceu na lista ativa e também abriu seu encontro correto na evolução.
+- Aula TEST-1004 das 11h às 13h em 11/11: o formulário bloqueou início às 11h e às 12h, exibindo aviso de sobreposição e desabilitando Continuar. Às 13h, liberou a continuação, sem criar outra reserva.
+- Nome da conta de teste do aluno foi salvo como “Aluno teste”; a página confirmou a atualização e a saudação passou a exibir Aluno.
+- Segunda etapa publicada no commit `1afaa06b1054346ab09c013ad08ed30c129fb1c7`, confirmado pelo marcador de versão do site. Agenda administrativa exibiu cinco encontros reais da semana, avisos exibiram uma pousada em análise e atendimento exibiu o estado vazio real.
+- Políticas comerciais indicaram corretamente a ausência da migração 34 e impediram salvar antes da atualização.
 - Nenhuma cobrança, transação Pix/cartão ou confirmação de pagamento foi realizada durante estes testes.
 
 ## Alterações da segunda etapa
@@ -28,6 +33,7 @@ Escopo: aluno, instrutor, administrador e pousada. Checkout permanece desativado
 - Scripts JavaScript do projeto e verificação das relações PostgREST passaram.
 - Todas as 35 migrações e 30 arquivos de testes SQL passaram em PostgreSQL isolado via PGlite, incluindo RLS, dono/papel, confirmação idempotente, ausência de pagamento, exclusão de comissão, concorrência de agenda e expiração de reservas.
 - O script nativo `scripts/test-db.sh` foi tentado, mas o `initdb` não executa como root neste ambiente. PGlite foi usado como alternativa; não representa execução no Supabase de produção.
+- GitHub Actions concluiu com sucesso o build, verificações de código e o script nativo `scripts/test-db.sh`, com PostgreSQL isolado: https://github.com/sobrejeri/kitesurf/actions/runs/41885805253. Isso também não aplica migrações no Supabase de produção.
 
 ## Pendências para aprovação
 
@@ -36,5 +42,6 @@ Escopo: aluno, instrutor, administrador e pousada. Checkout permanece desativado
 3. Completar testes reais de envio/recebimento do chat, foto de perfil, documentos, aprovação/reprovação, indicação da pousada e registro/conclusão de encontros com contas de teste, preservando dados existentes.
 4. Recuperação de senha depende de URL de redirecionamento e serviço de e-mail no Supabase, caixa de e-mail controlada pelo proprietário e redefinição manual da senha. O recebimento do e-mail ainda não foi validado.
 5. Notificações externas, falhas de rede, dispositivos móveis e regras comerciais excepcionais precisam de validação específica. Checkout, estornos e repasses permanecem fora desta etapa.
+6. A tentativa de envio do ícone do aplicativo como foto da conta de teste foi interrompida por timeout do controle de arquivos do navegador. Não houve confirmação de upload; não foi contabilizada como teste aprovado.
 
 Não foram enviados documentos de identidade fictícios nem aprovados cadastros com documentação inventada.
