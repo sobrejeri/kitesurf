@@ -69,7 +69,7 @@ export function LessonSearch({
             setDateError('A data escolhida já passou. Selecione hoje ou um dia futuro.');
           }
         }}
-        className="glass relative z-10 -mt-6 grid gap-2.5 rounded-[28px] border border-white/70 p-4 shadow-search lg:mt-6 lg:p-5"
+        className="glass vento-desktop-search relative z-10 -mt-6 grid gap-2.5 rounded-[28px] border border-white/70 p-4 shadow-search lg:mt-3 lg:p-4"
       >
         <div className="flex items-center justify-between gap-3 px-1">
           <p className="text-[13px] font-semibold text-ink">Seu nível no kite</p>
@@ -78,7 +78,7 @@ export function LessonSearch({
           </Link>
         </div>
         {/* Three plain choices in one segmented control. */}
-        <fieldset className="grid grid-cols-3 gap-1 rounded-full bg-sand p-1">
+        <fieldset className="vento-desktop-level-options grid grid-cols-3 gap-1 rounded-full bg-sand p-1">
           <legend className="sr-only">Seu nível no kite</legend>
           {LEVELS.filter((item) => options.includes(item.id)).map((item) => {
             const on = level === item.id;
@@ -94,7 +94,7 @@ export function LessonSearch({
           })}
         </fieldset>
 
-        <div className="rounded-[15px] border border-[#16819b]/60 bg-[#073c53] px-3 py-3">
+        <div className="vento-desktop-lesson-desc rounded-[15px] border border-[#16819b]/60 bg-[#073c53] px-3 py-3">
           <p className="text-[12px] font-semibold text-[#b6e7ed]">
             Aula {KITE_LEVEL_BADGES[level].label} · {KITE_LEVEL_BADGES[level].detail}
           </p>
@@ -107,7 +107,7 @@ export function LessonSearch({
           </p>
         </div>
 
-        <div className="grid gap-2.5 lg:grid-cols-3 lg:gap-0 lg:divide-x lg:divide-line lg:rounded-[18px] lg:bg-sand">
+        <div className="vento-desktop-search-fields grid gap-2.5 lg:grid-cols-3 lg:gap-0 lg:divide-x lg:divide-line lg:rounded-[18px] lg:bg-sand">
           <SearchRow label="Sua praia" icon="pin">
             <select name="praia" className={controlClass} defaultValue={beaches[0]?.id}>
               {beaches.length === 0 ? <option value="">Nenhuma praia disponível</option> : null}
@@ -136,7 +136,7 @@ export function LessonSearch({
 
         {dateError ? <p role="alert" className="text-[13px] text-warning">{dateError}</p> : null}
 
-        <div className="flex items-center gap-3 rounded-[18px] bg-sand py-2.5 pl-4 pr-2">
+        <div className="vento-desktop-search-hours flex items-center gap-3 rounded-[18px] bg-sand py-2.5 pl-4 pr-2">
           <Icon name="clock" className="!h-6 !w-6 shrink-0 text-[#ff6a13]" />
           <span className="flex-1 whitespace-nowrap text-[13px] text-muted">Quantas horas?</span>
           <Stepper hours={hours} onChange={setHours} />
@@ -144,7 +144,7 @@ export function LessonSearch({
         <input type="hidden" name="horas" value={hours} />
 
         {/* A first idea of the price, looked up in the server's quote table. */}
-        <p className="tabular mt-1 text-center text-[12px] text-muted" aria-live="polite">
+        <p className="vento-desktop-search-quote tabular mt-1 text-center text-[12px] text-muted" aria-live="polite">
           {quote ? (
             <>
               {hours}h × {formatMoney(quote.hourly_rate_cents)}/hora ={' '}
@@ -155,13 +155,13 @@ export function LessonSearch({
           )}
         </p>
 
-        <button type="submit" className={buttonClass('primary', 'md', 'w-full !min-h-14 !text-[17px]')}>
+        <button type="submit" className={buttonClass('primary', 'md', 'vento-desktop-search-submit w-full !min-h-14 !text-[17px]')}>
           Encontrar minha aula
           <Icon name="arrow" className="!h-5 !w-5" />
         </button>
       </form>
 
-      <ul className="mt-4 grid grid-cols-3 divide-x divide-line rounded-[22px] border border-line bg-surface py-4 shadow-card">
+      <ul className="vento-student-home-benefits mt-4 grid grid-cols-3 divide-x divide-line rounded-[22px] border border-line bg-surface py-4 shadow-card">
         {[
           ['shield', 'Instrutores aprovados'],
           ['users', 'Todos os níveis'],
