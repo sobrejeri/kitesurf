@@ -7,6 +7,7 @@ CREATE FUNCTION pg_temp.reset() RETURNS void LANGUAGE plpgsql AS $$
 BEGIN EXECUTE 'RESET ROLE'; PERFORM set_config('request.jwt.claim.sub','',false); END $$;
 DO $$
 DECLARE bid uuid; pricing bigint; beach uuid; partner uuid; counts record; expected_count integer;
+  before_booking public.bookings;
 BEGIN
  SELECT id INTO pricing FROM public.price_versions ORDER BY id DESC LIMIT 1;
  SELECT id INTO beach FROM public.beaches WHERE slug='prea';
@@ -17,6 +18,7 @@ BEGIN
  VALUES('VNT-VALIDATION-TEST','00000000-0000-0000-0000-0000000000b1',
    '00000000-0000-0000-0000-0000000000a1',partner,pricing,beach,
    'first_time','Português',1,30000,30000,1000,3500,25500,'1234') RETURNING id INTO bid;
+ SELECT * INTO before_booking FROM public.bookings WHERE id=bid;
 
  PERFORM pg_temp.act_as('00000000-0000-0000-0000-0000000000b2');
  BEGIN
@@ -31,7 +33,11 @@ BEGIN
  PERFORM pg_temp.reset();
  ASSERT EXISTS(SELECT 1 FROM public.bookings WHERE id=bid AND status='confirmed' AND is_test),
    'A confirmed validation booking must be explicitly marked as a test';
- ASSERT (SELECT total_cents FROM public.bookings WHERE id=bid)=30000,
+ ASSERT EXISTS(SELECT 1 FROM public.bookings WHERE id=bid
+   AND (price_version_id,hourly_rate_cents,total_cents,partner_cents,platform_cents,instructor_net_cents)
+     IS NOT DISTINCT FROM (before_booking.price_version_id,before_booking.hourly_rate_cents,
+       before_booking.total_cents,before_booking.partner_cents,before_booking.platform_cents,
+       before_booking.instructor_net_cents)),
    'The immutable price snapshot stays intact';
  ASSERT (SELECT count(*) FROM public.audit_logs WHERE action='booking.validation_confirmed' AND entity_id=bid::text)=1,
    'A retry cannot duplicate confirmation or rotate the instructor twice';

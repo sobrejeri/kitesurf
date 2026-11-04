@@ -16,15 +16,17 @@ export default async function OperationRulesPage() {
   const current = versions[0];
   return (
     <>
-      <PageHeader eyebrow="Valores e operação" title="Valor por hora e regras" lead="Defina o preço das aulas e a comissão global para novas reservas." />
+      <PageHeader eyebrow="Valores e operação" title="Valores por nível e regras" lead="Defina o valor por hora de cada nível e a comissão global para novas reservas." />
       <div className="grid gap-5 lg:grid-cols-2">
         <Card>
           <Eyebrow>Preço das aulas</Eyebrow>
-          <h2 className="mt-2 text-[16px]">Um valor por hora. O aluno escolhe a duração.</h2>
+          <h2 className="mt-2 text-[16px]">Um valor por hora para cada nível da aula.</h2>
           <p className="mt-1 text-[12px] text-muted">Vale para novas reservas. Reservas existentes mantêm o preço contratado.</p>
           {current ? (
             <p className="tabular mt-4 text-[13px]">
-              Atual: <strong className="text-brand">{formatMoney(current.hourly_rate_cents)}/hora</strong> · comissão {formatBps(current.platform_commission_bps)}
+              Iniciante: <strong className="text-brand">{formatMoney(current.hourly_rate_cents)}/h</strong><br />
+              Intermediário: <strong className="text-brand">{formatMoney(current.intermediate_hourly_cents ?? current.hourly_rate_cents)}/h</strong><br />
+              Avançado: <strong className="text-brand">{formatMoney(current.advanced_hourly_cents ?? current.hourly_rate_cents)}/h</strong>
             </p>
           ) : null}
           <p className="mt-3 text-[12px] text-muted">
@@ -34,16 +36,27 @@ export default async function OperationRulesPage() {
             {' '}e{' '}
             <Link href="/admin/afiliados" className="font-semibold text-brand underline">Pousadas afiliadas</Link>.
           </p>
-          <ActionForm action={publishPrice} submitLabel="Publicar novo valor" className="mt-5 grid gap-4">
+          {!current?.level_prices_ready ? <Note tone="warning" className="mt-4">Os valores atuais continuam válidos. Para editar por nível, aplique a migração 36 no Supabase.</Note> : null}
+          <ActionForm action={publishPrice} submitLabel="Publicar valores por nível" disabled={!current?.level_prices_ready} className="mt-5 grid gap-4">
+            <input type="hidden" name="expectedVersionId" value={current?.id ?? ''} />
             <div className="grid gap-4 sm:grid-cols-3">
-              <Field label="Valor da hora (R$, inteiro)">
-                <input name="hourlyRateReais" type="number" min={10} max={10000} step={1} required defaultValue={current ? current.hourly_rate_cents / 100 : 300} className={inputClass} />
-              </Field>
+              {([
+                ['beginnerRateReais', 'Iniciante · R$/hora', current?.hourly_rate_cents],
+                ['intermediateRateReais', 'Intermediário · R$/hora', current?.intermediate_hourly_cents ?? current?.hourly_rate_cents],
+                ['advancedRateReais', 'Avançado · R$/hora', current?.advanced_hourly_cents ?? current?.hourly_rate_cents],
+              ] as const).map(([name, label, cents]) => (
+                <Field key={name} label={label}>
+                  <input name={name} type="number" min={10} max={10000} step="0.01" required
+                    defaultValue={cents == null ? 300 : (cents / 100).toFixed(2)} className={inputClass} />
+                </Field>
+              ))}
+            </div>
+            <div className="grid gap-4 sm:grid-cols-2">
               <Field label="Comissão da plataforma (%)">
                 <input name="commissionPercent" type="number" min={0} max={100} step={1} required defaultValue={current ? current.platform_commission_bps / 100 : 15} className={inputClass} />
               </Field>
               <Field label="Transporte de apoio (R$/h)" hint="Vai inteiro para o instrutor. 0 desliga a opção.">
-                <input name="transportRateReais" type="number" min={0} max={10000} step={1} required defaultValue={current ? current.transport_hourly_cents / 100 : 100} className={inputClass} />
+                <input name="transportRateReais" type="number" min={0} max={10000} step="0.01" required defaultValue={current ? current.transport_hourly_cents / 100 : 100} className={inputClass} />
               </Field>
             </div>
             <Field label="Motivo" hint="Fica registrado no histórico de auditoria.">
@@ -57,7 +70,8 @@ export default async function OperationRulesPage() {
             {versions.map((version) => (
               <li key={version.id} className="flex items-center justify-between gap-3 py-3">
                 <span>
-                  <strong className="tabular block font-[550]">{formatMoney(version.hourly_rate_cents)}/hora · {formatBps(version.platform_commission_bps)} · transporte {formatMoney(version.transport_hourly_cents)}/h</strong>
+                  <strong className="tabular block font-[550]">Iniciante {formatMoney(version.hourly_rate_cents)}/h · Intermediário {formatMoney(version.intermediate_hourly_cents ?? version.hourly_rate_cents)}/h · Avançado {formatMoney(version.advanced_hourly_cents ?? version.hourly_rate_cents)}/h</strong>
+                  <strong className="tabular block font-[550]">Comissão {formatBps(version.platform_commission_bps)} · transporte {formatMoney(version.transport_hourly_cents)}/h</strong>
                   <span className="text-muted">{version.reason ?? '—'}</span>
                 </span>
                 <span className="text-muted">{formatDateShort(version.created_at)}</span>

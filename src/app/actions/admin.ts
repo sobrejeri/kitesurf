@@ -7,41 +7,47 @@ import { requireRole } from '@/lib/auth';
 import { createSupabaseServerClient } from '@/lib/supabase/server';
 
 import { friendlyError, type ActionState } from './errors';
+import { moneyInputCents } from '@/lib/level-prices';
 import { PROFILE_REQUIRED, readProgressFlags } from '@/lib/instructor-completion';
 
-/**
- * The hourly rate is typed in whole reais and the commission in whole
- * percent, because that is how an operator thinks. Both are integers, and the
- * conversion to centavos and basis points is integer multiplication.
- */
+/** Each publication atomically versions all three lesson rates. */
 const Price = z.strictObject({
-  hourlyRateReais: z.coerce.number().int().min(10).max(10000),
+  beginnerCents: z.number().int().min(1000).max(1000000),
+  intermediateCents: z.number().int().min(1000).max(1000000),
+  advancedCents: z.number().int().min(1000).max(1000000),
   commissionPercent: z.coerce.number().int().min(0).max(100),
-  transportRateReais: z.coerce.number().int().min(0).max(10000),
+  transportCents: z.number().int().min(0).max(1000000),
+  expectedVersionId: z.coerce.number().int().positive(),
   reason: z.string().trim().min(3).max(500),
 });
 
 export async function publishPrice(_prev: ActionState, form: FormData): Promise<ActionState> {
   await requireRole(['admin']);
   const parsed = Price.safeParse({
-    hourlyRateReais: form.get('hourlyRateReais'),
+    beginnerCents: moneyInputCents(form.get('beginnerRateReais')),
+    intermediateCents: moneyInputCents(form.get('intermediateRateReais')),
+    advancedCents: moneyInputCents(form.get('advancedRateReais')),
     commissionPercent: form.get('commissionPercent'),
-    transportRateReais: form.get('transportRateReais'),
+    transportCents: moneyInputCents(form.get('transportRateReais')),
+    expectedVersionId: form.get('expectedVersionId'),
     reason: form.get('reason'),
   });
-  if (!parsed.success) return { error: 'Use valores inteiros e informe o motivo da alteração.' };
-
+  if (!parsed.success) return { error: 'Confira os três valores por hora, a comissão e o motivo. Use até duas casas decimais nos valores.' };
   const supabase = await createSupabaseServerClient();
-  const { error } = await supabase.rpc('publish_price_version', {
-    p_hourly_rate_cents: parsed.data.hourlyRateReais * 100,
+  const { error } = await supabase.rpc('publish_level_price_version', {
+    p_beginner_cents: parsed.data.beginnerCents,
+    p_intermediate_cents: parsed.data.intermediateCents,
+    p_advanced_cents: parsed.data.advancedCents,
     p_commission_bps: parsed.data.commissionPercent * 100,
-    p_transport_hourly_cents: parsed.data.transportRateReais * 100,
+    p_transport_hourly_cents: parsed.data.transportCents,
     p_reason: parsed.data.reason,
+    p_expected_version_id: parsed.data.expectedVersionId,
   });
+  if (error?.hint === 'PRICE_VERSION_STALE') return { error: 'Os preços foram alterados em outra sessão. Atualize a página antes de publicar.' };
   if (error) return { error: friendlyError(error) };
   revalidatePath('/admin/regras');
-  revalidatePath('/aluno/inicio');
-  return { ok: 'Novo valor publicado. Reservas existentes mantêm o preço contratado.' };
+  revalidatePath('/aluno', 'layout');
+  return { ok: 'Valores por nível publicados. Reservas existentes mantêm o preço contratado.' };
 }
 
 const InstructorStatus = z.strictObject({

@@ -32,7 +32,9 @@ assert.ok(sunset.includes("ocean: { src: '/images/prea-coast.webp'"),
 assert.ok(home.includes('vento-student-desktop-home') &&
   home.includes('vento-desktop-course-cards'),
   'Explore desktop should have its own page composition');
-assert.ok(css.includes('grid-template-columns: minmax(120px,1fr)') &&
+const desktopSearchRule = css.match(/\.vento-student-desktop-home \.vento-desktop-search \{([^}]+)\}/s)?.[1] ?? '';
+const desktopColumns = desktopSearchRule.match(/grid-template-columns:([^;]+);/s)?.[1] ?? '';
+assert.ok((desktopColumns.match(/minmax\([^)]*\)/g) ?? []).length === 6 &&
   css.includes('body:has(.theme-mar-profundo) > .sticky.top-0'),
   'Desktop search should be a horizontal row with a single header');
 assert.ok(search.includes('vento-desktop-search-fields') &&

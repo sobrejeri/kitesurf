@@ -20,6 +20,8 @@ export const LEVEL_LABELS: Readonly<Record<LessonLevel, string>> = {
 };
 
 export interface QuoteRow {
+  /** Missing only in the common-rate response before migration 36. */
+  level?: LessonLevel;
   hours: number;
   hourly_rate_cents: number;
   total_cents: number;

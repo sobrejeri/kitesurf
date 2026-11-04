@@ -8,6 +8,7 @@ import { LEVEL_LABELS, type Beach, type LessonLevel, type QuoteRow } from '@/lib
 import { lessonDate } from '@/lib/dates';
 import { allowedLessonLevels, KITE_CURRICULA, KITE_LEVEL_BADGES } from '@/lib/kite-steps';
 import { formatMoney } from '@/lib/format';
+import { levelQuote } from '@/lib/level-prices';
 import { hasScheduleConflict, type StudentTimeSlot } from '@/lib/student-schedule';
 import { VALIDATION_WITHOUT_CHECKOUT } from '@/lib/booking-mode';
 
@@ -125,7 +126,7 @@ export function LessonBuilder({
   const selectedHours = defaults.hours;
   const totalHours = meetings.reduce((sum, meeting) => sum + meeting.hours, 0);
   const remainingHours = selectedHours - totalHours;
-  const quote = quotes.find((row) => row.hours === selectedHours);
+  const quote = levelQuote(quotes, level, selectedHours);
   const datesValid = meetings.every((meeting) => meeting.date >= lessonDate());
   const meetingsOverlap = meetings.some((a, index) => {
     const aStart = Date.parse(`${a.date}T${a.start}:00-03:00`);

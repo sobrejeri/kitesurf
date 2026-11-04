@@ -36,11 +36,13 @@ export function LessonDatePicker({
   onChange,
   ariaLabel = 'Data da aula',
   className = '',
+  compact = false,
 }: {
   value: string;
   onChange: (date: string) => void;
   ariaLabel?: string;
   className?: string;
+  compact?: boolean;
 }) {
   const dialogId = useId();
   const trigger = useRef<HTMLButtonElement>(null);
@@ -98,7 +100,9 @@ export function LessonDatePicker({
         aria-controls={open ? dialogId : undefined}
         onClick={openCalendar}
       >
-        {labelForDate(value, { day: 'numeric', month: 'short', year: 'numeric' })}
+        {labelForDate(value, compact
+          ? { day: '2-digit', month: '2-digit', year: 'numeric' }
+          : { day: 'numeric', month: 'short', year: 'numeric' })}
       </button>
       {mounted && open
         ? createPortal(

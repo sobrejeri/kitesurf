@@ -295,6 +295,9 @@ export async function getBookingForViewer(
 
 export async function getQuoteTable(): Promise<QuoteRow[]> {
   const supabase = await createSupabaseServerClient();
+  const response = await supabase.rpc('quote_table_by_level');
+  if (!response.error) return (response.data ?? []) as QuoteRow[];
+  if (!['42883', 'PGRST202'].includes(response.error.code)) throw response.error;
   const { data, error } = await supabase.rpc('quote_table');
   if (error) throw error;
   return (data ?? []) as QuoteRow[];
@@ -303,6 +306,9 @@ export async function getQuoteTable(): Promise<QuoteRow[]> {
 export interface PriceVersion {
   id: number;
   hourly_rate_cents: number;
+  intermediate_hourly_cents: number | null;
+  advanced_hourly_cents: number | null;
+  level_prices_ready: boolean;
   platform_commission_bps: number;
   transport_hourly_cents: number;
   reason: string | null;
@@ -311,14 +317,22 @@ export interface PriceVersion {
 
 export async function listPriceVersions(): Promise<PriceVersion[]> {
   const supabase = await createSupabaseServerClient();
-  const { data, error } = await supabase
+  const read = (columns: string) => supabase
     .from('price_versions')
-    .select('id, hourly_rate_cents, platform_commission_bps, transport_hourly_cents, reason, created_at')
+    .select(columns)
     .order('id', { ascending: false })
     .limit(10)
     .returns<PriceVersion[]>();
+  const columns = 'id, hourly_rate_cents, platform_commission_bps, transport_hourly_cents, reason, created_at';
+  const { data, error } = await read(`${columns}, intermediate_hourly_cents, advanced_hourly_cents`);
+  if (error && ['42703', 'PGRST204'].includes(error.code)) {
+    const legacy = await read(columns);
+    if (legacy.error) throw legacy.error;
+    return (legacy.data ?? []).map((row) => ({ ...row, intermediate_hourly_cents: null,
+      advanced_hourly_cents: null, level_prices_ready: false }));
+  }
   if (error) throw error;
-  return data ?? [];
+  return (data ?? []).map((row) => ({ ...row, level_prices_ready: true }));
 }
 
 export interface InstructorRow {

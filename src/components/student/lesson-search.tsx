@@ -8,6 +8,7 @@ import { type Beach, type QuoteRow, type LessonLevel } from '@/lib/data-labels';
 import { allowedLessonLevels, KITE_CURRICULA, KITE_LEVEL_BADGES } from '@/lib/kite-steps';
 import { lessonDate } from '@/lib/dates';
 import { formatMoney } from '@/lib/format';
+import { levelQuote } from '@/lib/level-prices';
 
 import { Icon, type IconName } from '../icon';
 import { LessonDatePicker } from './lesson-date-picker';
@@ -56,7 +57,7 @@ export function LessonSearch({
   const options = allowedLessonLevels(studentLevel);
   const [date, setDate] = useState(defaultDate);
   const [dateError, setDateError] = useState('');
-  const quote = quotes.find((row) => row.hours === hours);
+  const quote = levelQuote(quotes, level, hours);
 
   return (
     <>
@@ -80,6 +81,15 @@ export function LessonSearch({
         {/* Three plain choices in one segmented control. */}
         <fieldset className="vento-desktop-level-options grid grid-cols-3 gap-1 rounded-full bg-sand p-1">
           <legend className="sr-only">Seu nível no kite</legend>
+          <div className="vento-desktop-level-select">
+            <label htmlFor="desktop-lesson-level">Nível da aula</label>
+            <select id="desktop-lesson-level" aria-label="Nível da aula" value={level}
+              onChange={(event) => setLevel(event.target.value as LessonLevel)}>
+              {LEVELS.filter((item) => options.includes(item.id)).map((item) => (
+                <option key={item.id} value={item.id}>{item.title}</option>
+              ))}
+            </select>
+          </div>
           {LEVELS.filter((item) => options.includes(item.id)).map((item) => {
             const on = level === item.id;
             return (
@@ -121,6 +131,7 @@ export function LessonSearch({
             <LessonDatePicker
               ariaLabel="Qual dia?"
               value={date}
+              compact
               onChange={(next) => { setDate(next); setDateError(''); }}
               className={controlClass}
             />

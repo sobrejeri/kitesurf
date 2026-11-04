@@ -37,6 +37,8 @@ jobs:
         run: node --experimental-strip-types scripts/test-student-schedule.mjs
       - name: Test real admin agenda date ranges
         run: node --experimental-strip-types scripts/test-admin-agenda-range.mjs
+      - name: Test per-level quote selection and exact money inputs
+        run: node --experimental-strip-types scripts/test-level-prices.mjs
       - name: Test student homepage poster and booking CTA
         run: node scripts/test-home-banner.mjs
       - name: Test instructor completed lesson detail selection
