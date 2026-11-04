@@ -43,14 +43,47 @@ export default async function StudentHomePage() {
   const kiteLevel = viewer?.role === 'student' ? await getStudentKiteLevel(viewer.id) : null;
 
   return (
-    <>
+    <div className="vento-student-desktop-home">
+      <div className="mb-3 hidden items-center justify-between lg:flex">
+        <div>
+          <p className="text-[15px] font-bold text-ink">Olá, {firstName || 'bem-vindo'}! <span aria-hidden="true">☀️</span></p>
+          <p className="mt-1 text-[12px] text-muted">Preá e Jericoacoara</p>
+        </div>
+        <span className="rounded-full bg-sand px-4 py-2 text-[12px] text-label">Ceará, Brasil</span>
+      </div>
       <HomePosterHero firstName={firstName} />
 
       <LessonSearch defaultDate={lessonDate(1)} quotes={quotes} beaches={beaches}
         studentLevel={kiteLevel?.effective ?? 'first_time'} />
 
 
-      <section className="relative mt-8 overflow-hidden rounded-[22px] border border-line bg-surface p-5 md:p-7">
+      <section className="vento-desktop-course-cards mt-9 hidden lg:block" aria-label="Experiências para cada nível">
+        <div className="mb-4 flex items-end justify-between">
+          <div>
+            <p className="text-[11px] font-bold uppercase tracking-[.15em] text-brand">Um mar de possibilidades</p>
+            <h2 className="mt-2 text-[23px] font-bold text-ink">Encontre o seu ritmo.</h2>
+            <p className="mt-1 text-[13px] text-muted">Aulas adaptadas ao seu nível, com instrutores aprovados.</p>
+          </div>
+          <a href="/aluno/aulas" className="text-[12px] font-semibold text-brand">Ver minhas aulas</a>
+        </div>
+        <div className="grid grid-cols-3 gap-4">
+          {[
+            { badge: 'Para começar', title: 'Primeiros ventos', image: '/images/kite-lesson.webp' },
+            { badge: 'Para retomar', title: 'Mais autonomia', image: '/images/kite-lesson.webp' },
+            { badge: 'Para evoluir', title: 'Novos desafios', image: '/images/prea-coast.webp' },
+          ].map((card, index) => (
+            <article key={card.title} className="group relative h-[200px] overflow-hidden rounded-[16px] bg-[#0a5a75]">
+              <img src={card.image} alt="" loading="lazy" className="h-full w-full object-cover transition-transform duration-300 group-hover:scale-105"
+                style={{ objectPosition: index === 1 ? '65% 50%' : '50% 60%' }} />
+              <div className="absolute inset-0 bg-gradient-to-t from-[#002238]/90 via-transparent to-transparent" />
+              <span className="absolute left-4 top-4 rounded-full bg-white/95 px-3 py-1.5 text-[11px] font-semibold text-[#234568]">{card.badge}</span>
+              <h3 className="absolute bottom-4 left-4 text-[19px] font-bold text-white">{card.title}</h3>
+            </article>
+          ))}
+        </div>
+      </section>
+
+      <section className="relative mt-8 lg:hidden overflow-hidden rounded-[22px] border border-line bg-surface p-5 md:p-7">
         <span className="absolute -right-10 -top-10 h-48 w-48 rounded-full bg-[radial-gradient(circle,#ff7a1a40,transparent_65%)]" aria-hidden="true" />
         <HighlightTitle as="h2" text="Da vontade de aprender ao primeiro bordo." className="relative max-w-[18ch] text-[24px] font-bold leading-tight text-ink" />
         <ol className="relative mt-5 grid gap-5 sm:grid-cols-3 sm:divide-x sm:divide-line">
@@ -68,6 +101,6 @@ export default async function StudentHomePage() {
           ))}
         </ol>
       </section>
-    </>
+    </div>
   );
 }

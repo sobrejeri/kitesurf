@@ -421,3 +421,254 @@ body:has(.theme-mar-profundo) { background: #001a30; color: #f6fbff; }
 @media (prefers-reduced-motion: reduce) {
   .vento-home-poster * { animation: none !important; transition: none !important; }
 }
+
+/* Vento Aluno — layout de computador baseado no esboço.
+   O estilo mobile (até 1023px) permanece independente. */
+@media (min-width: 1024px) {
+  /* Remove the legacy shared account strip above the student's own header. */
+  body:has(.theme-mar-profundo) > .sticky.top-0 { display: none !important; }
+
+  .theme-mar-profundo .vento-desktop-student-header {
+    background: #fff;
+    border-bottom: 1px solid #e4e8f2;
+    box-shadow: 0 1px 5px #0c244511;
+  }
+  .theme-mar-profundo .vento-desktop-student-header .text-ink { color: #1c3252; }
+  .theme-mar-profundo .vento-desktop-student-header .text-muted { color: #8492a7; }
+  .theme-mar-profundo .vento-desktop-student-header nav a { color: #65738e; }
+  .theme-mar-profundo .vento-desktop-student-header nav a[aria-current="page"] {
+    color: #3659ca;
+    border-color: #3659ca;
+  }
+  .theme-mar-profundo .vento-desktop-student-header .border-line {
+    border-color: #dfe5ee;
+  }
+
+  .theme-mar-profundo:has(.vento-student-desktop-home),
+  .theme-mar-profundo:has(.vento-student-desktop-lessons) {
+    --color-ink: #1a3250;
+    --color-ink-strong: #122746;
+    --color-label: #506480;
+    --color-muted: #7789a1;
+    --color-subtle: #8a9ab1;
+    --color-sand: #f3f6fc;
+    --color-surface: #ffffff;
+    --color-canvas: #f7f9fe;
+    --color-line: #e2e8f2;
+    --color-chrome: #ffffff;
+    --color-brand: #365bcf;
+    --color-brand-hover: #244bc3;
+    --color-brand-soft: #eaf0ff;
+    --color-brand-tint: #edf2ff;
+    --color-brand-wash: #edf2ff;
+    --color-on-brand: #fff;
+    background: #f7f9fe;
+    color-scheme: light;
+  }
+  .theme-mar-profundo:has(.vento-student-desktop-home) .vento-desktop-student-header,
+  .theme-mar-profundo:has(.vento-student-desktop-lessons) .vento-desktop-student-header {
+    background: #fff;
+  }
+  .theme-mar-profundo:has(.vento-student-desktop-home) .text-brand,
+  .theme-mar-profundo:has(.vento-student-desktop-lessons) .text-brand {
+    color: #365bcf;
+  }
+  .theme-mar-profundo:has(.vento-student-desktop-home) .btn-primary,
+  .theme-mar-profundo:has(.vento-student-desktop-lessons) .btn-primary {
+    background: #355bcf;
+    color: #fff;
+    border-color: #355bcf;
+    box-shadow: 0 4px 14px #365bcf24;
+  }
+  .vento-desktop-home-hero {
+    min-height: 208px;
+    box-shadow: 0 9px 24px #15395b16;
+    background: #075f75;
+  }
+  .vento-desktop-home-hero img {
+    object-position: 50% 58%;
+    filter: saturate(1.13) contrast(1.04);
+  }
+
+  .vento-student-desktop-home .vento-desktop-search {
+    display: grid;
+    grid-template-columns: minmax(120px,1fr) minmax(145px,1.05fr)
+      minmax(178px,1.3fr) minmax(133px,.95fr) minmax(172px,1.2fr) minmax(175px,1.2fr);
+    grid-template-rows: minmax(67px,auto) auto;
+    align-items: stretch;
+    gap: 0;
+    margin-top: 12px;
+    padding: 8px 12px 10px;
+    border: 1px solid #e5eaf4;
+    border-radius: 17px;
+    background: #fff;
+    box-shadow: 0 5px 16px #102b4910;
+  }
+  .vento-student-desktop-home .vento-desktop-search > div:first-child,
+  .vento-student-desktop-home .vento-desktop-lesson-desc {
+    display: none;
+  }
+  .vento-student-desktop-home .vento-desktop-search-fields {
+    display: contents;
+  }
+  .vento-student-desktop-home .vento-desktop-search-fields > label {
+    min-width: 0;
+    border-right: 1px solid #e4eaf4;
+    border-radius: 0;
+    background: transparent;
+    padding: 8px 9px;
+    gap: 7px;
+  }
+  .vento-student-desktop-home .vento-desktop-search-fields > label:nth-child(1) {
+    grid-column: 1; grid-row: 1;
+  }
+  .vento-student-desktop-home .vento-desktop-search-fields > label:nth-child(2) {
+    grid-column: 2; grid-row: 1;
+  }
+  .vento-student-desktop-home .vento-desktop-search-fields > label:nth-child(3) {
+    grid-column: 4; grid-row: 1;
+  }
+  .vento-student-desktop-home .vento-desktop-search-fields .text-muted,
+  .vento-student-desktop-home .vento-desktop-search-hours .text-muted {
+    color: #8c9cb1;
+  }
+  .vento-student-desktop-home .vento-desktop-search-fields .text-ink {
+    color: #263f6a;
+  }
+  .vento-student-desktop-home .vento-desktop-search-fields :is(select,input) {
+    color: #20375d;
+    background: transparent;
+    border: 0;
+    font-size: 12px;
+  }
+  .vento-student-desktop-home .vento-desktop-search-fields .icon {
+    width: 15px !important; height: 15px !important;
+    color: #4164d5;
+  }
+  .vento-student-desktop-home .vento-desktop-level-options {
+    grid-column: 3; grid-row: 1;
+    align-self: center;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-right: 1px solid #e4eaf4;
+    background: transparent;
+    border-radius: 0;
+    padding: 6px;
+    gap: 4px;
+  }
+  .vento-student-desktop-home .vento-desktop-level-options label {
+    height: 39px;
+    flex: 1;
+    min-width: 0;
+    font-size: 11px;
+    border-radius: 10px;
+    line-height: 1.15;
+  }
+  .vento-student-desktop-home .vento-desktop-search-hours {
+    grid-column: 5; grid-row: 1;
+    min-width: 0;
+    padding: 6px 5px;
+    gap: 4px;
+    border-radius: 0;
+    border-right: 1px solid #e4eaf4;
+    background: transparent;
+  }
+  .vento-student-desktop-home .vento-desktop-search-hours > .icon {
+    display: none;
+  }
+  .vento-student-desktop-home .vento-desktop-search-hours > span {
+    flex: 0 0 auto;
+    font-size: 10px;
+    line-height: 1.15;
+    white-space: normal;
+  }
+  .vento-student-desktop-home .vento-desktop-search-hours .tabular {
+    min-width: 39px;
+    font-size: 15px;
+    color: #243e65;
+  }
+  .vento-student-desktop-home .vento-desktop-search-hours .tabular span {
+    display: none;
+  }
+  .vento-student-desktop-home .vento-desktop-search-hours button {
+    width: 28px;
+    height: 28px;
+    background: #eef3ff;
+    color: #365bcf;
+    border: 0;
+    box-shadow: none;
+  }
+  .vento-student-desktop-home .vento-desktop-search-submit {
+    grid-column: 6; grid-row: 1;
+    min-height: 48px !important;
+    align-self: center;
+    white-space: normal;
+    margin-left: 6px;
+    padding: 7px 8px;
+    font-size: 12px !important;
+    border-radius: 11px;
+  }
+  .vento-student-desktop-home .vento-desktop-search-quote {
+    grid-column: 1 / -1;
+    grid-row: 2;
+    margin: 0;
+    padding: 8px 8px 1px;
+    border-top: 1px solid #edf0f7;
+    text-align: left;
+    font-size: 12px;
+  }
+  .vento-student-desktop-home .vento-desktop-search-quote strong {
+    color: #365bcf;
+  }
+  .vento-student-desktop-home .vento-student-home-benefits { display: none; }
+  .vento-student-desktop-home > section:last-child { margin-top: 35px; }
+  .vento-student-desktop-home > section:last-child .text-ink { color: #1d3653; }
+}
+@media (min-width: 1024px) and (max-width: 1180px) {
+  .vento-student-desktop-home .vento-desktop-search {
+    grid-template-columns: repeat(3,minmax(0,1fr));
+    gap: 8px;
+  }
+  .vento-student-desktop-home .vento-desktop-level-options { grid-column: 3; grid-row: 1; }
+  .vento-student-desktop-home .vento-desktop-search-fields > label:nth-child(3) {
+    grid-column: 1; grid-row: 2;
+  }
+  .vento-student-desktop-home .vento-desktop-search-hours {
+    grid-column: 2; grid-row: 2;
+  }
+  .vento-student-desktop-home .vento-desktop-search-submit {
+    grid-column: 3; grid-row: 2;
+  }
+  .vento-student-desktop-home .vento-desktop-search-quote { grid-row: 3; }
+}
+
+@media (min-width: 1024px) {
+  .vento-student-desktop-lessons > section:first-child {
+    border-radius: 20px;
+  }
+  .vento-student-desktop-lessons > section:first-child > .relative {
+    min-height: 230px;
+    padding: 48px 34px 40px;
+  }
+  .vento-student-desktop-lessons .text-ink { color: #203855; }
+  .vento-student-desktop-lessons .text-label { color: #526987; }
+  .vento-student-desktop-lessons .text-muted { color: #7d8fa6; }
+  .vento-student-desktop-lessons .bg-surface {
+    background-color: #fff;
+    border-color: #e5eaf3;
+  }
+  .vento-student-desktop-lessons [role="tablist"] {
+    margin-top: 12px;
+    background: #fff;
+    border-color: #e1e9f3;
+  }
+  .vento-student-desktop-lessons [role="tab"][aria-selected="true"] {
+    background: #eaf2ff;
+    border-color: #345dcb;
+    color: #254ca4;
+  }
+  .vento-student-desktop-lessons .sunset-veil + .relative :is(h1,p) {
+    color: #fff;
+  }
+}

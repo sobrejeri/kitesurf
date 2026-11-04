@@ -3,6 +3,12 @@
  * message: the raw text can carry internal details and is only logged.
  */
 const KNOWN: readonly [RegExp, string][] = [
+  [/Student already has a lesson at the selected time/i,
+    'Você já tem uma aula ou uma busca de instrutor nesse horário. Escolha outro dia ou horário sem sobreposição.'],
+  [/Overlapping meetings/i,
+    'Há dois encontros no mesmo horário. Ajuste as datas e os horários para continuar.'],
+  [/Invalid meeting date or hours/i,
+    'Confira os horários: cada aula precisa começar com pelo menos uma hora de antecedência.'],
   [/Meeting change must be requested 72 hours before/i,
     'Alterações precisam ser solicitadas com pelo menos 3 dias (72 horas) de antecedência da aula original.'],
   [/Propose a new date at least 72 hours away/i,

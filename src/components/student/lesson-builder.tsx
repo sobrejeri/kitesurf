@@ -123,10 +123,19 @@ export function LessonBuilder({
   const remainingHours = selectedHours - totalHours;
   const quote = quotes.find((row) => row.hours === selectedHours);
   const datesValid = meetings.every((meeting) => meeting.date >= lessonDate());
+  const meetingsOverlap = meetings.some((a, index) => {
+    const aStart = Date.parse(`${a.date}T${a.start}:00-03:00`);
+    const aEnd = aStart + a.hours * 3600000;
+    return meetings.some((b, j) => {
+      if (j <= index) return false;
+      const bStart = Date.parse(`${b.date}T${b.start}:00-03:00`);
+      return aStart < bStart + b.hours * 3600000 && bStart < aEnd;
+    });
+  });
   const hoursFullyDistributed = remainingHours === 0;
   const canAddMeeting = meetings.length < selectedHours &&
     (remainingHours > 0 || meetings.some((meeting) => meeting.hours > 1));
-  const valid = hoursFullyDistributed && Boolean(beachId) && datesValid && allowed.includes(level);
+  const valid = hoursFullyDistributed && Boolean(beachId) && datesValid && !meetingsOverlap && allowed.includes(level);
 
   function update(id: number, patch: Partial<Meeting>) {
     // The select options already cap each meeting, but validate state updates too.
@@ -400,6 +409,11 @@ export function LessonBuilder({
                 </p>
               </div>
               {!datesValid ? <p role="alert" className="mt-3 text-[12px] text-warning">Selecione hoje ou uma data futura para todos os encontros.</p> : null}
+              {meetingsOverlap ? (
+                <p role="alert" className="mt-3 text-[12px] text-warning">
+                  Você colocou dois encontros no mesmo horário. Ajuste a data ou o início de uma das aulas para continuar.
+                </p>
+              ) : null}
               {!hoursFullyDistributed ? (
                 <p role="status" className="mt-3 text-[12px] text-warning">
                   Defina as {remainingHours}h restantes antes de continuar.

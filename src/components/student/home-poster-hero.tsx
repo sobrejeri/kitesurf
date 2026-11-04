@@ -14,7 +14,8 @@ const HIGHLIGHTS: readonly { label: string; icon: IconName }[] = [
 
 export function HomePosterHero({ firstName }: { firstName?: string }) {
   return (
-    <section className="vento-home-poster relative -mx-4 overflow-hidden md:mx-0 md:mt-2 md:rounded-[26px]" aria-labelledby="vento-home-title">
+    <>
+    <section className="vento-home-poster relative -mx-4 overflow-hidden md:mx-0 md:mt-2 md:rounded-[26px] lg:hidden" aria-labelledby="vento-home-title">
       <img
         src="/images/kite-lesson.webp"
         alt=""
@@ -67,5 +68,19 @@ export function HomePosterHero({ firstName }: { firstName?: string }) {
         <path d="M0 55C190 91 350 37 550 59S935 30 1200 56V70H0Z" fill="#001a30" />
       </svg>
     </section>
+    <section aria-labelledby="vento-desktop-home-title" className="vento-desktop-home-hero relative hidden overflow-hidden rounded-[22px] lg:block">
+      <img src="/images/prea-coast.webp" alt="" aria-hidden="true"
+        width={1536} height={1024} loading="eager" fetchPriority="high"
+        className="absolute inset-0 h-full w-full object-cover object-center" />
+      <div className="absolute inset-0 bg-gradient-to-r from-[#00283b]/85 via-[#003f57]/45 to-transparent" aria-hidden="true" />
+      <div className="relative z-10 flex min-h-[205px] max-w-[55%] flex-col justify-center px-8 py-8">
+        <span className="mb-2 text-[13px] font-medium tracking-wide text-[#b6f5f6]">Preá e Jericoacoara</span>
+        <h1 id="vento-desktop-home-title" className="font-display text-[32px] font-extrabold leading-[1.12] tracking-tight text-white">
+          Seu próximo bordo começa aqui.
+        </h1>
+        <p className="mt-3 text-[14px] text-[#e7f6f9]">Escolha suas horas e encontre seu instrutor.</p>
+      </div>
+    </section>
+    </>
   );
 }

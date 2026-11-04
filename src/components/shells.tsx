@@ -156,12 +156,14 @@ export function StudentShell({
   children,
   name,
   initials,
+  photoUrl,
   signedIn,
   signOut,
 }: {
   children: React.ReactNode;
   name: string;
   initials: string;
+  photoUrl?: string | null;
   signedIn: boolean;
   signOut: () => Promise<void>;
 }) {
@@ -173,12 +175,12 @@ export function StudentShell({
 
   return (
     <div className="theme-beach theme-mar-profundo min-h-dvh bg-canvas text-ink">
-      <header className="hidden border-b border-line bg-chrome md:block">
-        <div className="mx-auto flex h-[76px] max-w-6xl items-center justify-between gap-6 px-8">
+      <header className="vento-desktop-student-header hidden border-b border-line bg-chrome md:block">
+        <div className="mx-auto flex h-[76px] max-w-6xl items-center justify-between gap-6 px-6 lg:px-8">
           <Link href="/aluno/inicio" aria-label="Vento — início">
             <StudentBrand />
           </Link>
-          <nav aria-label="Navegação do aluno" className="flex h-full items-stretch gap-8">
+          <nav aria-label="Navegação do aluno" className="flex h-full items-stretch gap-7">
             {STUDENT_TABS.slice(0, 3).map((item) => {
               const active = isActive(pathname, item);
               return (
@@ -199,9 +201,13 @@ export function StudentShell({
             </Link>
             {signedIn ? (
               <Link href="/aluno/conta" className="flex items-center gap-2.5">
-                <Avatar initials={initials} size={36} />
+                {photoUrl ? (
+                  <span className="grid h-10 w-10 shrink-0 overflow-hidden rounded-full border border-line bg-sand">
+                    <img src={photoUrl} alt="" className="h-full w-full object-cover" />
+                  </span>
+                ) : <Avatar initials={initials} size={40} />}
                 <span className="text-[12px] leading-tight">
-                  <strong className="block font-[550] text-ink">{name}</strong>
+                  <strong className="block font-semibold text-ink">{name}</strong>
                   <span className="text-[11px] text-muted">Seu espaço no kite</span>
                 </span>
               </Link>
