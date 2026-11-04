@@ -43,7 +43,14 @@ export default async function StudentHomePage() {
   const kiteLevel = viewer?.role === 'student' ? await getStudentKiteLevel(viewer.id) : null;
 
   return (
-    <>
+    <div className="vento-student-desktop-home">
+      <div className="mb-3 hidden items-center justify-between lg:flex">
+        <div>
+          <p className="text-[15px] font-bold text-ink">Olá, {firstName || 'bem-vindo'}! <span aria-hidden="true">☀️</span></p>
+          <p className="mt-1 text-[12px] text-muted">Preá e Jericoacoara</p>
+        </div>
+        <span className="rounded-full bg-sand px-4 py-2 text-[12px] text-label">Ceará, Brasil</span>
+      </div>
       <HomePosterHero firstName={firstName} />
 
       <LessonSearch defaultDate={lessonDate(1)} quotes={quotes} beaches={beaches}
@@ -68,6 +75,6 @@ export default async function StudentHomePage() {
           ))}
         </ol>
       </section>
-    </>
+    </div>
   );
 }
