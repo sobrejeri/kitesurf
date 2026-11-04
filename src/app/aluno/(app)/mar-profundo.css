@@ -567,6 +567,7 @@ body:has(.theme-mar-profundo) { background: #001a30; color: #f6fbff; }
   }
   .vento-student-desktop-home .vento-desktop-level-options {
     grid-column: 3; grid-row: 1;
+    grid-template-columns: minmax(0,1fr);
     align-self: stretch;
     display: grid;
     align-content: center;
@@ -584,6 +585,7 @@ body:has(.theme-mar-profundo) { background: #001a30; color: #f6fbff; }
   .vento-student-desktop-home .vento-desktop-level-select label {
     color: #8c9cb1;
     font-size: 12px;
+    white-space: nowrap;
   }
   .vento-student-desktop-home .vento-desktop-level-select select {
     width: 100%;
@@ -636,6 +638,7 @@ body:has(.theme-mar-profundo) { background: #001a30; color: #f6fbff; }
   }
   .vento-student-desktop-home .vento-desktop-search-submit {
     grid-column: 6; grid-row: 1;
+    width: calc(100% - 12px);
     min-height: 48px !important;
     align-self: center;
     white-space: nowrap;

@@ -36,9 +36,8 @@ export default async function InstructorRequestPage({ params }: { params: Promis
     <Note tone="warning">O serviço de ofertas ainda não está disponível no Supabase. Instale a migração 11.</Note>
   );
   if (!request) notFound();
-  const { data: price } = await db.from('price_versions')
-    .select('hourly_rate_cents').eq('id', request.price_version_id)
-    .maybeSingle<{ hourly_rate_cents: number }>();
+  const quoted = await db.rpc('my_instructor_request_quote', { p_request_id: request.id });
+  const quote = !quoted.error ? quoted.data?.[0] as { total_cents: number } | undefined : undefined;
   const { data: suggestion } = request.status === 'searching'
     ? await db.rpc('read_my_offer_suggestion', { p_request_id: request.id })
     : { data: null };
@@ -60,9 +59,9 @@ export default async function InstructorRequestPage({ params }: { params: Promis
             {accepted ? 'Aceita' : request.status==='searching' ? 'Buscando' : 'Encerrada'}
           </Badge>
         </div>
-        {price ? <p className="mt-2 text-[13px] text-muted">
-          Valor estimado da aula: {formatMoney(price.hourly_rate_cents * request.total_hours)}.
-          {VALIDATION_WITHOUT_CHECKOUT ? ' Validação sem cobrança.' : ' Transporte, quando escolhido, entra no resumo de pagamento.'}
+        {quote ? <p className="mt-2 text-[13px] text-muted">
+          Valor estimado da aula: {formatMoney(quote.total_cents)}.
+          {VALIDATION_WITHOUT_CHECKOUT ? ' Validação sem cobrança.' : ' Inclui transporte, quando escolhido.'}
         </p> : null}
         {accepted && request.booking_id ? (
           <ButtonLink href={'/aluno/reserva/' + request.booking_id} className="mt-5 w-full">

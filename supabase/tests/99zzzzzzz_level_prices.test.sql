@@ -14,7 +14,7 @@ DO $$
 DECLARE
   old public.bookings; initial_version bigint; version_id bigint; later_id bigint;
   beach uuid; bid uuid; pending uuid; offer uuid; teacher uuid; booked public.bookings;
-  plan jsonb; lvl public.lesson_level; expected integer; day_offset integer:=360;
+  plan jsonb; lvl public.lesson_level; expected integer; day_offset integer:=360; quoted record;
 BEGIN
   SELECT * INTO old FROM public.bookings ORDER BY created_at LIMIT 1;
   SELECT id INTO initial_version FROM public.price_versions ORDER BY id DESC LIMIT 1;
@@ -67,6 +67,17 @@ BEGIN
   PERFORM pg_temp.act_as('00000000-0000-0000-0000-00000000000a');
   PERFORM public.set_instructor_commission(teacher,2000,'Level fee integration');
   later_id:=public.publish_level_price_version(60000,70000,80000,1500,10000,'Later prices',version_id);
+  PERFORM pg_temp.reset();
+  PERFORM pg_temp.act_as('00000000-0000-0000-0000-000000000b36');
+  SELECT * INTO quoted FROM public.my_instructor_request_quote(pending);
+  ASSERT quoted.hourly_rate_cents=50000 AND quoted.total_cents=120000 AND quoted.transport_cents=20000,
+    'Searching page must quote the pinned level price and transport';
+  PERFORM pg_temp.reset();
+  PERFORM pg_temp.act_as('00000000-0000-0000-0000-0000000000b2');
+  BEGIN
+    PERFORM public.my_instructor_request_quote(pending);
+    RAISE EXCEPTION 'Unrelated student read request quote';
+  EXCEPTION WHEN no_data_found THEN NULL; END;
   PERFORM pg_temp.reset();
   PERFORM pg_temp.act_as(teacher::text);
   bid:=public.accept_instructor_offer(offer);

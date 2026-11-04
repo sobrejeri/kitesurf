@@ -107,5 +107,25 @@ REVOKE ALL ON FUNCTION public.apply_booking_level_price() FROM PUBLIC,anon,authe
 CREATE TRIGGER bookings_00_level_price BEFORE INSERT ON public.bookings
   FOR EACH ROW EXECUTE FUNCTION public.apply_booking_level_price();
 
+-- A searching request keeps its own version, even after another publication.
+CREATE FUNCTION public.my_instructor_request_quote(p_request_id uuid)
+RETURNS TABLE(hourly_rate_cents integer,total_cents integer,transport_cents integer)
+LANGUAGE plpgsql STABLE SECURITY DEFINER SET search_path='' AS $$
+DECLARE uid uuid:=public.require_role(ARRAY['student']::public.app_role[]);
+  r public.instructor_requests; v public.price_versions; rate integer; transport integer;
+BEGIN
+  SELECT * INTO r FROM public.instructor_requests WHERE id=p_request_id AND student_id=uid;
+  IF r.id IS NULL THEN RAISE EXCEPTION 'Request not found' USING errcode='P0002'; END IF;
+  SELECT * INTO v FROM public.price_versions WHERE id=r.price_version_id;
+  IF v.id IS NULL THEN RAISE EXCEPTION 'Price version unavailable' USING errcode='P0002'; END IF;
+  rate:=CASE r.level WHEN 'first_time' THEN v.hourly_rate_cents
+    WHEN 'returning' THEN coalesce(v.intermediate_hourly_cents,v.hourly_rate_cents)
+    WHEN 'improving' THEN coalesce(v.advanced_hourly_cents,v.hourly_rate_cents) END;
+  transport:=CASE WHEN r.with_transport THEN r.total_hours*v.transport_hourly_cents ELSE 0 END;
+  RETURN QUERY SELECT rate,r.total_hours*rate+transport,transport;
+END $$;
+REVOKE ALL ON FUNCTION public.my_instructor_request_quote(uuid) FROM PUBLIC,anon,authenticated;
+GRANT EXECUTE ON FUNCTION public.my_instructor_request_quote(uuid) TO authenticated;
+
 NOTIFY pgrst,'reload schema';
 COMMIT;
