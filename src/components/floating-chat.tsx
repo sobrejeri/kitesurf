@@ -2,9 +2,11 @@
 
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
-import { chatBookingId, chatBubbles, mergeChatMessages, type ChatArea, type ChatMessage, type ChatThread } from '@/lib/chat-dock';
+import { chatBookingId, chatBubbles, mergeChatMessages, chatWasRead, presenceLabel, chatThreadTag, type ChatRead, type ChatArea, type ChatMessage, type ChatThread } from '@/lib/chat-dock';
+import {CHAT_FILE_TYPES,MAX_CHAT_FILE} from '@/lib/chat-files';
 import { initials } from '@/lib/people';
 import { Icon } from './icon';
+import {ChatMessageExtras} from './chat-message-extras';
 import styles from './floating-chat.module.css';
 
 function Photo({thread}: {thread:ChatThread}) {
@@ -29,6 +31,17 @@ export function FloatingChat({area,viewerId}: {area:ChatArea;viewerId:string}) {
   const [sending,setSending] = useState(false);
   const [error,setError] = useState('');
   const [inboxError,setInboxError] = useState('');
+  const [featuresReady,setFeaturesReady] = useState(false);
+  const [showOnline,setShowOnline] = useState(true);
+  const [peerLastSeen,setPeerLastSeen] = useState<string|null>(null);
+  const [peerRead,setPeerRead] = useState<ChatRead|null>(null);
+  const [locating,setLocating] = useState(false);
+  const [locationDraft,setLocationDraft] = useState<{latitude:number;longitude:number;accuracy:number}|null>(null);
+  const [uploading,setUploading] = useState(false);
+  const photoInput=useRef<HTMLInputElement>(null);
+  const fileInput=useRef<HTMLInputElement>(null);
+  const lastRead=useRef('');
+  const visibilityBusy=useRef(false);
   const box = useRef<HTMLDivElement>(null);
   const input = useRef<HTMLTextAreaElement>(null);
   const launcher = useRef<HTMLButtonElement>(null);
@@ -44,13 +57,14 @@ export function FloatingChat({area,viewerId}: {area:ChatArea;viewerId:string}) {
 
   const refreshInbox = useCallback(async (signal?:AbortSignal) => {
     const response = await fetch(endpoint,{cache:'no-store',signal});
-    const clear = () => {setThreads([]);setMessages([]);setDrafts({});setDetail(null);setOpen(false);setSelectedId(null);selectedRef.current=null;};
+    const clear = () => {setThreads([]);setMessages([]);setDrafts({});setDetail(null);setOpen(false);setSelectedId(null);setLocationDraft(null);selectedRef.current=null;};
     if (response.status===401 || response.status===403 || response.redirected) {
       clear();throw new Error('Entre novamente para abrir as conversas.');
     }
     if (!response.ok) throw new Error('As conversas estão temporariamente indisponíveis.');
     const data = await response.json();
     if(data.viewerId!==viewerId){clear();throw new Error('Sua conta mudou. Atualize a página.');}
+    setFeaturesReady(data.featuresReady);if(!visibilityBusy.current)setShowOnline(data.showOnline);
     setThreads(data.threads);setInboxError('');
   },[endpoint,viewerId]);
 
@@ -75,6 +89,7 @@ export function FloatingChat({area,viewerId}: {area:ChatArea;viewerId:string}) {
     selectedRef.current=id;
     if (selectedId!==id) {
       setMessages([]);setDetail(null);setHasOlder(false);historyLoaded.current=false;follow.current=true;
+      setPeerLastSeen(null);setPeerRead(null);setLocationDraft(null);lastRead.current='';
     }
     setError('');setSelectedId(id);setOpen(true);
   },[selectedId]);
@@ -90,8 +105,9 @@ export function FloatingChat({area,viewerId}: {area:ChatArea;viewerId:string}) {
       const id=chatBookingId(url.pathname,area);
       if (id) {event.preventDefault();show(id);}
     };
-    document.addEventListener('click',click);
-    return ()=>document.removeEventListener('click',click);
+    // Capture before Next Link handles the click at the React root.
+    document.addEventListener('click',click,true);
+    return ()=>document.removeEventListener('click',click,true);
   },[area,show]);
 
   useEffect(()=>{
@@ -105,6 +121,7 @@ export function FloatingChat({area,viewerId}: {area:ChatArea;viewerId:string}) {
           if (!response.ok) throw new Error(data.error);
           if (!controller.signal.aborted && data.viewerId===viewerId) {
             setDetail(data.thread);setMessages(previous=>mergeChatMessages(previous,data.messages));
+            setFeaturesReady(data.featuresReady);setPeerLastSeen(data.peerLastSeen);setPeerRead(data.peerRead);
             if (!historyLoaded.current) setHasOlder(data.hasOlder);
           }
         }
@@ -127,16 +144,18 @@ export function FloatingChat({area,viewerId}: {area:ChatArea;viewerId:string}) {
 
   useEffect(()=>{
     const notifications=threads.find(t=>t.id===selectedId)?.notificationIds.slice(0,100) ?? [];
-    if (!open || !selectedId || !last || !notifications.length || marking.current
+    const readKey=`${selectedId}:${last?.id}:${featuresReady}`;
+    if (!open || !selectedId || !last || (!notifications.length && lastRead.current===readKey) || marking.current
       || !follow.current || document.visibilityState!=='visible' || !document.hasFocus()) return;
     marking.current=true;
     void fetch(endpoint,{method:'POST',headers:{'Content-Type':'application/json','x-vento-chat':'1'},
-      body:JSON.stringify({type:'read',bookingId:selectedId,ids:notifications,through:last.created_at})})
+      body:JSON.stringify({type:'read',bookingId:selectedId,ids:notifications,through:last.created_at,lastMessageId:last.id})})
       .then(async response=>{if(response.ok){const data=await response.json();const read=new Set<string>(data.ids);
+        lastRead.current=readKey;
         if(read.size)setThreads(previous=>previous.map(t=>t.id!==selectedId?t:{...t,
           notificationIds:t.notificationIds.filter(id=>!read.has(id)),unread:Math.max(0,t.unread-read.size)}));}})
       .catch(()=>{}).finally(()=>{marking.current=false;});
-  },[endpoint,last,open,selectedId,threads]);
+  },[endpoint,last,open,selectedId,threads,featuresReady]);
 
   async function send(event:React.SubmitEvent<HTMLFormElement>) {
     event.preventDefault();if (!selectedId || sending) return;
@@ -149,9 +168,13 @@ export function FloatingChat({area,viewerId}: {area:ChatArea;viewerId:string}) {
       const data=await response.json();if(!response.ok)throw new Error(data.error);
       setDrafts(previous=>({...previous,[id]:previous[id]===original?'':(previous[id] ?? '')}));
       follow.current=true;
-      const updated=await fetch(`${endpoint}?bookingId=${id}`,{cache:'no-store'});
-      if(updated.ok){const next=await updated.json();if(selectedRef.current===id && next.viewerId===viewerId)setMessages(previous=>mergeChatMessages(previous,next.messages));}
-      await refreshInbox();
+      // Delivery was confirmed above. A refresh failure must not report a
+      // failed send or encourage the user to send the same message twice.
+      try {
+        const updated=await fetch(`${endpoint}?bookingId=${id}`,{cache:'no-store'});
+        if(updated.ok){const next=await updated.json();if(selectedRef.current===id && next.viewerId===viewerId)setMessages(previous=>mergeChatMessages(previous,next.messages));}
+        await refreshInbox();
+      } catch { /* The active conversation retries automatically. */ }
     } catch(cause){if(selectedRef.current===id)setError(cause instanceof Error?cause.message:'Não foi possível enviar. Sua mensagem foi preservada.');}
     finally{setSending(false);input.current?.focus();}
   }
@@ -169,6 +192,44 @@ export function FloatingChat({area,viewerId}: {area:ChatArea;viewerId:string}) {
     finally{setLoadingOlder(false);}
   }
   function minimize(){setOpen(false);launcher.current?.focus();}
+  async function visibility(visible:boolean){
+    if(visibilityBusy.current)return;visibilityBusy.current=true;setShowOnline(visible);
+    try{const response=await fetch(endpoint,{method:'POST',headers:{'Content-Type':'application/json','x-vento-chat':'1'},body:JSON.stringify({type:'visibility',visible})});
+      if(!response.ok)throw new Error();
+    }catch{setShowOnline(!visible);setInboxError('Não foi possível alterar seu status.');}
+    finally{visibilityBusy.current=false;}
+  }
+  async function upload(file:File|undefined){
+    if(!file || !selectedId || sending || uploading)return;
+    if(!file.size || file.size>MAX_CHAT_FILE){setError('Escolha um arquivo de até 10 MB.');return;}
+    const id=selectedId;setUploading(true);setError('');
+    const form=new FormData();form.set('bookingId',id);form.set('file',file);
+    try{const response=await fetch(endpoint,{method:'POST',headers:{'x-vento-chat':'1'},body:form});
+      const data=await response.json();if(!response.ok)throw new Error(data.error);
+      follow.current=true;try{await refreshInbox();}catch{setInboxError('Mensagem enviada. A lista será atualizada automaticamente.');}
+    }catch(cause){if(selectedRef.current===id)setError(cause instanceof Error?cause.message:'Não foi possível enviar o arquivo.');}
+    finally{setUploading(false);}
+  }
+  function locate(){
+    if(!selectedId || locating)return;
+    if(!navigator.geolocation){setError('Localização indisponível neste navegador.');return;}
+    const id=selectedId;setLocating(true);setError('');
+    navigator.geolocation.getCurrentPosition(position=>{
+      if(selectedRef.current===id)setLocationDraft({latitude:position.coords.latitude,longitude:position.coords.longitude,accuracy:position.coords.accuracy});
+      setLocating(false);
+    },()=>{setLocating(false);setError('Não foi possível obter a localização. Verifique a permissão do aparelho.');},
+    {enableHighAccuracy:true,timeout:10000,maximumAge:0});
+  }
+  async function shareLocation(){
+    if(!selectedId || !locationDraft || sending)return;
+    const id=selectedId;setSending(true);setError('');
+    try{const response=await fetch(endpoint,{method:'POST',headers:{'Content-Type':'application/json','x-vento-chat':'1'},
+      body:JSON.stringify({type:'location',bookingId:id,latitude:locationDraft.latitude,longitude:locationDraft.longitude})});
+      const data=await response.json();if(!response.ok)throw new Error(data.error);
+      setLocationDraft(null);follow.current=true;try{await refreshInbox();}catch{setInboxError('Mensagem enviada. A lista será atualizada automaticamente.');}
+    }catch(cause){if(selectedRef.current===id)setError(cause instanceof Error?cause.message:'Não foi possível compartilhar a localização.');}
+    finally{setSending(false);}
+  }
   if (!mounted) return null;
   const unread=threads.reduce((sum,t)=>sum+t.unread,0);
   return createPortal(<aside className={styles.dock} aria-label="Chat flutuante Vento">
@@ -180,31 +241,48 @@ export function FloatingChat({area,viewerId}: {area:ChatArea;viewerId:string}) {
         {selectedId ? <button type="button" onClick={()=>{selectedRef.current=null;setSelectedId(null);setError('');}} aria-label="Todas as conversas"><Icon name="back" /></button> : <Icon name="chat" />}
         {thread ? <Photo thread={thread}/> : null}
         <div><strong>{selectedId?(thread?.name ?? 'Carregando conversa…'):'Minhas conversas'}</strong>
-          <small>{selectedId?`${area==='aluno'?'Instrutor':'Aluno'} · ${thread?.code ?? 'Reserva'}`:'Mensagens das suas aulas'}</small></div>
+          <small>{selectedId?thread?chatThreadTag(thread):'Reserva':'Mensagens das suas aulas'}</small></div>
         <button type="button" aria-label="Minimizar conversa" onClick={minimize}><Icon name="minus" /></button>
       </header>
       {!selectedId ? <div className={styles.list}>
+        <label className={styles.visibility}><input type="checkbox" checked={showOnline} disabled={!featuresReady} onChange={event=>visibility(event.target.checked)}/> Mostrar quando estou online</label>
+        {!featuresReady?<p>Os novos recursos de presença, arquivos e localização aguardam ativação.</p>:null}
         {inboxError ? <p role="status">{inboxError}</p> : null}
         {!threads.length && !inboxError ? <p>Suas conversas aparecem aqui depois da confirmação de uma aula.</p> : null}
         {threads.map(t=><button type="button" key={t.id} onClick={()=>show(t.id)} className={styles.thread}>
-          <Photo thread={t}/><span><strong>{t.name}</strong><small>{t.code}</small><span>{t.preview}</span></span>
+          <Photo thread={t}/><span><strong>{t.name}</strong><small>{chatThreadTag(t)}</small><span>{t.preview}</span></span>
           {t.unread?<b className={styles.count}>{t.unread>99?'99+':t.unread}</b>:null}
         </button>)}
       </div> : <>
+        {featuresReady?<p className={`${styles.presence} ${presenceLabel(peerLastSeen)==='Online'?styles.online:''}`}>{presenceLabel(peerLastSeen)}</p>:null}
         <div className={styles.log} ref={box} onScroll={()=>{const el=box.current;if(el)follow.current=el.scrollHeight-el.scrollTop-el.clientHeight<70;}}>
           {hasOlder ? <button type="button" className={styles.older} onClick={older} disabled={loadingOlder}>{loadingOlder?'Carregando…':'Mensagens anteriores'}</button>:null}
           {!messages.length ? <p className={styles.empty}>{detail?'Envie sua primeira mensagem.':'Carregando mensagens…'}</p>:null}
           <ol aria-label="Mensagens da reserva">{messages.map(message=><li key={message.id} className={message.sender_id===viewerId?styles.mine:styles.theirs}>
-            <span>{message.body}<time dateTime={message.created_at}>{new Intl.DateTimeFormat('pt-BR',{timeZone:'America/Fortaleza',hour:'2-digit',minute:'2-digit'}).format(new Date(message.created_at))}</time></span>
+            <span>{message.body}<ChatMessageExtras message={message}/><time dateTime={message.created_at}>{new Intl.DateTimeFormat('pt-BR',{timeZone:'America/Fortaleza',hour:'2-digit',minute:'2-digit'}).format(new Date(message.created_at))}
+              {message.sender_id===viewerId?` · ${chatWasRead(message,peerRead)?'Visualizada':'Enviada'}`:''}</time></span>
           </li>)}</ol>
         </div>
-        <p className={styles.context}>Conversa da reserva {thread?.code ?? 'selecionada'}. <a href={`/${area}/atendimento/${selectedId}`} target="_blank" rel="noopener noreferrer">Abrir histórico completo</a></p>
+        <p className={styles.context}>{thread?chatThreadTag(thread):'Conversa da reserva selecionada'}. <a href={`/${area}/atendimento/${selectedId}`} target="_blank" rel="noopener noreferrer">Abrir histórico completo</a></p>
         {error?<p className={styles.error} role="alert">{error}</p>:null}
+        <div className={styles.tools}>
+          <input ref={photoInput} type="file" accept="image/jpeg,image/png,image/webp,image/gif,image/heic,image/heif" hidden onChange={event=>{void upload(event.target.files?.[0]);event.target.value='';}}/>
+          <input ref={fileInput} type="file" accept={CHAT_FILE_TYPES.join(',')} hidden onChange={event=>{void upload(event.target.files?.[0]);event.target.value='';}}/>
+          <button type="button" disabled={!featuresReady || uploading || sending} onClick={()=>photoInput.current?.click()}>Foto</button>
+          <button type="button" disabled={!featuresReady || uploading || sending} onClick={()=>fileInput.current?.click()}>Arquivo</button>
+          <button type="button" disabled={!featuresReady || uploading || sending || locating} onClick={locate}>📍 {locating?'Localizando…':'Localização'}</button>
+          <small>{uploading?'Enviando arquivo…':'Até 10 MB'}</small>
+        </div>
+        {locationDraft?<div className={styles.locationConfirm}>
+          <p>Compartilhar sua localização atual com {thread?.name}? Precisão aproximada: {Math.round(locationDraft.accuracy)} m.</p>
+          <button type="button" disabled={sending} onClick={shareLocation}>Enviar localização</button>
+          <button type="button" onClick={()=>setLocationDraft(null)}>Cancelar</button>
+        </div>:null}
         <form className={styles.compose} onSubmit={send}>
           <textarea ref={input} rows={2} maxLength={2000} value={drafts[selectedId] ?? ''}
             aria-label="Sua mensagem no chat flutuante" placeholder="Escreva sua mensagem…"
             onChange={event=>setDrafts(previous=>({...previous,[selectedId]:event.target.value}))}/>
-          <button type="submit" aria-label="Enviar mensagem" disabled={sending || !detail || !(drafts[selectedId] ?? '').trim()}><Icon name={sending?'clock':'arrow'}/></button>
+          <button type="submit" aria-label="Enviar mensagem" disabled={sending || uploading || !detail || !(drafts[selectedId] ?? '').trim()}><Icon name={sending?'clock':'arrow'}/></button>
         </form>
       </>}
     </section>:null}

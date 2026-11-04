@@ -1,6 +1,6 @@
 # Chat flutuante — aluno e instrutor
 
-O chat usa as mensagens privadas e notificações existentes. Não exige nova migração; depende das migrações já existentes de mensagens, notificações e fotos (08, 16, 25 e 26).
+O chat usa as mensagens privadas e notificações existentes. O texto básico usa mensagens, notificações e fotos existentes (08, 16, 25 e 26). Presença, leitura, arquivos e localização exigem aplicar a migration 37, depois das anteriores. Antes disso, o texto permanece disponível e os novos controles ficam desativados.
 
 - O botão acompanha todas as páginas autenticadas da área do aluno ou do instrutor, por meio do layout compartilhado. Visitantes e administradores não recebem acesso às conversas privadas.
 - Mensagens não lidas fazem aparecer até três bolinhas de participantes com contador e ícone de mensagem. Reservas do mesmo participante compartilham a bolinha, mas cada conversa continua identificada pelo código da reserva.
@@ -15,3 +15,14 @@ O chat usa as mensagens privadas e notificações existentes. Não exige nova mi
 Validação: testes de agrupamento por participante, roteamento por área, ordenação e deduplicação; TypeScript, ESLint, build e suíte existente do projeto. O envio continua sujeito à proteção já existente de dois segundos entre mensagens.
 
 Sugestão para a inicial (ainda não aplicada): para quem possui reservas, substituir os três cards de apresentação por próxima aula, horas por reserva e evolução avaliada pelo instrutor. Para novos usuários, manter a apresentação. A busca de novas aulas permanece disponível nos dois casos.
+
+## Recursos da migration 37
+
+- Fotos privadas também na lista de conversas. Identificação: “Reserva VNT-… · dia DD/MM”, usando encontro em andamento, próximo agendado ou último encontro não cancelado.
+- Online significa atividade da aba nos últimos 90 segundos; não garante disponibilidade para responder. “Mostrar quando estou online” oculta também o último acesso dos outros participantes.
+- “Visualizada” exige cursor de leitura persistido pelo outro participante, com janela visível, focada e conversa no fim. Envio não significa visualização.
+- Fotos e arquivos até 10 MB: JPEG, PNG, WEBP, GIF, HEIC/HEIF, PDF, TXT, CSV, DOCX e XLSX. Arquivos privados, caminhos gerados no servidor, acesso apenas aos participantes. Verificação de assinatura não substitui antivírus. HEIC/HEIF ficam disponíveis para download, sem miniatura no navegador.
+- Localização atual somente após clicar no pino, conceder permissão ao navegador e confirmar envio. Sem rastreamento contínuo. O destinatário abre o mapa pelo link.
+- Anexos e localização também aparecem no histórico completo.
+
+Verificação desta atualização: 37 migrations e 32 arquivos de testes SQL passam no PostgreSQL embarcado (PGlite); os testes JS cobrem leitura, presença, data e formatos. O script PostgreSQL nativo não inicia neste ambiente sem PostgreSQL instalado; a CI executa a suíte nativa. Envio de texto e recebimento com bolha e foto foram observados no site. A automação do navegador ficou indisponível antes do teste de resposta. Os novos anexos, GPS e leitura ainda precisam de teste real após aplicar a migration 37; não estão aprovados como validação ponta a ponta.

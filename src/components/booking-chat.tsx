@@ -9,6 +9,8 @@ import { requireRole } from '@/lib/auth';
 import { getBookingForViewer } from '@/lib/data';
 import { createSupabaseServerClient } from '@/lib/supabase/server';
 import { LiveConversation } from '@/components/live-conversation';
+import { chatMessageExtras } from '@/lib/chat-message-extras';
+import { ChatMessageExtras } from '@/components/chat-message-extras';
 
 interface ChatRow { id: string; sender_id: string; body: string; created_at: string }
 type Area = 'aluno' | 'instrutor';
@@ -27,7 +29,7 @@ export async function BookingChat({ bookingId, area, before }: { bookingId: stri
   const { data: latest, error } = await query.order('created_at', { ascending: false })
     .order('id', { ascending: false }).limit(201).returns<ChatRow[]>();
   const hasOlder = (latest?.length ?? 0) > 200;
-  const data = (latest ?? []).slice(0, 200).reverse();
+  const data = await chatMessageExtras(db,viewer.id,booking.id,(latest ?? []).slice(0, 200).reverse());
   const first = data[0];
   const allowed = booking.status === 'confirmed' || booking.status === 'completed';
   const title = area === 'aluno' ? (booking.instructor?.full_name || 'Seu instrutor') : (booking.student?.full_name || 'Seu aluno');
@@ -56,6 +58,7 @@ export async function BookingChat({ bookingId, area, before }: { bookingId: stri
                         : 'max-w-[85%] break-words whitespace-pre-wrap rounded-2xl border border-line bg-sand px-4 py-3 text-[13px] text-ink'}>
                         <span className="mb-1 block text-[11px] opacity-70">{own ? 'Você' : title}</span>
                         {message.body}
+                        <ChatMessageExtras message={message}/>
                         <time dateTime={message.created_at} className="mt-2 block text-right text-[10px] opacity-70">
                           {new Intl.DateTimeFormat('pt-BR', { timeZone: 'America/Fortaleza', dateStyle: 'short', timeStyle: 'short' }).format(new Date(message.created_at))}
                         </time>
