@@ -6,6 +6,8 @@ const shell = read('src/components/shells.tsx');
 const layout = read('src/app/aluno/(app)/layout.tsx');
 const home = read('src/app/aluno/(app)/inicio/page.tsx');
 const hero = read('src/components/student/home-poster-hero.tsx');
+const lessons = read('src/app/aluno/(app)/aulas/page.tsx');
+const sunset = read('src/components/student/sunset.tsx');
 const css = read('src/app/aluno/(app)/mar-profundo.css');
 const search = read('src/components/student/lesson-search.tsx');
 const builder = read('src/components/student/lesson-builder.tsx');
@@ -22,6 +24,10 @@ assert.ok(hero.includes('vento-desktop-home-hero') && hero.includes('lg:hidden')
   'Desktop hero must be distinct from the existing mobile banner');
 assert.ok(statSync('public/images/prea-coast.webp').size > 100_000,
   'Desktop photograph must not be a pixelated thumbnail');
+assert.ok(lessons.includes('vento-student-desktop-lessons') && css.includes('.vento-student-desktop-lessons'),
+  'My Lessons should share the light desktop layout and retain the working lesson list');
+assert.ok(sunset.includes("ocean: { src: '/images/prea-coast.webp'"),
+  'Ocean page headers must not use the blurry 3.8 KB thumbnail');
 assert.ok(home.includes('vento-student-desktop-home') &&
   home.includes('vento-desktop-course-cards'),
   'Explore desktop should have its own page composition');
@@ -39,6 +45,9 @@ assert.ok(migration.includes('pg_advisory_xact_lock') &&
   migration.includes("r.status = 'searching'") &&
   migration.includes("b.status IN ('awaiting_payment', 'confirmed')"),
   'The backend must reject simultaneous requests and conflicts with existing bookings');
+assert.ok(booking.includes('const timeSlots = parsed.data.meetings.map') &&
+  booking.includes('Há encontros no mesmo dia e horário'),
+  'Server must also guard against forged overlapping meetings');
 assert.ok(booking.includes("create_instructor_request_with_preference"),
   'Student search should still call the secure instructor queue RPC');
 console.log('PASS: desktop layout and profile photo plus layered meeting-conflict protection');
