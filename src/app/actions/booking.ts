@@ -72,6 +72,20 @@ export async function createBooking(_prev: ActionState, form: FormData): Promise
   if (parsed.data.meetings.some((meeting) => meeting.date < lessonDate())) {
     return { error: 'Não é possível reservar uma aula em uma data anterior a hoje.' };
   }
+  // Server-side overlap validation: a modified browser cannot skip the UI guard.
+  const timeSlots = parsed.data.meetings.map((meeting) => {
+    const starts = Date.parse(`${meeting.date}T${meeting.start}:00${LESSON_UTC_OFFSET}`);
+    return { starts, ends: starts + meeting.hours * 3600000 };
+  });
+  if (timeSlots.some((slot, i) =>
+    timeSlots.some((other, j) => j > i &&
+      slot.starts < other.ends && other.starts < slot.ends))) {
+    return { error: 'Há encontros no mesmo dia e horário. Separe os horários antes de procurar instrutor.' };
+  }
+  if (timeSlots.some((slot) => !Number.isFinite(slot.starts) ||
+    slot.starts < Date.now() + 3600000)) {
+    return { error: 'Os encontros precisam começar daqui a pelo menos uma hora.' };
+  }
 
   const referral = (await cookies()).get('vento_ref')?.value ?? null;
 
