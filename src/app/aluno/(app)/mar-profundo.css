@@ -176,19 +176,19 @@ body:has(.theme-mar-profundo) { background: #001a30; color: #f6fbff; }
 .mar-profundo-page .btn-primary:disabled { opacity: .45; }
 
 /* Fixed ocean tab bar, with the active tab picked out in cyan. */
-.theme-mar-profundo nav[aria-label="Navegação do aluno"] {
+.theme-mar-profundo nav[aria-label="Navegação do aluno"].fixed {
   background: #001a30f5 !important;
   border-color: #009bb9;
   border-radius: 28px 28px 0 0;
   box-shadow: 0 -8px 36px #001122aa, 0 -1px 9px #00d9e738;
 }
-.theme-mar-profundo nav[aria-label="Navegação do aluno"] a[aria-current="page"] {
+.theme-mar-profundo nav[aria-label="Navegação do aluno"].fixed a[aria-current="page"] {
   color: #00e8ee;
 }
-.theme-mar-profundo nav[aria-label="Navegação do aluno"] a[aria-current="page"] span:last-child {
+.theme-mar-profundo nav[aria-label="Navegação do aluno"].fixed a[aria-current="page"] span:last-child {
   background: #00e8ee;
 }
-.theme-mar-profundo nav[aria-label="Navegação do aluno"] a:not([aria-current="page"]) {
+.theme-mar-profundo nav[aria-label="Navegação do aluno"].fixed a:not([aria-current="page"]) {
   color: #c2d2e0;
 }
 @media (min-width: 768px) {
@@ -429,12 +429,27 @@ body:has(.theme-mar-profundo) { background: #001a30; color: #f6fbff; }
   body:has(.theme-mar-profundo) > .sticky.top-0 { display: none !important; }
 
   .theme-mar-profundo .vento-desktop-student-header {
+    --color-logo-ink: #1c3252;
+    --color-label: #526987;
+    --color-sand: #edf2fc;
+    --color-ink: #1c3252;
+    --color-brand: #365bcf;
+    position: sticky;
+    top: 0;
+    z-index: 40;
     background: #fff;
     border-bottom: 1px solid #e4e8f2;
     box-shadow: 0 1px 5px #0c244511;
   }
   .theme-mar-profundo .vento-desktop-student-header .text-ink { color: #1c3252; }
   .theme-mar-profundo .vento-desktop-student-header .text-muted { color: #8492a7; }
+  .theme-mar-profundo .vento-desktop-student-header nav {
+    background: transparent;
+    border-radius: 0;
+    box-shadow: none;
+    gap: 28px;
+  }
+  .theme-mar-profundo .vento-desktop-student-header nav a { white-space: nowrap; }
   .theme-mar-profundo .vento-desktop-student-header nav a { color: #65738e; }
   .theme-mar-profundo .vento-desktop-student-header nav a[aria-current="page"] {
     color: #3659ca;
@@ -486,8 +501,8 @@ body:has(.theme-mar-profundo) { background: #001a30; color: #f6fbff; }
     background: #075f75;
   }
   .vento-desktop-home-hero img {
-    object-position: 50% 58%;
-    filter: saturate(1.13) contrast(1.04);
+    object-position: 50% 67%;
+    filter: none;
   }
 
   .vento-student-desktop-home .vento-desktop-search {

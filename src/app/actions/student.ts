@@ -97,7 +97,7 @@ export async function uploadStudentAvatar(_previous: ActionState, form: FormData
       return { error: 'A foto foi enviada, mas não foi possível atualizar seu perfil.' };
     }
 
-    revalidatePath('/aluno/conta');
+    revalidatePath('/aluno', 'layout');
     return { ok: 'Foto do perfil atualizada.' };
   } catch (error) {
     console.error('[student-avatar] Unexpected error', error);

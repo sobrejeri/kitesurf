@@ -69,8 +69,10 @@ export function HomePosterHero({ firstName }: { firstName?: string }) {
       </svg>
     </section>
     <section aria-labelledby="vento-desktop-home-title" className="vento-desktop-home-hero relative hidden overflow-hidden rounded-[22px] lg:block">
-      <img src="/images/prea-coast.webp" alt="" aria-hidden="true"
-        width={1536} height={1024} loading="eager" fetchPriority="high"
+      <img src="/images/prea-real-1600.webp" alt="" aria-hidden="true"
+        srcSet="/images/prea-real-1600.webp 1600w, /images/prea-real-3200.webp 3200w"
+        sizes="(min-width: 1152px) 1088px, 100vw"
+        width={3200} height={1881} loading="eager" fetchPriority="high"
         className="absolute inset-0 h-full w-full object-cover object-center" />
       <div className="absolute inset-0 bg-gradient-to-r from-[#00283b]/85 via-[#003f57]/45 to-transparent" aria-hidden="true" />
       <div className="relative z-10 flex min-h-[205px] max-w-[55%] flex-col justify-center px-8 py-8">
@@ -80,6 +82,11 @@ export function HomePosterHero({ firstName }: { firstName?: string }) {
         </h1>
         <p className="mt-3 text-[14px] text-[#e7f6f9]">Escolha suas horas e encontre seu instrutor.</p>
       </div>
+      <a href="https://commons.wikimedia.org/wiki/File:Praia_do_prea_-_cruz_-_ceara.jpg"
+        target="_blank" rel="noopener noreferrer"
+        className="absolute bottom-2 right-3 z-10 rounded bg-black/55 px-2 py-1 text-[10px] text-white hover:bg-black/75">
+        Foto: Fabiobarros · CC BY-SA 4.0
+      </a>
     </section>
     </>
   );

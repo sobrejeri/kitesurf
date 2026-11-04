@@ -11,6 +11,9 @@ import { getStudentKiteLevel } from '@/lib/student-kite-level';
 import { isAllowedLessonLevel } from '@/lib/kite-steps';
 import { LESSON_UTC_OFFSET } from '@/lib/format';
 import { createSupabaseServerClient } from '@/lib/supabase/server';
+import { getStudentOccupiedSlots } from '@/lib/student-occupied-slots';
+import { hasScheduleConflict } from '@/lib/student-schedule';
+import { VALIDATION_WITHOUT_CHECKOUT } from '@/lib/booking-mode';
 
 import { friendlyError, type ActionState } from './errors';
 
@@ -86,6 +89,19 @@ export async function createBooking(_prev: ActionState, form: FormData): Promise
     slot.starts < Date.now() + 3600000)) {
     return { error: 'Os encontros precisam começar daqui a pelo menos uma hora.' };
   }
+  // Repeat the existing-schedule check at submission time, including pending searches.
+  // Migration 32 retains the atomic per-student guard for simultaneous requests.
+  try {
+    const occupied = await getStudentOccupiedSlots(viewer.id);
+    if (hasScheduleConflict(parsed.data.meetings.map((meeting) => ({
+      startsAt: `${meeting.date}T${meeting.start}:00${LESSON_UTC_OFFSET}`,
+      minutes: meeting.hours * 60,
+    })), occupied)) {
+      return { error: 'Você já tem uma aula ou uma busca de instrutor nesse horário. Escolha outro dia ou horário sem sobreposição.' };
+    }
+  } catch {
+    return { error: 'Não foi possível conferir sua agenda. Tente novamente antes de buscar instrutor.' };
+  }
 
   const referral = (await cookies()).get('vento_ref')?.value ?? null;
 
@@ -104,13 +120,12 @@ export async function createBooking(_prev: ActionState, form: FormData): Promise
     p_preferred_instructor_id: parsed.data.preferredInstructorId,
   });
   if (error && (error.code === 'PGRST202' || error.code === '42883')) {
-    // Transitional deployment: older Supabase databases do not have the
-    // offer engine yet. Preserve existing bookings until SQL migration 13 is
-    // installed; never silently discard an explicit instructor preference.
+    // Older deployments may have the queue without the preference wrapper.
+    // Keep the instructor offer/accept flow; never create a direct booking.
     if (parsed.data.preferredInstructorId) {
       return { error: 'A recontratação com o mesmo instrutor depende da atualização do Supabase. Avise a administração.' };
     }
-    const legacy = await supabase.rpc('create_booking', {
+    const legacy = await supabase.rpc('create_instructor_request', {
       p_beach_id: parsed.data.beachId,
       p_level: parsed.data.level,
       p_language: parsed.data.language,
@@ -126,7 +141,7 @@ export async function createBooking(_prev: ActionState, form: FormData): Promise
       return { error: 'Não foi possível abrir a reserva. Avise a administração.' };
     }
     revalidatePath('/aluno/aulas');
-    redirect(`/aluno/reserva/${legacy.data}`);
+    redirect(`/aluno/solicitacao/${legacy.data}`);
   }
   if (error) {
     console.error('[booking.request] RPC create_instructor_request_with_preference failed', {
@@ -148,9 +163,24 @@ export async function createBooking(_prev: ActionState, form: FormData): Promise
 
 const BookingId = z.uuid();
 
+/** No gateway or payment method: use the existing owner-checked test confirmation. */
+export async function confirmValidationLesson(_prev: ActionState, form: FormData): Promise<ActionState> {
+  await requireRole(['student']);
+  if (!VALIDATION_WITHOUT_CHECKOUT) return { error: 'A confirmação de validação está encerrada.' };
+  const id = BookingId.safeParse(form.get('bookingId'));
+  if (!id.success) return { error: 'Reserva inválida.' };
+  const db = await createSupabaseServerClient();
+  const { error } = await db.rpc('confirm_test_payment', { p_booking_id: id.data });
+  if (error) return { error: friendlyError(error) };
+  revalidatePath('/aluno', 'layout');
+  revalidatePath('/instrutor', 'layout');
+  return { ok: 'Aula confirmada para validação. Nenhuma cobrança realizada.' };
+}
+
 /** Simulated payment until a gateway is integrated. Moves no money. */
 export async function confirmTestPayment(_prev: ActionState, form: FormData): Promise<ActionState> {
   await requireRole(['student']);
+  if (VALIDATION_WITHOUT_CHECKOUT) return { error: 'O checkout está desativado durante a validação das aulas.' };
   const id = BookingId.safeParse(form.get('bookingId'));
   if (!id.success) return { error: 'Reserva inválida.' };
 

@@ -9,6 +9,7 @@ import { lessonDate } from '@/lib/dates';
 import { getStudentKiteLevel } from '@/lib/student-kite-level';
 import { allowedLessonLevels } from '@/lib/kite-steps';
 import type { LessonLevel } from '@/lib/data-labels';
+import { getStudentOccupiedSlots } from '@/lib/student-occupied-slots';
 
 export const metadata: Metadata = { title: 'Monte sua aula' };
 
@@ -32,15 +33,15 @@ function defaultsFrom(params: Params, beaches: readonly Beach[], profileLevel: L
 
 export default async function BuildLessonPage({ searchParams }: { searchParams: Promise<Params> }) {
   const viewer = await requireRole(['student'], '/aluno/reservar');
-  const [params, quotes, beaches, kiteLevel] = await Promise.all([
-    searchParams, getQuoteTable(), listActiveBeaches(), getStudentKiteLevel(viewer.id),
+  const [params, quotes, beaches, kiteLevel, occupiedSlots] = await Promise.all([
+    searchParams, getQuoteTable(), listActiveBeaches(), getStudentKiteLevel(viewer.id), getStudentOccupiedSlots(viewer.id),
   ]);
   return (
     <div className="mar-profundo-page">
       <StudentHero eyebrow="Seu próximo bordo" title="Monte sua aula" highlight="aula" lead="Escolha suas horas e os dias para ir ao mar." compact image="ocean" />
       <div className="mt-4 md:mt-7" />
       <LessonBuilder quotes={quotes} beaches={beaches} defaults={defaultsFrom(params, beaches, kiteLevel.effective)}
-        studentLevel={kiteLevel.effective} />
+        studentLevel={kiteLevel.effective} occupiedSlots={occupiedSlots} />
     </div>
   );
 }

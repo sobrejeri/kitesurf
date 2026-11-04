@@ -2,7 +2,8 @@ import type { Metadata } from 'next';
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
 
-import { confirmTestPayment } from '@/app/actions/booking';
+import { confirmTestPayment, confirmValidationLesson } from '@/app/actions/booking';
+import { VALIDATION_WITHOUT_CHECKOUT } from '@/lib/booking-mode';
 import { rateInstructor } from '@/app/actions/ratings';
 import { ActionForm } from '@/components/action-form';
 import { Icon } from '@/components/icon';
@@ -65,9 +66,9 @@ export default async function BookingPage({ params }: { params: Promise<{ id: st
         lead:'Seus encontros, valores e código de reserva foram preservados. Você receberá uma notificação quando outro profissional aceitar.'}
     : booking.status === 'awaiting_payment'
     ? {
-      eyebrow: 'Aguardando pagamento',
-      title: 'Falta só confirmar o pagamento.',
-      lead: 'Confira os dados da reserva e conclua a etapa de pagamento para garantir a aula.',
+      eyebrow: VALIDATION_WITHOUT_CHECKOUT ? 'Validação da aula' : 'Aguardando pagamento',
+      title: VALIDATION_WITHOUT_CHECKOUT ? 'Confirme sua aula, sem cobrança.' : 'Falta só confirmar o pagamento.',
+      lead: VALIDATION_WITHOUT_CHECKOUT ? 'O instrutor aceitou. Confirme para testar a aula, o chat e sua evolução.' : 'Confira os dados da reserva e conclua a etapa de pagamento para garantir a aula.',
     }
     : booking.status === 'cancelled'
       ? {
@@ -122,7 +123,7 @@ export default async function BookingPage({ params }: { params: Promise<{ id: st
                 >
                   <Icon name={booking.status === 'confirmed' || booking.status === 'completed' ? 'check' : booking.status === 'cancelled' ? 'back' : 'clock'}
                     className="!h-3.5 !w-3.5" />
-                  {BOOKING_STATUS_LABELS[booking.status]}
+                  {VALIDATION_WITHOUT_CHECKOUT && awaiting ? 'Aguardando sua confirmação' : BOOKING_STATUS_LABELS[booking.status]}
                 </span>
                 {booking.is_test ? (
                   <span className="inline-flex min-h-8 items-center rounded-full border border-[#b97743] bg-[#382e29] px-3 py-1 text-[12px] font-semibold text-[#ffd1a9]">
@@ -295,14 +296,14 @@ export default async function BookingPage({ params }: { params: Promise<{ id: st
           ) : null}
           <Card>
             <div className="flex items-center justify-between">
-              <span className="text-[13px] text-label">{booking.is_test ? 'Simulação' : 'Pagamento'}</span>
-              <Badge tone={booking.is_test || awaiting || booking.status === 'cancelled' ? 'warning' : 'success'}>{booking.is_test ? 'Sem cobrança' : awaiting ? 'Pendente' : booking.status === 'cancelled' ? 'Reserva cancelada' : 'Confirmado'}</Badge>
+              <span className="text-[13px] text-label">{VALIDATION_WITHOUT_CHECKOUT ? 'Validação da plataforma' : booking.is_test ? 'Simulação' : 'Pagamento'}</span>
+              <Badge tone={booking.is_test || awaiting || booking.status === 'cancelled' ? 'warning' : 'success'}>{VALIDATION_WITHOUT_CHECKOUT || booking.is_test ? 'Sem cobrança' : awaiting ? 'Pendente' : booking.status === 'cancelled' ? 'Reserva cancelada' : 'Confirmado'}</Badge>
             </div>
             <div className="mt-4 flex items-center justify-between">
               <span className="text-[13px] text-label">Total da reserva</span>
               <strong className="tabular text-[24px] font-semibold tracking-[-0.7px] text-brand">{formatMoney(booking.total_cents)}</strong>
             </div>
-            {booking.is_test ? <p className="mt-2 text-[12px] font-semibold text-brand">Demonstração sem cobrança, sem comissão e sem repasse.</p> : null}
+            {VALIDATION_WITHOUT_CHECKOUT ? <p className="mt-2 text-[12px] font-semibold text-brand">Valores de referência. Nesta fase não há checkout nem cobrança.</p> : booking.is_test ? <p className="mt-2 text-[12px] font-semibold text-brand">Demonstração sem cobrança, sem comissão e sem repasse.</p> : null}
             <p className="tabular mt-1 text-right text-[11px] text-muted">
               Aula: {booking.total_hours}h × {formatMoney(booking.hourly_rate_cents)}/hora
               {booking.with_transport ? (
@@ -313,7 +314,11 @@ export default async function BookingPage({ params }: { params: Promise<{ id: st
                 </>
               ) : null}
             </p>
-            {awaiting ? (
+            {awaiting && VALIDATION_WITHOUT_CHECKOUT ? (
+              <ActionForm action={confirmValidationLesson} submitLabel="Confirmar aula sem cobrança" className="mt-4 border-t border-line pt-4" wideSubmit>
+                <input type="hidden" name="bookingId" value={booking.id} />
+              </ActionForm>
+            ) : awaiting ? (
               <div className="mt-4 border-t border-line pt-4">
                 <ActionForm action={confirmTestPayment} submitLabel="Confirmar pagamento de teste" className="grid gap-3" wideSubmit>
                   <input type="hidden" name="bookingId" value={booking.id} />

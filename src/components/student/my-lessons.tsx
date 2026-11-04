@@ -10,6 +10,8 @@ import { IconBubble, KiteIllustration } from './sunset';
 
 export interface LessonCard {
   bookingId: string;
+  meetingId: string;
+  evolutionHref: string | null;
   title: string;
   statusLabel: string;
   statusTone: 'success' | 'warning' | 'quiet';
@@ -78,8 +80,8 @@ export function MyLessons({ lessons }: { lessons: readonly LessonCard[] }) {
           ) : (
             visible.map((lesson) => (
               <Link
-                key={`${lesson.bookingId}-${lesson.dateShort}-${lesson.time}`}
-                href={`/aluno/reserva/${lesson.bookingId}`}
+                key={lesson.meetingId}
+                href={lesson.evolutionHref ?? `/aluno/reserva/${lesson.bookingId}`}
                 className="press block rounded-[22px] border border-line bg-surface p-4"
               >
                 <div className="flex items-start gap-4">
@@ -101,6 +103,12 @@ export function MyLessons({ lessons }: { lessons: readonly LessonCard[] }) {
                     <span className="text-[12px] text-muted">Seu instrutor nessa jornada</span>
                   </span>
                 </div>
+                {lesson.evolutionHref ? (
+                  <span className="mt-3 flex items-center gap-2 text-[13px] font-semibold text-brand">
+                    <Icon name="chart" className="!h-4 !w-4" />
+                    Abrir evolução desta aula
+                  </span>
+                ) : null}
               </Link>
             ))
           )}

@@ -7,6 +7,8 @@ import { requireRole } from '@/lib/auth';
 import { BOOKING_STATUS_LABELS, MEETING_STATUS_LABELS, listBookingsForStudent } from '@/lib/data';
 import { formatDateShort, formatDay, formatMinutes, formatMonthTag, formatTime } from '@/lib/format';
 import { initials } from '@/lib/people';
+import { lessonHasEvolution, lessonEvolutionHref } from '@/lib/student-lesson-links';
+import { VALIDATION_WITHOUT_CHECKOUT } from '@/lib/booking-mode';
 
 export const metadata: Metadata = { title: 'Minhas aulas' };
 
@@ -23,8 +25,10 @@ export default async function MyLessonsPage() {
         const awaiting = booking.status === 'awaiting_payment';
         return {
           bookingId: booking.id,
+          meetingId: meeting.id,
+          evolutionHref: lessonHasEvolution(meeting.status) ? lessonEvolutionHref(booking.id, meeting.id) : null,
           title: 'Aula particular de kitesurf',
-          statusLabel: awaiting ? BOOKING_STATUS_LABELS.awaiting_payment : MEETING_STATUS_LABELS[meeting.status],
+          statusLabel: awaiting ? (VALIDATION_WITHOUT_CHECKOUT ? 'Aguardando sua confirmação' : BOOKING_STATUS_LABELS.awaiting_payment) : MEETING_STATUS_LABELS[meeting.status],
           statusTone: awaiting ? 'warning' : meeting.status === 'done' ? 'quiet' : 'success',
           day: formatDay(meeting.starts_at),
           month: formatMonthTag(meeting.starts_at),

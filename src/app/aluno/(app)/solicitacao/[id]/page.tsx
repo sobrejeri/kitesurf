@@ -9,6 +9,7 @@ import { Badge, ButtonLink, Card, Note, PageHeader } from '@/components/ui';
 import { requireRole } from '@/lib/auth';
 import { formatMoney } from '@/lib/format';
 import { createSupabaseServerClient } from '@/lib/supabase/server';
+import { VALIDATION_WITHOUT_CHECKOUT } from '@/lib/booking-mode';
 
 export const metadata: Metadata = { title: 'Buscar instrutor' };
 
@@ -50,7 +51,7 @@ export default async function InstructorRequestPage({ params }: { params: Promis
   return (
     <>
       <PageHeader eyebrow="Sua solicitação" title={accepted ? 'Instrutor encontrado!' : 'Procurando seu instrutor'}
-        lead={accepted ? 'Sua aula foi aceita. Agora é só concluir o pagamento de teste.' :
+        lead={accepted ? (VALIDATION_WITHOUT_CHECKOUT ? 'Sua aula foi aceita. Confira a reserva e confirme sem cobrança.' : 'Sua aula foi aceita. Agora é só concluir o pagamento de teste.') :
           'Enviamos a proposta aos profissionais compatíveis, seguindo a fila de atendimento.'}/>
       <Card className="max-w-2xl">
         <div className="flex items-center justify-between gap-3">
@@ -60,11 +61,12 @@ export default async function InstructorRequestPage({ params }: { params: Promis
           </Badge>
         </div>
         {price ? <p className="mt-2 text-[13px] text-muted">
-          Aula: {formatMoney(price.hourly_rate_cents * request.total_hours)}. Transporte, quando escolhido, entra no resumo de pagamento.
+          Valor estimado da aula: {formatMoney(price.hourly_rate_cents * request.total_hours)}.
+          {VALIDATION_WITHOUT_CHECKOUT ? ' Validação sem cobrança.' : ' Transporte, quando escolhido, entra no resumo de pagamento.'}
         </p> : null}
         {accepted && request.booking_id ? (
           <ButtonLink href={'/aluno/reserva/' + request.booking_id} className="mt-5 w-full">
-            Continuar para pagamento
+            {VALIDATION_WITHOUT_CHECKOUT ? 'Ver e confirmar minha aula' : 'Continuar para pagamento'}
           </ButtonLink>
         ) : request.status === 'searching' ? (
           <>

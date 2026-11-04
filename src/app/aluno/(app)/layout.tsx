@@ -25,8 +25,9 @@ export default async function StudentLayout({ children }: { children: React.Reac
       console.warn('[student.desktop-avatar] Could not load photo', error);
     }
   }
+  const name = viewer ? viewer.fullName?.trim() || 'Aluno' : 'Visitante';
   return (
-    <StudentShell name={viewer?.fullName || 'Visitante'} initials={initials(viewer?.fullName)} photoUrl={photoUrl} signedIn={Boolean(viewer)} signOut={signOut}>
+    <StudentShell name={name} initials={initials(name)} photoUrl={photoUrl} signedIn={Boolean(viewer)} signOut={signOut}>
       {children}
     </StudentShell>
   );

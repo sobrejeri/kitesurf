@@ -6,6 +6,7 @@ import { z } from 'zod';
 import { requireRole } from '@/lib/auth';
 import { createSupabaseServerClient } from '@/lib/supabase/server';
 import { friendlyError, type ActionState } from './errors';
+import { VALIDATION_WITHOUT_CHECKOUT } from '@/lib/booking-mode';
 
 export async function respondToInstructorOffer(_previous: ActionState, form: FormData): Promise<ActionState> {
   const viewer = await requireRole(['instructor']);
@@ -26,7 +27,9 @@ export async function respondToInstructorOffer(_previous: ActionState, form: For
   revalidatePath('/instrutor/agenda');
   if (response.data === 'decline') return { ok: 'Oferta recusada. Sua posição na fila foi preservada.' };
   return typeof data === 'string' && z.uuid().safeParse(data).success
-    ? { ok: 'Oferta aceita. Aguardando pagamento de teste pelo aluno.' }
+    ? { ok: VALIDATION_WITHOUT_CHECKOUT
+      ? 'Oferta aceita. O aluno já pode confirmar a aula de validação, sem cobrança.'
+      : 'Oferta aceita. Aguardando pagamento de teste pelo aluno.' }
     : { error: 'Oferta indisponível ou expirada. Atualize as solicitações.' };
 }
 

@@ -18,7 +18,8 @@ assert.ok(shell.includes('vento-desktop-student-header'), 'Desktop student shoul
 assert.ok(layout.includes('vento-student-avatars') &&
   layout.includes('.createSignedUrl(profile.avatar_path, 3600)'),
   'Signed-in student avatar should come from the private Storage bucket');
-assert.ok(shell.includes('photoUrl ?') && shell.includes('object-cover'),
+const avatar = read('src/components/student/profile-avatar.tsx');
+assert.ok(shell.includes('StudentProfileAvatar') && avatar.includes('object-cover'),
   'Desktop profile circle should render the avatar, with initials fallback');
 assert.ok(hero.includes('vento-desktop-home-hero') && hero.includes('lg:hidden'),
   'Desktop hero must be distinct from the existing mobile banner');

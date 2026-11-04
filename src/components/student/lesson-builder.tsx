@@ -8,6 +8,8 @@ import { LEVEL_LABELS, type Beach, type LessonLevel, type QuoteRow } from '@/lib
 import { lessonDate } from '@/lib/dates';
 import { allowedLessonLevels, KITE_CURRICULA, KITE_LEVEL_BADGES } from '@/lib/kite-steps';
 import { formatMoney } from '@/lib/format';
+import { hasScheduleConflict, type StudentTimeSlot } from '@/lib/student-schedule';
+import { VALIDATION_WITHOUT_CHECKOUT } from '@/lib/booking-mode';
 
 import { Icon, type IconName } from '../icon';
 import { Button, Card, Field, Note, inputClass } from '../ui';
@@ -96,11 +98,13 @@ export function LessonBuilder({
   beaches,
   defaults,
   studentLevel,
+  occupiedSlots,
 }: {
   quotes: readonly QuoteRow[];
   beaches: readonly Beach[];
   defaults: BuilderDefaults;
   studentLevel: LessonLevel;
+  occupiedSlots: readonly StudentTimeSlot[];
 }) {
   const [state, formAction, pending] = useActionState(createBooking, {});
   const [step, setStep] = useState<1 | 2>(1);
@@ -133,9 +137,13 @@ export function LessonBuilder({
     });
   });
   const hoursFullyDistributed = remainingHours === 0;
+  const proposedSlots = meetings.map((meeting) => ({
+    startsAt: `${meeting.date}T${meeting.start}:00-03:00`, minutes: meeting.hours * 60,
+  }));
+  const existingConflict = proposedSlots.some((slot) => hasScheduleConflict([slot], occupiedSlots));
   const canAddMeeting = meetings.length < selectedHours &&
     (remainingHours > 0 || meetings.some((meeting) => meeting.hours > 1));
-  const valid = hoursFullyDistributed && Boolean(beachId) && datesValid && !meetingsOverlap && allowed.includes(level);
+  const valid = hoursFullyDistributed && Boolean(beachId) && datesValid && !meetingsOverlap && !existingConflict && allowed.includes(level);
 
   function update(id: number, patch: Partial<Meeting>) {
     // The select options already cap each meeting, but validate state updates too.
@@ -414,6 +422,11 @@ export function LessonBuilder({
                   Você colocou dois encontros no mesmo horário. Ajuste a data ou o início de uma das aulas para continuar.
                 </p>
               ) : null}
+              {existingConflict ? (
+                <p role="alert" className="mt-3 text-[12px] text-warning">
+                  Você já tem uma aula ou uma busca de instrutor nesse horário. Escolha outro dia ou horário sem sobreposição.
+                </p>
+              ) : null}
               {!hoursFullyDistributed ? (
                 <p role="status" className="mt-3 text-[12px] text-warning">
                   Defina as {remainingHours}h restantes antes de continuar.
@@ -496,7 +509,9 @@ export function LessonBuilder({
 
             <Note title="Como funciona a busca" className="mt-5">
               O Vento procura o primeiro instrutor disponível e compatível com sua aula.
-              O valor final é calculado pelo sistema e a reserva é confirmada após o pagamento.
+              {VALIDATION_WITHOUT_CHECKOUT
+                ? ' Nesta fase de validação, você confirma a aula após o aceite do instrutor, sem checkout e sem cobrança.'
+                : ' O valor final é calculado pelo sistema e a reserva é confirmada após o pagamento.'}
             </Note>
             {state.error ? <Note tone="warning" className="mt-3">{state.error}</Note> : null}
           </Card>

@@ -19,6 +19,7 @@ import { getBookingLevelAssessments, type BookingLevelAssessment } from '@/lib/b
 import { getMeetingKiteSkills } from '@/lib/meeting-skills';
 import { formatDateLong, formatMinutes, formatTime } from '@/lib/format';
 import { KITE_CURRICULA, KITE_LEVEL_BADGES, kiteStageStatus } from '@/lib/kite-steps';
+import { VALIDATION_WITHOUT_CHECKOUT } from '@/lib/booking-mode';
 
 export const metadata: Metadata = { title: 'Minha evolução' };
 
@@ -34,7 +35,7 @@ function ProgressStatus({ label }: { label: string }) {
           : 'bg-[#27374c] text-[#cbd8ed]';
   return (
     <span className={'shrink-0 rounded-full px-2.5 py-1 text-[11px] font-bold ' + colors}>
-      {label}
+      {VALIDATION_WITHOUT_CHECKOUT && label === 'Aguardando pagamento' ? 'Aguardando confirmação' : label}
     </span>
   );
 }
@@ -119,7 +120,7 @@ function ReservationMetric({ label, value }: { label: string; value: string }) {
 export default async function ProgressPage({
   searchParams,
 }: {
-  searchParams: Promise<{ reserva?: string }>;
+  searchParams: Promise<{ reserva?: string; encontro?: string }>;
 }) {
   const viewer = await requireRole(['student'], '/aluno/evolucao');
   const [bookings, params] = await Promise.all([
@@ -230,7 +231,9 @@ export default async function ProgressPage({
 
           {selected.status === 'awaiting_payment' ? (
             <p className="mt-4 rounded-[14px] border border-line p-3 text-[13px] text-label">
-              Esta reserva está aguardando pagamento. A evolução começará após a confirmação.
+              {VALIDATION_WITHOUT_CHECKOUT
+                ? 'Confirme sua aula na reserva para começar a validação sem cobrança.'
+                : 'Esta reserva está aguardando pagamento. A evolução começará após a confirmação.'}
             </p>
           ) : null}
           {selected.status === 'cancelled' ? (
@@ -300,8 +303,9 @@ export default async function ProgressPage({
                     : canStart ? 'Disponível'
                     : meeting.status === 'scheduled' ? 'Agendado' : 'Pendente';
                   return (
-                    <li key={meeting.id}
-                      className="rounded-[14px] border border-line bg-surface p-3">
+                    <li key={meeting.id} id={`encontro-${meeting.id}`}
+                      className={'scroll-mt-28 rounded-[14px] border border-line bg-surface p-3 ' +
+                        (params.encontro === meeting.id ? 'ring-2 ring-brand' : '')}>
                       <div className="flex flex-wrap items-center justify-between gap-2">
                         <strong className="text-[13px] font-bold text-ink">
                           Encontro {meeting.position}
@@ -312,6 +316,11 @@ export default async function ProgressPage({
                         {formatDateLong(meeting.starts_at)} às {formatTime(meeting.starts_at)}
                         {' · '}{formatMinutes(meeting.minutes)} previstas
                       </p>
+                      {meeting.note ? (
+                        <p className="mt-2 whitespace-pre-line text-[13px] text-label">
+                          <strong>Registro do instrutor: </strong>{meeting.note}
+                        </p>
+                      ) : null}
                       {done ? (
                         <>
                           <p className="mt-1 text-[12px] font-semibold text-ink">

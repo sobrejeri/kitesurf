@@ -1,0 +1,35 @@
+import 'server-only';
+
+import { createSupabaseServerClient } from './supabase/server';
+import type { StudentTimeSlot } from './student-schedule';
+
+/** RLS and explicit ownership apply to both reads. No nested PostgREST relationships. */
+export async function getStudentOccupiedSlots(studentId: string): Promise<StudentTimeSlot[]> {
+  const db = await createSupabaseServerClient();
+  const [bookings, requests] = await Promise.all([
+    db.from('bookings').select('id').eq('student_id', studentId)
+      .in('status', ['awaiting_payment', 'confirmed']),
+    db.from('instructor_requests').select('meetings').eq('student_id', studentId)
+      .eq('status', 'searching').gt('expires_at', new Date().toISOString())
+      .returns<{ meetings: { starts_at: string; hours: number }[] }[]>(),
+  ]);
+  if (bookings.error || requests.error) {
+    const error = bookings.error ?? requests.error;
+    console.error('[student.schedule]', { code: error?.code, message: error?.message });
+    throw new Error('Não foi possível conferir sua agenda. Tente novamente antes de buscar instrutor.');
+  }
+  const ids = (bookings.data ?? []).map((booking) => booking.id);
+  const meetings = ids.length ? await db.from('booking_meetings')
+    .select('starts_at,minutes').in('booking_id', ids)
+    .in('status', ['scheduled', 'in_progress'])
+    .returns<{ starts_at: string; minutes: number }[]>() : { data: [], error: null };
+  if (meetings.error) {
+    console.error('[student.schedule.meetings]', { code: meetings.error.code });
+    throw new Error('Não foi possível conferir os encontros da sua agenda. Tente novamente.');
+  }
+  return [
+    ...(meetings.data ?? []).map((meeting) => ({ startsAt: meeting.starts_at, minutes: meeting.minutes })),
+    ...(requests.data ?? []).flatMap((request) => request.meetings.map((meeting) =>
+      ({ startsAt: meeting.starts_at, minutes: meeting.hours * 60 }))),
+  ];
+}

@@ -6,6 +6,7 @@ import { usePathname } from 'next/navigation';
 import { Icon, type IconName } from './icon';
 import { MenuButton, MobileHeader, SheetAccount, TabBar, isActive, type SheetLink, type TabItem } from './mobile';
 import { StudentBrand } from './student/sunset';
+import { StudentProfileAvatar } from './student/profile-avatar';
 import { areaFromPath } from '@/lib/app-areas';
 import { AREAS } from '@/lib/areas';
 
@@ -200,14 +201,10 @@ export function StudentShell({
               <Icon name="bell" />
             </Link>
             {signedIn ? (
-              <Link href="/aluno/conta" className="flex items-center gap-2.5">
-                {photoUrl ? (
-                  <span className="grid h-10 w-10 shrink-0 overflow-hidden rounded-full border border-line bg-sand">
-                    <img src={photoUrl} alt="" className="h-full w-full object-cover" />
-                  </span>
-                ) : <Avatar initials={initials} size={40} />}
-                <span className="text-[12px] leading-tight">
-                  <strong className="block font-semibold text-ink">{name}</strong>
+              <Link href="/aluno/conta" aria-label="Abrir meu perfil" className="flex min-w-0 items-center gap-2.5 rounded-full focus-visible:outline-2 focus-visible:outline-brand">
+                <StudentProfileAvatar name={name} initials={initials} photoUrl={photoUrl} />
+                <span className="min-w-0 max-w-40 text-[12px] leading-tight">
+                  <strong className="block truncate font-semibold text-ink">{name}</strong>
                   <span className="text-[11px] text-muted">Seu espaço no kite</span>
                 </span>
               </Link>

@@ -60,7 +60,7 @@ export default async function AccountPage() {
 
       <div className="grid gap-4 lg:grid-cols-2">
         <section className="rounded-[22px] border border-line bg-surface p-5">
-          <div className="flex flex-col items-center gap-3 text-center sm:flex-row sm:items-center sm:gap-4 sm:text-left">
+          <div className="grid min-w-0 justify-items-center gap-4 text-center sm:grid-cols-[118px_minmax(0,1fr)] sm:items-center sm:justify-items-stretch sm:text-left">
             <ProfilePhotoPicker
               action={uploadStudentAvatar}
               photoUrl={avatarUrl}
@@ -87,7 +87,7 @@ export default async function AccountPage() {
                 {KITE_LEVEL_BADGES[kiteLevel.effective].label} · {KITE_LEVEL_BADGES[kiteLevel.effective].metal}
               </p>
             </div>
-            <div className="w-full sm:w-auto sm:basis-full">
+            <div className="w-full sm:col-span-2">
               <ProfileEditor fullName={viewer.fullName} language={viewer.language} />
             </div>
           </div>
