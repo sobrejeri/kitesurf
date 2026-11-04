@@ -6,11 +6,11 @@ import { Card, Note, PageHeader } from '@/components/ui';
 import { requireRole } from '@/lib/auth';
 import { createSupabaseServerClient } from '@/lib/supabase/server';
 
-type Area='aluno'|'instrutor';
+type Area='aluno'|'instrutor'|'admin';
 interface Notice { id:string;title:string;body:string;href:string;category:string;read_at:string|null;created_at:string }
 
 export async function NotificationInbox({area}:{area:Area}) {
-  const viewer=await requireRole([area==='aluno'?'student':'instructor']);
+  const viewer=await requireRole([area==='aluno'?'student':area==='admin'?'admin':'instructor']);
   const db=await createSupabaseServerClient();
   const {data,error}=await db.from('app_notifications')
     .select('id,title,body,href,category,read_at,created_at')

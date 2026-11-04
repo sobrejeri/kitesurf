@@ -35,6 +35,8 @@ jobs:
         run: node scripts/test-student-desktop.mjs
       - name: Test student schedule conflicts and evolution destinations
         run: node --experimental-strip-types scripts/test-student-schedule.mjs
+      - name: Test real admin agenda date ranges
+        run: node --experimental-strip-types scripts/test-admin-agenda-range.mjs
       - name: Test student homepage poster and booking CTA
         run: node scripts/test-home-banner.mjs
       - name: Test instructor completed lesson detail selection

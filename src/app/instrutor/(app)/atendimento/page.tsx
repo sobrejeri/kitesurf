@@ -14,7 +14,7 @@ export default async function ConversationsPage() {
     <>
       <PageHeader eyebrow="Atendimento" title="Minhas conversas" lead="Fale diretamente com seus alunos após a confirmação da aula."/>
       <Card>
-        {conversations.length === 0 ? <p className="text-[13px] text-muted">Ainda não existem conversas disponíveis. As mensagens são liberadas após o pagamento.</p> : (
+        {conversations.length === 0 ? <p className="text-[13px] text-muted">Ainda não existem conversas disponíveis. As mensagens são liberadas após a confirmação da aula.</p> : (
           <ul className="divide-y divide-line">
             {conversations.map(b => (
               <li key={b.id} className="flex flex-wrap items-center justify-between gap-3 py-4">

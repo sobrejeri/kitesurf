@@ -73,6 +73,7 @@ export function AreaLogin({
           <input name="password" type="password" required autoComplete="current-password" className={inputClass} />
         </Field>
       </ActionForm>
+      <Link href={`/${area}/recuperar`} className="mt-4 block min-h-11 text-center text-[13px] font-semibold text-brand underline">Esqueci minha senha</Link>
       {info.signup ? (
         <p className="mt-5 text-center text-[14px] text-label">
           Ainda não tem conta?{' '}

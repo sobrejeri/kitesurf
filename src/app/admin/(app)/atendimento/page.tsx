@@ -1,9 +1,13 @@
 import type { Metadata } from 'next';
 
-import { Chat } from '@/components/shared';
+import { IncidentWorkspace } from '@/components/incident-workspace';
+import { Note } from '@/components/ui';
 
 export const metadata: Metadata = { title: 'Atendimento' };
 
 export default function AdminChatPage() {
-  return <Chat counterpart="Rafael Lima" counterpartRole="Instrutor" />;
+  return <>
+    <Note className="mb-4">Atendimentos e resoluções são registrados por ocorrência. As conversas da aula continuam privadas entre aluno e instrutor.</Note>
+    <IncidentWorkspace area="admin" title="Atendimento da operação" />
+  </>;
 }

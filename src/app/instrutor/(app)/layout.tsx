@@ -67,7 +67,7 @@ export default async function InstructorLayout({ children }: { children: React.R
       tip={{
         icon: 'shield',
         title: 'Sua prioridade está guardada',
-        body: 'Recusar ou deixar expirar preserva sua posição. A vez é usada após o pagamento.',
+        body: 'Recusar ou deixar expirar preserva sua posição. A vez é usada após a confirmação da aula.',
       }}
       person={{
         name: viewer.fullName,

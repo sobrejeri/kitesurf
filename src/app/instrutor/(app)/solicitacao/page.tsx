@@ -100,6 +100,12 @@ export default async function RequestPage() {
         </Card>
       ) : (
         <div className="grid gap-4">
+          {(offers ?? []).some((offer) => !offer.request) ? (
+            <Note tone="warning">
+              Há uma proposta para você, mas os detalhes não puderam ser carregados.
+              Atualize a página. Se persistir, avise a administração para verificar o acesso às solicitações.
+            </Note>
+          ) : null}
           {(offers??[]).map(offer=>offer.request ? (
             <Card key={offer.id} className="max-w-3xl">
               <div className="flex flex-wrap items-center justify-between gap-2">

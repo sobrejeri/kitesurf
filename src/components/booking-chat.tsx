@@ -1,5 +1,6 @@
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
+import { z } from 'zod';
 
 import { sendBookingMessage } from '@/app/actions/chat';
 import { ActionForm } from '@/components/action-form';
@@ -7,20 +8,27 @@ import { ButtonLink, Card, Note, PageHeader, inputClass } from '@/components/ui'
 import { requireRole } from '@/lib/auth';
 import { getBookingForViewer } from '@/lib/data';
 import { createSupabaseServerClient } from '@/lib/supabase/server';
+import { LiveConversation } from '@/components/live-conversation';
 
 interface ChatRow { id: string; sender_id: string; body: string; created_at: string }
 type Area = 'aluno' | 'instrutor';
 
-export async function BookingChat({ bookingId, area }: { bookingId: string; area: Area }) {
+export async function BookingChat({ bookingId, area, before }: { bookingId: string; area: Area; before?: { at?: string; id?: string } }) {
   const viewer = await requireRole([area === 'aluno' ? 'student' : 'instructor']);
   const booking = await getBookingForViewer(bookingId, viewer);
   if (!booking || (area === 'aluno' ? booking.student_id !== viewer.id : booking.instructor_id !== viewer.id)) {
     notFound();
   }
   const db = await createSupabaseServerClient();
-  const { data, error } = await db.from('booking_messages')
-    .select('id,sender_id,body,created_at').eq('booking_id', booking.id)
-    .order('created_at', { ascending: true }).limit(200).returns<ChatRow[]>();
+  const cursor = z.object({ at: z.iso.datetime({ offset: true }), id: z.uuid() }).safeParse(before);
+  let query = db.from('booking_messages')
+    .select('id,sender_id,body,created_at').eq('booking_id', booking.id);
+  if (cursor.success) query = query.or(`created_at.lt.${cursor.data.at},and(created_at.eq.${cursor.data.at},id.lt.${cursor.data.id})`);
+  const { data: latest, error } = await query.order('created_at', { ascending: false })
+    .order('id', { ascending: false }).limit(201).returns<ChatRow[]>();
+  const hasOlder = (latest?.length ?? 0) > 200;
+  const data = (latest ?? []).slice(0, 200).reverse();
+  const first = data[0];
   const allowed = booking.status === 'confirmed' || booking.status === 'completed';
   const title = area === 'aluno' ? (booking.instructor?.full_name || 'Seu instrutor') : (booking.student?.full_name || 'Seu aluno');
   return (
@@ -31,10 +39,11 @@ export async function BookingChat({ bookingId, area }: { bookingId: string; area
         {error ? (
           <Note tone="warning">O chat ainda não está disponível. Verifique a migração SQL de mensagens.</Note>
         ) : !allowed ? (
-          <Note tone="warning">A conversa é liberada somente após a confirmação do pagamento. Nenhuma mensagem foi enviada.</Note>
+          <Note tone="warning">A conversa é liberada após a confirmação da aula. Nenhuma mensagem foi enviada.</Note>
         ) : (
           <>
-            {(data ?? []).length === 0 ? (
+            <LiveConversation lastMessageId={data.at(-1)?.id ?? ''} live={!cursor.success}>
+            {data.length === 0 ? (
               <p className="py-10 text-center text-[13px] text-muted">Conversa iniciada. Envie sua primeira mensagem.</p>
             ) : (
               <ol aria-label="Mensagens da reserva" className="grid gap-3">
@@ -56,12 +65,18 @@ export async function BookingChat({ bookingId, area }: { bookingId: string; area
                 })}
               </ol>
             )}
+            </LiveConversation>
+            {hasOlder && first ? <Link href={`/${area}/atendimento/${booking.id}?antes=${encodeURIComponent(first.created_at)}&mensagem=${first.id}`}
+              className="mt-4 inline-block text-[13px] text-brand underline">Mensagens anteriores</Link> : null}
+            {cursor.success ? <Link href={`/${area}/atendimento/${booking.id}`} className="mt-4 block text-[13px] text-brand underline">Voltar às mensagens recentes para responder</Link> : (
             <ActionForm action={sendBookingMessage} submitLabel="Enviar mensagem" className="mt-5 grid gap-3 border-t border-line pt-4">
               <input type="hidden" name="bookingId" value={booking.id}/>
               <label htmlFor="booking-message" className="text-[13px] font-semibold">Sua mensagem</label>
               <textarea id="booking-message" name="body" rows={3} required minLength={1} maxLength={2000}
                 placeholder="Escreva sua mensagem..." className={inputClass}/>
             </ActionForm>
+            )}
+            {!cursor.success ? <p className="mt-2 text-[11px] text-muted">A conversa atualiza automaticamente enquanto estiver aberta.</p> : null}
             <div className="mt-3 flex flex-wrap items-center gap-3">
               <Link href={`/${area}/atendimento/${booking.id}`} className="text-[13px] text-brand underline">
                 Atualizar mensagens

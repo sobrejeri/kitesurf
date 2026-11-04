@@ -20,7 +20,7 @@ const STATUSES:Record<string,string>={
   open:'Aberta',reviewing:'Em análise',resolved:'Resolvida',rejected:'Não procedente',
 };
 
-export async function IncidentWorkspace({area}:{area:'aluno'|'instrutor'|'admin'}) {
+export async function IncidentWorkspace({area,title}:{area:'aluno'|'instrutor'|'admin';title?:string}) {
   const role:AppRole=area==='aluno'?'student':area==='instrutor'?'instructor':'admin';
   const viewer=await requireRole([role]);
   const db=await createSupabaseServerClient();
@@ -34,7 +34,7 @@ export async function IncidentWorkspace({area}:{area:'aluno'|'instrutor'|'admin'
     .flatMap(b=>b.booking_meetings.map(m=>({id:m.id,bookingId:b.id,code:('code' in b && typeof b.code==='string' ? b.code : b.id.slice(0,8)),startsAt:m.starts_at,minutes:m.minutes})));
   return (
     <>
-      <PageHeader eyebrow="Cada situação acompanhada" title={admin?'Analisar ocorrências':'Imprevistos e ocorrências'}
+      <PageHeader eyebrow="Cada situação acompanhada" title={title ?? (admin?'Analisar ocorrências':'Imprevistos e ocorrências')}
         lead="As ocorrências são registradas para análise; nenhuma decisão altera automaticamente o pagamento ou os encontros."/>
       {records.error?<Note tone="warning">O módulo de ocorrências depende da migração 15 no Supabase.</Note>:null}
       <div className="grid gap-4 lg:grid-cols-[1fr_1fr]">

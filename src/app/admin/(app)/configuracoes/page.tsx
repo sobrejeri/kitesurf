@@ -11,6 +11,7 @@ interface Item {
   label: string;
   icon: IconName;
   href?: string;
+  status?: string;
 }
 
 const GROUPS: readonly { title: string; items: readonly Item[] }[] = [
@@ -21,15 +22,16 @@ const GROUPS: readonly { title: string; items: readonly Item[] }[] = [
       { label: 'Praias e localizações', icon: 'pin', href: '/admin/praias' },
       { label: 'Pontos de encontro', icon: 'pin', href: '/admin/pontos' },
       { label: 'Regras de cancelamento', icon: 'shield', href: '/admin/politicas' },
-      { label: 'Formas de pagamento', icon: 'wallet' },
-      { label: 'Notificações e e-mails', icon: 'bell' },
+      { label: 'Checkout e formas de pagamento', icon: 'wallet', status: 'Após validação' },
+      { label: 'Avisos e pendências da operação', icon: 'bell', href: '/admin/avisos' },
     ],
   },
   {
     title: 'Segurança',
     items: [
       { label: 'Auditoria de atividades', icon: 'list', href: '/admin/auditoria' },
-      { label: 'Usuários administradores', icon: 'users' },
+      { label: 'Usuários administradores', icon: 'users', href: '/admin/equipe' },
+      { label: 'Recuperar senha da minha conta', icon: 'shield', href: '/admin/recuperar' },
     ],
   },
 ];
@@ -52,7 +54,7 @@ export default async function SettingsPage() {
                     {item.href ? (
                       <Icon name="chevron" className="!h-4 !w-4 text-muted" />
                     ) : (
-                      <span className="rounded-full bg-sand px-2.5 py-1 text-[11px] text-muted">Em breve</span>
+                      <span className="rounded-full bg-sand px-2.5 py-1 text-[11px] text-muted">{item.status ?? 'Configuração externa'}</span>
                     )}
                   </>
                 );

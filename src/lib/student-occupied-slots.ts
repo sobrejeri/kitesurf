@@ -7,7 +7,7 @@ import type { StudentTimeSlot } from './student-schedule';
 export async function getStudentOccupiedSlots(studentId: string): Promise<StudentTimeSlot[]> {
   const db = await createSupabaseServerClient();
   const [bookings, requests] = await Promise.all([
-    db.from('bookings').select('id').eq('student_id', studentId)
+    db.from('bookings').select('id,status,created_at').eq('student_id', studentId)
       .in('status', ['awaiting_payment', 'confirmed']),
     db.from('instructor_requests').select('meetings').eq('student_id', studentId)
       .eq('status', 'searching').gt('expires_at', new Date().toISOString())
@@ -18,7 +18,8 @@ export async function getStudentOccupiedSlots(studentId: string): Promise<Studen
     console.error('[student.schedule]', { code: error?.code, message: error?.message });
     throw new Error('Não foi possível conferir sua agenda. Tente novamente antes de buscar instrutor.');
   }
-  const ids = (bookings.data ?? []).map((booking) => booking.id);
+  const ids = (bookings.data ?? []).filter((booking) => booking.status === 'confirmed'
+    || Date.parse(booking.created_at) >= Date.now() - 10 * 60_000).map((booking) => booking.id);
   const meetings = ids.length ? await db.from('booking_meetings')
     .select('starts_at,minutes').in('booking_id', ids)
     .in('status', ['scheduled', 'in_progress'])

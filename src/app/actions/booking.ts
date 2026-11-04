@@ -163,14 +163,14 @@ export async function createBooking(_prev: ActionState, form: FormData): Promise
 
 const BookingId = z.uuid();
 
-/** No gateway or payment method: use the existing owner-checked test confirmation. */
+/** No gateway or payment method: owner-checked validation, excluded from payouts. */
 export async function confirmValidationLesson(_prev: ActionState, form: FormData): Promise<ActionState> {
   await requireRole(['student']);
   if (!VALIDATION_WITHOUT_CHECKOUT) return { error: 'A confirmação de validação está encerrada.' };
   const id = BookingId.safeParse(form.get('bookingId'));
   if (!id.success) return { error: 'Reserva inválida.' };
   const db = await createSupabaseServerClient();
-  const { error } = await db.rpc('confirm_test_payment', { p_booking_id: id.data });
+  const { error } = await db.rpc('confirm_validation_lesson', { p_booking_id: id.data });
   if (error) return { error: friendlyError(error) };
   revalidatePath('/aluno', 'layout');
   revalidatePath('/instrutor', 'layout');

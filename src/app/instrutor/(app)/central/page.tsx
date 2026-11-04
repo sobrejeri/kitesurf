@@ -1,7 +1,6 @@
 import type { Metadata } from 'next';
 
 import { Hub } from '@/components/shared';
-import { DEMO_NOTICE } from '@/data/demo';
 
 export const metadata: Metadata = { title: 'Central de trabalho' };
 
@@ -15,5 +14,5 @@ const ITEMS = [
 ] as const;
 
 export default function InstructorHubPage() {
-  return <Hub title="Central de trabalho" items={ITEMS} notice={DEMO_NOTICE} />;
+  return <Hub title="Central de trabalho" items={ITEMS} notice="Disponibilidade, documentos, aulas e ocorrências são registrados na sua conta. Esta fase de validação não realiza cobranças nem repasses." />;
 }

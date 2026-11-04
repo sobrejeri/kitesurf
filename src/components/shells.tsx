@@ -51,7 +51,7 @@ export function TopBar({ viewer, signOut }: { viewer: TopBarViewer | null; signO
   const areas = viewer ? AREAS.filter((area) => viewer.role === 'admin' || area.role === viewer.role) : [];
   const app = areaFromPath(pathname);
   // The login screens are full-screen app screens of their own.
-  if (pathname === '/entrar' || /^\/[a-z]+\/(entrar|criar-conta)/.test(pathname)) return null;
+  if (pathname === '/entrar' || /^\/[a-z]+\/(entrar|criar-conta|recuperar|redefinir)/.test(pathname)) return null;
   return (
     <div className="sticky top-0 z-40 hidden h-14 items-center justify-between gap-3 border-b border-line bg-chrome px-6 text-[12px] text-label lg:flex">
       {areas.length > 1 ? (

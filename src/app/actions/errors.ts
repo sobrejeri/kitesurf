@@ -3,6 +3,12 @@
  * message: the raw text can carry internal details and is only logged.
  */
 const KNOWN: readonly [RegExp, string][] = [
+  [/New password should be different|same password/i,
+    'Escolha uma senha diferente da senha atual.'],
+  [/Please wait before sending again/i,
+    'Aguarde dois segundos antes de enviar outra mensagem.'],
+  [/Validation confirmation unavailable or expired/i,
+    'O prazo de confirmação expirou ou a aula não está disponível. Confira a reserva ou procure um novo horário.'],
   [/Student already has a lesson at the selected time/i,
     'Você já tem uma aula ou uma busca de instrutor nesse horário. Escolha outro dia ou horário sem sobreposição.'],
   [/Overlapping meetings/i,
@@ -22,7 +28,7 @@ const KNOWN: readonly [RegExp, string][] = [
   [/Instructor unavailable for proposed meeting|Proposed time is no longer available/i,
     'A nova data não está disponível na agenda do instrutor. Escolha outro horário.'],
   [/Meeting change already decided|Meeting change response deadline expired/i,
-    'Esta solicitação já foi respondida ou ultrapassou o prazo de 48 horas.'],
+    'Esta solicitação já foi respondida ou o prazo de resposta expirou.'],
   [/Only scheduled confirmed meetings may be changed|Meeting no longer eligible for change/i,
     'Apenas aulas agendadas de reservas confirmadas podem ser reagendadas.'],
 

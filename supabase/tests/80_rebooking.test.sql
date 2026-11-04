@@ -1,5 +1,10 @@
 -- Rebooking must prove a previous paid lesson and try that instructor first.
 \set ON_ERROR_STOP on
+-- A separate student is required: the checkout test has already confirmed
+-- a booking for b2, so that account may legitimately rehire this teacher.
+INSERT INTO auth.users(id,email,raw_user_meta_data) VALUES (
+  '00000000-0000-0000-0000-000000000b80','new-rebooking@test','{"full_name":"New student"}'
+);
 create function pg_temp.act_as(uid text) returns void language plpgsql as $$
 begin perform set_config('request.jwt.claim.sub',uid,false); execute 'set role authenticated'; end $$;
 create function pg_temp.reset() returns void language plpgsql as $$
@@ -20,7 +25,7 @@ begin
     +interval '14 hours') at time zone 'America/Fortaleza';
   payload:=jsonb_build_array(jsonb_build_object('starts_at',requested_at,'hours',1));
 
-  perform pg_temp.act_as('00000000-0000-0000-0000-0000000000b2');
+  perform pg_temp.act_as('00000000-0000-0000-0000-000000000b80');
   begin
     perform public.create_instructor_request_with_preference(
       (select id from public.beaches where slug='prea'),'first_time','Português',

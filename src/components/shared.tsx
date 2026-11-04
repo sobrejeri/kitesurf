@@ -147,8 +147,10 @@ export function Inbox({ bare = false }: { bare?: boolean }) {
 }
 
 const FLOW_RULES = [
-  ['Reagendamento', 'prazo contratado por encontro; padrão atual de 24h, com aceite do mesmo instrutor.'],
-  ['Cancelamento', 'solicitação analisada pelo admin. Não há cobrança ou perda automática de horas no protótipo.'],
+  ['Reagendamento', 'solicite com pelo menos 3 dias (72 horas) de antecedência. A nova data precisa ser posterior à original, com prazo de 12 horas para resposta.'],
+  ['Sem resposta', 'após o prazo de resposta, o aluno tem 12 horas para escolher entre cancelar ou buscar outro instrutor. A reserva não é cancelada automaticamente.'],
+  ['Desistência do instrutor', 'libera a atribuição para a fila de instrutores, preservando a reserva do aluno.'],
+  ['Cancelamento', 'respeita os prazos e as opções apresentados em cada reserva. Não há cobrança ou perda automática de horas nesta fase de validação.'],
   ['Vento e interrupção', 'registrar os minutos realizados e encaminhar o restante para saldo ou análise de reembolso.'],
   ['Ausência', 'registrar após o horário previsto e aguardar análise, sem penalidade automática.'],
   ['Reembolso e repasse', 'somente simulações; a movimentação real dependerá da integração financeira.'],

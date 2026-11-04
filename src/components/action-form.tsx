@@ -18,6 +18,7 @@ export function ActionForm({
   className = '',
   wideSubmit = false,
   submitClassName = '',
+  disabled = false,
 }: {
   action: (state: ActionState, form: FormData) => Promise<ActionState>;
   children?: React.ReactNode;
@@ -26,12 +27,13 @@ export function ActionForm({
   className?: string;
   wideSubmit?: boolean;
   submitClassName?: string;
+  disabled?: boolean;
 }) {
   const [state, formAction, pending] = useActionState(action, {});
   return (
     <form action={formAction} className={className}>
       {children}
-      <Button type="submit" variant={submitVariant} disabled={pending} className={`${wideSubmit ? 'w-full' : 'justify-self-start'} ${submitClassName}`}>
+      <Button type="submit" variant={submitVariant} disabled={pending || disabled} className={`${wideSubmit ? 'w-full' : 'justify-self-start'} ${submitClassName}`}>
         {pending ? 'Enviando…' : submitLabel}
       </Button>
       {state.error ? (

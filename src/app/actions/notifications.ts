@@ -18,5 +18,6 @@ export async function markNotificationRead(_prev:ActionState,form:FormData):Prom
     return {error:friendlyError(error)};
   }
   revalidatePath('/aluno/avisos');revalidatePath('/instrutor/avisos');
+  revalidatePath('/admin/avisos');
   return {ok:'Aviso marcado como lido.'};
 }

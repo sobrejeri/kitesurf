@@ -11,6 +11,7 @@ import { IconBubble, KiteIllustration } from './sunset';
 export interface LessonCard {
   bookingId: string;
   meetingId: string;
+  startsAt: string;
   evolutionHref: string | null;
   title: string;
   statusLabel: string;

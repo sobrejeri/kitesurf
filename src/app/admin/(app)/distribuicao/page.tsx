@@ -26,12 +26,12 @@ export default async function DistributionPage() {
                   <p className="truncate text-[13px] font-[550]">{row.profile?.full_name}</p>
                   <p className="text-[11px] text-muted">{row.beaches.map((b) => b.name).join(' e ')} · {row.languages.join(', ')}</p>
                 </div>
-                <Badge>Disponível</Badge>
+                <Badge>Na fila</Badge>
               </li>
             ))}
           </ol>
         )}
-        <Note className="mt-3">A posição muda depois do pagamento confirmado: o instrutor que recebeu a aula vai para o final. Recusas, expirações e pausas preservam a prioridade.</Note>
+        <Note className="mt-3">A posição muda depois da confirmação da aula: o instrutor que recebeu a reserva vai para o final. A disponibilidade é conferida para cada horário solicitado. Recusas, expirações e pausas preservam a prioridade.</Note>
       </Card>
     </>
   );
