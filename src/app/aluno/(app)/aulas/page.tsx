@@ -40,7 +40,7 @@ export default async function MyLessonsPage() {
     );
 
   return (
-    <>
+    <div className="vento-student-desktop-lessons">
       <StudentHero
         image="lesson"
         eyebrow="Sua agenda de bons ventos"
@@ -55,6 +55,6 @@ export default async function MyLessonsPage() {
         </ButtonLink>
       </StudentHero>
       <MyLessons lessons={lessons} />
-    </>
+    </div>
   );
 }
