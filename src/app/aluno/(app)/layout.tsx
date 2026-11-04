@@ -2,6 +2,7 @@ import './mar-profundo.css';
 
 import { signOut } from '@/app/actions/auth';
 import { StudentShell } from '@/components/shells';
+import { FloatingChat } from '@/components/floating-chat';
 import { getViewer } from '@/lib/auth';
 import { initials } from '@/lib/people';
 import { createSupabaseServerClient } from '@/lib/supabase/server';
@@ -29,6 +30,7 @@ export default async function StudentLayout({ children }: { children: React.Reac
   return (
     <StudentShell name={name} initials={initials(name)} photoUrl={photoUrl} signedIn={Boolean(viewer)} signOut={signOut}>
       {children}
+      {viewer?.role === 'student' ? <FloatingChat key={viewer.id} area="aluno" viewerId={viewer.id}/> : null}
     </StudentShell>
   );
 }

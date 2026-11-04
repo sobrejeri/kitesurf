@@ -2,6 +2,7 @@ import { signOut } from '@/app/actions/auth';
 import { WorkspaceShell, type WorkspaceNavItem } from '@/components/shells';
 import { areaLinksFor } from '@/lib/areas';
 import { requireRole } from '@/lib/auth';
+import { FloatingChat } from '@/components/floating-chat';
 import { createSupabaseServerClient } from '@/lib/supabase/server';
 
 const NAV: readonly WorkspaceNavItem[] = [
@@ -79,6 +80,7 @@ export default async function InstructorLayout({ children }: { children: React.R
       }}
     >
       {children}
+      {viewer.role === 'instructor' ? <FloatingChat key={viewer.id} area="instrutor" viewerId={viewer.id}/> : null}
     </WorkspaceShell>
   );
 }
