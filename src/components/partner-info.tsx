@@ -5,11 +5,11 @@ export function PartnerFootnote() {
   return (
     <div className="mt-6 grid gap-3">
       <Note title="Como a indicação gera comissão">
-        A pousada recebe um percentual sobre as horas de aula realizadas por hóspedes que reservaram pelo link dela.
+        A pousada recebe comissão somente na primeira reserva elegível do aluno indicado pelo seu link. Novas reservas do mesmo aluno não geram outra comissão.
         A comissão sai da parte da plataforma: o preço do hóspede e o líquido do instrutor não mudam.
       </Note>
       <p className="text-[11px] leading-relaxed text-muted">
-        Repasses de comissão ainda não são automáticos: dependem da integração de pagamento.
+        Reservas de validação não geram comissão. Repasses de comissão ainda não são automáticos: dependem da integração de pagamento.
       </p>
     </div>
   );

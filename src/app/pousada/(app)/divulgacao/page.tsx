@@ -26,7 +26,7 @@ export default async function PromotePage() {
           <>
             <h2 className="mt-6 text-[14px]">Seu link de indicação</h2>
             <div className="mt-3"><CopyField value={link} /></div>
-            <p className="mt-3 text-[11px] text-muted">Quem reserva em até 30 dias depois de abrir o link fica vinculado à sua pousada.</p>
+            <p className="mt-3 text-[11px] text-muted">O link identifica sua indicação por até 30 dias. A comissão vale somente para a primeira reserva elegível do aluno; reservas seguintes não geram comissão.</p>
           </>
         ) : (
           <Note tone="warning" className="mt-5">O link é liberado depois que a operação aprovar a pousada.</Note>

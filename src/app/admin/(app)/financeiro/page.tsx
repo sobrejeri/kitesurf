@@ -29,21 +29,22 @@ export default async function AdminFinancePage() {
 
   return (
     <>
-      <AdminTitle title="Financeiro" subtitle="Pagamentos de teste — nenhum dinheiro é movimentado." />
+      <AdminTitle title="Financeiro" subtitle="Valores de referência das reservas. Aulas de validação ficam fora dos totais." />
+      <p className="mb-4 text-[12px] text-muted">Este resumo considera as últimas 500 reservas cadastradas, com totais apenas das confirmadas ou concluídas elegíveis.</p>
       <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
-        <Metric label="Volume confirmado" value={formatMoney(volume)} hint={`${paid.length} reservas pagas`} hintTone="success" icon="wallet" tone="green" />
+        <Metric label="Volume confirmado" value={formatMoney(volume)} hint={`${paid.length} reservas confirmadas`} hintTone="success" icon="wallet" tone="green" />
         <Metric label="Parcela plataforma" value={formatMoney(platform)} hint={formatBps(share(platform))} hintTone="muted" icon="chart" tone="purple" />
         <Metric label="Líquido instrutores" value={formatMoney(instructors)} hint={formatBps(share(instructors))} hintTone="muted" icon="users" tone="blue" />
         <Metric label="Comissões pousadas" value={formatMoney(partners)} hint={formatBps(share(partners))} hintTone="brand" icon="home" tone="orange" />
       </div>
 
-      <Panel title="Evolução de pagamentos" action={<span className="text-[12px] text-muted">Últimos 7 dias</span>} className="mt-4">
+      <Panel title="Valores por data da reserva" action={<span className="text-[12px] text-muted">Últimos 7 dias</span>} className="mt-4">
         <BarChart points={perDay} describe={formatMoney} />
       </Panel>
 
       <Panel title="Distribuição por reserva" className="mt-4">
         {paid.length === 0 ? (
-          <EmptyState>Nenhuma reserva paga ainda.</EmptyState>
+          <EmptyState>Nenhuma reserva elegível para os totais. Aulas de validação não geram receita.</EmptyState>
         ) : (
           <ul className="grid gap-2">
             {paid.map((b) => (

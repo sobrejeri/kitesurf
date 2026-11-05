@@ -3,6 +3,8 @@ import type { Metadata } from 'next';
 import { Icon, type IconName } from '@/components/icon';
 import { LessonSearch } from '@/components/student/lesson-search';
 import { HighlightTitle } from '@/components/student/sunset';
+import { HomeDashboard } from '@/components/student/home-dashboard';
+import { listBookingsForStudent, type StudentBooking } from '@/lib/data';
 import { HomePosterHero } from '@/components/student/home-poster-hero';
 import { getViewer } from '@/lib/auth';
 import { getQuoteTable, listActiveBeaches, type Beach, type QuoteRow } from '@/lib/data';
@@ -41,23 +43,32 @@ export default async function StudentHomePage() {
   const [quotes, beaches, viewer] = await Promise.all([loadQuotes(), loadBeaches(), getViewer()]);
   const firstName = viewer?.fullName.split(' ')[0];
   const kiteLevel = viewer?.role === 'student' ? await getStudentKiteLevel(viewer.id) : null;
+  let bookings:StudentBooking[]=[];
+  let historyUnavailable=false;
+  if(viewer?.role==='student'){
+    try{bookings=await listBookingsForStudent(viewer.id);}catch{historyUnavailable=true;}
+  }
+  const returning=bookings.length>0;
+
 
   return (
     <div className="vento-student-desktop-home">
-      <div className="mb-3 hidden items-center justify-between lg:flex">
+      {!returning?<><div className="mb-3 hidden items-center justify-between lg:flex">
         <div>
           <p className="text-[15px] font-bold text-ink">Olá, {firstName || 'bem-vindo'}! <span aria-hidden="true">☀️</span></p>
           <p className="mt-1 text-[12px] text-muted">Preá e Jericoacoara</p>
         </div>
         <span className="rounded-full bg-sand px-4 py-2 text-[12px] text-label">Ceará, Brasil</span>
       </div>
-      <HomePosterHero firstName={firstName} />
+      <HomePosterHero firstName={firstName} /></>:null}
 
+      {returning?<HomeDashboard bookings={bookings} level={kiteLevel} firstName={firstName}/>:null}
+      {historyUnavailable?<p role="status" className="my-5 rounded-xl border border-line bg-surface p-4 text-sm text-label">Não foi possível carregar suas aulas agora. <a className="text-brand underline" href="/aluno/inicio">Tentar novamente</a></p>:null}
       <LessonSearch defaultDate={lessonDate(1)} quotes={quotes} beaches={beaches}
         studentLevel={kiteLevel?.effective ?? 'first_time'} />
 
 
-      <section className="vento-desktop-course-cards mt-9 hidden lg:block" aria-label="Experiências para cada nível">
+      {!returning && !historyUnavailable ? <><section className="vento-desktop-course-cards mt-9 hidden lg:block" aria-label="Experiências para cada nível">
         <div className="mb-4 flex items-end justify-between">
           <div>
             <p className="text-[11px] font-bold uppercase tracking-[.15em] text-brand">Um mar de possibilidades</p>
@@ -100,7 +111,7 @@ export default async function StudentHomePage() {
             </li>
           ))}
         </ol>
-      </section>
+      </section></>:null}
     </div>
   );
 }

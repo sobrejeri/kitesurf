@@ -41,6 +41,8 @@ jobs:
         run: node --experimental-strip-types scripts/test-level-prices.mjs
       - name: Test floating chat conversations and message order
         run: node --experimental-strip-types scripts/test-chat-dock.mjs
+      - name: Test personal home booking selection and progress
+        run: node --experimental-strip-types scripts/test-student-home.mjs
       - name: Test student homepage poster and booking CTA
         run: node scripts/test-home-banner.mjs
       - name: Test instructor completed lesson detail selection

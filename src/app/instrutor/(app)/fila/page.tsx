@@ -5,6 +5,7 @@ import { Icon } from '@/components/icon';
 import { Badge, EmptyState } from '@/components/ui';
 import { requireRole } from '@/lib/auth';
 import { listQueue } from '@/lib/data';
+import { VALIDATION_WITHOUT_CHECKOUT } from '@/lib/booking-mode';
 import { initials } from '@/lib/people';
 
 export const metadata: Metadata = { title: 'Minha prioridade' };
@@ -12,7 +13,7 @@ export const metadata: Metadata = { title: 'Minha prioridade' };
 const RULES = [
   ['Recusou?', 'Sua posição permanece.'],
   ['Deixou expirar?', 'Sua posição permanece.'],
-  ['Aluno confirmou e pagou?', 'Você vai para o final.'],
+  [VALIDATION_WITHOUT_CHECKOUT ? 'Aluno confirmou a aula?' : 'Aluno confirmou e pagou?', 'Você vai para o final.'],
 ] as const;
 
 export default async function QueuePage() {

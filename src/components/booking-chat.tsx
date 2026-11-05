@@ -10,6 +10,7 @@ import { getBookingForViewer } from '@/lib/data';
 import { createSupabaseServerClient } from '@/lib/supabase/server';
 import { LiveConversation } from '@/components/live-conversation';
 import { chatMessageExtras } from '@/lib/chat-message-extras';
+import {chatWasRead, presenceLabel} from '@/lib/chat-dock';
 import { ChatMessageExtras } from '@/components/chat-message-extras';
 
 interface ChatRow { id: string; sender_id: string; body: string; created_at: string }
@@ -31,7 +32,13 @@ export async function BookingChat({ bookingId, area, before }: { bookingId: stri
   const hasOlder = (latest?.length ?? 0) > 200;
   const data = await chatMessageExtras(db,viewer.id,booking.id,(latest ?? []).slice(0, 200).reverse());
   const first = data[0];
+  const last = data.at(-1);
   const allowed = booking.status === 'confirmed' || booking.status === 'completed';
+  const peerId=area==='aluno'?booking.instructor_id:booking.student_id;
+  const [peerReceipt,peerPresence]=allowed && peerId?await Promise.all([
+    db.from('booking_chat_reads').select('last_message_id,message_at,read_at').eq('booking_id',booking.id).eq('user_id',peerId).maybeSingle(),
+    db.from('chat_presence').select('last_seen').eq('user_id',peerId).maybeSingle(),
+  ]):[{data:null},{data:null}];
   const title = area === 'aluno' ? (booking.instructor?.full_name || 'Seu instrutor') : (booking.student?.full_name || 'Seu aluno');
   return (
     <>
@@ -44,7 +51,9 @@ export async function BookingChat({ bookingId, area, before }: { bookingId: stri
           <Note tone="warning">A conversa é liberada após a confirmação da aula. Nenhuma mensagem foi enviada.</Note>
         ) : (
           <>
-            <LiveConversation lastMessageId={data.at(-1)?.id ?? ''} live={!cursor.success}>
+            <p className="mb-4 text-xs text-label">{presenceLabel(peerPresence.data?.last_seen ?? null)}</p>
+            <LiveConversation lastMessageId={data.at(-1)?.id ?? ''} live={!cursor.success}
+              receipt={last?{area,bookingId:booking.id,through:last.created_at}:undefined}>
             {data.length === 0 ? (
               <p className="py-10 text-center text-[13px] text-muted">Conversa iniciada. Envie sua primeira mensagem.</p>
             ) : (
@@ -61,6 +70,7 @@ export async function BookingChat({ bookingId, area, before }: { bookingId: stri
                         <ChatMessageExtras message={message}/>
                         <time dateTime={message.created_at} className="mt-2 block text-right text-[10px] opacity-70">
                           {new Intl.DateTimeFormat('pt-BR', { timeZone: 'America/Fortaleza', dateStyle: 'short', timeStyle: 'short' }).format(new Date(message.created_at))}
+                          {own?` · ${chatWasRead(message,peerReceipt.data)?'Visualizada':'Enviada'}`:''}
                         </time>
                       </div>
                     </li>
@@ -71,7 +81,7 @@ export async function BookingChat({ bookingId, area, before }: { bookingId: stri
             </LiveConversation>
             {hasOlder && first ? <Link href={`/${area}/atendimento/${booking.id}?antes=${encodeURIComponent(first.created_at)}&mensagem=${first.id}`}
               className="mt-4 inline-block text-[13px] text-brand underline">Mensagens anteriores</Link> : null}
-            {cursor.success ? <Link href={`/${area}/atendimento/${booking.id}`} className="mt-4 block text-[13px] text-brand underline">Voltar às mensagens recentes para responder</Link> : (
+            {cursor.success ? <Link data-chat-navigation="page" href={`/${area}/atendimento/${booking.id}`} className="mt-4 block text-[13px] text-brand underline">Voltar às mensagens recentes para responder</Link> : (
             <ActionForm action={sendBookingMessage} submitLabel="Enviar mensagem" className="mt-5 grid gap-3 border-t border-line pt-4">
               <input type="hidden" name="bookingId" value={booking.id}/>
               <label htmlFor="booking-message" className="text-[13px] font-semibold">Sua mensagem</label>
@@ -81,7 +91,7 @@ export async function BookingChat({ bookingId, area, before }: { bookingId: stri
             )}
             {!cursor.success ? <p className="mt-2 text-[11px] text-muted">A conversa atualiza automaticamente enquanto estiver aberta.</p> : null}
             <div className="mt-3 flex flex-wrap items-center gap-3">
-              <Link href={`/${area}/atendimento/${booking.id}`} className="text-[13px] text-brand underline">
+              <Link data-chat-navigation="page" href={`/${area}/atendimento/${booking.id}`} className="text-[13px] text-brand underline">
                 Atualizar mensagens
               </Link>
               <ButtonLink href={area === 'aluno' ? '/aluno/reserva/' + booking.id : '/instrutor/aula'} size="sm" variant="ghost">

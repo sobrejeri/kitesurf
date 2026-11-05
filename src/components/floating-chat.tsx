@@ -31,6 +31,7 @@ export function FloatingChat({area,viewerId}: {area:ChatArea;viewerId:string}) {
   const [sending,setSending] = useState(false);
   const [error,setError] = useState('');
   const [inboxError,setInboxError] = useState('');
+  const [connectionError,setConnectionError] = useState('');
   const [featuresReady,setFeaturesReady] = useState(false);
   const [showOnline,setShowOnline] = useState(true);
   const [peerLastSeen,setPeerLastSeen] = useState<string|null>(null);
@@ -91,7 +92,7 @@ export function FloatingChat({area,viewerId}: {area:ChatArea;viewerId:string}) {
       setMessages([]);setDetail(null);setHasOlder(false);historyLoaded.current=false;follow.current=true;
       setPeerLastSeen(null);setPeerRead(null);setLocationDraft(null);lastRead.current='';
     }
-    setError('');setSelectedId(id);setOpen(true);
+    setError('');setConnectionError('');setSelectedId(id);setOpen(true);
   },[selectedId]);
 
   // Existing "Conversar" links open the dock; modified clicks keep full-page navigation.
@@ -99,7 +100,7 @@ export function FloatingChat({area,viewerId}: {area:ChatArea;viewerId:string}) {
     const click = (event:MouseEvent) => {
       if (event.defaultPrevented || event.button!==0 || event.ctrlKey || event.metaKey || event.shiftKey || event.altKey) return;
       const anchor = event.target instanceof Element ? event.target.closest('a') : null;
-      if (!anchor || anchor.target==='_blank' || anchor.hasAttribute('download')) return;
+      if (!anchor || anchor.target==='_blank' || anchor.hasAttribute('download') || anchor.dataset.chatNavigation==='page') return;
       const url = new URL(anchor.href,window.location.href);
       if (url.origin!==window.location.origin || url.search || url.hash) return;
       const id=chatBookingId(url.pathname,area);
@@ -120,12 +121,12 @@ export function FloatingChat({area,viewerId}: {area:ChatArea;viewerId:string}) {
           const data=await response.json();
           if (!response.ok) throw new Error(data.error);
           if (!controller.signal.aborted && data.viewerId===viewerId) {
-            setDetail(data.thread);setMessages(previous=>mergeChatMessages(previous,data.messages));
+            setConnectionError('');setDetail(data.thread);setMessages(previous=>mergeChatMessages(previous,data.messages));
             setFeaturesReady(data.featuresReady);setPeerLastSeen(data.peerLastSeen);setPeerRead(data.peerRead);
             if (!historyLoaded.current) setHasOlder(data.hasOlder);
           }
         }
-      } catch (cause) {if (!controller.signal.aborted) setError(cause instanceof Error?cause.message:'Não foi possível abrir a conversa.');}
+      } catch (cause) {if (!controller.signal.aborted) setConnectionError(cause instanceof Error?cause.message:'Não foi possível abrir a conversa.');}
       finally {if (!controller.signal.aborted) timer=setTimeout(update,3000);}
     };
     void update();
@@ -264,6 +265,7 @@ export function FloatingChat({area,viewerId}: {area:ChatArea;viewerId:string}) {
           </li>)}</ol>
         </div>
         <p className={styles.context}>{thread?chatThreadTag(thread):'Conversa da reserva selecionada'}. <a href={`/${area}/atendimento/${selectedId}`} target="_blank" rel="noopener noreferrer">Abrir histórico completo</a></p>
+        {connectionError?<p className={styles.error} role="status">{connectionError}</p>:null}
         {error?<p className={styles.error} role="alert">{error}</p>:null}
         <div className={styles.tools}>
           <input ref={photoInput} type="file" accept="image/jpeg,image/png,image/webp,image/gif,image/heic,image/heif" hidden onChange={event=>{void upload(event.target.files?.[0]);event.target.value='';}}/>

@@ -79,7 +79,7 @@ export async function chatDockRequest(request: NextRequest, area: ChatArea) {
       }
       const input = z.discriminatedUnion('type',[
         z.strictObject({type:z.literal('send'),bookingId:Id,body:z.string().trim().min(1).max(2000)}),
-        z.strictObject({type:z.literal('read'),bookingId:Id,ids:z.array(Id).max(100),through:z.iso.datetime({offset:true}),lastMessageId:Id}),
+        z.strictObject({type:z.literal('read'),bookingId:Id,ids:z.array(Id).max(100).optional(),through:z.iso.datetime({offset:true}),lastMessageId:Id}),
         z.strictObject({type:z.literal('visibility'),visible:z.boolean()}),
         z.strictObject({type:z.literal('location'),bookingId:Id,latitude:z.number().min(-90).max(90),longitude:z.number().min(-180).max(180)}),
       ]).safeParse(await request.json().catch(()=>null));
@@ -103,15 +103,18 @@ export async function chatDockRequest(request: NextRequest, area: ChatArea) {
         if(result.error)return json({error:friendlyError(result.error)},400);return json({ok:true,id:result.data});
       }
       if(featuresReady){const marked=await db.rpc('mark_my_booking_chat_read',{p_booking_id:input.data.bookingId,p_message_id:input.data.lastMessageId});if(marked.error)throw marked.error;}
-      const unread = input.data.ids.length ? await db.from('app_notifications').select('id').eq('recipient_id',viewer.id)
+      let unreadQuery=db.from('app_notifications').select('id').eq('recipient_id',viewer.id)
         .eq('category','message').eq('href',`/${area}/atendimento/${input.data.bookingId}`)
-        .in('id',input.data.ids).is('read_at',null).lte('created_at',input.data.through) : {data:[],error:null};
+        .is('read_at',null).lte('created_at',input.data.through).order('created_at').limit(100);
+      if(input.data.ids?.length)unreadQuery=unreadQuery.in('id',input.data.ids);
+      // Full-page readers omit ids; resolve only their own loaded conversation.
+      const unread = input.data.ids?.length===0 ? {data:[],error:null} : await unreadQuery;
       if (unread.error) throw unread.error;
       for (const row of unread.data ?? []) {
         const marked = await db.rpc('mark_my_notification_read',{p_id:row.id});
         if (marked.error) throw marked.error;
       }
-      return json({ok:true,featuresReady,ids:(unread.data ?? []).map(row=>row.id)});
+      return json({ok:true,featuresReady,hasMore:input.data.ids===undefined && unread.data?.length===100,ids:(unread.data ?? []).map(row=>row.id)});
     }
     if (bookingId) {
       if (!Id.safeParse(bookingId).success) return json({error:'Conversa inválida.'},400);

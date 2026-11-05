@@ -28,8 +28,8 @@ export default async function InstructorFinancePage() {
       <AdminTitle title="Meu financeiro" subtitle="Valores das suas reservas confirmadas." />
       <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
         <Metric label="Líquido previsto" value={formatMoney(net)} hint="Após comissão" hintTone="success" icon="wallet" tone="green" />
-        <Metric label="Vendas brutas" value={formatMoney(gross)} hint="Pago pelos alunos" icon="chart" tone="blue" />
-        <Metric label="Comissão da plataforma" value={formatMoney(gross - net)} hint="Fixada em cada reserva" icon="sliders" tone="purple" />
+        <Metric label="Vendas brutas" value={formatMoney(gross)} hint="Valores das reservas" icon="chart" tone="blue" />
+        <Metric label="Comissão total" value={formatMoney(gross - net)} hint="Plataforma e pousada" icon="sliders" tone="purple" />
         <Metric label="Reservas" value={String(bookings.length)} hint="Confirmadas" icon="book" tone="orange" />
       </div>
 
@@ -39,7 +39,7 @@ export default async function InstructorFinancePage() {
 
       <Panel title="Extrato de reservas" className="mt-4">
         {bookings.length === 0 ? (
-          <EmptyState>Nenhuma reserva confirmada ainda.</EmptyState>
+          <EmptyState>Nenhuma reserva elegível para o financeiro. Aulas de validação não geram repasse.</EmptyState>
         ) : (
           <ul className="grid gap-2">
             {bookings.map((b) => (
