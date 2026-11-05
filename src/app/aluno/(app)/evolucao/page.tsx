@@ -43,20 +43,25 @@ function ProgressStatus({ label }: { label: string }) {
 function BookingPreview({
   booking,
   expanded,
+  statusParam = '',
 }: {
   booking: StudentBooking;
   expanded: boolean;
+  /** Keeps the active status filter in the URL when opening/closing a booking. */
+  statusParam?: string;
 }) {
   const progress = getBookingProgress(booking.booking_meetings);
   const label = evolutionBookingStatus(booking);
   const next = [...booking.booking_meetings]
     .filter((meeting) => meeting.status === 'scheduled' || meeting.status === 'in_progress')
     .sort((a, b) => a.starts_at.localeCompare(b.starts_at))[0];
+  const filter = statusParam ? `status=${statusParam}` : '';
 
   return (
     <Link
-      href={expanded ? `/aluno/evolucao#reserva-${booking.id}` :
-        `/aluno/evolucao?reserva=${booking.id}#reserva-${booking.id}`}
+      href={expanded
+        ? `/aluno/evolucao${filter ? `?${filter}` : ''}#reserva-${booking.id}`
+        : `/aluno/evolucao?reserva=${booking.id}${filter ? `&${filter}` : ''}#reserva-${booking.id}`}
       aria-current={expanded ? 'page' : undefined}
       className={
         'press block rounded-[18px] border p-4 transition-colors ' +
@@ -117,10 +122,43 @@ function ReservationMetric({ label, value }: { label: string; value: string }) {
   );
 }
 
+type StatusKey = 'ativas' | 'concluidas' | 'aguardando' | 'canceladas';
+
+const STATUS_FILTERS: readonly { key: StatusKey; label: string }[] = [
+  { key: 'ativas', label: 'Ativas' },
+  { key: 'concluidas', label: 'Concluídas' },
+  { key: 'aguardando', label: 'Aguardando' },
+  { key: 'canceladas', label: 'Canceladas' },
+];
+
+/** One status bucket per booking, so the filter chips never overlap. */
+function bookingCategory(booking: StudentBooking): StatusKey {
+  if (booking.status === 'cancelled') return 'canceladas';
+  if (booking.status === 'awaiting_payment') return 'aguardando';
+  if (bookingIsFinished(booking)) return 'concluidas';
+  return 'ativas';
+}
+
+function FilterChip({
+  href, label, count, active,
+}: { href: string; label: string; count: number; active: boolean }) {
+  return (
+    <Link
+      href={href}
+      aria-current={active ? 'page' : undefined}
+      className={'press inline-flex items-center gap-1.5 rounded-full border px-3 py-1.5 text-[12px] font-semibold transition-colors ' +
+        (active ? 'border-brand bg-brand text-on-brand' : 'border-line bg-surface text-label hover:text-ink')}
+    >
+      {label}
+      <span className={'tabular text-[11px] ' + (active ? 'text-on-brand/80' : 'text-muted')}>{count}</span>
+    </Link>
+  );
+}
+
 export default async function ProgressPage({
   searchParams,
 }: {
-  searchParams: Promise<{ reserva?: string; encontro?: string }>;
+  searchParams: Promise<{ reserva?: string; encontro?: string; status?: string }>;
 }) {
   const viewer = await requireRole(['student'], '/aluno/evolucao');
   const [bookings, params] = await Promise.all([
@@ -132,6 +170,16 @@ export default async function ProgressPage({
   // listBookingsForStudent is scoped to this authenticated student under RLS.
   const selected = selectedStudentBooking(bookings, params.reserva);
   const finished = selected ? bookingIsFinished(selected) : false;
+
+  // Status filter (chips). "Todas" shows everything; other keys narrow the list.
+  const counts: Record<StatusKey, number> = { ativas: 0, concluidas: 0, aguardando: 0, canceladas: 0 };
+  for (const booking of bookings) counts[bookingCategory(booking)] += 1;
+  const activeStatus: StatusKey | 'todas' =
+    STATUS_FILTERS.some((f) => f.key === params.status) ? (params.status as StatusKey) : 'todas';
+  const visibleBookings = activeStatus === 'todas'
+    ? bookings
+    : bookings.filter((booking) => bookingCategory(booking) === activeStatus);
+  const statusParam = activeStatus === 'todas' ? '' : activeStatus;
 
   // The detailed queries are only needed after the student opens a booking.
   const [skills, reviews] = selected
@@ -188,6 +236,15 @@ export default async function ProgressPage({
         <p className="mt-1 text-[12px] text-muted">
           Toque em uma reserva para consultar os detalhes. As outras ficam recolhidas.
         </p>
+        {bookings.length > 0 ? (
+          <div className="mt-3 flex flex-wrap gap-2" role="group" aria-label="Filtrar reservas por status">
+            <FilterChip href="/aluno/evolucao" label="Todas" count={bookings.length} active={activeStatus === 'todas'} />
+            {STATUS_FILTERS.filter((f) => counts[f.key] > 0).map((f) => (
+              <FilterChip key={f.key} href={`/aluno/evolucao?status=${f.key}`}
+                label={f.label} count={counts[f.key]} active={activeStatus === f.key} />
+            ))}
+          </div>
+        ) : null}
         {bookings.length === 0 ? (
           <div className="mt-4 rounded-[16px] border border-line p-4">
             <p className="text-[13px] text-muted">Você ainda não possui reservas.</p>
@@ -196,16 +253,20 @@ export default async function ProgressPage({
               Agendar minha primeira aula
             </Link>
           </div>
+        ) : visibleBookings.length === 0 ? (
+          <div className="mt-4 rounded-[16px] border border-line p-4">
+            <p className="text-[13px] text-muted">Nenhuma reserva nesta categoria.</p>
+          </div>
         ) : (
           <div className="mt-4 grid gap-3">
-            {bookings.map((booking) => (
+            {visibleBookings.map((booking) => (
               <div id={`reserva-${booking.id}`} key={booking.id}
                 className={'grid gap-2 scroll-mt-28 rounded-[22px] transition-colors ' +
                   (selected?.id === booking.id
                     ? 'bg-[#064862] p-1.5 ring-2 ring-[#00e3ee]/80 shadow-[0_12px_30px_#000e206e]'
                     : '')}>
                 <BookingPreview booking={booking}
-                  expanded={selected?.id === booking.id} />
+                  expanded={selected?.id === booking.id} statusParam={statusParam} />
                 {selected?.id === booking.id ? (
                   <>
         <section id="detalhes-reserva"
