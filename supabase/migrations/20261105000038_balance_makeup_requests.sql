@@ -54,8 +54,18 @@ CREATE FUNCTION public.can_student_attend_balance(
         OR (b.status='awaiting_payment' AND b.created_at>now()-interval '10 minutes'))
       AND tstzrange(m.starts_at,m.starts_at+make_interval(mins=>m.minutes),'[)')
           && tstzrange(p_start,p_start+make_interval(mins=>p_minutes),'[)')
+  ) AND NOT EXISTS (
+    -- Searching requests also hold a student's slot until expiry.
+    SELECT 1 FROM public.instructor_requests r
+    CROSS JOIN LATERAL jsonb_array_elements(r.meetings) AS slot(value)
+    WHERE r.student_id=p_student AND r.status='searching' AND r.expires_at>now()
+      AND tstzrange(
+        (slot.value->>'starts_at')::timestamptz,
+        (slot.value->>'starts_at')::timestamptz
+          +make_interval(hours=>(slot.value->>'hours')::integer),'[)')
+          && tstzrange(p_start,p_start+make_interval(mins=>p_minutes),'[)')
   );
-$$;
+$;
 REVOKE ALL ON FUNCTION public.can_student_attend_balance(uuid,timestamptz,integer)
   FROM PUBLIC,anon,authenticated;
 
