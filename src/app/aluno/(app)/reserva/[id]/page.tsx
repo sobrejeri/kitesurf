@@ -223,7 +223,7 @@ export default async function BookingPage({ params }: { params: Promise<{ id: st
                   Conversar com meu instrutor
                 </ButtonLink>
               ) : null}
-              {booking.status === 'completed' && booking.instructor_id ? (
+              {booking.status === 'completed' && booking.instructor_id && balance.available === 0 ? (
                 <ButtonLink
                   href={`/aluno/reservar?instrutor=${booking.instructor_id}&praia=${booking.beach_id}&nivel=${booking.level}&idioma=${encodeURIComponent(booking.language)}&horas=${booking.total_hours}`}
                   variant="ghost"
