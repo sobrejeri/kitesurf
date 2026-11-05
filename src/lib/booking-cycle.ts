@@ -1,12 +1,34 @@
 import type { Booking, StudentBooking } from '@/lib/data';
 
-/** A finished booking stays in history; a later booking starts at 0 independently. */
+/**
+ * Paid minutes not yet delivered or scheduled: contracted − recorded − the
+ * minutes already held by a scheduled or in-progress meeting. Mirrors the
+ * server's booking_balance_minutes so the UI and the database never disagree.
+ */
+export function bookingBalanceMinutes(
+  booking: Pick<Booking, 'total_hours' | 'booking_meetings'>,
+): number {
+  let done = 0;
+  let scheduled = 0;
+  for (const meeting of booking.booking_meetings) {
+    if (meeting.status === 'done') done += meeting.done_minutes;
+    else if (meeting.status === 'scheduled' || meeting.status === 'in_progress') scheduled += meeting.minutes;
+  }
+  return Math.max(0, booking.total_hours * 60 - done - scheduled);
+}
+
+/**
+ * A finished booking stays in history; a later booking starts at 0 independently.
+ * A confirmed booking whose meetings are all recorded but still holds a paid
+ * balance is NOT finished — the student can reschedule a make-up for it.
+ */
 export function bookingIsFinished(
-  booking: Pick<Booking, 'status' | 'booking_meetings'>,
+  booking: Pick<Booking, 'status' | 'total_hours' | 'booking_meetings'>,
 ): boolean {
-  return booking.status === 'completed'
-    || (booking.status === 'confirmed' && booking.booking_meetings.length > 0
-      && booking.booking_meetings.every((m) => m.status === 'done' || m.status === 'cancelled'));
+  if (booking.status === 'completed') return true;
+  return booking.status === 'confirmed' && booking.booking_meetings.length > 0
+    && booking.booking_meetings.every((m) => m.status === 'done' || m.status === 'cancelled')
+    && bookingBalanceMinutes(booking) === 0;
 }
 export function activeStudentBookings(bookings: readonly StudentBooking[]): StudentBooking[] {
   return bookings.filter((b) => b.status === 'confirmed' && !bookingIsFinished(b))
@@ -42,10 +64,14 @@ export function selectedStudentBooking(
 
 /** Display the status of a booking rather than labeling all records as active. */
 export function evolutionBookingStatus(
-  booking: Pick<Booking, 'status' | 'booking_meetings'>,
+  booking: Pick<Booking, 'status' | 'total_hours' | 'booking_meetings'>,
 ) {
   if (booking.status === 'cancelled') return 'Cancelada';
   if (bookingIsFinished(booking)) return 'Concluída';
+  if (booking.status === 'confirmed'
+    && booking.booking_meetings.length > 0
+    && booking.booking_meetings.every((m) => m.status === 'done' || m.status === 'cancelled')
+    && bookingBalanceMinutes(booking) > 0) return 'Saldo a reagendar';
   if (booking.status === 'awaiting_payment') return 'Aguardando pagamento';
   if (booking.booking_meetings.some((meeting) => meeting.status === 'in_progress')) return 'Em aula';
   if (booking.booking_meetings.some((meeting) => meeting.status === 'done')) return 'Em andamento';
