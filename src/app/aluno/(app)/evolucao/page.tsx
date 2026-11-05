@@ -147,8 +147,8 @@ export default async function ProgressPage({
         </section>
       ) : (
         <>
-          {/* Resumo da jornada — anel de progresso e números grandes */}
-          <section className="-mt-2 rounded-[22px] border border-line bg-surface p-4">
+          {/* Resumo da jornada — anel e números grandes, sem cartão (direto no fundo) */}
+          <section className="-mt-2 px-1">
             <div className="flex flex-wrap items-center justify-between gap-3">
               <h2 className="text-[18px] font-bold text-ink">Sua jornada no kite</h2>
               <KiteLevelMedal level={kiteLevel.assessed ?? kiteLevel.effective}
