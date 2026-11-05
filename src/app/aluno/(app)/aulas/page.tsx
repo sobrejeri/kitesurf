@@ -12,8 +12,9 @@ import { VALIDATION_WITHOUT_CHECKOUT } from '@/lib/booking-mode';
 
 export const metadata: Metadata = { title: 'Minhas aulas' };
 
-export default async function MyLessonsPage() {
+export default async function MyLessonsPage({searchParams}:{searchParams:Promise<{aba?:string|string[]}>}) {
   const viewer = await requireRole(['student'], '/aluno/aulas');
+  const initialTab=(await searchParams).aba==='anteriores'?1:0;
   const bookings = await listBookingsForStudent(viewer.id);
   const now = Date.now();
 
@@ -29,8 +30,8 @@ export default async function MyLessonsPage() {
           startsAt: meeting.starts_at,
           evolutionHref: lessonHasEvolution(meeting.status) ? lessonEvolutionHref(booking.id, meeting.id) : null,
           title: 'Aula particular de kitesurf',
-          statusLabel: awaiting ? (VALIDATION_WITHOUT_CHECKOUT ? 'Aguardando sua confirmação' : BOOKING_STATUS_LABELS.awaiting_payment) : meeting.status === 'done' ? 'Concluída' : MEETING_STATUS_LABELS[meeting.status],
-          statusTone: awaiting ? 'warning' : meeting.status === 'done' ? 'quiet' : 'success',
+          statusLabel: awaiting ? (VALIDATION_WITHOUT_CHECKOUT ? 'Aguardando sua confirmação' : BOOKING_STATUS_LABELS.awaiting_payment) : meeting.status === 'done' ? 'Concluída' : past && meeting.status==='scheduled' ? 'Aguardando registro' : MEETING_STATUS_LABELS[meeting.status],
+          statusTone: awaiting || (past && meeting.status==='scheduled') ? 'warning' : meeting.status === 'done' ? 'quiet' : 'success',
           day: formatDay(meeting.starts_at),
           month: formatMonthTag(meeting.starts_at),
           beach: (booking.beach?.name ?? '—'),
@@ -61,7 +62,7 @@ export default async function MyLessonsPage() {
           Nova aula
         </ButtonLink>
       </StudentHero>
-      <MyLessons lessons={lessons} />
+      <MyLessons key={initialTab} initialTab={initialTab} lessons={lessons} />
     </div>
   );
 }

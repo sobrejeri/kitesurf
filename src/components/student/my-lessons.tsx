@@ -38,8 +38,8 @@ const TIPS: readonly { title: string; body: string; icon: IconName }[] = [
   { title: 'Respeite seu ritmo.', body: 'Aproveite a jornada, sem pressa.', icon: 'heart' },
 ];
 
-export function MyLessons({ lessons }: { lessons: readonly LessonCard[] }) {
-  const [tab, setTab] = useState(0);
+export function MyLessons({ lessons, initialTab=0 }: { lessons: readonly LessonCard[]; initialTab?:0|1 }) {
+  const [tab, setTab] = useState<number>(initialTab);
   const visible = lessons.filter((lesson) => (tab === 0 ? !lesson.past : lesson.past));
   return (
     <>
