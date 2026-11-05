@@ -7,6 +7,7 @@ import { studentHomeSummary } from '@/lib/student-home';
 import { formatDateLong, formatMinutes, formatTime } from '@/lib/format';
 import { KITE_LEVEL_BADGES } from '@/lib/kite-steps';
 import { lessonEvolutionHref } from '@/lib/student-lesson-links';
+import { initials } from '@/lib/people';
 import styles from './home-dashboard.module.css';
 
 /**
@@ -18,10 +19,12 @@ export function HomeDashboard({
   bookings,
   level,
   firstName,
+  instructorPhotoUrl = null,
 }: {
   bookings: StudentBooking[];
   level: StudentKiteLevel | null;
   firstName?: string;
+  instructorPhotoUrl?: string | null;
 }) {
   const summary = studentHomeSummary(bookings);
   const { current, booking } = summary;
@@ -104,6 +107,12 @@ export function HomeDashboard({
           {current ? (
             <>
               <div className={styles.nextBody}>
+                <div className={styles.instructorPhoto}>
+                  {instructorPhotoUrl
+                    ? <img src={instructorPhotoUrl} alt="" />
+                    : <span className={styles.instructorInitials}>{initials(current.booking.instructor?.full_name)}</span>}
+                  <span className={styles.seal} aria-hidden="true"><Icon name="check" /></span>
+                </div>
                 <div className={styles.nextDetails}>
                   <p className={styles.nextWhen}>
                     <strong>{formatDateLong(current.meeting.starts_at)}</strong>
@@ -113,7 +122,6 @@ export function HomeDashboard({
                   <p className={styles.nextMeta}><Icon name="user" />Instrutor: {current.booking.instructor?.full_name ?? 'Em definição'}</p>
                   <span className={styles.bookingCode}>{current.booking.code}</span>
                 </div>
-                <div className={styles.nextArt} aria-hidden="true"><Icon name="kite" /></div>
               </div>
               <div className={styles.actions}>
                 <Link

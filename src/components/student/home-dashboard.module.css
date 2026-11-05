@@ -32,7 +32,12 @@
 .label{font-size:13px;gap:8px}
 .status{display:inline-flex;align-items:center;gap:5px;padding:5px 9px;border-radius:99px;color:#89f4c6;background:#075443;border:1px solid #28bb8d;font-size:11px;font-weight:700}
 .status svg{width:15px;height:15px}
-.nextBody{position:relative;display:flex;min-height:151px;margin-top:18px}
+.nextBody{position:relative;display:flex;gap:16px;align-items:flex-start;min-height:151px;margin-top:18px}
+.instructorPhoto{position:relative;flex:none;z-index:1}
+.instructorPhoto img,.instructorInitials{display:block;width:88px;height:88px;border-radius:20px;object-fit:cover;border:2px solid #2ad3e6;background:#0a4b65}
+.instructorInitials{display:grid;place-items:center;color:#cdeefb;font-weight:850;font-size:30px}
+.seal{position:absolute;right:-5px;bottom:-5px;display:grid;place-items:center;width:26px;height:26px;border-radius:50%;background:#16c9df;color:#04202b;border:3px solid #063347}
+.seal svg{width:14px;height:14px;color:#04202b}
 .nextDetails{position:relative;z-index:1}
 .nextWhen{display:flex;flex-direction:column;gap:9px;margin:0 0 3px}
 .nextWhen strong{font-size:clamp(21px,3vw,29px);font-weight:850;letter-spacing:-.04em}
@@ -40,8 +45,6 @@
 .nextWhen svg,.nextMeta svg{width:16px;height:16px;color:#00e5ef}
 .nextMeta{margin-top:9px}
 .bookingCode{display:inline-block;padding:5px 9px;background:#0a5270;border-radius:7px;color:#e5faff;font-size:11px;margin-top:12px}
-.nextArt{position:absolute;right:3px;top:12px;display:grid;place-items:center;width:125px;height:125px;border-radius:50%;background:#00daec16;border:1px solid #00daec3d;color:#5ef1fb;opacity:.5;transform:rotate(-14deg)}
-.nextArt svg{width:65px;height:65px}
 .actions{position:relative;display:grid;grid-template-columns:1.1fr .9fr;gap:13px;margin-top:17px;padding-top:0}
 .actions a{display:inline-flex;min-height:47px;align-items:center;justify-content:center;gap:8px;border-radius:99px;font-size:14px;font-weight:800;padding:10px 13px}
 .actions .primary,.emptyLesson .primary{color:#003047!important;background:linear-gradient(100deg,#00d7e9,#04f3ee);margin:0}
@@ -87,9 +90,10 @@
  .status{font-size:10px}
  .nextWhen strong{font-size:23px}
  .nextWhen span,.nextMeta{font-size:12px}
- .nextBody{min-height:153px}
- .nextArt{width:85px;height:85px;top:43px;right:-4px}
- .nextArt svg{width:47px;height:47px}
+ .nextBody{min-height:0}
+ .instructorPhoto img,.instructorInitials{width:72px;height:72px}
+ .instructorInitials{font-size:24px}
+ .seal{width:22px;height:22px}.seal svg{width:12px;height:12px}
  .actions{gap:8px}
  .actions a{font-size:12px;padding:9px 7px;min-height:44px}
  .insights{gap:9px;margin-top:12px}
@@ -125,8 +129,6 @@
   .nextMeta { margin-top: 6px; font-size: 11.5px; max-width: 100%; }
   .nextWhen span { font-size: 11.5px; }
   .bookingCode { margin-top: 8px; padding: 4px 8px; font-size: 10px; }
-  .nextArt { width: 57px; height: 57px; right: 5px; top: 32px; opacity: .32; }
-  .nextArt svg { width: 30px; height: 30px; }
   .actions { margin-top: 12px; }
   .actions a { min-height: 44px; font-size: 11.5px; gap: 5px; }
   .actions a svg { width: 15px; height: 15px; }

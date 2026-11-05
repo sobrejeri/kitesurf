@@ -10,6 +10,8 @@ import { getViewer } from '@/lib/auth';
 import { getQuoteTable, listActiveBeaches, type Beach, type QuoteRow } from '@/lib/data';
 import { lessonDate } from '@/lib/dates';
 import { getStudentKiteLevel } from '@/lib/student-kite-level';
+import { studentHomeSummary } from '@/lib/student-home';
+import { getStudentBookingInstructorAvatar } from '@/lib/student-booking-avatar';
 import { supabaseConfig } from '@/lib/env';
 
 export const metadata: Metadata = { title: 'Explorar' };
@@ -49,7 +51,9 @@ export default async function StudentHomePage() {
     try{bookings=await listBookingsForStudent(viewer.id);}catch{historyUnavailable=true;}
   }
   const returning=bookings.length>0;
-
+  // Real instructor photo for the next-lesson card (initials fallback in the component).
+  const homeCurrentBookingId = returning ? (studentHomeSummary(bookings).current?.booking.id ?? null) : null;
+  const instructorPhotoUrl = homeCurrentBookingId ? await getStudentBookingInstructorAvatar(homeCurrentBookingId) : null;
 
   return (
     <div className="vento-student-desktop-home">
@@ -62,7 +66,7 @@ export default async function StudentHomePage() {
       </div>
       <HomePosterHero firstName={firstName} /></>:null}
 
-      {returning?<HomeDashboard bookings={bookings} level={kiteLevel} firstName={firstName}/>:null}
+      {returning?<HomeDashboard bookings={bookings} level={kiteLevel} firstName={firstName} instructorPhotoUrl={instructorPhotoUrl}/>:null}
       {historyUnavailable?<p role="status" className="my-5 rounded-xl border border-line bg-surface p-4 text-sm text-label">Não foi possível carregar suas aulas agora. <a className="text-brand underline" href="/aluno/inicio">Tentar novamente</a></p>:null}
       <LessonSearch defaultDate={lessonDate(1)} quotes={quotes} beaches={beaches}
         studentLevel={kiteLevel?.effective ?? 'first_time'} />
