@@ -57,7 +57,7 @@ if (modernStudent) {
   withinList(
     student,
     'visibleBookings.map((booking) => (',
-    '</div>\\n            ))}\\n          </div>',
+    '</div>\n            ))}\n          </div>',
     '<section id="detalhes-reserva"',
     'Student booking details',
   );
