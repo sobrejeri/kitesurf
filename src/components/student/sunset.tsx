@@ -133,7 +133,7 @@ export function StudentHero({
           className={`mt-2 max-w-[14ch] font-bold leading-[1.05] tracking-[-1.2px] text-white ${titleSize} ${plainOnMobile ? 'max-md:hidden' : ''}`}
         />
         {lead ? <p className={`mt-3 max-w-[30ch] text-[15px] leading-snug text-[#dfe5ee] ${plainOnMobile ? 'max-md:hidden' : ''}`}>{lead}</p> : null}
-        {children ? <div className="mt-5">{children}</div> : null}
+        {children ? <div className={`mt-5 ${plainOnMobile ? 'max-md:hidden' : ''}`}>{children}</div> : null}
       </div>
       {compact && (image === 'lesson' || image === 'ocean') ? <svg className={`pointer-events-none absolute bottom-0 left-0 h-[45px] w-full ${hideMediaMobile}`} viewBox="0 0 390 45" preserveAspectRatio="none" aria-hidden="true"><path d="M0 26 C95 0 140 44 232 18 S350 8 390 16 L390 45 L0 45Z" fill="#00b9d5" opacity=".9"/><path d="M0 37 C95 12 153 48 244 30 S342 23 390 29 L390 45 L0 45Z" fill="#031c31"/></svg> : null}
     </section>

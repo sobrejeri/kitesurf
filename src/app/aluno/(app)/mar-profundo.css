@@ -9,6 +9,16 @@
   --color-brand-soft: #074c69;
   --color-brand-tint: #063f5b;
   --color-brand-wash: #05334e;
+  /* Status tones adapted for the deep-ocean surfaces: dark tinted fills with
+     bright text, so badges and notes stay legible instead of washing out. */
+  --color-success: #8bf3cb;
+  --color-success-soft: #124c3b;
+  --color-warning: #ffcf8a;
+  --color-warning-soft: #58391d;
+  --color-danger: #ffb0be;
+  --color-danger-soft: #472735;
+  --color-quiet: #cbd8ed;
+  --color-quiet-soft: #27374c;
   --color-on-brand: #001b2e;
   --color-on-brand-muted: #bce9ee;
   --color-ink: #f6fbff;
