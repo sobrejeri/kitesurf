@@ -1,65 +1,219 @@
 import Link from 'next/link';
-import {Icon} from '@/components/icon';
-import type {StudentBooking} from '@/lib/data';
-import type {StudentKiteLevel} from '@/lib/student-kite-level';
-import {studentHomeSummary} from '@/lib/student-home';
-import {formatDateLong,formatMinutes,formatTime} from '@/lib/format';
-import {KITE_LEVEL_BADGES} from '@/lib/kite-steps';
-import {lessonEvolutionHref} from '@/lib/student-lesson-links';
+
+import { Icon } from '@/components/icon';
+import type { StudentBooking } from '@/lib/data';
+import type { StudentKiteLevel } from '@/lib/student-kite-level';
+import { studentHomeSummary } from '@/lib/student-home';
+import { formatDateLong, formatMinutes, formatTime } from '@/lib/format';
+import { KITE_LEVEL_BADGES } from '@/lib/kite-steps';
+import { lessonEvolutionHref } from '@/lib/student-lesson-links';
 import styles from './home-dashboard.module.css';
 
-export function HomeDashboard({bookings,level,firstName}:{bookings:StudentBooking[];level:StudentKiteLevel|null;firstName?:string}){
-  const summary=studentHomeSummary(bookings);
-  const {current,booking}=summary;
-  // The next lesson is featured in the card above, so the agenda lists only the
-  // meetings after it — no duplication of the same encounter.
-  const agendaUpcoming=summary.upcoming.filter(e=>e.meeting.id!==current?.meeting.id);
-  const currentLabel=current?.meeting.status==='in_progress'?'Aula em andamento':
-    current && summary.upcoming.some(e=>e.meeting.id===current.meeting.id)?'Sua próxima aula':'Encontro aguardando registro';
-  return <section className={styles.dashboard} aria-labelledby="student-dashboard-title">
-    <header className={styles.welcome}>
-      <img src="/images/prea-real-1600.webp" alt="" width={1600} height={941}/>
-      <div><span className={styles.eyebrow}>SEU ESPAÇO NO KITE</span>
-        <h1 id="student-dashboard-title">Bons ventos, {firstName || 'aluno'}.</h1>
-        <p>Seu próximo encontro e cada conquista, no seu ritmo.</p>
-        <a href="#buscar-aula" className={styles.searchLink}>Agendar nova aula <Icon name="arrow"/></a>
+/**
+ * Aluno / Início — VentoKite.
+ * Visual-only redesign. Existing booking, progress, support and search links
+ * remain intact; figures and status are read from the student's own records.
+ */
+export function HomeDashboard({
+  bookings,
+  level,
+  firstName,
+}: {
+  bookings: StudentBooking[];
+  level: StudentKiteLevel | null;
+  firstName?: string;
+}) {
+  const summary = studentHomeSummary(bookings);
+  const { current, booking } = summary;
+  const agendaUpcoming = summary.upcoming.filter((item) => item.meeting.id !== current?.meeting.id);
+  const currentLabel = current?.meeting.status === 'in_progress'
+    ? 'Aula em andamento'
+    : current && summary.upcoming.some((item) => item.meeting.id === current.meeting.id)
+      ? 'Sua próxima aula'
+      : 'Encontro aguardando registro';
+
+  return (
+    <section className={styles.dashboard} aria-labelledby="student-dashboard-title">
+      <header className={styles.welcome}>
+        <img
+          src="/images/kite-lesson.webp"
+          alt=""
+          width={1254}
+          height={1254}
+          className={styles.heroPhoto}
+          fetchPriority="high"
+        />
+        <div className={styles.heroShade} aria-hidden="true" />
+        <div className={styles.heroContent}>
+          <div className={styles.heroBrand} aria-label="VentoKite, aulas de kitesurf">
+            <span className={styles.brandName}>Vento<span>Kite</span></span>
+            <span className={styles.brandDescriptor}>AULAS DE KITESURF <Icon name="waves" /></span>
+          </div>
+          <span className={styles.eyebrow}>SEU ESPAÇO NO KITE</span>
+          <h1 id="student-dashboard-title">Bons ventos,<br /><em>{firstName || 'aluno'}!</em></h1>
+          <p>Seu próximo encontro e cada conquista, no seu ritmo.</p>
+          <a href="#buscar-aula" className={styles.searchLink}>
+            <Icon name="calendar" />
+            Agendar nova aula
+            <Icon name="arrow" />
+          </a>
+        </div>
+      </header>
+
+      <nav className={styles.quickNav} aria-label="Acessos rápidos">
+        <a href="#buscar-aula" className={styles.quickPrimary}>
+          <Icon name="calendar" />
+          <span>Agendar<br />aula</span>
+        </a>
+        <Link href="/aluno/aulas">
+          <Icon name="book" />
+          <span>Minhas<br />aulas</span>
+        </Link>
+        <Link href="/aluno/evolucao">
+          <Icon name="chart" />
+          <span>Evolução<br />no kite</span>
+        </Link>
+        <Link href="/aluno/evolucao">
+          <Icon name="star" />
+          <span>Minhas<br />conquistas</span>
+        </Link>
+      </nav>
+
+      {summary.pending.map((pending) => (
+        <div className={styles.pending} key={pending.id} role="status">
+          <span><strong>Confirme sua aula</strong> · Reserva {pending.code}</span>
+          <Link href={'/aluno/reserva/' + pending.id}>Revisar reserva <Icon name="arrow" /></Link>
+        </div>
+      ))}
+
+      <div className={styles.cards}>
+        <article className={[styles.card, styles.next].join(' ')}>
+          <div className={styles.nextHeading}>
+            <span className={styles.label}><Icon name="calendar" />{current ? currentLabel : 'Seu próximo encontro'}</span>
+            {current ? (
+              <span className={styles.status}>
+                <Icon name={current.meeting.status === 'in_progress' ? 'clock' : 'check'} />
+                {current.meeting.status === 'in_progress'
+                  ? 'Em andamento'
+                  : current.booking.status === 'confirmed'
+                    ? 'Confirmada'
+                    : 'Agendada'}
+              </span>
+            ) : null}
+          </div>
+          {current ? (
+            <>
+              <div className={styles.nextBody}>
+                <div className={styles.nextDetails}>
+                  <p className={styles.nextWhen}>
+                    <strong>{formatDateLong(current.meeting.starts_at)}</strong>
+                    <span><Icon name="clock" />{formatTime(current.meeting.starts_at)} · {formatMinutes(current.meeting.minutes)}</span>
+                  </p>
+                  <p className={styles.nextMeta}><Icon name="pin" />{current.booking.beach?.name ?? 'Praia da reserva'}</p>
+                  <p className={styles.nextMeta}><Icon name="user" />Instrutor: {current.booking.instructor?.full_name ?? 'Em definição'}</p>
+                  <span className={styles.bookingCode}>{current.booking.code}</span>
+                </div>
+                <div className={styles.nextArt} aria-hidden="true"><Icon name="kite" /></div>
+              </div>
+              <div className={styles.actions}>
+                <Link
+                  className={styles.primary}
+                  href={current.meeting.status === 'in_progress'
+                    ? lessonEvolutionHref(current.booking.id, current.meeting.id)
+                    : '/aluno/reserva/' + current.booking.id}
+                >
+                  Ver minha aula <Icon name="arrow" />
+                </Link>
+                <Link className={styles.secondary} href={'/aluno/atendimento/' + current.booking.id} aria-label="Conversar com meu instrutor">
+                  <Icon name="chat" /> Conversar
+                </Link>
+              </div>
+            </>
+          ) : (
+            <div className={styles.emptyLesson}>
+              <h2>O mar espera por você.</h2>
+              <p>Escolha um novo dia para continuar sua jornada.</p>
+              <a href="#buscar-aula" className={styles.primary}>Encontrar minha aula <Icon name="arrow" /></a>
+            </div>
+          )}
+        </article>
+
+        <div className={styles.insights}>
+          <article className={[styles.card, styles.insightCard].join(' ')}>
+            <span className={styles.label}><Icon name="clock" />Horas da reserva</span>
+            {booking ? (
+              <>
+                <h2 className={styles.progressTitle}>{formatMinutes(summary.recordedMinutes)} <span>de {formatMinutes(summary.totalMinutes)}</span></h2>
+                <div
+                  className={styles.progress}
+                  role="progressbar"
+                  aria-label={'Horas registradas na reserva ' + booking.code}
+                  aria-valuenow={summary.percent}
+                  aria-valuemin={0}
+                  aria-valuemax={100}
+                ><span style={{ width: summary.percent + '%' }} /></div>
+                <p>{formatMinutes(summary.remainingMinutes)} ainda não registradas pelo instrutor.</p>
+                <Link className={styles.cardArrow} href={'/aluno/evolucao?reserva=' + booking.id + '#reserva-' + booking.id} aria-label="Acompanhar evolução das horas">
+                  <Icon name="arrow" />
+                </Link>
+              </>
+            ) : (
+              <><h2>Vamos começar?</h2><p>Seu progresso aparecerá após a primeira aula.</p></>
+            )}
+          </article>
+
+          <article className={[styles.card, styles.insightCard, styles.levelCard].join(' ')}>
+            <span className={styles.label}><Icon name="chart" />Seu nível no kite</span>
+            <h2>{level?.assessed ? KITE_LEVEL_BADGES[level.assessed].label : 'Em acompanhamento'}</h2>
+            <p>{level?.assessed
+              ? 'Nível avaliado pelo instrutor.'
+              : 'Seu instrutor acompanha seu nível ao longo das aulas.'}</p>
+            {level?.assessedAt ? <small>Avaliação de {formatDateLong(level.assessedAt)}</small> : null}
+            <Link href="/aluno/evolucao" className={styles.cardArrow} aria-label="Ver minhas conquistas"><Icon name="arrow" /></Link>
+          </article>
+        </div>
       </div>
-      <a className={styles.credit} href="https://commons.wikimedia.org/wiki/File:Praia_do_prea_-_cruz_-_ceara.jpg" target="_blank" rel="noopener noreferrer">Foto: Fabiobarros · CC BY-SA 4.0</a>
-    </header>
-    {summary.pending.map(p=><div className={styles.pending} key={p.id}><span><strong>Confirme sua aula</strong> · Reserva {p.code}</span><Link href={`/aluno/reserva/${p.id}`}>Revisar reserva <Icon name="arrow"/></Link></div>)}
-    <div className={styles.cards}>
-      <article className={`${styles.card} ${styles.next}`}>
-        <span className={styles.label}><Icon name="calendar"/>{current?currentLabel:'Seu próximo encontro'}</span>
-        {current?<>
-          <p className={styles.nextWhen}><strong>{formatDateLong(current.meeting.starts_at)}</strong><span>{formatTime(current.meeting.starts_at)} · {formatMinutes(current.meeting.minutes)}</span></p>
-          <p className={styles.nextMeta}>{current.booking.beach?.name ?? 'Praia da reserva'} · {current.booking.instructor?.full_name ?? 'Seu instrutor'} · {current.booking.code}</p>
-          <div className={styles.actions}><Link className={styles.primary} href={current.meeting.status==='in_progress'?lessonEvolutionHref(current.booking.id,current.meeting.id):`/aluno/reserva/${current.booking.id}`}>Ver minha aula <Icon name="arrow"/></Link>
-            <Link href={`/aluno/atendimento/${current.booking.id}`} aria-label="Conversar com meu instrutor"><Icon name="chat"/> Conversar</Link></div>
-        </>:<><h2>O mar espera por você.</h2><p>Escolha um novo dia para continuar sua jornada.</p><a href="#buscar-aula" className={styles.primary}>Encontrar minha aula <Icon name="arrow"/></a></>}
-      </article>
-      <article className={styles.card}>
-        <span className={styles.label}><Icon name="clock"/>Suas horas nesta reserva</span>
-        {booking?<><h2>{formatMinutes(summary.recordedMinutes)} <span>de {formatMinutes(summary.totalMinutes)}</span></h2>
-          <p>Registradas pelo instrutor</p>
-          <div className={styles.progress} role="progressbar" aria-label={`Horas registradas na reserva ${booking.code}`} aria-valuenow={summary.percent} aria-valuemin={0} aria-valuemax={100}><span style={{width:`${summary.percent}%`}}/></div>
-          <small>Reserva {booking.code}</small>
-          <p>{formatMinutes(summary.remainingMinutes)} ainda não registradas.</p>
-          <Link className={styles.textLink} href={`/aluno/evolucao?reserva=${booking.id}#reserva-${booking.id}`}>Acompanhar evolução <Icon name="arrow"/></Link>
-        </>:<><h2>Vamos começar?</h2><p>Seu progresso aparece após a confirmação da primeira aula.</p></>}
-      </article>
-      <article className={styles.card}>
-        <span className={styles.label}><Icon name="chart"/>Seu nível no kite</span>
-        <h2>{level?.assessed?KITE_LEVEL_BADGES[level.assessed].label:'Em acompanhamento'}</h2>
-        <p>{level?.assessed?'Nível avaliado pelo instrutor.':'Seu instrutor registra suas habilidades e avalia seu nível ao longo das aulas.'}</p>
-        {level?.assessedAt?<small>Avaliação de {formatDateLong(level.assessedAt)}</small>:null}
-        <Link href="/aluno/evolucao" className={styles.textLink}>Ver minhas conquistas <Icon name="arrow"/></Link>
-      </article>
-    </div>
-    {agendaUpcoming.length?<>
-    <div className={styles.agendaHeading}><h2>Na sua agenda</h2><Link href="/aluno/aulas">Ver todas as aulas <Icon name="arrow"/></Link></div>
-    <ul className={styles.agenda}>{agendaUpcoming.slice(0,3).map(({booking:b,meeting:m})=><li key={m.id}><span className={styles.date}><Icon name="calendar"/>{formatDateLong(m.starts_at)}</span><span><strong>{b.beach?.name ?? 'Sua praia'}</strong><small>{formatTime(m.starts_at)} · {formatMinutes(m.minutes)} · {b.code}</small></span><Link href={`/aluno/reserva/${b.id}`} aria-label={`Ver reserva ${b.code} em ${formatDateLong(m.starts_at)}`}><Icon name="arrow"/></Link></li>)}</ul>
-    </>:null}
-    {summary.unrecorded.length?<p className={styles.footnote}>{summary.unrecorded.length} encontro(s) com data passada ainda aguardam registro do instrutor. <Link href="/aluno/aulas?aba=anteriores">Consultar histórico</Link></p>:null}
-    <div className={styles.searchHeading}><span className={styles.eyebrow}>CONTINUE NO SEU RITMO</span><h2>Seu próximo bordo</h2></div>
-  </section>;
+
+      {summary.unrecorded.length ? (
+        <p className={styles.footnote}>
+          <Icon name="clock" />
+          <span>{summary.unrecorded.length} encontro(s) com data passada ainda aguardam registro do instrutor.</span>
+          <Link href="/aluno/aulas?aba=anteriores">Consultar histórico <Icon name="arrow" /></Link>
+        </p>
+      ) : null}
+
+      {agendaUpcoming.length ? (
+        <>
+          <div className={styles.agendaHeading}>
+            <h2>Na sua agenda</h2>
+            <Link href="/aluno/aulas">Ver todas as aulas <Icon name="arrow" /></Link>
+          </div>
+          <ul className={styles.agenda}>
+            {agendaUpcoming.slice(0, 3).map(({ booking: item, meeting }) => (
+              <li key={meeting.id}>
+                <span className={styles.date}><Icon name="calendar" />{formatDateLong(meeting.starts_at)}</span>
+                <span>
+                  <strong>{item.beach?.name ?? 'Sua praia'}</strong>
+                  <small>{formatTime(meeting.starts_at)} · {formatMinutes(meeting.minutes)} · {item.code}</small>
+                </span>
+                <Link href={'/aluno/reserva/' + item.id} aria-label={'Ver reserva ' + item.code + ' em ' + formatDateLong(meeting.starts_at)}>
+                  <Icon name="arrow" />
+                </Link>
+              </li>
+            ))}
+          </ul>
+        </>
+      ) : null}
+
+      <div className={styles.searchHeading}>
+        <img src="/images/prea-coast.webp" alt="" loading="lazy" />
+        <div className={styles.promoShade} aria-hidden="true" />
+        <div className={styles.promoContent}>
+          <span className={styles.eyebrow}>CONTINUE NO SEU RITMO</span>
+          <h2>Seu próximo<br />bordo começa aqui.</h2>
+          <a href="#buscar-aula">Escolher uma aula <Icon name="arrow" /></a>
+        </div>
+      </div>
+    </section>
+  );
 }
