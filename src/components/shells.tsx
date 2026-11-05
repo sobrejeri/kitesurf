@@ -229,15 +229,7 @@ export function StudentShell({
               <Icon name="back" />
             </button>
           ) : null}
-          <Link href="/aluno/inicio" aria-label="Vento — início" className="press">
-            <StudentBrand onPhoto />
-          </Link>
           <span className="flex-1" />
-          {signedIn ? (
-            <Link href="/aluno/avisos" aria-label="Avisos" className="press grid h-11 w-11 place-items-center rounded-full bg-[#0b2a4a]/45 text-white backdrop-blur">
-              <Icon name="bell" className="!h-6 !w-6" />
-            </Link>
-          ) : null}
           <MenuButton
             onPhoto
             title="Menu"

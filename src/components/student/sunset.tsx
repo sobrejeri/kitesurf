@@ -120,7 +120,7 @@ export function StudentHero({
       <div className={`relative px-4 md:px-10 ${pad}`}>
         {top ? <div className="mb-6">{top}</div> : null}
         {eyebrow ? (
-          <p className="text-sunrise flex items-center gap-2 text-[11px] font-semibold uppercase tracking-[2px]">
+          <p className={`text-sunrise flex items-center gap-2 text-[11px] font-semibold uppercase tracking-[2px] ${plainOnMobile ? 'max-md:hidden' : ''}`}>
             {eyebrowIcon ? <Icon name={eyebrowIcon} className="!h-4 !w-4" /> : null}
             {eyebrow}
           </p>
@@ -130,7 +130,7 @@ export function StudentHero({
           // One colour per title; only the handwritten word stands out.
           highlight={script ? highlight : undefined}
           highlightClass="text-sunrise font-script text-[1.35em] font-bold leading-[0.8] tracking-normal"
-          className={`mt-2 max-w-[14ch] font-bold leading-[1.05] tracking-[-1.2px] text-white ${titleSize}`}
+          className={`mt-2 max-w-[14ch] font-bold leading-[1.05] tracking-[-1.2px] text-white ${titleSize} ${plainOnMobile ? 'max-md:hidden' : ''}`}
         />
         {lead ? <p className={`mt-3 max-w-[30ch] text-[15px] leading-snug text-[#dfe5ee] ${plainOnMobile ? 'max-md:hidden' : ''}`}>{lead}</p> : null}
         {children ? <div className="mt-5">{children}</div> : null}
