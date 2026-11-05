@@ -1,1 +1,161 @@
 .dashboard{padding-top:6px;color:#f6fbff}.welcome{position:relative;isolation:isolate;overflow:hidden;border:1px solid #21627b;border-radius:22px;min-height:210px;background:#00354d}.welcome>img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;object-position:50% 66%;z-index:-2}.welcome:after{content:'';position:absolute;inset:0;background:linear-gradient(90deg,#002236f5 10%,#003c53a6 65%,#00354d10);z-index:-1}.welcome>div{padding:30px 32px 28px}.eyebrow{font-size:10px;font-weight:800;letter-spacing:.18em;color:#57e8ec}.welcome h1{font-size:clamp(26px,3vw,36px);font-weight:800;line-height:1.15;margin:12px 0 10px;letter-spacing:-.9px}.welcome p{font-size:14px;color:#d4e7ef}.searchLink{display:inline-flex;align-items:center;gap:12px;color:#ffb378;font-size:13px;font-weight:700;margin-top:20px}.credit{position:absolute;right:10px;bottom:8px;color:#e3eff5;font-size:9px;background:#001c3699;padding:3px 6px;border-radius:5px}.cards{display:grid;grid-template-columns:1.2fr 1fr 1fr;gap:15px;margin-top:20px}.card{min-width:0;display:flex;flex-direction:column;align-items:flex-start;border:1px solid #17627c;background:linear-gradient(145deg,#06445d,#033049);padding:22px;border-radius:18px}.next{border-top:3px solid #ff8b3d;padding-top:18px}.nextWhen{display:flex;flex-wrap:wrap;align-items:baseline;gap:4px 10px;margin:12px 0 4px}.nextWhen strong{font-size:19px;font-weight:750;letter-spacing:-.3px;color:#f6fbff}.nextWhen span{font-size:14px;color:#bcd6e4}.nextMeta{font-size:12px;color:#c2dce9;margin:0}.label{display:flex;align-items:center;gap:8px;font-size:12px;color:#c0dce8}.label svg{width:17px;height:17px;color:#49e4eb}.card h2{font-size:24px;font-weight:750;line-height:1.2;letter-spacing:-.5px;margin:14px 0 8px}.card h2 span{font-size:15px;font-weight:400;color:#a6c5d6}.card p{font-size:12px;line-height:1.65;color:#c2dce9}.card small{display:block;font-size:10px;color:#a8c4d5;margin:6px 0}.card .time{font-size:19px;color:#eff9ff;font-weight:600;margin-bottom:10px}.time span{font-weight:400;font-size:13px;color:#a8c4d5}.actions{display:flex;flex-wrap:wrap;gap:14px;align-items:center;margin-top:auto;padding-top:16px}.actions a,.textLink{display:inline-flex;align-items:center;gap:7px;font-size:12px;font-weight:650;color:#55e9ed}.primary{display:inline-flex;align-items:center;gap:9px!important;background:#00d5e3;color:#002333!important;padding:10px 13px;border-radius:11px;font-weight:750;font-size:12px;margin-top:12px}.actions .primary{margin-top:0}.textLink{margin-top:auto;padding-top:18px}.progress{width:100%;height:6px;background:#12536d;border-radius:10px;margin:18px 0 10px;overflow:hidden}.progress span{display:block;height:100%;background:#00d8e4;border-radius:10px}.agendaHeading{display:flex;align-items:center;justify-content:space-between;gap:12px;margin:26px 0 13px}.agendaHeading h2,.searchHeading h2{font-size:19px;font-weight:750}.agendaHeading a{display:flex;gap:8px;align-items:center;color:#50e1e9;font-size:12px}.agenda{display:grid;gap:1px;border:1px solid #15546f;border-radius:16px;overflow:hidden;background:#15546f}.agenda li{display:flex;align-items:center;gap:22px;background:#032b43;padding:15px 20px}.date{display:flex;align-items:center;gap:8px;min-width:150px;color:#b8d8e5;font-size:12px}.agenda strong{font-size:13px;font-weight:650}.agenda small{display:block;color:#a5c4d6;font-size:11px;margin-top:3px}.agenda li>a{margin-left:auto;display:grid;place-items:center;min-width:40px;min-height:40px;color:#40e2eb}.empty,.footnote{font-size:12px;color:#b4cddb;line-height:1.7}.empty{padding:18px;border:1px dashed #1a5770;border-radius:14px}.footnote{margin-top:12px}.footnote a{text-decoration:underline;color:#54dfe8}.searchHeading{margin:30px 0 30px}.searchHeading h2{margin-top:6px}.pending{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;margin-top:16px;padding:15px 18px;background:#453329;border:1px solid #95714e;border-radius:14px;font-size:12px;color:#ffe0ba}.pending a{display:flex;align-items:center;gap:8px;font-weight:700}.dashboard a:focus-visible{outline:2px solid #5cf3f6;outline-offset:4px}.dashboard svg{width:17px;height:17px;flex-shrink:0}@media(max-width:767px){.dashboard{padding-top:75px}.welcome>div{padding:25px 20px 34px}.welcome{min-height:200px}.cards{grid-template-columns:1fr;gap:12px}.card{padding:20px}.card h2{margin-top:12px}.agenda li{gap:12px;padding:12px;flex-wrap:wrap}.date{min-width:100%;font-size:11px}.agendaHeading a{font-size:11px}.searchHeading{margin-bottom:40px}.actions{padding-top:14px}.credit{font-size:8px}}
+
+
+/* VentoKite 2026 redesign - student homepage only */
+.dashboard{padding-top:0;--aqua:#00e6ee}
+.welcome{min-height:365px;border-radius:27px;box-shadow:0 18px 40px #00101daa}
+.welcome>.heroPhoto{object-position:63% 50%;filter:saturate(1.25) contrast(1.12)}
+.welcome>.heroShade{position:absolute;inset:0;padding:0;z-index:-1;background:linear-gradient(90deg,#001528fa,#003249cb 52%,#003c5266),linear-gradient(0deg,#001728bb,transparent 65%)}
+.welcome:after{display:none}
+.welcome>.heroContent{position:relative;max-width:600px;padding:30px 36px 36px}
+.heroBrand{display:flex;flex-direction:column;align-items:flex-start;margin-bottom:34px}
+.brandName{font-size:32px;line-height:1;font-style:italic;font-weight:900;letter-spacing:-1.5px;color:white}
+.brandName span{color:#00e4ed}
+.brandDescriptor{display:inline-flex;align-items:center;gap:6px;margin-top:5px;font-size:9px;font-weight:750;letter-spacing:.17em;color:#e7f8ff}
+.brandDescriptor svg{width:17px;height:12px;color:#00e4ed}
+.welcome .eyebrow{font-size:11px;color:#63eaf1}
+.welcome h1{font-size:clamp(34px,4.5vw,52px);line-height:1.04;font-weight:850;letter-spacing:-.05em;margin:13px 0 12px}
+.welcome h1 em{font-style:normal}
+.welcome p{max-width:27ch;font-size:16px;line-height:1.4;color:#f0faff}
+.welcome .searchLink{display:inline-flex;align-items:center;justify-content:center;min-height:48px;gap:11px;padding:11px 19px;margin-top:22px;color:#fff;background:linear-gradient(110deg,#ff8d17,#f6730b);border-radius:99px;font-size:14px;font-weight:800;box-shadow:0 10px 24px #ff831d44}
+.quickNav{position:relative;z-index:2;display:grid;grid-template-columns:repeat(4,minmax(0,1fr));margin:-19px 14px 0;padding:3px;min-height:95px;background:linear-gradient(110deg,#03415bfa,#00243efa);border:1px solid #28cde5;border-radius:22px;box-shadow:0 12px 26px #000b19bb}
+.quickNav a{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:7px;min-height:88px;text-align:center;font-size:12px;line-height:1.17;font-weight:700;color:#effaff;border-radius:18px}
+.quickNav a:hover{background:#085372}
+.quickNav a svg{width:26px;height:26px}
+.quickNav .quickPrimary{background:linear-gradient(130deg,#0c829a,#06405b);box-shadow:inset 0 0 0 1px #18e4f8}
+.quickPrimary svg{color:#00f0fa}
+.cards{display:block;margin-top:24px}
+.card{border:1px solid #1584a2;border-radius:23px;background:linear-gradient(135deg,#0a4d66,#003049 85%);box-shadow:0 13px 33px #000f2077}
+.next{position:relative;overflow:hidden;padding:22px 26px 24px;border:1px solid #28ddea}
+.next:before{content:"";position:absolute;inset:0 0 0 auto;width:55%;background:url('/images/prea-coast.webp') center / cover no-repeat;opacity:.18;mask-image:linear-gradient(to right,transparent,#000)}
+.nextHeading{display:flex;align-items:center;justify-content:space-between;gap:9px;flex-wrap:wrap;position:relative}
+.label{font-size:13px;gap:8px}
+.status{display:inline-flex;align-items:center;gap:5px;padding:5px 9px;border-radius:99px;color:#89f4c6;background:#075443;border:1px solid #28bb8d;font-size:11px;font-weight:700}
+.status svg{width:15px;height:15px}
+.nextBody{position:relative;display:flex;min-height:151px;margin-top:18px}
+.nextDetails{position:relative;z-index:1}
+.nextWhen{display:flex;flex-direction:column;gap:9px;margin:0 0 3px}
+.nextWhen strong{font-size:clamp(21px,3vw,29px);font-weight:850;letter-spacing:-.04em}
+.nextWhen span,.nextMeta{display:inline-flex;align-items:center;gap:8px;font-size:13px;color:#dff2fb}
+.nextWhen svg,.nextMeta svg{width:16px;height:16px;color:#00e5ef}
+.nextMeta{margin-top:9px}
+.bookingCode{display:inline-block;padding:5px 9px;background:#0a5270;border-radius:7px;color:#e5faff;font-size:11px;margin-top:12px}
+.nextArt{position:absolute;right:3px;top:12px;display:grid;place-items:center;width:125px;height:125px;border-radius:50%;background:#00daec16;border:1px solid #00daec3d;color:#5ef1fb;opacity:.5;transform:rotate(-14deg)}
+.nextArt svg{width:65px;height:65px}
+.actions{position:relative;display:grid;grid-template-columns:1.1fr .9fr;gap:13px;margin-top:17px;padding-top:0}
+.actions a{display:inline-flex;min-height:47px;align-items:center;justify-content:center;gap:8px;border-radius:99px;font-size:14px;font-weight:800;padding:10px 13px}
+.actions .primary,.emptyLesson .primary{color:#003047!important;background:linear-gradient(100deg,#00d7e9,#04f3ee);margin:0}
+.actions .secondary{border:1px solid #c1f5ff;background:#00304e60;color:#f5ffff}
+.emptyLesson{position:relative;padding-top:18px}
+.emptyLesson h2{font-size:24px;font-weight:800}
+.emptyLesson p{margin-top:8px}
+.emptyLesson .primary{display:inline-flex;align-items:center;gap:8px;margin-top:18px;padding:12px 17px;border-radius:99px;font-weight:800}
+.insights{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:15px;margin-top:16px}
+.insightCard{position:relative;min-height:194px;padding:20px 22px 53px}
+.insightCard h2{font-size:clamp(22px,3vw,31px);font-weight:850;letter-spacing:-.035em;overflow-wrap:anywhere}
+.insightCard h2 span{font-size:.57em;font-weight:450}
+.insightCard .progressTitle{color:#00e7ee}
+.insightCard p{font-size:12px;line-height:1.5}
+.progress{margin:16px 0 10px}
+.cardArrow{position:absolute;bottom:14px;right:14px;display:grid;place-items:center;width:36px;height:36px;border-radius:50%;color:#00e8ef;background:#076985;border:1px solid #15cce1}
+.levelCard:before{content:"";position:absolute;width:140px;height:140px;right:-45px;top:-45px;background:radial-gradient(circle,#00dff339,transparent 70%)}
+.footnote{display:flex;align-items:center;gap:12px;flex-wrap:wrap;margin-top:18px;padding:13px 15px;background:#06334e;border:1px solid #21738f;border-radius:14px}
+.footnote>svg{color:#ff9a35}
+.footnote>span{flex:1}
+.footnote a{display:inline-flex;align-items:center;gap:5px}
+.searchHeading{position:relative;isolation:isolate;min-height:170px;overflow:hidden;margin:30px 0;border-radius:23px;border:1px solid #29bcd8}
+.searchHeading>img{position:absolute;z-index:-2;inset:0;width:100%;height:100%;object-fit:cover}
+.promoShade{position:absolute;z-index:-1;inset:0;background:linear-gradient(90deg,#00182afa,#003248ca 50%,#0034494b)}
+.promoContent{padding:23px 27px}
+.promoContent h2{font-size:clamp(25px,3vw,35px);font-style:italic;font-weight:850;line-height:1.06;margin-top:9px}
+.promoContent a{display:inline-flex;align-items:center;gap:8px;margin-top:13px;font-size:12px;color:#00e7ef;font-weight:800}
+@media(max-width:767px){
+ .dashboard{padding-top:0}
+ .welcome{min-height:385px;margin:0 -4px;border-radius:0 0 27px 27px}
+ .welcome>.heroContent{padding:86px 21px 30px}
+ .heroBrand{margin-bottom:19px}
+ .brandName{font-size:26px}
+ .welcome h1{font-size:clamp(31px,8.3vw,40px)}
+ .welcome p{font-size:14px}
+ .welcome .searchLink{font-size:13px;min-height:44px;padding:9px 14px;margin-top:18px}
+ .quickNav{margin:-16px 3px 0;min-height:80px}
+ .quickNav a{font-size:10px;min-height:75px;padding:6px 2px}
+ .quickNav a svg{width:23px;height:23px}
+ .cards{margin-top:17px}
+ .next{padding:17px 17px 20px}
+ .label{font-size:12px}
+ .status{font-size:10px}
+ .nextWhen strong{font-size:23px}
+ .nextWhen span,.nextMeta{font-size:12px}
+ .nextBody{min-height:153px}
+ .nextArt{width:85px;height:85px;top:43px;right:-4px}
+ .nextArt svg{width:47px;height:47px}
+ .actions{gap:8px}
+ .actions a{font-size:12px;padding:9px 7px;min-height:44px}
+ .insights{gap:9px;margin-top:12px}
+ .insightCard{padding:16px 12px 52px;min-height:194px}
+ .insightCard .label{font-size:11px}
+ .insightCard h2{font-size:22px}
+ .insightCard p{font-size:11px}
+ .insightCard small{font-size:10px}
+ .cardArrow{width:31px;height:31px;right:11px;bottom:11px}
+ .footnote{font-size:11px}
+ .footnote>span{flex:1 1 75%}
+ .searchHeading{margin-top:24px}
+}
+@media(max-width:340px){.insights{grid-template-columns:1fr}.actions{grid-template-columns:1fr}.quickNav a{font-size:9px}}
+
+
+/* Compact student dashboard — November 2026.
+   Reduce decorative icons and information-card height while keeping a
+   44x44px hit area for each small arrow and the primary booking actions. */
+.mobileSummary { display: none; }
+.desktopSummary { display: inline; }
+.nextMeta { display: flex; width: 100%; }
+.cardArrow::after {
+  content: "";
+  position: absolute;
+  inset: -8px;
+}
+@media (max-width: 767px) {
+  .next { padding: 15px 16px 17px; }
+  .nextBody { min-height: 0; margin-top: 12px; }
+  .nextWhen { gap: 6px; }
+  .nextWhen strong { font-size: 21px; }
+  .nextMeta { margin-top: 6px; font-size: 11.5px; max-width: 100%; }
+  .nextWhen span { font-size: 11.5px; }
+  .bookingCode { margin-top: 8px; padding: 4px 8px; font-size: 10px; }
+  .nextArt { width: 57px; height: 57px; right: 5px; top: 32px; opacity: .32; }
+  .nextArt svg { width: 30px; height: 30px; }
+  .actions { margin-top: 12px; }
+  .actions a { min-height: 44px; font-size: 11.5px; gap: 5px; }
+  .actions a svg { width: 15px; height: 15px; }
+
+  .insights { gap: 9px; margin-top: 10px; }
+  .insightCard {
+    min-height: 145px;
+    padding: 12px 11px 32px;
+    border-radius: 17px;
+  }
+  .insightCard .label { font-size: 10.5px; gap: 5px; line-height: 1.2; }
+  .insightCard .label svg { width: 14px; height: 14px; }
+  .insightCard h2 { font-size: clamp(17px, 5vw, 20px); margin-top: 8px; line-height: 1.12; }
+  .insightCard h2 span { font-size: .62em; }
+  .insightCard p { font-size: 10.5px; line-height: 1.28; margin-top: 6px; }
+  .insightCard small { font-size: 9.5px; line-height: 1.25; margin-top: 4px; }
+  .progress { height: 5px; margin: 11px 0 7px; }
+  .cardArrow {
+    right: 10px; bottom: 9px; width: 28px; height: 28px;
+    border-width: 1px;
+  }
+  .cardArrow svg { width: 15px; height: 15px; }
+  .mobileSummary { display: inline; }
+  .desktopSummary { display: none; }
+  .quickNav a svg { width: 19px; height: 19px; }
+  .quickNav a { gap: 4px; }
+  .footnote { margin-top: 12px; padding: 11px 13px; gap: 8px; }
+  .footnote > svg { width: 16px; height: 16px; }
+}
+@media (max-width: 340px) {
+  .insightCard { min-height: 132px; padding-bottom: 30px; }
+}
