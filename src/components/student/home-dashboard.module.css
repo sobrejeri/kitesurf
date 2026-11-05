@@ -104,3 +104,58 @@
  .searchHeading{margin-top:24px}
 }
 @media(max-width:340px){.insights{grid-template-columns:1fr}.actions{grid-template-columns:1fr}.quickNav a{font-size:9px}}
+
+
+/* Compact student dashboard — November 2026.
+   Reduce decorative icons and information-card height while keeping a
+   44x44px hit area for each small arrow and the primary booking actions. */
+.mobileSummary { display: none; }
+.desktopSummary { display: inline; }
+.nextMeta { display: flex; width: 100%; }
+.cardArrow::after {
+  content: "";
+  position: absolute;
+  inset: -8px;
+}
+@media (max-width: 767px) {
+  .next { padding: 15px 16px 17px; }
+  .nextBody { min-height: 0; margin-top: 12px; }
+  .nextWhen { gap: 6px; }
+  .nextWhen strong { font-size: 21px; }
+  .nextMeta { margin-top: 6px; font-size: 11.5px; max-width: 100%; }
+  .nextWhen span { font-size: 11.5px; }
+  .bookingCode { margin-top: 8px; padding: 4px 8px; font-size: 10px; }
+  .nextArt { width: 57px; height: 57px; right: 5px; top: 32px; opacity: .32; }
+  .nextArt svg { width: 30px; height: 30px; }
+  .actions { margin-top: 12px; }
+  .actions a { min-height: 44px; font-size: 11.5px; gap: 5px; }
+  .actions a svg { width: 15px; height: 15px; }
+
+  .insights { gap: 9px; margin-top: 10px; }
+  .insightCard {
+    min-height: 145px;
+    padding: 12px 11px 32px;
+    border-radius: 17px;
+  }
+  .insightCard .label { font-size: 10.5px; gap: 5px; line-height: 1.2; }
+  .insightCard .label svg { width: 14px; height: 14px; }
+  .insightCard h2 { font-size: clamp(17px, 5vw, 20px); margin-top: 8px; line-height: 1.12; }
+  .insightCard h2 span { font-size: .62em; }
+  .insightCard p { font-size: 10.5px; line-height: 1.28; margin-top: 6px; }
+  .insightCard small { font-size: 9.5px; line-height: 1.25; margin-top: 4px; }
+  .progress { height: 5px; margin: 11px 0 7px; }
+  .cardArrow {
+    right: 10px; bottom: 9px; width: 28px; height: 28px;
+    border-width: 1px;
+  }
+  .cardArrow svg { width: 15px; height: 15px; }
+  .mobileSummary { display: inline; }
+  .desktopSummary { display: none; }
+  .quickNav a svg { width: 19px; height: 19px; }
+  .quickNav a { gap: 4px; }
+  .footnote { margin-top: 12px; padding: 11px 13px; gap: 8px; }
+  .footnote > svg { width: 16px; height: 16px; }
+}
+@media (max-width: 340px) {
+  .insightCard { min-height: 132px; padding-bottom: 30px; }
+}
