@@ -2,25 +2,33 @@ import type { Metadata } from 'next';
 import Link from 'next/link';
 
 import { blockInstructorTime, unblockInstructorTime } from '@/app/actions/availability';
+import { respondBookingBalance } from '@/app/actions/booking-balance';
 import { ActionForm } from '@/components/action-form';
 import { ButtonLink, Card, Field, Note, PageHeader, inputClass } from '@/components/ui';
 import { requireRole } from '@/lib/auth';
 import { listBookingsForInstructor } from '@/lib/data';
-import { formatDateLong, formatTime } from '@/lib/format';
+import { formatDateLong, formatMinutes, formatTime } from '@/lib/format';
 import { createSupabaseServerClient } from '@/lib/supabase/server';
 
 export const metadata: Metadata = { title: 'Agenda e bloqueios' };
 
 type TimeOff = { id: string; starts_at: string; ends_at: string; reason: string };
+type BalanceOffer = { id:string;booking_id:string;starts_at:string;minutes:number;expires_at:string };
 
 export default async function InstructorAgendaPage() {
   const viewer = await requireRole(['instructor'], '/instrutor/agenda');
   const db = await createSupabaseServerClient();
-  const [bookings, blocks] = await Promise.all([
+  const [bookings, blocks, balanceOffers] = await Promise.all([
     listBookingsForInstructor(viewer.id),
     db.from('instructor_time_off').select('id,starts_at,ends_at,reason')
       .eq('instructor_id', viewer.id).gte('ends_at', new Date().toISOString())
       .order('starts_at', { ascending: true }).returns<TimeOff[]>(),
+    db.from('booking_balance_requests')
+      .select('id,booking_id,starts_at,minutes,expires_at')
+      .eq('instructor_id', viewer.id).eq('status', 'pending')
+      .gt('expires_at', new Date().toISOString())
+      .order('created_at', { ascending: true })
+      .returns<BalanceOffer[]>(),
   ]);
   const future = bookings.filter((b) => b.status === 'confirmed')
     .flatMap((b) => b.booking_meetings.filter(m => m.status === 'scheduled' || m.status === 'in_progress')
@@ -87,6 +95,53 @@ export default async function InstructorAgendaPage() {
           )}
         </Card>
       </div>
+      {balanceOffers.error ? (
+        <Note tone="warning" className="mt-4">
+          A gestão de reposições ficará disponível após a migração 38 do banco.
+        </Note>
+      ) : (balanceOffers.data ?? []).length > 0 ? (
+        <Card>
+          <h2 className="text-[18px] font-bold text-ink">Solicitações de reposição</h2>
+          <p className="mt-1 text-[13px] text-muted">
+            Minutos que o aluno já contratou e ainda não realizou. Aceite apenas se puder atender;
+            não será criado outro pagamento.
+          </p>
+          <ul className="mt-4 grid gap-3">
+            {(balanceOffers.data ?? []).map((offer) => {
+              const booking = bookings.find((item) => item.id === offer.booking_id);
+              return (
+                <li key={offer.id} className="rounded-[18px] border border-line bg-surface p-4">
+                  <strong className="block text-[14px] text-ink">
+                    {booking?.student?.full_name ?? 'Aluno'} · {booking?.code ?? 'Reserva'}
+                  </strong>
+                  <p className="mt-1 text-[13px] text-muted">
+                    {formatDateLong(offer.starts_at)} · {formatTime(offer.starts_at)}
+                    {' · '}{formatMinutes(offer.minutes)} de saldo
+                  </p>
+                  <p className="mt-1 text-[12px] text-muted">
+                    Solicitação válida até {formatDateLong(offer.expires_at)}
+                    {' · '}{formatTime(offer.expires_at)}
+                  </p>
+                  <div className="mt-3 flex flex-wrap gap-2">
+                    <ActionForm action={respondBookingBalance} submitLabel="Aceitar reposição"
+                      className="flex items-center">
+                      <input type="hidden" name="bookingId" value={offer.booking_id}/>
+                      <input type="hidden" name="requestId" value={offer.id}/>
+                      <input type="hidden" name="decision" value="accept"/>
+                    </ActionForm>
+                    <ActionForm action={respondBookingBalance} submitLabel="Recusar"
+                      submitVariant="ghost" className="flex items-center">
+                      <input type="hidden" name="bookingId" value={offer.booking_id}/>
+                      <input type="hidden" name="requestId" value={offer.id}/>
+                      <input type="hidden" name="decision" value="reject"/>
+                    </ActionForm>
+                  </div>
+                </li>
+              );
+            })}
+          </ul>
+        </Card>
+      ) : null}
     </>
   );
 }
