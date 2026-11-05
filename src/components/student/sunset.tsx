@@ -103,7 +103,7 @@ export function StudentHero({
   // On phones a plain header hides the photo, veil and wave and uses tight padding.
   const hideMediaMobile = plainOnMobile ? 'max-md:hidden' : '';
   const pad = plainOnMobile
-    ? `${tightTopMobile ? 'pt-[calc(env(safe-area-inset-top)+16px)] pb-2' : 'pt-[calc(env(safe-area-inset-top)+64px)] pb-4'} ${compact ? 'md:min-h-[264px] md:py-12' : 'md:py-10'}`
+    ? `${tightTopMobile ? 'pt-[calc(env(safe-area-inset-top)+4px)] pb-1' : 'pt-[calc(env(safe-area-inset-top)+64px)] pb-4'} ${compact ? 'md:min-h-[264px] md:py-12' : 'md:py-10'}`
     : (compact
         ? 'min-h-[236px] pb-9 pt-[calc(env(safe-area-inset-top)+88px)] md:min-h-[264px] md:py-12'
         : 'pb-6 pt-[calc(env(safe-area-inset-top)+82px)] md:py-10');

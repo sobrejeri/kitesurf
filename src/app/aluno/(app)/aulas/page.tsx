@@ -8,6 +8,7 @@ import { BOOKING_STATUS_LABELS, MEETING_STATUS_LABELS, listBookingsForStudent } 
 import { formatDateShort, formatDay, formatMinutes, formatMonthTag, formatTime } from '@/lib/format';
 import { initials } from '@/lib/people';
 import { lessonHasEvolution, lessonEvolutionHref, lessonIsPast } from '@/lib/student-lesson-links';
+import { getStudentBookingInstructorAvatar } from '@/lib/student-booking-avatar';
 import { VALIDATION_WITHOUT_CHECKOUT } from '@/lib/booking-mode';
 
 export const metadata: Metadata = { title: 'Minhas aulas' };
@@ -17,6 +18,14 @@ export default async function MyLessonsPage({searchParams}:{searchParams:Promise
   const initialTab=(await searchParams).aba==='anteriores'?1:0;
   const bookings = await listBookingsForStudent(viewer.id);
   const now = Date.now();
+
+  // Real instructor photo per booking (one signed URL each), with initials fallback.
+  const photoBookingIds = [...new Set(
+    bookings.filter((b) => b.instructor_id && b.status !== 'cancelled').map((b) => b.id),
+  )];
+  const instructorPhotos = new Map(await Promise.all(
+    photoBookingIds.map(async (id) => [id, await getStudentBookingInstructorAvatar(id)] as const),
+  ));
 
   const lessons: LessonCard[] = bookings
     .filter((booking) => booking.status !== 'cancelled')
@@ -40,6 +49,7 @@ export default async function MyLessonsPage({searchParams}:{searchParams:Promise
           durationLabel: formatMinutes(meeting.minutes),
           instructorName: booking.instructor?.full_name ?? 'Instrutor a confirmar',
           instructorInitials: initials(booking.instructor?.full_name),
+          instructorPhotoUrl: instructorPhotos.get(booking.id) ?? null,
           past,
         } satisfies LessonCard;
       }),

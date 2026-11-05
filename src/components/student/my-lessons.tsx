@@ -4,7 +4,8 @@ import Link from 'next/link';
 import { useState } from 'react';
 
 import { Icon, type IconName } from '../icon';
-import { Avatar, Badge, ButtonLink, DateTile } from '../ui';
+import { Badge, ButtonLink, DateTile } from '../ui';
+import { StudentInstructorPhoto } from './instructor-photo';
 
 import { IconBubble, KiteIllustration } from './sunset';
 
@@ -24,6 +25,7 @@ export interface LessonCard {
   durationLabel: string;
   instructorName: string;
   instructorInitials: string;
+  instructorPhotoUrl: string | null;
   past: boolean;
 }
 
@@ -98,7 +100,7 @@ export function MyLessons({ lessons, initialTab=0 }: { lessons: readonly LessonC
                   <Icon name="chevron" className="mt-6 !h-5 !w-5 text-muted" />
                 </div>
                 <div className="mt-4 flex items-center gap-3 border-t border-line pt-3">
-                  <Avatar initials={lesson.instructorInitials} size={34} />
+                  <StudentInstructorPhoto name={lesson.instructorName} url={lesson.instructorPhotoUrl} size={38} />
                   <span className="text-[13px] leading-tight">
                     <strong className="block font-semibold text-ink">{lesson.instructorName}</strong>
                     <span className="text-[12px] text-muted">Seu instrutor nessa jornada</span>
