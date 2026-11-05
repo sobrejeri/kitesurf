@@ -11,6 +11,9 @@ import styles from './home-dashboard.module.css';
 export function HomeDashboard({bookings,level,firstName}:{bookings:StudentBooking[];level:StudentKiteLevel|null;firstName?:string}){
   const summary=studentHomeSummary(bookings);
   const {current,booking}=summary;
+  // The next lesson is featured in the card above, so the agenda lists only the
+  // meetings after it — no duplication of the same encounter.
+  const agendaUpcoming=summary.upcoming.filter(e=>e.meeting.id!==current?.meeting.id);
   const currentLabel=current?.meeting.status==='in_progress'?'Aula em andamento':
     current && summary.upcoming.some(e=>e.meeting.id===current.meeting.id)?'Sua próxima aula':'Encontro aguardando registro';
   return <section className={styles.dashboard} aria-labelledby="student-dashboard-title">
@@ -28,10 +31,8 @@ export function HomeDashboard({bookings,level,firstName}:{bookings:StudentBookin
       <article className={`${styles.card} ${styles.next}`}>
         <span className={styles.label}><Icon name="calendar"/>{current?currentLabel:'Seu próximo encontro'}</span>
         {current?<>
-          <h2>{formatDateLong(current.meeting.starts_at)}</h2>
-          <p className={styles.time}>{formatTime(current.meeting.starts_at)} <span>· {formatMinutes(current.meeting.minutes)}</span></p>
-          <p>{current.booking.beach?.name ?? 'Praia da reserva'} · {current.booking.instructor?.full_name ?? 'Seu instrutor'}</p>
-          <small>Reserva {current.booking.code}</small>
+          <p className={styles.nextWhen}><strong>{formatDateLong(current.meeting.starts_at)}</strong><span>{formatTime(current.meeting.starts_at)} · {formatMinutes(current.meeting.minutes)}</span></p>
+          <p className={styles.nextMeta}>{current.booking.beach?.name ?? 'Praia da reserva'} · {current.booking.instructor?.full_name ?? 'Seu instrutor'} · {current.booking.code}</p>
           <div className={styles.actions}><Link className={styles.primary} href={current.meeting.status==='in_progress'?lessonEvolutionHref(current.booking.id,current.meeting.id):`/aluno/reserva/${current.booking.id}`}>Ver minha aula <Icon name="arrow"/></Link>
             <Link href={`/aluno/atendimento/${current.booking.id}`} aria-label="Conversar com meu instrutor"><Icon name="chat"/> Conversar</Link></div>
         </>:<><h2>O mar espera por você.</h2><p>Escolha um novo dia para continuar sua jornada.</p><a href="#buscar-aula" className={styles.primary}>Encontrar minha aula <Icon name="arrow"/></a></>}
@@ -54,8 +55,10 @@ export function HomeDashboard({bookings,level,firstName}:{bookings:StudentBookin
         <Link href="/aluno/evolucao" className={styles.textLink}>Ver minhas conquistas <Icon name="arrow"/></Link>
       </article>
     </div>
+    {agendaUpcoming.length?<>
     <div className={styles.agendaHeading}><h2>Na sua agenda</h2><Link href="/aluno/aulas">Ver todas as aulas <Icon name="arrow"/></Link></div>
-    {summary.upcoming.length?<ul className={styles.agenda}>{summary.upcoming.slice(0,3).map(({booking:b,meeting:m})=><li key={m.id}><span className={styles.date}><Icon name="calendar"/>{formatDateLong(m.starts_at)}</span><span><strong>{b.beach?.name ?? 'Sua praia'}</strong><small>{formatTime(m.starts_at)} · {formatMinutes(m.minutes)} · {b.code}</small></span><Link href={`/aluno/reserva/${b.id}`} aria-label={`Ver reserva ${b.code} em ${formatDateLong(m.starts_at)}`}><Icon name="arrow"/></Link></li>)}</ul>:<p className={styles.empty}>Sem novos encontros agendados. A busca abaixo está pronta para sua próxima aula.</p>}
+    <ul className={styles.agenda}>{agendaUpcoming.slice(0,3).map(({booking:b,meeting:m})=><li key={m.id}><span className={styles.date}><Icon name="calendar"/>{formatDateLong(m.starts_at)}</span><span><strong>{b.beach?.name ?? 'Sua praia'}</strong><small>{formatTime(m.starts_at)} · {formatMinutes(m.minutes)} · {b.code}</small></span><Link href={`/aluno/reserva/${b.id}`} aria-label={`Ver reserva ${b.code} em ${formatDateLong(m.starts_at)}`}><Icon name="arrow"/></Link></li>)}</ul>
+    </>:null}
     {summary.unrecorded.length?<p className={styles.footnote}>{summary.unrecorded.length} encontro(s) com data passada ainda aguardam registro do instrutor. <Link href="/aluno/aulas?aba=anteriores">Consultar histórico</Link></p>:null}
     <div className={styles.searchHeading}><span className={styles.eyebrow}>CONTINUE NO SEU RITMO</span><h2>Seu próximo bordo</h2></div>
   </section>;
