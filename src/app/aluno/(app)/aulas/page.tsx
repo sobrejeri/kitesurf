@@ -58,6 +58,7 @@ export default async function MyLessonsPage({searchParams}:{searchParams:Promise
         lead="Seu próximo encontro com o mar começa aqui."
         compact
         plainOnMobile
+        tightTopMobile
       >
         <ButtonLink href="/aluno/reservar" icon="plus" trailingIcon="arrow" className="px-7">
           Nova aula
