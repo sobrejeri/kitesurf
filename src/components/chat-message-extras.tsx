@@ -3,7 +3,7 @@ export function ChatMessageExtras({message}:{message:ChatMessage}){
   const file=message.attachment;const location=message.location;
   return <>
     {file?<a href={file.url} target="_blank" rel="noopener noreferrer" style={{display:'block',marginTop:8,color:'inherit'}}>
-      {file.imageUrl?<img src={file.imageUrl} alt={file.name} loading="lazy" style={{display:'block',maxWidth:'100%',maxHeight:220,objectFit:'contain',borderRadius:10,marginBottom:6}}/>:null}
+      {file.imageUrl?<img src={file.imageUrl} alt={file.name} loading="lazy" width={320} height={220} style={{display:'block',width:'100%',height:220,objectFit:'contain',borderRadius:10,marginBottom:6}}/>:null}
       <span style={{fontSize:12,textDecoration:'underline'}}>Baixar {file.name} · {Math.max(1,Math.round(file.bytes/1024))} KB</span>
     </a>:null}
     {location?<a href={`https://maps.google.com/?q=${location.latitude},${location.longitude}`} target="_blank" rel="noopener noreferrer"

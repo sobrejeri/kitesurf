@@ -148,6 +148,8 @@ export function FloatingChat({area,viewerId}: {area:ChatArea;viewerId:string}) {
     const readKey=`${selectedId}:${last?.id}:${featuresReady}`;
     if (!open || !selectedId || !last || (!notifications.length && lastRead.current===readKey) || marking.current
       || !follow.current || document.visibilityState!=='visible' || !document.hasFocus()) return;
+    const el=box.current;
+    if(!el || el.scrollHeight-el.scrollTop-el.clientHeight>=70)return;
     marking.current=true;
     void fetch(endpoint,{method:'POST',headers:{'Content-Type':'application/json','x-vento-chat':'1'},
       body:JSON.stringify({type:'read',bookingId:selectedId,ids:notifications,through:last.created_at,lastMessageId:last.id})})
