@@ -152,7 +152,7 @@ export function HomeDashboard({
                   aria-valuemin={0}
                   aria-valuemax={100}
                 ><span style={{ width: summary.percent + '%' }} /></div>
-                <p>{formatMinutes(summary.remainingMinutes)} ainda não registradas pelo instrutor.</p>
+                <p aria-label={formatMinutes(summary.remainingMinutes) + ' ainda não registradas pelo instrutor.'}><span className={styles.mobileSummary}>{formatMinutes(summary.remainingMinutes)} pendentes</span><span className={styles.desktopSummary}>{formatMinutes(summary.remainingMinutes)} ainda não registradas pelo instrutor.</span></p>
                 <Link className={styles.cardArrow} href={'/aluno/evolucao?reserva=' + booking.id + '#reserva-' + booking.id} aria-label="Acompanhar evolução das horas">
                   <Icon name="arrow" />
                 </Link>
@@ -165,9 +165,7 @@ export function HomeDashboard({
           <article className={[styles.card, styles.insightCard, styles.levelCard].join(' ')}>
             <span className={styles.label}><Icon name="chart" />Seu nível no kite</span>
             <h2>{level?.assessed ? KITE_LEVEL_BADGES[level.assessed].label : 'Em acompanhamento'}</h2>
-            <p>{level?.assessed
-              ? 'Nível avaliado pelo instrutor.'
-              : 'Seu instrutor acompanha seu nível ao longo das aulas.'}</p>
+            <p><span className={styles.mobileSummary}>{level?.assessed ? 'Avaliado pelo instrutor' : 'Nível em avaliação'}</span><span className={styles.desktopSummary}>{level?.assessed ? 'Nível avaliado pelo instrutor.' : 'Seu instrutor acompanha seu nível ao longo das aulas.'}</span></p>
             {level?.assessedAt ? <small>Avaliação de {formatDateLong(level.assessedAt)}</small> : null}
             <Link href="/aluno/evolucao" className={styles.cardArrow} aria-label="Ver minhas conquistas"><Icon name="arrow" /></Link>
           </article>
