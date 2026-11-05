@@ -16,7 +16,7 @@ DECLARE
  other_id uuid:='00000000-0000-0000-0000-000000000b98';
  beach uuid; req uuid; offer uuid; bid uuid; instructor uuid; first_meeting uuid;
  pin text; due timestamptz; makeup timestamptz; makeup_id uuid;
- original_amount integer; original_partner integer; original_platform integer;
+ original_amount integer; original_partner integer; original_platform integer; search_hold uuid;
 BEGIN
  SELECT id INTO beach FROM public.beaches WHERE slug='prea';
  FOR instructor IN SELECT id FROM public.instructors WHERE status='approved' LOOP
@@ -64,6 +64,21 @@ BEGIN
    RAISE EXCEPTION 'Different student was allowed to request balance';
  EXCEPTION WHEN no_data_found THEN NULL; END;
  PERFORM pg_temp.reset_balance();
+
+ -- A pending instructor search reserves the student's time too.
+ PERFORM pg_temp.as_balance(sid);
+ search_hold:=public.create_instructor_request_with_preference(
+   beach,'first_time','Português',
+   jsonb_build_array(jsonb_build_object('starts_at',makeup,'hours',1)),
+   null,false,null);
+ BEGIN
+   PERFORM public.request_booking_balance(bid,makeup,30);
+   RAISE EXCEPTION 'Makeup overlapped an active instructor search';
+ EXCEPTION WHEN unique_violation THEN NULL; END;
+ PERFORM pg_temp.reset_balance();
+ UPDATE public.instructor_requests SET expires_at=now()-interval '1 minute'
+   WHERE id=search_hold;
+
  PERFORM pg_temp.as_balance(sid);
  makeup_id:=public.request_booking_balance(bid,makeup,30);
  BEGIN
