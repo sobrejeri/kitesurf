@@ -35,8 +35,8 @@ assert.ok(instructor.includes("getMeetingKiteSkills(selectedHistory ? [selectedH
 
 withinList(
   student,
-  'bookings.map((booking) => (',
-  '</div>\n        )}\n      </section>',
+  'visibleBookings.map((booking) => (',
+  '</div>\n            ))}\n          </div>',
   '<section id="detalhes-reserva"',
   'Student booking details',
 );
