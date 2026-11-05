@@ -46,16 +46,6 @@ function ReservationMetric({ label, value }: { label: string; value: string }) {
   );
 }
 
-function SummaryStat({ label, value, hint }: { label: string; value: string; hint?: string }) {
-  return (
-    <div className="rounded-[15px] border border-line bg-surface px-3 py-3">
-      <p className="text-[11px] text-muted">{label}</p>
-      <p className="tabular mt-0.5 text-[20px] font-extrabold leading-tight text-ink">{value}</p>
-      {hint ? <p className="mt-0.5 text-[11px] text-muted">{hint}</p> : null}
-    </div>
-  );
-}
-
 export default async function ProgressPage({
   searchParams,
 }: {
@@ -157,32 +147,43 @@ export default async function ProgressPage({
         </section>
       ) : (
         <>
-          {/* Resumo da jornada */}
+          {/* Resumo da jornada — anel de progresso e números grandes */}
           <section className="-mt-2 rounded-[22px] border border-line bg-surface p-4">
             <div className="flex flex-wrap items-center justify-between gap-3">
               <h2 className="text-[18px] font-bold text-ink">Sua jornada no kite</h2>
               <KiteLevelMedal level={kiteLevel.assessed ?? kiteLevel.effective}
                 assessed={Boolean(kiteLevel.assessed)} compact />
             </div>
-            <div className="mt-4 grid grid-cols-3 gap-2">
-              <SummaryStat label="Horas realizadas" value={formatMinutes(totalDone)}
-                hint={`de ${formatMinutes(totalContracted)}`} />
-              <SummaryStat label="Aulas concluídas" value={String(doneEncounters.length)} />
-              <SummaryStat label="Seu nível" value={KITE_LEVEL_BADGES[kiteLevel.assessed ?? kiteLevel.effective].label}
-                hint={kiteLevel.assessed ? 'Avaliado' : 'Informado'} />
-            </div>
-            <div className="mt-4">
-              <div className="flex items-center justify-between gap-2">
-                <p className="text-[13px] font-semibold text-ink">Caminho percorrido</p>
-                <span className="tabular text-[14px] font-extrabold text-brand">{journeyPercent}%</span>
-              </div>
-              <div className="mt-2 h-2 w-full overflow-hidden rounded-full bg-track"
+            <div className="mt-4 flex items-center gap-5">
+              <div className="relative h-[132px] w-[132px] shrink-0"
                 role="progressbar" aria-label="Horas realizadas no total"
                 aria-valuemin={0} aria-valuemax={100} aria-valuenow={journeyPercent}>
-                <span className="block h-full rounded-full bg-brand" style={{ width: `${journeyPercent}%` }} />
+                <svg viewBox="0 0 132 132" className="h-full w-full -rotate-90" aria-hidden="true">
+                  <circle cx="66" cy="66" r="56" fill="none" stroke="var(--color-track)" strokeWidth="12" />
+                  <circle cx="66" cy="66" r="56" fill="none" stroke="var(--color-brand)" strokeWidth="12"
+                    strokeLinecap="round" strokeDasharray={2 * Math.PI * 56}
+                    strokeDashoffset={2 * Math.PI * 56 * (1 - journeyPercent / 100)} />
+                </svg>
+                <div className="absolute inset-0 grid place-content-center text-center">
+                  <span className="tabular text-[30px] font-extrabold leading-none text-ink">{journeyPercent}%</span>
+                  <span className="mt-1 text-[11px] text-muted">do caminho</span>
+                </div>
               </div>
-              <p className="mt-2 text-[12px] text-muted">{levelLabel}. Soma de todas as suas reservas confirmadas.</p>
+              <div className="grid min-w-0 flex-1 gap-4">
+                <div>
+                  <p className="tabular text-[24px] font-extrabold leading-none text-ink">
+                    {formatMinutes(totalDone)}
+                    <span className="text-[14px] font-medium text-muted"> / {formatMinutes(totalContracted)}</span>
+                  </p>
+                  <p className="mt-1 text-[12px] text-muted">Horas realizadas</p>
+                </div>
+                <div>
+                  <p className="tabular text-[24px] font-extrabold leading-none text-ink">{doneEncounters.length}</p>
+                  <p className="mt-1 text-[12px] text-muted">Aulas concluídas</p>
+                </div>
+              </div>
             </div>
+            <p className="mt-4 text-[12px] text-muted">{levelLabel}. Soma de todas as suas reservas confirmadas.</p>
           </section>
 
           {/* Minha jornada no kite — currículo agregado */}

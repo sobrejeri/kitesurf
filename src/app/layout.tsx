@@ -1,5 +1,5 @@
 import type { Metadata, Viewport } from 'next';
-import { Caveat, DM_Sans, Montserrat } from 'next/font/google';
+import { Caveat, Inter, Space_Grotesk } from 'next/font/google';
 
 import { signOut } from '@/app/actions/auth';
 import { TopBar } from '@/components/shells';
@@ -8,10 +8,11 @@ import { getViewer } from '@/lib/auth';
 
 import './globals.css';
 
-const dmSans = DM_Sans({ subsets: ['latin'], variable: '--font-dm-sans', display: 'swap' });
+// Body face: a clean, highly legible modern grotesque.
+const inter = Inter({ subsets: ['latin'], variable: '--font-inter', display: 'swap' });
+// Headings: a geometric grotesque with more character than the previous face.
+const spaceGrotesk = Space_Grotesk({ subsets: ['latin'], variable: '--font-space-grotesk', display: 'swap' });
 // Handwritten accent for one word in the student app's hero ("aqui.").
-// Headings of the student app: a bolder, rounder face than the staff apps.
-const montserrat = Montserrat({ subsets: ['latin'], variable: '--font-montserrat', display: 'swap' });
 const caveat = Caveat({ subsets: ['latin'], weight: '700', variable: '--font-caveat', display: 'swap' });
 
 export const metadata: Metadata = {
@@ -40,7 +41,7 @@ export const viewport: Viewport = {
 export default async function RootLayout({ children }: { children: React.ReactNode }) {
   const viewer = await getViewer();
   return (
-    <html lang="pt-BR" className={`${dmSans.variable} ${montserrat.variable} ${caveat.variable}`}>
+    <html lang="pt-BR" className={`${inter.variable} ${spaceGrotesk.variable} ${caveat.variable}`}>
       <body className="min-h-dvh font-sans antialiased">
         <TopBar viewer={viewer ? { name: viewer.fullName || viewer.email || '', role: viewer.role } : null} signOut={signOut} />
         {children}

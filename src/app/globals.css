@@ -83,9 +83,9 @@
   --shadow-button: 0 5px 14px #405fd31a;
   --shadow-focus: 0 0 0 3px #405fd30c;
 
-  --font-sans: var(--font-dm-sans), system-ui, sans-serif;
+  --font-sans: var(--font-inter), system-ui, sans-serif;
   --font-script: var(--font-caveat), cursive;
-  --font-display: var(--font-montserrat), var(--font-dm-sans), system-ui, sans-serif;
+  --font-display: var(--font-space-grotesk), var(--font-inter), system-ui, sans-serif;
 }
 
 :root {
