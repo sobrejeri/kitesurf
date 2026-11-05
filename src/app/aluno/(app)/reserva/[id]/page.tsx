@@ -3,13 +3,14 @@ import Link from 'next/link';
 import { notFound } from 'next/navigation';
 
 import { confirmTestPayment, confirmValidationLesson } from '@/app/actions/booking';
+import { requestBookingBalance } from '@/app/actions/booking-balance';
 import { VALIDATION_WITHOUT_CHECKOUT } from '@/lib/booking-mode';
 import { rateInstructor } from '@/app/actions/ratings';
 import { ActionForm } from '@/components/action-form';
 import { Icon } from '@/components/icon';
 import { StudentHero } from '@/components/student/sunset';
 import { StudentInstructorPhoto } from '@/components/student/instructor-photo';
-import { Badge, ButtonLink, Card, Eyebrow, Note, ProgressBar } from '@/components/ui';
+import { Badge, ButtonLink, Card, Eyebrow, Field, Note, ProgressBar, inputClass } from '@/components/ui';
 import { requireRole } from '@/lib/auth';
 import { BOOKING_STATUS_LABELS, LEVEL_LABELS, MEETING_STATUS_LABELS, getBookingForViewer, learningBalance } from '@/lib/data';
 import { formatDateLong, formatMinutes, formatMoney, formatTime } from '@/lib/format';
@@ -55,6 +56,15 @@ export default async function BookingPage({ params }: { params: Promise<{ id: st
   const balance = learningBalance([{ ...booking, status: awaiting ? 'confirmed' : booking.status }]);
   const donePercent = balance.contracted ? Math.round((balance.done / balance.contracted) * 100) : 0;
   const reservedPercent = balance.contracted ? Math.round((balance.scheduled / balance.contracted) * 100) : 0;
+  const { data: balanceRequest, error: balanceRequestError } =
+    booking.status === 'completed' && balance.available > 0
+      ? await db.from('booking_balance_requests')
+        .select('id,starts_at,minutes,status,expires_at')
+        .eq('booking_id', booking.id).order('created_at', { ascending: false })
+        .limit(1).maybeSingle<{
+          id:string;starts_at:string;minutes:number;status:string;expires_at:string
+        }>()
+      : { data: null, error: null };
   const instructorName = booking.instructor?.full_name ?? 'Instrutor a confirmar';
   const avatarUrl = booking.instructor_id
     ? await getStudentBookingInstructorAvatar(booking.id)
@@ -213,7 +223,7 @@ export default async function BookingPage({ params }: { params: Promise<{ id: st
                   Conversar com meu instrutor
                 </ButtonLink>
               ) : null}
-              {booking.status === 'completed' && booking.instructor_id ? (
+              {booking.status === 'completed' && booking.instructor_id && balance.available === 0 ? (
                 <ButtonLink
                   href={`/aluno/reservar?instrutor=${booking.instructor_id}&praia=${booking.beach_id}&nivel=${booking.level}&idioma=${encodeURIComponent(booking.language)}&horas=${booking.total_hours}`}
                   variant="ghost"
@@ -248,6 +258,43 @@ export default async function BookingPage({ params }: { params: Promise<{ id: st
             <Link href="/aluno/evolucao" className="mt-4 inline-flex items-center gap-1.5 text-[13px] font-[550] text-brand">
               <Icon name="arrow" className="!h-4 !w-4" /> Acompanhar minha evolução
             </Link>
+            {booking.status === 'completed' && booking.instructor_id && balance.available > 0 ? (
+              <div className="mt-5 border-t border-line pt-4">
+                <h3 className="text-[15px] font-bold text-ink">Reagendar horas restantes</h3>
+                <p className="mt-1 text-[12px] text-muted">
+                  Você ainda tem {formatMinutes(balance.available)} desta reserva.
+                  Solicite ao mesmo instrutor, sem fazer uma nova contratação.
+                </p>
+                {balanceRequestError ? (
+                  <Note tone="warning" className="mt-3">
+                    A reposição depende da atualização 38 do Supabase.
+                  </Note>
+                ) : balanceRequest?.status === 'pending' &&
+                    Date.parse(balanceRequest.expires_at) > Date.now() ? (
+                  <Note tone="warning" className="mt-3">
+                    Pedido de {formatMinutes(balanceRequest.minutes)} para {formatDateLong(balanceRequest.starts_at)}
+                    {' · '}{formatTime(balanceRequest.starts_at)} enviado ao instrutor. Prazo de resposta: 12 horas.
+                  </Note>
+                ) : (
+                  <ActionForm action={requestBookingBalance}
+                    submitLabel="Solicitar reposição" className="mt-3 grid gap-3">
+                    <input type="hidden" name="bookingId" value={booking.id} />
+                    <Field label="Novo dia e horário (mínimo 72 horas de antecedência)">
+                      <input className={inputClass} type="datetime-local" name="proposedDate" required />
+                    </Field>
+                    <Field label="Minutos a utilizar do saldo">
+                      <input className={inputClass} type="number" name="minutes"
+                        min={1} max={Math.min(balance.available,480)}
+                        defaultValue={Math.min(balance.available,480)} required />
+                    </Field>
+                    <p className="text-[12px] text-muted">
+                      O encontro só aparecerá na agenda após a aceitação do instrutor.
+                      Nenhuma nova cobrança será gerada.
+                    </p>
+                  </ActionForm>
+                )}
+              </div>
+            ) : null}
           </Card>
         </div>
 

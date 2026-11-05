@@ -68,8 +68,8 @@ assert.ok(actionMarkup.includes('className="mt-5 grid w-full gap-2.5"'),
   'Reservation actions should be stacked and full width');
 assert.equal(actionMarkup.split('className={reservationActionClass}').length-1, 2,
   'Only chat and completed-booking rehire should remain as full-width buttons');
-assert.ok(actionMarkup.includes("booking.status === 'completed' && booking.instructor_id ?"),
-  'Rehire button must only be available after the entire booking is completed');
+assert.ok(actionMarkup.includes("booking.status === 'completed' && booking.instructor_id && balance.available === 0 ?"),
+  'Rehire button must require completion and zero prepaid minutes remaining');
 assert.ok(!actionMarkup.includes("booking.status === 'confirmed' ||"),
   'Confirmed or ongoing bookings must not show rehire button');
 assert.ok(actionMarkup.includes('href={`/aluno/atendimento/${booking.id}`}') &&

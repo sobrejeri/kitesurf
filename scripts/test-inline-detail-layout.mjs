@@ -33,34 +33,49 @@ assert.ok(instructor.includes("'#aula-' + meeting.id"),
 assert.ok(instructor.includes("getMeetingKiteSkills(selectedHistory ? [selectedHistory.meeting.id] : [])"),
   'Completed lesson details continue querying only the chosen encounter');
 
-withinList(
-  student,
-  'bookings.map((booking) => (',
-  '</div>\n        )}\n      </section>',
-  '<section id="detalhes-reserva"',
-  'Student booking details',
-);
-assert.ok(student.includes('id={\u0060reserva-${booking.id}\u0060}'),
-  'Every student booking gets its own in-page anchor');
-assert.ok(student.includes('selected?.id === booking.id ? ('),
-  'Only the selected booking expands');
-assert.ok(student.includes('getMeetingKiteSkills(selected.booking_meetings.map'),
-  'Student skill lookup stays scoped to the selected booking');
-
-
-for (const [source, type, accent, detailBg] of [
-  [student, 'student', 'ring-[#00e3ee]/80', 'bg-[#053954]'],
-  [instructor, 'instructor', 'ring-[#ff8a3d]/80', 'bg-[#191c2b]'],
-]) {
-  assert.ok(source.includes(accent),
-    type + ' selected card must have an accessible high-contrast focus outline');
-  assert.ok(source.includes(detailBg),
-    type + ' expanded detail panel must visually match its selected card');
-  assert.ok(source.includes('Detalhes abertos'),
-    type + ' selected card must identify its expansion state in text');
+// Two intentionally supported student layouts:
+// - reserve cards with inline expanded detail (legacy)
+// - compact completed-lesson history with a dedicated selected detail section.
+// Both must scope details to the signed-in student's selected booking.
+const modernStudent = student.includes('doneEncounters.map(({ booking: b, meeting: m }) => {');
+if (modernStudent) {
+  const historyStart = student.indexOf('doneEncounters.map(({ booking: b, meeting: m }) => {');
+  const detailStart = student.indexOf('<section id="detalhes-reserva"');
+  assert.ok(historyStart >= 0 && detailStart > historyStart,
+    'Student selected detail must follow its completed lesson history');
+  assert.ok(student.includes('selected ? (') &&
+    student.includes('getMeetingKiteSkills(selected.booking_meetings.map'),
+    'Student detail and skill queries must only use the selected booking');
+  assert.ok(student.includes('reserva=${b.id}#detalhes-reserva') &&
+    student.includes('aria-current={open ? \'page\' : undefined}'),
+    'Completed lessons must link to their selected detail section');
+  assert.ok(student.includes("open ? 'border-[#00e3ee] bg-[#07516c]'") &&
+    student.includes('bg-[#053954]') &&
+    student.includes("{open ? 'Fechar' : 'Ver'}"),
+    'Modern history must expose selection, contrast and a matching detail panel');
+} else {
+  withinList(
+    student,
+    'visibleBookings.map((booking) => (',
+    '</div>\n            ))}\n          </div>',
+    '<section id="detalhes-reserva"',
+    'Student booking details',
+  );
+  assert.ok(student.includes('id={`reserva-${booking.id}`}'),
+    'Every student booking gets its own in-page anchor');
+  assert.ok(student.includes('selected?.id === booking.id ? ('),
+    'Only the selected booking expands');
+  assert.ok(student.includes('getMeetingKiteSkills(selected.booking_meetings.map'),
+    'Student skill lookup stays scoped to the selected booking');
+  assert.ok(student.includes('ring-[#00e3ee]/80') && student.includes('bg-[#053954]') &&
+    student.includes('Detalhes abertos'),
+    'Inline student selected cards must retain accessible contrast and clear state');
 }
-assert.ok(student.includes('selected?.id === booking.id') &&
-  instructor.includes('const expanded = selected?.meeting.id === meeting.id;'),
-  'Selection styles must not make unselected reservations look active');
 
-console.log('PASS: student and instructor details render inline with their selected cards');
+assert.ok(instructor.includes('ring-[#ff8a3d]/80') &&
+  instructor.includes('bg-[#191c2b]') &&
+  instructor.includes('Detalhes abertos') &&
+  instructor.includes('const expanded = selected?.meeting.id === meeting.id;'),
+  'Instructor details must retain selected-card contrast and expansion state');
+
+console.log('PASS: student and instructor selection panels remain correctly scoped');
