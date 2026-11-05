@@ -101,7 +101,7 @@ export function StudentHero({
       />
       <div className={`sunset-veil absolute inset-0 ${compact && image === 'lesson' ? '!bg-gradient-to-b !from-[#041d32]/40 !via-[#062d48]/45 !to-[#003b59]/95' : ''}`} aria-hidden="true" />
       <div
-        className={`relative px-4 md:px-10 ${compact ? 'min-h-[300px] pb-14 pt-[calc(env(safe-area-inset-top)+105px)] md:min-h-[320px] md:py-16' : 'pb-8 pt-[calc(env(safe-area-inset-top)+96px)] md:py-14'}`}
+        className={`relative px-4 md:px-10 ${compact ? 'min-h-[236px] pb-9 pt-[calc(env(safe-area-inset-top)+88px)] md:min-h-[264px] md:py-12' : 'pb-6 pt-[calc(env(safe-area-inset-top)+82px)] md:py-10'}`}
       >
         {top ? <div className="mb-6">{top}</div> : null}
         {eyebrow ? (
