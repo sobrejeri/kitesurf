@@ -177,7 +177,7 @@ export default async function ProgressPage({
       <StudentHero image="coast" eyebrow="Sua evolução no mar"
         title="Minha evolução" highlight="evolução"
         lead="Selecione uma reserva para ver seus encontros, horas e evolução no kite."
-        compact />
+        compact plainOnMobile />
 
       <section id="minhas-reservas"
         className="relative -mt-2 scroll-mt-6 rounded-[22px] border border-line bg-surface p-4">

@@ -56,6 +56,7 @@ export default async function AccountPage() {
         highlight={firstName ? `${firstName}!` : undefined}
         lead="Seu próximo bordo começa aqui."
         compact
+        plainOnMobile
       />
 
       <div className="grid gap-4 lg:grid-cols-2">

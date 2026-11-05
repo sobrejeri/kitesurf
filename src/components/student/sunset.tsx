@@ -72,6 +72,7 @@ export function StudentHero({
   lead,
   image = 'coast',
   compact = false,
+  plainOnMobile = false,
   script = false,
   top,
   children,
@@ -87,22 +88,36 @@ export function StudentHero({
   lead?: string;
   image?: HeroImage;
   compact?: boolean;
+  /**
+   * Sub-pages (profile, evolution, my lessons) drop the decorative photo on
+   * phones for a compact text header — it ate half the screen — while keeping
+   * the full photo banner from md up.
+   */
+  plainOnMobile?: boolean;
   children?: React.ReactNode;
 }) {
   const photo = IMAGES[image];
+  // On phones a plain header hides the photo, veil and wave and uses tight padding.
+  const hideMediaMobile = plainOnMobile ? 'max-md:hidden' : '';
+  const pad = plainOnMobile
+    ? `pt-[calc(env(safe-area-inset-top)+64px)] pb-4 ${compact ? 'md:min-h-[264px] md:py-12' : 'md:py-10'}`
+    : (compact
+        ? 'min-h-[236px] pb-9 pt-[calc(env(safe-area-inset-top)+88px)] md:min-h-[264px] md:py-12'
+        : 'pb-6 pt-[calc(env(safe-area-inset-top)+82px)] md:py-10');
+  const titleSize = plainOnMobile
+    ? (compact ? 'text-[26px] md:text-[40px]' : 'text-[28px] md:text-[52px]')
+    : (compact ? 'text-[30px] md:text-[40px]' : 'text-[34px] md:text-[52px]');
   return (
     <section className={`relative -mx-4 overflow-hidden md:mx-0 md:mt-2 md:rounded-hero ${image === 'ocean' ? 'ocean-hero' : ''}`}>
       {/* Decorative photograph; the heading carries the meaning. */}
       <img
         src={photo.src}
         alt=""
-        className={`sunset-photo absolute inset-0 h-full w-full ${'object-cover'}`}
+        className={`sunset-photo absolute inset-0 h-full w-full object-cover ${hideMediaMobile}`}
         style={{ objectPosition: photo.position }}
       />
-      <div className={`sunset-veil absolute inset-0 ${compact && image === 'lesson' ? '!bg-gradient-to-b !from-[#041d32]/40 !via-[#062d48]/45 !to-[#003b59]/95' : ''}`} aria-hidden="true" />
-      <div
-        className={`relative px-4 md:px-10 ${compact ? 'min-h-[236px] pb-9 pt-[calc(env(safe-area-inset-top)+88px)] md:min-h-[264px] md:py-12' : 'pb-6 pt-[calc(env(safe-area-inset-top)+82px)] md:py-10'}`}
-      >
+      <div className={`sunset-veil absolute inset-0 ${hideMediaMobile} ${compact && image === 'lesson' ? '!bg-gradient-to-b !from-[#041d32]/40 !via-[#062d48]/45 !to-[#003b59]/95' : ''}`} aria-hidden="true" />
+      <div className={`relative px-4 md:px-10 ${pad}`}>
         {top ? <div className="mb-6">{top}</div> : null}
         {eyebrow ? (
           <p className="text-sunrise flex items-center gap-2 text-[11px] font-semibold uppercase tracking-[2px]">
@@ -115,12 +130,12 @@ export function StudentHero({
           // One colour per title; only the handwritten word stands out.
           highlight={script ? highlight : undefined}
           highlightClass="text-sunrise font-script text-[1.35em] font-bold leading-[0.8] tracking-normal"
-          className={`mt-2 max-w-[14ch] font-bold leading-[1.05] tracking-[-1.2px] text-white ${compact ? 'text-[30px] md:text-[40px]' : 'text-[34px] md:text-[52px]'}`}
+          className={`mt-2 max-w-[14ch] font-bold leading-[1.05] tracking-[-1.2px] text-white ${titleSize}`}
         />
-        {lead ? <p className="mt-3 max-w-[30ch] text-[15px] leading-snug text-[#dfe5ee]">{lead}</p> : null}
+        {lead ? <p className={`mt-3 max-w-[30ch] text-[15px] leading-snug text-[#dfe5ee] ${plainOnMobile ? 'max-md:hidden' : ''}`}>{lead}</p> : null}
         {children ? <div className="mt-5">{children}</div> : null}
       </div>
-      {compact && (image === 'lesson' || image === 'ocean') ? <svg className="pointer-events-none absolute bottom-0 left-0 h-[45px] w-full" viewBox="0 0 390 45" preserveAspectRatio="none" aria-hidden="true"><path d="M0 26 C95 0 140 44 232 18 S350 8 390 16 L390 45 L0 45Z" fill="#00b9d5" opacity=".9"/><path d="M0 37 C95 12 153 48 244 30 S342 23 390 29 L390 45 L0 45Z" fill="#031c31"/></svg> : null}
+      {compact && (image === 'lesson' || image === 'ocean') ? <svg className={`pointer-events-none absolute bottom-0 left-0 h-[45px] w-full ${hideMediaMobile}`} viewBox="0 0 390 45" preserveAspectRatio="none" aria-hidden="true"><path d="M0 26 C95 0 140 44 232 18 S350 8 390 16 L390 45 L0 45Z" fill="#00b9d5" opacity=".9"/><path d="M0 37 C95 12 153 48 244 30 S342 23 390 29 L390 45 L0 45Z" fill="#031c31"/></svg> : null}
     </section>
   );
 }
