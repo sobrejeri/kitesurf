@@ -65,7 +65,7 @@ CREATE FUNCTION public.can_student_attend_balance(
           +make_interval(hours=>(slot.value->>'hours')::integer),'[)')
           && tstzrange(p_start,p_start+make_interval(mins=>p_minutes),'[)')
   );
-$;
+$$;
 REVOKE ALL ON FUNCTION public.can_student_attend_balance(uuid,timestamptz,integer)
   FROM PUBLIC,anon,authenticated;
 
