@@ -45,6 +45,8 @@ jobs:
         run: node --experimental-strip-types scripts/test-student-home.mjs
       - name: Test student homepage poster and booking CTA
         run: node scripts/test-home-banner.mjs
+      - name: Test photorealistic VentoKite student visual
+        run: node scripts/test-student-visual-photo.mjs
       - name: Test instructor completed lesson detail selection
         run: node --experimental-strip-types scripts/test-instructor-completed-meetings.mjs
       - name: Test instructor lesson tabs and ordered-start eligibility
