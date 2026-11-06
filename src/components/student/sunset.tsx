@@ -120,7 +120,7 @@ export function StudentHero({
         style={{ objectPosition: photo.position }}
       />
       <div className={`sunset-veil absolute inset-0 ${hideMediaMobile} ${compact && image === 'lesson' ? '!bg-gradient-to-b !from-[#041d32]/40 !via-[#062d48]/45 !to-[#003b59]/95' : ''}`} aria-hidden="true" />
-      <img src="/images/kite-modelo3.svg" alt="" aria-hidden="true" className={`kite-m3-studenthero-kite ${hideMediaMobile}`} />
+      <img src="/images/vento-kite-real.webp" alt="" aria-hidden="true" className={`kite-m3-studenthero-kite ${hideMediaMobile}`} />
       <div className={`kite-m3-studenthero-content relative px-4 md:px-10 ${pad}`}>
         {top ? <div className="mb-6">{top}</div> : null}
         {eyebrow ? (
