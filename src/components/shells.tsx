@@ -6,6 +6,7 @@ import { usePathname } from 'next/navigation';
 import { Icon, type IconName } from './icon';
 import { MenuButton, MobileHeader, SheetAccount, TabBar, isActive, type SheetLink, type TabItem } from './mobile';
 import { StudentBrand } from './student/sunset';
+import { KiteModelo3Brand } from './student/modelo3-header';
 import { StudentProfileAvatar } from './student/profile-avatar';
 import { areaFromPath } from '@/lib/app-areas';
 import { AREAS } from '@/lib/areas';
