@@ -1,7 +1,7 @@
 import type { Metadata } from 'next';
 import Link from 'next/link';
 
-import { Icon } from '@/components/icon';
+import { Icon, type IconName } from '@/components/icon';
 import { StudentHero } from '@/components/student/sunset';
 import { KiteLevelMedal } from '@/components/student/kite-level-medal';
 import { requireRole } from '@/lib/auth';
@@ -46,6 +46,23 @@ function ReservationMetric({ label, value }: { label: string; value: string }) {
   );
 }
 
+function JourneyMetric({ icon, label, value, sub, href }: {
+  icon: IconName; label: string; value: string; sub: string; href: string;
+}) {
+  return (
+    <Link href={href} className="press relative flex flex-col rounded-[18px] border border-line bg-surface p-4">
+      <span className="flex items-center gap-2 text-[12px] leading-tight text-muted">
+        <Icon name={icon} className="!h-5 !w-5 shrink-0 text-brand" />{label}
+      </span>
+      <span className="tabular mt-2 text-[24px] font-extrabold leading-none text-ink">{value}</span>
+      <span className="mt-2 pr-9 text-[11px] leading-snug text-muted">{sub}</span>
+      <span className="absolute bottom-3 right-3 grid h-8 w-8 shrink-0 place-items-center rounded-full border border-line text-brand">
+        <Icon name="arrow" className="!h-4 !w-4" />
+      </span>
+    </Link>
+  );
+}
+
 export default async function ProgressPage({
   searchParams,
 }: {
@@ -74,6 +91,10 @@ export default async function ProgressPage({
   const totalDone = liveBookings.reduce((sum, b) =>
     sum + b.booking_meetings.reduce((t, m) => t + (m.status === 'done' ? m.done_minutes : 0), 0), 0);
   const journeyPercent = totalContracted ? Math.min(100, Math.round((totalDone / totalContracted) * 100)) : 0;
+  const totalScheduled = liveBookings.reduce((sum, b) =>
+    sum + b.booking_meetings.reduce((t, m) =>
+      t + ((m.status === 'scheduled' || m.status === 'in_progress') ? m.minutes : 0), 0), 0);
+  const totalBalance = Math.max(0, totalContracted - totalDone - totalScheduled);
   const curriculumLevel = kiteLevel.effective;
   const curriculum = KITE_CURRICULA[curriculumLevel];
   // Aggregate skills only from meetings taught at the student's current level,
@@ -134,8 +155,8 @@ export default async function ProgressPage({
     <>
       <StudentHero image="coast" eyebrow="Sua evolução no mar"
         title="Minha evolução" highlight="evolução"
-        lead="Acompanhe suas horas, habilidades e aulas concluídas no kite."
-        compact plainOnMobile />
+        lead="Cada hora no mar te leva mais longe. Acompanhe sua jornada aqui."
+        compact />
 
       {bookings.length === 0 ? (
         <section className="-mt-6 rounded-[22px] border border-line bg-surface p-5 md:-mt-2">
@@ -147,59 +168,68 @@ export default async function ProgressPage({
         </section>
       ) : (
         <>
-          {/* Resumo da jornada — anel e números grandes, sem cartão (direto no fundo) */}
-          <section className="-mt-6 px-1 md:-mt-2">
-            <div className="flex flex-wrap items-center justify-between gap-3">
-              <h2 className="text-[18px] font-bold text-ink">Sua jornada no kite</h2>
+          {/* Seu tempo no mar — anel, horas realizadas e barra */}
+          <section className="-mt-3 rounded-[22px] border border-line bg-surface p-5 md:-mt-2">
+            <div className="flex items-center justify-between gap-3">
+              <h2 className="flex items-center gap-2.5 text-[17px] font-bold text-ink">
+                <Icon name="waves" className="!h-6 !w-6 text-brand" />Seu tempo no mar
+              </h2>
               <KiteLevelMedal level={kiteLevel.assessed ?? kiteLevel.effective}
                 assessed={Boolean(kiteLevel.assessed)} compact />
             </div>
-            <div className="mt-4 flex items-center gap-5">
-              <div className="relative h-[132px] w-[132px] shrink-0"
-                role="progressbar" aria-label="Horas realizadas no total"
+            <div className="mt-4 flex items-center justify-between gap-4">
+              <div className="min-w-0">
+                <p className="flex items-center gap-2">
+                  <Icon name="clock" className="!h-6 !w-6 shrink-0 text-brand" />
+                  <span className="tabular text-[30px] font-extrabold leading-none text-ink">{formatMinutes(totalDone)}</span>
+                </p>
+                <p className="mt-1.5 text-[12px] text-muted">de {formatMinutes(totalContracted)} realizados</p>
+              </div>
+              <div className="relative h-[92px] w-[92px] shrink-0" role="progressbar"
+                aria-label="Percentual de horas realizadas"
                 aria-valuemin={0} aria-valuemax={100} aria-valuenow={journeyPercent}>
-                <svg viewBox="0 0 132 132" className="h-full w-full -rotate-90" aria-hidden="true">
-                  <circle cx="66" cy="66" r="56" fill="none" stroke="var(--color-track)" strokeWidth="12" />
-                  <circle cx="66" cy="66" r="56" fill="none" stroke="var(--color-brand)" strokeWidth="12"
-                    strokeLinecap="round" strokeDasharray={2 * Math.PI * 56}
-                    strokeDashoffset={2 * Math.PI * 56 * (1 - journeyPercent / 100)} />
+                <svg viewBox="0 0 92 92" className="h-full w-full -rotate-90" aria-hidden="true">
+                  <circle cx="46" cy="46" r="40" fill="none" stroke="var(--color-track)" strokeWidth="9" />
+                  <circle cx="46" cy="46" r="40" fill="none" stroke="var(--color-brand)" strokeWidth="9"
+                    strokeLinecap="round" strokeDasharray={2 * Math.PI * 40}
+                    strokeDashoffset={2 * Math.PI * 40 * (1 - journeyPercent / 100)} />
                 </svg>
                 <div className="absolute inset-0 grid place-content-center text-center">
-                  <span className="tabular text-[30px] font-extrabold leading-none text-ink">{journeyPercent}%</span>
-                  <span className="mt-1 text-[11px] text-muted">do caminho</span>
-                </div>
-              </div>
-              <div className="grid min-w-0 flex-1 gap-4">
-                <div>
-                  <p className="tabular text-[24px] font-extrabold leading-none text-ink">
-                    {formatMinutes(totalDone)}
-                    <span className="text-[14px] font-medium text-muted"> / {formatMinutes(totalContracted)}</span>
-                  </p>
-                  <p className="mt-1 text-[12px] text-muted">Horas realizadas</p>
-                </div>
-                <div>
-                  <p className="text-[24px] font-extrabold leading-none text-ink">
-                    <span className="tabular">{doneEncounters.length}</span> Aulas
-                  </p>
-                  <p className="mt-1 text-[12px] text-muted">concluídas</p>
+                  <span className="tabular text-[19px] font-extrabold leading-none text-ink">{journeyPercent}%</span>
+                  <span className="mt-0.5 text-[9px] leading-tight text-muted">das horas<br />realizadas</span>
                 </div>
               </div>
             </div>
-            <p className="mt-4 text-[12px] text-muted">{levelLabel}. Soma de todas as suas reservas confirmadas.</p>
+            <div className="mt-4 h-2 w-full overflow-hidden rounded-full bg-track" role="progressbar"
+              aria-label="Progresso das horas" aria-valuemin={0} aria-valuemax={100} aria-valuenow={journeyPercent}>
+              <span className="block h-full rounded-full bg-brand" style={{ width: `${journeyPercent}%` }} />
+            </div>
+            <p className="mt-3 text-[12px] text-muted">{levelLabel}. Soma de todas as suas reservas confirmadas.</p>
           </section>
 
-          {/* Minha jornada no kite — currículo agregado */}
-          <section className="mt-5 rounded-[22px] border border-line bg-surface p-4">
-            <div className="flex items-start gap-3">
+          {/* Cartões de horas — totais agregados */}
+          <section className="mt-4 grid grid-cols-2 gap-3">
+            <JourneyMetric icon="calendar" label="Horas contratadas" value={formatMinutes(totalContracted)} sub="Reservas confirmadas" href="/aluno/aulas" />
+            <JourneyMetric icon="chart" label="Horas realizadas" value={formatMinutes(totalDone)} sub="Aulas registradas" href="/aluno/aulas?aba=anteriores" />
+            <JourneyMetric icon="calendar" label="Horas agendadas" value={formatMinutes(totalScheduled)} sub="Próximos encontros" href="/aluno/aulas" />
+            <JourneyMetric icon="wallet" label="Saldo disponível" value={formatMinutes(totalBalance)} sub="Para os próximos encontros" href="/aluno/reservar" />
+          </section>
+
+          {/* Seu caminho no kite — currículo agregado com linha do tempo */}
+          <section className="relative mt-5 overflow-hidden rounded-[22px] border border-line bg-surface p-4">
+            <img src="/images/prea-coast.webp" alt="" aria-hidden="true"
+              className="pointer-events-none absolute inset-y-0 right-0 h-full w-[52%] object-cover opacity-20"
+              style={{ objectPosition: '72% 45%', WebkitMaskImage: 'linear-gradient(to left, #000, transparent)', maskImage: 'linear-gradient(to left, #000, transparent)' }} />
+            <div className="relative flex items-start gap-3">
               <Icon name="flag" className="!h-6 !w-6 shrink-0 text-brand" />
               <div>
-                <h2 className="text-[18px] font-bold text-ink">Minha jornada no kite</h2>
+                <h2 className="text-[18px] font-bold text-ink">Seu caminho no kite</h2>
                 <p className="mt-1 text-[12px] text-muted">
-                  {KITE_LEVEL_BADGES[curriculumLevel].detail}. Reúne as habilidades registradas pelo seu instrutor em todas as aulas deste nível.
+                  {KITE_LEVEL_BADGES[curriculumLevel].detail}. As etapas que você vai trabalhar com seu instrutor.
                 </p>
               </div>
             </div>
-            <ol className="mt-4 grid gap-3">
+            <ol className="relative mt-4 grid gap-3">
               {curriculum.map((step, i) => {
                 const state = kiteStageStatus(curriculumSkills, step.id);
                 const last = i === curriculum.length - 1;
