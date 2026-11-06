@@ -100,12 +100,15 @@ export function LessonBuilder({
   defaults,
   studentLevel,
   occupiedSlots,
+  startEditing = false,
 }: {
   quotes: readonly QuoteRow[];
   beaches: readonly Beach[];
   defaults: BuilderDefaults;
   studentLevel: LessonLevel;
   occupiedSlots: readonly StudentTimeSlot[];
+  /** Open the "Sua aula" fields on arrival (used when nothing was pre-chosen on Explorar). */
+  startEditing?: boolean;
 }) {
   const [state, formAction, pending] = useActionState(createBooking, {});
   const [step, setStep] = useState<1 | 2>(1);
@@ -118,7 +121,7 @@ export function LessonBuilder({
     { id: 1, date: defaults.date, start: '09:00', hours: defaults.hours },
   ]);
   const [open, setOpen] = useState(1);
-  const [editing, setEditing] = useState(false);
+  const [editing, setEditing] = useState(startEditing);
   const [transport, setTransport] = useState(false);
 
   // The hour package chosen in Explorar is fixed. Meetings only distribute it
