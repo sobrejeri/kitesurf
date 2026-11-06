@@ -2,7 +2,6 @@ import type { Metadata } from 'next';
 import Link from 'next/link';
 
 import { Icon, type IconName } from '@/components/icon';
-import { StudentHero } from '@/components/student/sunset';
 import { KiteLevelMedal } from '@/components/student/kite-level-medal';
 import { requireRole } from '@/lib/auth';
 import { listBookingsForStudent } from '@/lib/data';
@@ -54,8 +53,8 @@ function JourneyMetric({ icon, label, value, sub, href }: {
       <span className="flex items-center gap-2 text-[12px] leading-tight text-muted">
         <Icon name={icon} className="!h-5 !w-5 shrink-0 text-brand" />{label}
       </span>
-      <span className="tabular mt-2 text-[24px] font-extrabold leading-none text-ink">{value}</span>
-      <span className="mt-2 pr-9 text-[11px] leading-snug text-muted">{sub}</span>
+      <span className="tabular mt-1.5 text-[24px] font-extrabold leading-none text-ink">{value}</span>
+      <span className="mt-1.5 pr-9 text-[11px] leading-snug text-muted">{sub}</span>
       <span className="absolute bottom-3 right-3 grid h-8 w-8 shrink-0 place-items-center rounded-full border border-line text-brand">
         <Icon name="arrow" className="!h-4 !w-4" />
       </span>
@@ -152,14 +151,9 @@ export default async function ProgressPage({
     : `${KITE_LEVEL_BADGES[kiteLevel.effective].label} (informado)`;
 
   return (
-    <>
-      <StudentHero image="coast" eyebrow="Sua evolução no mar"
-        title="Minha evolução" highlight="evolução"
-        lead="Cada hora no mar te leva mais longe. Acompanhe sua jornada aqui."
-        compact />
-
+    <div className="pt-[calc(env(safe-area-inset-top)+50px)] md:pt-0">
       {bookings.length === 0 ? (
-        <section className="-mt-6 rounded-[22px] border border-line bg-surface p-5 md:-mt-2">
+        <section className="rounded-[22px] border border-line bg-surface p-5">
           <p className="text-[13px] text-muted">Você ainda não possui reservas.</p>
           <Link href="/aluno/reservar"
             className="mt-3 inline-block text-[13px] font-bold text-brand underline">
@@ -168,22 +162,25 @@ export default async function ProgressPage({
         </section>
       ) : (
         <>
-          {/* Seu tempo no mar — anel, horas realizadas e barra */}
-          <section className="-mt-3 rounded-[22px] border border-line bg-surface p-5 md:-mt-2">
-            <div className="flex items-center justify-between gap-3">
+          {/* Seu tempo no mar — foto em degradê ao fundo, anel, horas e barra */}
+          <section className="relative overflow-hidden rounded-[22px] border border-line bg-surface p-4">
+            <img src="/images/prea-coast.webp" alt="" aria-hidden="true"
+              className="pointer-events-none absolute inset-0 h-full w-full object-cover opacity-[0.22]"
+              style={{ objectPosition: '50% 38%', WebkitMaskImage: 'linear-gradient(to bottom, #000 0%, transparent 82%)', maskImage: 'linear-gradient(to bottom, #000 0%, transparent 82%)' }} />
+            <div className="relative flex items-center justify-between gap-3">
               <h2 className="flex items-center gap-2.5 text-[17px] font-bold text-ink">
                 <Icon name="waves" className="!h-6 !w-6 text-brand" />Seu tempo no mar
               </h2>
               <KiteLevelMedal level={kiteLevel.assessed ?? kiteLevel.effective}
                 assessed={Boolean(kiteLevel.assessed)} compact />
             </div>
-            <div className="mt-4 flex items-center justify-between gap-4">
+            <div className="relative mt-3 flex items-center justify-between gap-4">
               <div className="min-w-0">
                 <p className="flex items-center gap-2">
                   <Icon name="clock" className="!h-6 !w-6 shrink-0 text-brand" />
                   <span className="tabular text-[30px] font-extrabold leading-none text-ink">{formatMinutes(totalDone)}</span>
                 </p>
-                <p className="mt-1.5 text-[12px] text-muted">de {formatMinutes(totalContracted)} realizados</p>
+                <p className="mt-1 text-[12px] text-muted">de {formatMinutes(totalContracted)} realizados</p>
               </div>
               <div className="relative h-[92px] w-[92px] shrink-0" role="progressbar"
                 aria-label="Percentual de horas realizadas"
@@ -200,11 +197,11 @@ export default async function ProgressPage({
                 </div>
               </div>
             </div>
-            <div className="mt-4 h-2 w-full overflow-hidden rounded-full bg-track" role="progressbar"
+            <div className="relative mt-3 h-2 w-full overflow-hidden rounded-full bg-track" role="progressbar"
               aria-label="Progresso das horas" aria-valuemin={0} aria-valuemax={100} aria-valuenow={journeyPercent}>
               <span className="block h-full rounded-full bg-brand" style={{ width: `${journeyPercent}%` }} />
             </div>
-            <p className="mt-3 text-[12px] text-muted">{levelLabel}. Soma de todas as suas reservas confirmadas.</p>
+            <p className="relative mt-2.5 text-[12px] text-muted">{levelLabel}. Soma de todas as suas reservas confirmadas.</p>
           </section>
 
           {/* Cartões de horas — totais agregados */}
@@ -523,6 +520,6 @@ export default async function ProgressPage({
           ) : null}
         </>
       )}
-    </>
+    </div>
   );
 }
