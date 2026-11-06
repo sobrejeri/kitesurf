@@ -143,11 +143,19 @@ h3 {
 html {
   -webkit-tap-highlight-color: transparent;
   -webkit-text-size-adjust: 100%;
+  /* Never let a full-bleed banner or stray wide element create a sideways
+     scroll on any screen. `clip` doesn't start a scroll container, so sticky
+     headers keep working; `hidden` is the fallback for older browsers. */
+  overflow-x: hidden;
+  overflow-x: clip;
 }
 
 body {
   /* No rubber-band reveal of the page behind the fixed bars. */
   overscroll-behavior-y: none;
+  overflow-x: hidden;
+  overflow-x: clip;
+  max-width: 100%;
 }
 
 a,
