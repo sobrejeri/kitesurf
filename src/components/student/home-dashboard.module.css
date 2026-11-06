@@ -60,8 +60,6 @@
 .footnote>svg{color:#ff9a35}
 .footnote>span{flex:1}
 .footnote a{display:inline-flex;align-items:center;gap:5px}
-.promoBanner{display:block;overflow:hidden;margin:28px 0 30px;border-radius:20px;border:1px solid #2a86a8;box-shadow:0 14px 34px #000f2066;line-height:0}
-.promoBanner img{display:block;width:100%;height:auto}
 @media(max-width:767px){
  .dashboard{padding-top:0}
  .welcome{min-height:358px;margin:0 -16px;border-radius:0}
@@ -91,7 +89,6 @@
  .cardArrow{width:31px;height:31px;right:11px;bottom:11px}
  .footnote{font-size:11px}
  .footnote>span{flex:1 1 75%}
- .promoBanner{margin-top:22px}
 }
 @media(max-width:340px){.insights{grid-template-columns:1fr}.actions{grid-template-columns:1fr}}
 

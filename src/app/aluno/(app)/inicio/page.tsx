@@ -1,11 +1,8 @@
 import type { Metadata } from 'next';
 
-import { Icon, type IconName } from '@/components/icon';
 import { LessonSearch } from '@/components/student/lesson-search';
-import { HighlightTitle } from '@/components/student/sunset';
 import { HomeDashboard } from '@/components/student/home-dashboard';
 import { listBookingsForStudent, type StudentBooking } from '@/lib/data';
-import { HomePosterHero } from '@/components/student/home-poster-hero';
 import { getViewer } from '@/lib/auth';
 import { getQuoteTable, listActiveBeaches, type Beach, type QuoteRow } from '@/lib/data';
 import { lessonDate } from '@/lib/dates';
@@ -15,12 +12,6 @@ import { getStudentBookingInstructorAvatar } from '@/lib/student-booking-avatar'
 import { supabaseConfig } from '@/lib/env';
 
 export const metadata: Metadata = { title: 'Explorar' };
-
-const STEPS: readonly { title: string; body: string; icon: IconName }[] = [
-  { title: 'Escolha suas horas', body: 'Conte a duração, a praia, o dia e seu idioma.', icon: 'calendar' },
-  { title: 'Conheça seu instrutor', body: 'Encontre um profissional disponível para você.', icon: 'user' },
-  { title: 'Viva e acompanhe', body: 'Suas aulas, seu saldo e cada nova conquista.', icon: 'waves' },
-];
 
 async function loadQuotes(): Promise<QuoteRow[]> {
   if (!supabaseConfig) return [];
@@ -57,65 +48,28 @@ export default async function StudentHomePage() {
 
   return (
     <div className="vento-student-desktop-home">
-      {!returning?<><div className="mb-3 hidden items-center justify-between lg:flex">
-        <div>
-          <p className="text-[15px] font-bold text-ink">Olá, {firstName || 'bem-vindo'}! <span aria-hidden="true">☀️</span></p>
-          <p className="mt-1 text-[12px] text-muted">Preá e Jericoacoara</p>
-        </div>
-        <span className="rounded-full bg-sand px-4 py-2 text-[12px] text-label">Ceará, Brasil</span>
-      </div>
-      <HomePosterHero firstName={firstName} /></>:null}
-
-      {returning?<HomeDashboard bookings={bookings} level={kiteLevel} firstName={firstName} instructorPhotoUrl={instructorPhotoUrl}/>:null}
-      {historyUnavailable?<p role="status" className="my-5 rounded-xl border border-line bg-surface p-4 text-sm text-label">Não foi possível carregar suas aulas agora. <a className="text-brand underline" href="/aluno/inicio">Tentar novamente</a></p>:null}
-      <LessonSearch defaultDate={lessonDate(1)} quotes={quotes} beaches={beaches}
-        studentLevel={kiteLevel?.effective ?? 'first_time'} />
-
-
-      {!returning && !historyUnavailable ? <><section className="vento-desktop-course-cards mt-9 hidden lg:block" aria-label="Experiências para cada nível">
-        <div className="mb-4 flex items-end justify-between">
-          <div>
-            <p className="text-[11px] font-bold uppercase tracking-[.15em] text-brand">Um mar de possibilidades</p>
-            <h2 className="mt-2 text-[23px] font-bold text-ink">Encontre o seu ritmo.</h2>
-            <p className="mt-1 text-[13px] text-muted">Aulas adaptadas ao seu nível, com instrutores aprovados.</p>
+      {returning ? (
+        // Aluno com aula registrada: apenas o painel (próxima aula, horas, nível).
+        <HomeDashboard bookings={bookings} level={kiteLevel} firstName={firstName} instructorPhotoUrl={instructorPhotoUrl} />
+      ) : (
+        // Primeiro acesso, sem reserva: banner da campanha + busca de aulas.
+        <div className="pt-[calc(env(safe-area-inset-top)+64px)] md:pt-0">
+          <a
+            href="/aluno/reservar"
+            aria-label="Seu próximo bordo começa aqui — aulas de kitesurf para todos os níveis, no seu ritmo, com instrutores experientes. Agendar uma aula."
+            className="press block overflow-hidden rounded-[20px] border border-[#2a86a8] shadow-[0_14px_34px_#000f2066]"
+          >
+            <img src="/images/promo-bordo.jpg" alt="" width={1671} height={666} className="block h-auto w-full" />
+          </a>
+          <div className="mt-4">
+            <LessonSearch defaultDate={lessonDate(1)} quotes={quotes} beaches={beaches}
+              studentLevel={kiteLevel?.effective ?? 'first_time'} />
           </div>
-          <a href="/aluno/aulas" className="text-[12px] font-semibold text-brand">Ver minhas aulas</a>
         </div>
-        <div className="grid grid-cols-3 gap-4">
-          {[
-            { badge: 'Para começar', title: 'Primeiros ventos', image: '/images/kite-lesson.webp' },
-            { badge: 'Para retomar', title: 'Mais autonomia', image: '/images/kite-lesson.webp' },
-            { badge: 'Para evoluir', title: 'Novos desafios', image: '/images/prea-coast.webp' },
-          ].map((card, index) => (
-            <article key={card.title} className="group relative h-[200px] overflow-hidden rounded-[16px] bg-[#0a5a75]">
-              <img src={card.image} alt="" loading="lazy" className="h-full w-full object-cover transition-transform duration-300 group-hover:scale-105"
-                style={{ objectPosition: index === 1 ? '65% 50%' : '50% 60%' }} />
-              <div className="absolute inset-0 bg-gradient-to-t from-[#002238]/90 via-transparent to-transparent" />
-              <span className="absolute left-4 top-4 rounded-full bg-white/95 px-3 py-1.5 text-[11px] font-semibold text-[#234568]">{card.badge}</span>
-              <h3 className="absolute bottom-4 left-4 text-[19px] font-bold text-white">{card.title}</h3>
-            </article>
-          ))}
-        </div>
-      </section>
-
-      <section className="relative mt-8 lg:hidden overflow-hidden rounded-[22px] border border-line bg-surface p-5 md:p-7">
-        <span className="absolute -right-10 -top-10 h-48 w-48 rounded-full bg-[radial-gradient(circle,#ff7a1a40,transparent_65%)]" aria-hidden="true" />
-        <HighlightTitle as="h2" text="Da vontade de aprender ao primeiro bordo." className="relative max-w-[18ch] text-[24px] font-bold leading-tight text-ink" />
-        <ol className="relative mt-5 grid gap-5 sm:grid-cols-3 sm:divide-x sm:divide-line">
-          {STEPS.map((step, index) => (
-            <li key={step.title} className="flex items-start gap-3 sm:block sm:px-4 sm:first:pl-0">
-              <span className="flex items-center gap-3">
-                <span className="grid h-10 w-10 shrink-0 place-items-center rounded-full bg-brand-soft text-[16px] font-semibold text-brand">{index + 1}</span>
-                <Icon name={step.icon} className="hidden !h-7 !w-7 text-ink sm:block" />
-              </span>
-              <span className="sm:mt-3 sm:block">
-                <strong className="block text-[16px] font-semibold text-ink">{step.title}</strong>
-                <span className="text-[13px] leading-snug text-muted">{step.body}</span>
-              </span>
-            </li>
-          ))}
-        </ol>
-      </section></>:null}
+      )}
+      {historyUnavailable ? (
+        <p role="status" className="my-5 rounded-xl border border-line bg-surface p-4 text-sm text-label">Não foi possível carregar suas aulas agora. <a className="text-brand underline" href="/aluno/inicio">Tentar novamente</a></p>
+      ) : null}
     </div>
   );
 }

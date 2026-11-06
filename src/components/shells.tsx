@@ -258,7 +258,7 @@ export function StudentShell({
         items={tabs}
         label="Navegação do aluno"
         variant="underline"
-        center={{ label: 'Agendar', href: '/aluno/inicio#buscar-aula', icon: 'calendar' }}
+        center={{ label: 'Agendar', href: '/aluno/reservar', icon: 'calendar' }}
       />
     </div>
   );

@@ -187,19 +187,6 @@ export function HomeDashboard({
         </>
       ) : null}
 
-      <a
-        href="#buscar-aula"
-        className={styles.promoBanner}
-        aria-label="Seu próximo bordo começa aqui — aulas de kitesurf para todos os níveis, no seu ritmo, com instrutores experientes. Agendar uma aula."
-      >
-        <img
-          src="/images/promo-bordo.jpg"
-          alt=""
-          width={1671}
-          height={666}
-          loading="lazy"
-        />
-      </a>
     </section>
   );
 }
