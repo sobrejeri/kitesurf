@@ -136,3 +136,36 @@
 @media (max-width: 340px) {
   .insightCard { min-height: 132px; padding-bottom: 30px; }
 }
+
+
+/* Modelo 03 — synchronize the personalized Explore dashboard with every other student page. */
+.dashboard { --aqua:#baff05; }
+.welcome {background:radial-gradient(ellipse at 78% 20%,#076c89,#00344f 65%,#001a2b);}
+.welcome>.heroContent {z-index:2; position:relative;}
+.welcome>.heroKite {
+  position:absolute;z-index:1;top:14px;right:-4%;width:min(50%,420px);
+  height:78%;object-fit:contain;pointer-events:none;
+  filter:drop-shadow(0 14px 18px #001a28b5);
+}
+.brandName span,.brandDescriptor svg {color:#bdff06;}
+.welcome .eyebrow {color:#65ecf2;}
+.welcome h1 em {color:#bdff06;}
+.card {border-color:#23859a;background:linear-gradient(135deg,#074961,#002b42 85%);}
+.next {border-color:#baff03;box-shadow:0 0 0 1px #bdff0625,0 13px 33px #000f2077;}
+.label svg,.nextMeta svg {color:#baff03;}
+.status {color:#d8ffaa;background:#175637e8;border-color:#82cc36;}
+.instructorPhoto img,.instructorInitials {border-color:#bdff06;}
+.seal {background:#baff05;}
+.bookingCode {background:#6025b4;color:#fff;}
+.insightCard .progressTitle {color:#bdff06;}
+.progress span {background:#bdff06;}
+.cardArrow {color:#082a38;background:linear-gradient(125deg,#a7fa00,#d1ff33);border-color:#baff04;}
+.levelCard:before {background:radial-gradient(circle,#adfa0040,transparent 72%);}
+.actions a,.textLink,.agendaHeading a,.agenda li>a,.footnote a {color:#bdff06;}
+.primary,.emptyLesson .primary {background:linear-gradient(120deg,#a8ff00,#d2ff28);color:#072333!important;}
+.dashboard a:focus-visible {outline-color:#bdff06;}
+@media(max-width:767px) {
+  .welcome>.heroKite {right:-13%;top:65px;width:min(72%,370px);height:68%;opacity:.97;}
+  .welcome>.heroContent {position:relative;z-index:2;}
+  .welcome>.heroPhoto {object-position:72% 48%;}
+}
