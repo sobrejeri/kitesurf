@@ -138,7 +138,7 @@ export default async function ProgressPage({
         compact plainOnMobile />
 
       {bookings.length === 0 ? (
-        <section className="-mt-2 rounded-[22px] border border-line bg-surface p-5">
+        <section className="-mt-6 rounded-[22px] border border-line bg-surface p-5 md:-mt-2">
           <p className="text-[13px] text-muted">Você ainda não possui reservas.</p>
           <Link href="/aluno/reservar"
             className="mt-3 inline-block text-[13px] font-bold text-brand underline">
@@ -148,7 +148,7 @@ export default async function ProgressPage({
       ) : (
         <>
           {/* Resumo da jornada — anel e números grandes, sem cartão (direto no fundo) */}
-          <section className="-mt-2 px-1">
+          <section className="-mt-6 px-1 md:-mt-2">
             <div className="flex flex-wrap items-center justify-between gap-3">
               <h2 className="text-[18px] font-bold text-ink">Sua jornada no kite</h2>
               <KiteLevelMedal level={kiteLevel.assessed ?? kiteLevel.effective}
@@ -178,8 +178,10 @@ export default async function ProgressPage({
                   <p className="mt-1 text-[12px] text-muted">Horas realizadas</p>
                 </div>
                 <div>
-                  <p className="tabular text-[24px] font-extrabold leading-none text-ink">{doneEncounters.length}</p>
-                  <p className="mt-1 text-[12px] text-muted">Aulas concluídas</p>
+                  <p className="text-[24px] font-extrabold leading-none text-ink">
+                    <span className="tabular">{doneEncounters.length}</span> Aulas
+                  </p>
+                  <p className="mt-1 text-[12px] text-muted">concluídas</p>
                 </div>
               </div>
             </div>
@@ -198,12 +200,17 @@ export default async function ProgressPage({
               </div>
             </div>
             <ol className="mt-4 grid gap-3">
-              {curriculum.map((step) => {
+              {curriculum.map((step, i) => {
                 const state = kiteStageStatus(curriculumSkills, step.id);
+                const last = i === curriculum.length - 1;
                 return (
-                  <li key={step.id} className="flex items-start gap-3">
+                  <li key={step.id} className="relative flex items-start gap-3">
+                    {!last ? (
+                      <span aria-hidden="true" className={'absolute left-[17px] top-9 -bottom-3 w-[2px] rounded-full '
+                        + (state === 'mastered' ? 'bg-[#159c84]' : 'bg-line')} />
+                    ) : null}
                     <span className={
-                      'grid h-9 w-9 shrink-0 place-items-center rounded-full text-[13px] font-bold ' +
+                      'relative z-[1] grid h-9 w-9 shrink-0 place-items-center rounded-full text-[13px] font-bold ' +
                       (state === 'mastered' ? 'bg-[#159c84] text-white'
                         : state === 'practiced' ? 'bg-brand text-white'
                         : 'bg-sand text-label')
