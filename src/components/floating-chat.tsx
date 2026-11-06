@@ -235,7 +235,7 @@ export function FloatingChat({area,viewerId}: {area:ChatArea;viewerId:string}) {
   }
   if (!mounted) return null;
   const unread=threads.reduce((sum,t)=>sum+t.unread,0);
-  return createPortal(<aside className={styles.dock} aria-label="Chat flutuante Vento">
+  return createPortal(<aside className={`${styles.dock} ${area === 'aluno' ? styles.studentDock : ''}`} aria-label="Chat flutuante Vento">
     <span className={styles.sr} aria-live="polite">{unread?`${unread} mensagens não lidas no chat.`:''}</span>
     {open ? <section className={styles.panel} role="dialog" aria-modal="false"
       aria-label={thread?`Conversa com ${thread.name}`:'Minhas conversas'}

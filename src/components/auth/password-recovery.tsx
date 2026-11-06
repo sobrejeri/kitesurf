@@ -6,11 +6,12 @@ import { createSupabaseServerClient } from '@/lib/supabase/server';
 import { ActionForm } from '@/components/action-form';
 import { Field, Note, inputClass } from '@/components/ui';
 import { StudentBrand } from '@/components/student/sunset';
+import { KiteModelo3Brand } from '@/components/student/modelo3-header';
 
 function RecoveryFrame({ area, title, children }: { area: AppArea; title: string; children: React.ReactNode }) {
-  return <div className="theme-sunset min-h-dvh bg-canvas px-5 py-10 text-ink">
+  return <div className={`${area === 'aluno' ? 'theme-beach kite-m3-auth' : 'theme-sunset'} min-h-dvh bg-canvas px-5 py-10 text-ink`}>
     <main className="mx-auto max-w-md">
-      <StudentBrand subtitle={APP_AREAS[area].subtitle} />
+      {area === 'aluno' ? <KiteModelo3Brand compact /> : <StudentBrand subtitle={APP_AREAS[area].subtitle} />}
       <h1 className="mb-5 mt-12 text-[30px] font-bold">{title}</h1>
       <div className="rounded-[22px] border border-line bg-surface p-5">{children}</div>
       <Link href={`/${area}/entrar`} className="mt-6 inline-block min-h-11 text-[14px] text-brand underline">Voltar para entrar</Link>

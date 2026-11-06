@@ -6,6 +6,7 @@ import { usePathname } from 'next/navigation';
 import { Icon, type IconName } from './icon';
 import { MenuButton, MobileHeader, SheetAccount, TabBar, isActive, type SheetLink, type TabItem } from './mobile';
 import { StudentBrand } from './student/sunset';
+import { KiteModelo3Brand } from './student/modelo3-header';
 import { StudentProfileAvatar } from './student/profile-avatar';
 import { areaFromPath } from '@/lib/app-areas';
 import { AREAS } from '@/lib/areas';
@@ -174,6 +175,8 @@ export function StudentShell({
   // Minhas aulas has its own tab switcher, so the phone top drops the menu there.
   const hideTopMenu = pathname === '/aluno/aulas' || pathname.startsWith('/aluno/aulas/')
     || pathname === '/aluno/evolucao' || pathname.startsWith('/aluno/evolucao/');
+  const showCompactBrand = !['/aluno/inicio', '/aluno/aulas', '/aluno/evolucao', '/aluno/conta']
+    .some((route) => pathname === route || pathname.startsWith(route + '/'));
   const tabs = signedIn
     ? STUDENT_TABS
     : STUDENT_TABS.map((tab) => (tab.href === '/aluno/conta' ? { ...tab, label: 'Entrar', href: '/aluno/entrar' } : tab));
@@ -183,7 +186,7 @@ export function StudentShell({
       <header className="vento-desktop-student-header hidden border-b border-line bg-chrome md:block">
         <div className="mx-auto flex h-[76px] max-w-6xl items-center justify-between gap-6 px-6 lg:px-8">
           <Link href="/aluno/inicio" aria-label="Vento — início">
-            <StudentBrand />
+            <KiteModelo3Brand compact />
           </Link>
           <nav aria-label="Navegação do aluno" className="flex h-full items-stretch gap-7">
             {STUDENT_TABS.slice(0, 3).map((item) => {
@@ -238,10 +241,10 @@ export function StudentShell({
               <Icon name="back" />
             </button>
           ) : null}
-          <span className="flex-1" />
+          {showCompactBrand ? <span className="pointer-events-auto min-w-0 flex-1 pl-2"><KiteModelo3Brand compact /></span> : <span className="flex-1" />}
           {hideTopMenu ? null : (
           <MenuButton
-            className="pointer-events-auto"
+            className="pointer-events-auto kite-m3-menu-button"
             onPhoto
             title="Menu"
             links={STUDENT_MENU}

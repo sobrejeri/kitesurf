@@ -1,8 +1,7 @@
 import type { Metadata } from 'next';
 
 import { MyLessons, type LessonCard } from '@/components/student/my-lessons';
-import { StudentHero } from '@/components/student/sunset';
-import { ButtonLink } from '@/components/ui';
+import { KiteModelo3Header } from '@/components/student/modelo3-header';
 import { requireRole } from '@/lib/auth';
 import { BOOKING_STATUS_LABELS, MEETING_STATUS_LABELS, listBookingsForStudent } from '@/lib/data';
 import { formatDateShort, formatDay, formatMinutes, formatMonthTag, formatTime } from '@/lib/format';
@@ -58,22 +57,8 @@ export default async function MyLessonsPage({searchParams}:{searchParams:Promise
       : a.past ? 1 : -1);
 
   return (
-    <div className="vento-student-desktop-lessons">
-      <StudentHero
-        image="lesson"
-        eyebrow="Sua agenda de bons ventos"
-        eyebrowIcon="sun"
-        title="Minhas aulas"
-        highlight="aulas"
-        lead="Seu próximo encontro com o mar começa aqui."
-        compact
-        plainOnMobile
-        tightTopMobile
-      >
-        <ButtonLink href="/aluno/reservar" icon="plus" trailingIcon="arrow" className="px-7">
-          Nova aula
-        </ButtonLink>
-      </StudentHero>
+    <div className="vento-student-desktop-lessons kite-modelo3">
+      <KiteModelo3Header title="Minhas aulas" subtitle="Acompanhe suas aulas, detalhes e status." actionHref="/aluno/reservar" actionLabel="Nova aula" />
       <MyLessons key={initialTab} initialTab={initialTab} lessons={lessons} />
     </div>
   );

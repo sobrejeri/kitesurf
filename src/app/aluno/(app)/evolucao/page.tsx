@@ -3,6 +3,7 @@ import Link from 'next/link';
 
 import { Icon, type IconName } from '@/components/icon';
 import { KiteLevelMedal } from '@/components/student/kite-level-medal';
+import { KiteModelo3Header } from '@/components/student/modelo3-header';
 import { requireRole } from '@/lib/auth';
 import { listBookingsForStudent } from '@/lib/data';
 import {
@@ -151,7 +152,8 @@ export default async function ProgressPage({
     : `${KITE_LEVEL_BADGES[kiteLevel.effective].label} (informado)`;
 
   return (
-    <div className="pt-[calc(env(safe-area-inset-top)+14px)] md:pt-0">
+    <div className="kite-modelo3">
+      <KiteModelo3Header />
       {bookings.length === 0 ? (
         <section className="rounded-[22px] border border-line bg-surface p-5">
           <p className="text-[13px] text-muted">Você ainda não possui reservas.</p>
@@ -163,7 +165,7 @@ export default async function ProgressPage({
       ) : (
         <>
           {/* Seu tempo no mar — sem caixa e sem imagem de fundo */}
-          <section className="px-1 pt-1 pb-2">
+          <section className="kite-m3-progress-header px-1 pt-1 pb-2">
             <div className="flex items-center justify-between gap-3">
               <h2 className="flex items-center gap-2.5 text-[17px] font-bold text-ink">
                 <Icon name="waves" className="!h-6 !w-6 text-brand" />Seu tempo no mar
@@ -210,7 +212,7 @@ export default async function ProgressPage({
           </section>
 
           {/* Seu caminho no kite — currículo agregado com linha do tempo */}
-          <section className="relative mt-5 overflow-hidden rounded-[22px] border border-line bg-surface p-4">
+          <section className="kite-m3-journey-section relative mt-5 overflow-hidden rounded-[22px] border border-line bg-surface p-4">
             <img src="/images/prea-coast.webp" alt="" aria-hidden="true"
               className="pointer-events-none absolute inset-y-0 right-0 h-full w-[52%] object-cover opacity-20"
               style={{ objectPosition: '72% 45%', WebkitMaskImage: 'linear-gradient(to left, #000, transparent)', maskImage: 'linear-gradient(to left, #000, transparent)' }} />

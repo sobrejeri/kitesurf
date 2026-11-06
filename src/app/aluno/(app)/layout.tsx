@@ -1,4 +1,5 @@
 import './mar-profundo.css';
+import './modelo3.css';
 
 import { signOut } from '@/app/actions/auth';
 import { StudentShell } from '@/components/shells';
