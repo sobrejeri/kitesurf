@@ -10,7 +10,8 @@ import { KiteLevelEditor } from '@/components/student/kite-level-editor';
 import { getStudentKiteLevel } from '@/lib/student-kite-level';
 import { KITE_LEVEL_BADGES } from '@/lib/kite-steps';
 import { ProfilePhotoPicker } from '@/components/profile-photo-picker';
-import { StudentHero, SunsetEmpty } from '@/components/student/sunset';
+import { SunsetEmpty } from '@/components/student/sunset';
+import { KiteModelo3Header } from '@/components/student/modelo3-header';
 import { ButtonLink } from '@/components/ui';
 import { requireRole } from '@/lib/auth';
 import { listBookingsForStudent } from '@/lib/data';
@@ -48,19 +49,11 @@ export default async function AccountPage() {
   const firstName = viewer.fullName.split(' ')[0];
 
   return (
-    <>
-      <StudentHero
-        image="lesson"
-        eyebrow="Meu perfil"
-        title={firstName ? `Olá, ${firstName}!` : 'Olá!'}
-        highlight={firstName ? `${firstName}!` : undefined}
-        lead="Seu próximo bordo começa aqui."
-        compact
-        plainOnMobile
-      />
+    <div className="kite-modelo3">
+      <KiteModelo3Header />
 
       <div className="grid gap-4 lg:grid-cols-2">
-        <section className="rounded-[22px] border border-line bg-surface p-5">
+        <section className="kite-m3-profile-card rounded-[22px] border border-line bg-surface p-5">
           <div className="grid min-w-0 justify-items-center gap-4 text-center sm:grid-cols-[118px_minmax(0,1fr)] sm:items-center sm:justify-items-stretch sm:text-left">
             <ProfilePhotoPicker
               action={uploadStudentAvatar}
@@ -152,6 +145,6 @@ export default async function AccountPage() {
           )}
         </section>
       </div>
-    </>
+    </div>
   );
 }
