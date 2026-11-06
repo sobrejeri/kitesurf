@@ -5,6 +5,16 @@ import { Icon } from '@/components/icon';
  * VentoKite Modelo 03: visual-only hero for student screens.
  * All booking/profile data remains rendered by each page's existing components.
  */
+export function KiteModelo3Brand({ compact = false }: { compact?: boolean }) {
+  return (
+    <Link href="/aluno/inicio" className={`kite-m3-logo ${compact ? 'kite-m3-logo--compact' : ''}`}
+      aria-label="VentoKite — início">
+      <span className="kite-m3-logo__name">Vento<strong>Kite</strong></span>
+      <span className="kite-m3-logo__sub">AULAS DE KITESURF <span aria-hidden="true">≋</span></span>
+    </Link>
+  );
+}
+
 export function KiteModelo3Header({
   title,
   subtitle,
@@ -20,10 +30,7 @@ export function KiteModelo3Header({
     <header className="kite-m3-header">
       <div className="kite-m3-header__texture" aria-hidden="true" />
       <div className="kite-m3-header__inner">
-        <Link href="/aluno/inicio" className="kite-m3-logo" aria-label="VentoKite — início">
-          <span className="kite-m3-logo__name">Vento<strong>Kite</strong></span>
-          <span className="kite-m3-logo__sub">AULAS DE KITESURF <span aria-hidden="true">≋</span></span>
-        </Link>
+        <KiteModelo3Brand />
         {title ? (
           <div className="kite-m3-header__heading">
             <p className="kite-m3-header__eyebrow">SEU ESPAÇO NO KITE</p>
