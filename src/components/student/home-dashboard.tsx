@@ -63,25 +63,6 @@ export function HomeDashboard({
         </div>
       </header>
 
-      <nav className={styles.quickNav} aria-label="Acessos rápidos">
-        <a href="#buscar-aula" className={styles.quickPrimary}>
-          <Icon name="calendar" />
-          <span>Agendar<br />aula</span>
-        </a>
-        <Link href="/aluno/aulas">
-          <Icon name="book" />
-          <span>Minhas<br />aulas</span>
-        </Link>
-        <Link href="/aluno/evolucao">
-          <Icon name="chart" />
-          <span>Evolução<br />no kite</span>
-        </Link>
-        <Link href="/aluno/evolucao">
-          <Icon name="star" />
-          <span>Minhas<br />conquistas</span>
-        </Link>
-      </nav>
-
       {summary.pending.map((pending) => (
         <div className={styles.pending} key={pending.id} role="status">
           <span><strong>Confirme sua aula</strong> · Reserva {pending.code}</span>
