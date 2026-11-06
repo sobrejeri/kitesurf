@@ -106,7 +106,7 @@ export default async function AccountPage() {
               <dd className="text-ink">{viewer.language}</dd>
             </div>
           </dl>
-          <form action={signOut} className="mt-5">
+          <form action={signOut} className="mt-5 flex justify-center sm:justify-start">
             <button type="submit" className="press flex items-center gap-2.5 rounded-full border border-brand/70 px-6 py-3 text-[14px] font-semibold text-brand">
               <Icon name="logout" className="!h-5 !w-5" /> Sair da conta
             </button>

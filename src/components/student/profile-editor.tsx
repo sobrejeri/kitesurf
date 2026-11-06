@@ -13,18 +13,21 @@ export function ProfileEditor({ fullName, language }: { fullName: string; langua
   const [open, setOpen] = useState(false);
   return (
     <>
-      <button
-        type="button"
-        onClick={() => setOpen(!open)}
-        aria-expanded={open}
-        className="press flex items-center gap-2 rounded-full border border-brand/70 px-4 py-2.5 text-[13px] font-semibold text-ink"
-      >
-        <Icon name="edit" className="!h-4 !w-4 text-brand" />
-        {open ? 'Fechar' : 'Editar perfil'}
-      </button>
+      <div className="flex justify-center sm:justify-start">
+        <button
+          type="button"
+          onClick={() => setOpen(!open)}
+          aria-expanded={open}
+          className="press flex items-center gap-2 rounded-full border border-brand/70 px-4 py-2.5 text-[13px] font-semibold text-ink"
+        >
+          <Icon name="edit" className="!h-4 !w-4 text-brand" />
+          {open ? 'Fechar' : 'Editar perfil'}
+        </button>
+      </div>
       {open ? (
         <div className="basis-full">
-          <ActionForm action={updateProfile} submitLabel="Salvar" className="mt-4 grid gap-4">
+          <ActionForm action={updateProfile} submitLabel="Salvar"
+            submitAlign="justify-self-center sm:justify-self-start" className="mt-4 grid gap-4">
             <Field label="Nome">
               <input name="fullName" defaultValue={fullName} required minLength={2} maxLength={120} autoComplete="name" className={inputClass} />
             </Field>

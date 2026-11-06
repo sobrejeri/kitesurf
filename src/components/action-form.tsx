@@ -17,6 +17,7 @@ export function ActionForm({
   submitVariant = 'primary',
   className = '',
   wideSubmit = false,
+  submitAlign = 'justify-self-start',
   submitClassName = '',
   disabled = false,
 }: {
@@ -26,6 +27,8 @@ export function ActionForm({
   submitVariant?: 'primary' | 'ghost' | 'soft' | 'danger';
   className?: string;
   wideSubmit?: boolean;
+  /** justify-self utility for the submit button when not wideSubmit. */
+  submitAlign?: string;
   submitClassName?: string;
   disabled?: boolean;
 }) {
@@ -33,7 +36,7 @@ export function ActionForm({
   return (
     <form action={formAction} className={className}>
       {children}
-      <Button type="submit" variant={submitVariant} disabled={pending || disabled} className={`${wideSubmit ? 'w-full' : 'justify-self-start'} ${submitClassName}`}>
+      <Button type="submit" variant={submitVariant} disabled={pending || disabled} className={`${wideSubmit ? 'w-full' : submitAlign} ${submitClassName}`}>
         {pending ? 'Enviando…' : submitLabel}
       </Button>
       {state.error ? (
