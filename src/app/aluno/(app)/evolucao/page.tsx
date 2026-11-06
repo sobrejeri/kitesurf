@@ -162,12 +162,9 @@ export default async function ProgressPage({
         </section>
       ) : (
         <>
-          {/* Seu tempo no mar — foto em degradê ao fundo, sem caixa */}
-          <section className="relative px-1 pt-1 pb-2">
-            <img src="/images/prea-coast.webp" alt="" aria-hidden="true"
-              className="pointer-events-none absolute inset-x-0 top-0 h-[150%] w-full object-cover opacity-30"
-              style={{ objectPosition: '50% 34%', WebkitMaskImage: 'linear-gradient(to bottom, #000 0%, transparent 70%)', maskImage: 'linear-gradient(to bottom, #000 0%, transparent 70%)' }} />
-            <div className="relative flex items-center justify-between gap-3">
+          {/* Seu tempo no mar — sem caixa e sem imagem de fundo */}
+          <section className="px-1 pt-1 pb-2">
+            <div className="flex items-center justify-between gap-3">
               <h2 className="flex items-center gap-2.5 text-[17px] font-bold text-ink">
                 <Icon name="waves" className="!h-6 !w-6 text-brand" />Seu tempo no mar
               </h2>
