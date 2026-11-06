@@ -23,3 +23,30 @@
 .bubbles{display:flex;gap:11px;align-items:center}.bubble,.launcher{position:relative;border:3px solid #fff;border-radius:50%;width:58px;height:58px;box-shadow:0 5px 22px #001e3f45;padding:0;display:grid;place-items:center}.bubble{background:#d7e9f2}.bubble .photo{width:100%;height:100%;font-size:21px}.launcher{background:#00ccde;color:#003045}.launcher>svg{width:27px;height:27px}.badge{position:absolute;top:-8px;right:-6px;border:2px solid #fff;height:23px;min-width:23px}.messageIcon{position:absolute;right:-5px;bottom:-4px;display:grid;place-items:center;width:24px;height:24px;padding:4px;border:2px solid #fff;border-radius:50%;background:#00ccde;color:#002c42}
 .visibility{display:flex;align-items:center;gap:8px;padding:10px;font-size:12px;color:#28556c;background:#f0f8fa;border-radius:10px}.presence{margin:0;padding:5px 13px;font-size:11px;color:#5b7b8b;background:#edf5f8}.online{color:#157d59}.online:before{content:'';display:inline-block;width:7px;height:7px;margin-right:6px;background:#1fa273;border-radius:50%}.tools{display:flex;align-items:center;gap:5px;flex-shrink:0;padding:5px 9px;border-top:1px solid #e4edf4;background:#fff}.tools button{border:0;background:#e9f4f8;color:#15546d;border-radius:7px;padding:5px 7px;font-size:11px}.tools small{margin-left:auto;font-size:9px;color:#64828f}.locationConfirm{padding:10px;background:#ecf9f8;color:#134d5d;font-size:12px}.locationConfirm p{margin:0 0 7px}.locationConfirm button{margin-right:7px;border:0;border-radius:7px;background:#00cddd;color:#00364b;padding:6px 8px}
 @media(max-width:767px){.dock{right:12px;bottom:calc(82px + env(safe-area-inset-bottom));gap:8px}.panel{width:min(370px,calc(100vw - 24px));height:460px;max-height:calc(100dvh - 185px - env(safe-area-inset-bottom))}.bubble,.launcher{width:51px;height:51px}.compose textarea{font-size:16px}.bubbles{gap:8px}}
+
+
+/* The chat portal is rendered under <body>, outside .theme-mar-profundo.
+   Explicitly scope these VentoKite Modelo 03 colors to ALUNO only. */
+.studentDock{color:#effaff;color-scheme:dark}
+.studentDock .panel{background:#032a40;border-color:#1b8597;box-shadow:0 18px 65px #000c20bd}
+.studentDock .head{background:linear-gradient(125deg,#03506a,#002e46);border-bottom:1px solid #278b9b}
+.studentDock .head small{color:#c9e2eb}
+.studentDock .list,.studentDock .log{background:#022c43}
+.studentDock .thread{border-bottom-color:#155b72;background:#04354d;color:#f4fbff}
+.studentDock .thread:hover{background:#08506a}
+.studentDock .thread small,.studentDock .thread>span>span{color:#aecedc}
+.studentDock .list>p,.studentDock .empty{color:#b9d5e2}
+.studentDock .log li>span{background:#0e536b;color:#f4fbff}
+.studentDock .log .mine>span{background:#284f31;color:#edffd4}
+.studentDock .log time{color:#bcd3dc}
+.studentDock .older,.studentDock .context a{color:#bdff06}
+.studentDock .context,.studentDock .compose,.studentDock .tools{background:#033147;border-color:#216d82;color:#c8dbe5}
+.studentDock .compose textarea{background:#00253a;border-color:#268498;color:#f4fbff}
+.studentDock .compose textarea::placeholder{color:#a7c3d2}
+.studentDock .compose button,.studentDock .launcher,.studentDock .messageIcon{background:linear-gradient(120deg,#aaff00,#daff32);color:#032b3b;border-color:#e7ffb0}
+.studentDock .bubble{border-color:#ecffd1}
+.studentDock .count,.studentDock .badge{background:#7132c2;color:#fff}
+.studentDock .visibility,.studentDock .presence,.studentDock .tools button{background:#084357;color:#d9ebf2}
+.studentDock .locationConfirm{background:#073c4c;color:#e4f1f9}
+.studentDock .locationConfirm button{background:#bdff06;color:#032a3b}
+.studentDock :is(button,a,textarea):focus-visible{outline-color:#bdff06}
