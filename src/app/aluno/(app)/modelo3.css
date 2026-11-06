@@ -329,3 +329,80 @@ body:has(.theme-beach.theme-mar-profundo) { background:#001829; color:#f4fbff; }
   .theme-mar-profundo .kite-m3-logo--compact .kite-m3-logo__name {font-size:22px;}
   .theme-mar-profundo .kite-m3-logo--compact .kite-m3-logo__sub {font-size:7px;}
 }
+
+/* Fidelity pass for the approved photographic reference. */
+.theme-mar-profundo .kite-m3-header {
+  background:
+    linear-gradient(90deg,#001c2be8 0%,#003c567d 65%,#0026373f),
+    url('/images/vento-ocean-hero.webp') center 55%/cover no-repeat;
+}
+.theme-mar-profundo .kite-m3-header__kite {
+  width:min(45%,245px);
+  height:96%;
+  top:1%;
+  right:2%;
+  object-fit:contain;
+  object-position:center right;
+  opacity:1;
+  transform:none;
+  filter:drop-shadow(0 14px 15px #0013299e);
+}
+.theme-mar-profundo .kite-m3-header__inner {width:69%;}
+.theme-mar-profundo .kite-m3-studenthero-kite {
+  object-fit:contain;
+  object-position:center right;
+  opacity:1;
+  filter:drop-shadow(0 12px 14px #00162677);
+}
+.theme-mar-profundo .kite-m3-header .kite-m3-logo__name {text-shadow:0 3px 9px #001020;}
+.theme-mar-profundo button.kite-m3-menu-button {
+  border:2px solid #c3ff32;
+  background:linear-gradient(145deg,#b5ff00,#dbff37);
+  color:#00273c;
+  box-shadow:0 7px 23px #a5ff0050;
+  width:46px;
+  height:46px;
+  border-radius:50%;
+  backdrop-filter:none;
+}
+.theme-mar-profundo button.kite-m3-menu-button .icon {stroke-width:2.3;}
+.theme-mar-profundo nav[aria-label="Navegação do aluno"].fixed {
+  background:linear-gradient(180deg,#002a3bdc,#001524fa 65%);
+  border-top:1px solid #24cbd6;
+  border-radius:30px 30px 0 0;
+}
+.theme-mar-profundo nav[aria-label="Navegação do aluno"].fixed a[aria-label="Agendar"] > span:first-child {
+  background:linear-gradient(145deg,#b6ff00,#d7ff25);
+  width:58px;
+  height:58px;
+  border:5px solid #023141;
+  box-shadow:0 5px 28px #b9ff0070;
+}
+.theme-mar-profundo nav[aria-label="Navegação do aluno"].fixed a[aria-current="page"] > span:last-child {
+  min-width:36px;
+  background:#baff00;
+  height:3px;
+  border-radius:99px;
+}
+.kite-m3-wave-band {
+  display:none;
+  pointer-events:none;
+  position:fixed;
+  left:0;
+  right:0;
+  bottom:calc(78px + env(safe-area-inset-bottom));
+  z-index:39;
+  height:52px;
+  overflow:hidden;
+}
+.kite-m3-wave-band svg {display:block;width:100%;height:100%;}
+@media (max-width:767px) {
+  .kite-m3-wave-band {display:block;}
+  .theme-mar-profundo .kite-m3-header__kite {right:0;width:44%;height:91%;}
+  .theme-mar-profundo .kite-m3-header__inner {width:76%;}
+  .theme-mar-profundo .kite-m3-studenthero-kite {right:-3%;width:45%;height:78%;}
+}
+@media (min-width:768px) {
+  .theme-mar-profundo .kite-m3-header__kite {width:30%;max-width:320px;}
+  .theme-mar-profundo .kite-m3-header__inner {width:72%;}
+}
