@@ -13,7 +13,7 @@ import { supabaseConfig } from '@/lib/env';
  * the server (requireRole) and the database enforces RLS on every row.
  */
 
-const PUBLIC_PATHS = ['/', '/entrar', '/cadastro', '/auth', '/api/version', '/aluno/inicio', '/aluno/politicas', '/configuracao'];
+const PUBLIC_PATHS = ['/', '/entrar', '/cadastro', '/auth', '/api/version', '/aluno/inicio', '/laboratorio-kite.html', '/aluno/politicas', '/configuracao'];
 const REFERRAL_COOKIE = 'vento_ref';
 const REFERRAL_PATTERN = /^[A-Z0-9-]{3,32}$/;
 
