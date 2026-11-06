@@ -3,21 +3,20 @@
 
 /* VentoKite 2026 redesign - student homepage only */
 .dashboard{padding-top:0;--aqua:#00e6ee}
-.welcome{min-height:365px;border:0;border-radius:27px 27px 0 0;box-shadow:none;background:transparent}
+.welcome{min-height:336px;border:0;border-radius:24px 24px 0 0;box-shadow:none;background:transparent}
 .welcome>.heroPhoto{object-position:63% 50%;filter:saturate(1.25) contrast(1.12);-webkit-mask-image:linear-gradient(to bottom,#000 55%,transparent 97%);mask-image:linear-gradient(to bottom,#000 55%,transparent 97%)}
 .welcome>.heroShade{position:absolute;inset:0;padding:0;z-index:-1;background:linear-gradient(90deg,#001528fa,#003249cb 52%,#003c5266),linear-gradient(0deg,#001a30 2%,#001728bb 14%,transparent 60%);-webkit-mask-image:linear-gradient(to bottom,#000 55%,transparent 99%);mask-image:linear-gradient(to bottom,#000 55%,transparent 99%)}
 .welcome:after{display:none}
-.welcome>.heroContent{position:relative;max-width:600px;padding:30px 36px 36px}
-.heroBrand{display:flex;flex-direction:column;align-items:flex-start;margin-bottom:34px}
+.welcome>.heroContent{position:relative;max-width:600px;padding:26px 28px 30px}
+.heroBrand{display:flex;flex-direction:column;align-items:flex-start;margin-bottom:22px}
 .brandName{font-size:32px;line-height:1;font-style:italic;font-weight:900;letter-spacing:-1.5px;color:white}
 .brandName span{color:#00e4ed}
 .brandDescriptor{display:inline-flex;align-items:center;gap:6px;margin-top:5px;font-size:9px;font-weight:750;letter-spacing:.17em;color:#e7f8ff}
 .brandDescriptor svg{width:17px;height:12px;color:#00e4ed}
 .welcome .eyebrow{font-size:11px;color:#63eaf1}
-.welcome h1{font-size:clamp(34px,4.5vw,52px);line-height:1.04;font-weight:850;letter-spacing:-.05em;margin:13px 0 12px}
-.welcome h1 em{font-style:normal}
-.welcome p{max-width:27ch;font-size:16px;line-height:1.4;color:#f0faff}
-.welcome .searchLink{display:inline-flex;align-items:center;justify-content:center;min-height:48px;gap:11px;padding:11px 19px;margin-top:22px;color:#fff;background:linear-gradient(110deg,#ff8d17,#f6730b);border-radius:99px;font-size:14px;font-weight:800;box-shadow:0 10px 24px #ff831d44}
+.welcome h1{font-family:var(--font-script);font-size:clamp(46px,9vw,76px);line-height:.88;font-weight:700;letter-spacing:0;margin:8px 0 8px}
+.welcome h1 em{font-style:normal;color:#ff8f2a}
+.welcome p{max-width:30ch;font-size:16px;line-height:1.38;color:#f0faff;margin:2px 0 0}
 .cards{display:block;margin-top:24px}
 .card{border:1px solid #1584a2;border-radius:23px;background:linear-gradient(135deg,#0a4d66,#003049 85%);box-shadow:0 13px 33px #000f2077}
 .next{position:relative;overflow:hidden;padding:15px 18px;border:1px solid #28ddea}
@@ -69,13 +68,12 @@
 .promoContent a{display:inline-flex;align-items:center;gap:8px;margin-top:13px;font-size:12px;color:#00e7ef;font-weight:800}
 @media(max-width:767px){
  .dashboard{padding-top:0}
- .welcome{min-height:385px;margin:0 -4px;border-radius:0 0 27px 27px}
- .welcome>.heroContent{padding:86px 21px 30px}
- .heroBrand{margin-bottom:19px}
+ .welcome{min-height:358px;margin:0 -16px;border-radius:0}
+ .welcome>.heroContent{padding:80px 18px 28px}
+ .heroBrand{margin-bottom:18px}
  .brandName{font-size:26px}
- .welcome h1{font-size:clamp(31px,8.3vw,40px)}
+ .welcome h1{font-size:clamp(44px,13vw,60px)}
  .welcome p{font-size:14px}
- .welcome .searchLink{font-size:13px;min-height:44px;padding:9px 14px;margin-top:18px}
  .cards{margin-top:17px}
  .next{padding:14px 15px}
  .label{font-size:11.5px}

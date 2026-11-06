@@ -55,11 +55,6 @@ export function HomeDashboard({
           <span className={styles.eyebrow}>SEU ESPAÇO NO KITE</span>
           <h1 id="student-dashboard-title">Bons ventos,<br /><em>{firstName || 'aluno'}!</em></h1>
           <p>Seu próximo encontro e cada conquista, no seu ritmo.</p>
-          <a href="#buscar-aula" className={styles.searchLink}>
-            <Icon name="calendar" />
-            Agendar nova aula
-            <Icon name="arrow" />
-          </a>
         </div>
       </header>
 
