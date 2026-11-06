@@ -169,3 +169,7 @@
   .welcome>.heroContent {position:relative;z-index:2;}
   .welcome>.heroPhoto {object-position:72% 48%;}
 }
+
+
+/* Override .welcome > img's full-inset rule so the illustrated kite sits on the RIGHT. */
+.welcome>.heroKite {left:auto;bottom:auto;}
