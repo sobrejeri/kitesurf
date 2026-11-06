@@ -114,7 +114,7 @@ export function TabBar({
                 aria-label={center.label}
                 className="press flex flex-col items-center gap-1 py-1 text-tabbar-ink"
               >
-                <span className="-mt-[22px] grid h-[52px] w-[52px] place-items-center rounded-full bg-gradient-to-br from-[#00d7e9] to-[#05f0ec] text-[#002b3b] shadow-[0_9px_22px_#00d8e480] ring-[5px] ring-tabbar/95">
+                <span className="-mt-[22px] grid h-[52px] w-[52px] place-items-center rounded-full bg-gradient-to-br from-[#9ee63c] to-[#c3f24e] text-[#13240a] shadow-[0_9px_22px_#a3e63580] ring-[5px] ring-tabbar/95">
                   <Icon name={center.icon} className="!h-[25px] !w-[25px] [stroke-width:2]" />
                 </span>
                 <span className={`${variant === 'underline' ? 'text-[11px]' : 'text-[10px]'} font-[650] text-sunrise`}>{center.label}</span>
