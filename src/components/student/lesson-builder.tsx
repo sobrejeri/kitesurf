@@ -123,6 +123,7 @@ export function LessonBuilder({
   const [open, setOpen] = useState(1);
   const [editing, setEditing] = useState(startEditing);
   const [transport, setTransport] = useState(false);
+  const [showCurriculum, setShowCurriculum] = useState(false);
 
   // The hour package chosen in Explorar is fixed. Meetings only distribute it
   // across dates; changing a meeting must not change the package or its quote.
@@ -277,25 +278,40 @@ export function LessonBuilder({
             </Card>
 
             <Card className="!p-4">
-              <p className="text-[14px] font-extrabold text-ink">
-                O que esta aula oferece · {KITE_LEVEL_BADGES[level].label}
-              </p>
-              <p className="mt-1 text-[12px] text-muted">
-                {KITE_LEVEL_BADGES[level].detail}. A sequência é uma referência,
-                não uma garantia de aprender todas as etapas em uma única aula.
-              </p>
-              <ul className="mt-3 grid gap-1.5">
-                {KITE_CURRICULA[level].map((item) => (
-                  <li key={item.id} className="flex gap-2 text-[12px] text-label">
-                    <span className="font-bold text-brand">{item.id}.</span>
-                    {item.title}
-                  </li>
-                ))}
-              </ul>
-              <p className="mt-2 text-[11px] text-muted">
-                O instrutor define atividades compatíveis com suas habilidades
-                e com o vento e o mar no dia.
-              </p>
+              <button
+                type="button"
+                onClick={() => setShowCurriculum(!showCurriculum)}
+                aria-expanded={showCurriculum}
+                className="flex w-full items-center gap-3 text-left"
+              >
+                <span className="min-w-0 flex-1 text-[14px] font-extrabold text-ink">
+                  O que esta aula oferece · {KITE_LEVEL_BADGES[level].label}
+                </span>
+                <span className="flex shrink-0 items-center gap-1 text-[13px] font-bold text-brand">
+                  {showCurriculum ? 'Recolher' : 'Ver etapas'}
+                  <Icon name="chevronDown" className={`!h-4 !w-4 transition-transform ${showCurriculum ? 'rotate-180' : ''}`} />
+                </span>
+              </button>
+              {showCurriculum ? (
+                <>
+                  <p className="mt-3 text-[12px] text-muted">
+                    {KITE_LEVEL_BADGES[level].detail}. A sequência é uma referência,
+                    não uma garantia de aprender todas as etapas em uma única aula.
+                  </p>
+                  <ul className="mt-3 grid gap-1.5">
+                    {KITE_CURRICULA[level].map((item) => (
+                      <li key={item.id} className="flex gap-2 text-[12px] text-label">
+                        <span className="font-bold text-brand">{item.id}.</span>
+                        {item.title}
+                      </li>
+                    ))}
+                  </ul>
+                  <p className="mt-2 text-[11px] text-muted">
+                    O instrutor define atividades compatíveis com suas habilidades
+                    e com o vento e o mar no dia.
+                  </p>
+                </>
+              ) : null}
             </Card>
 
             {/* Optional add-on: the instructor's own support vehicle. */}
