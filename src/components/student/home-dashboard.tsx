@@ -47,6 +47,7 @@ export function HomeDashboard({
           fetchPriority="high"
         />
         <div className={styles.heroShade} aria-hidden="true" />
+        <img src="/images/kite-modelo3.svg" alt="" aria-hidden="true" className={styles.heroKite} />
         <div className={styles.heroContent}>
           <div className={styles.heroBrand} aria-label="VentoKite, aulas de kitesurf">
             <span className={styles.brandName}>Vento<span>Kite</span></span>
