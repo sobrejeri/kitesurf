@@ -171,7 +171,8 @@ export function StudentShell({
   const pathname = usePathname();
   const subpage = STUDENT_SUBPAGES.some((route) => pathname.startsWith(route));
   // Minhas aulas has its own tab switcher, so the phone top drops the menu there.
-  const hideTopMenu = pathname === '/aluno/aulas' || pathname.startsWith('/aluno/aulas/');
+  const hideTopMenu = pathname === '/aluno/aulas' || pathname.startsWith('/aluno/aulas/')
+    || pathname === '/aluno/evolucao' || pathname.startsWith('/aluno/evolucao/');
   const tabs = signedIn
     ? STUDENT_TABS
     : STUDENT_TABS.map((tab) => (tab.href === '/aluno/conta' ? { ...tab, label: 'Entrar', href: '/aluno/entrar' } : tab));

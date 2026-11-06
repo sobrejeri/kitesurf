@@ -151,7 +151,7 @@ export default async function ProgressPage({
     : `${KITE_LEVEL_BADGES[kiteLevel.effective].label} (informado)`;
 
   return (
-    <div className="pt-[calc(env(safe-area-inset-top)+50px)] md:pt-0">
+    <div className="pt-[calc(env(safe-area-inset-top)+14px)] md:pt-0">
       {bookings.length === 0 ? (
         <section className="rounded-[22px] border border-line bg-surface p-5">
           <p className="text-[13px] text-muted">Você ainda não possui reservas.</p>
@@ -162,11 +162,11 @@ export default async function ProgressPage({
         </section>
       ) : (
         <>
-          {/* Seu tempo no mar — foto em degradê ao fundo, anel, horas e barra */}
-          <section className="relative overflow-hidden rounded-[22px] border border-line bg-surface p-4">
+          {/* Seu tempo no mar — foto em degradê ao fundo, sem caixa */}
+          <section className="relative px-1 pt-1 pb-2">
             <img src="/images/prea-coast.webp" alt="" aria-hidden="true"
-              className="pointer-events-none absolute inset-0 h-full w-full object-cover opacity-[0.22]"
-              style={{ objectPosition: '50% 38%', WebkitMaskImage: 'linear-gradient(to bottom, #000 0%, transparent 82%)', maskImage: 'linear-gradient(to bottom, #000 0%, transparent 82%)' }} />
+              className="pointer-events-none absolute inset-x-0 top-0 h-[150%] w-full object-cover opacity-30"
+              style={{ objectPosition: '50% 34%', WebkitMaskImage: 'linear-gradient(to bottom, #000 0%, transparent 70%)', maskImage: 'linear-gradient(to bottom, #000 0%, transparent 70%)' }} />
             <div className="relative flex items-center justify-between gap-3">
               <h2 className="flex items-center gap-2.5 text-[17px] font-bold text-ink">
                 <Icon name="waves" className="!h-6 !w-6 text-brand" />Seu tempo no mar
@@ -174,7 +174,7 @@ export default async function ProgressPage({
               <KiteLevelMedal level={kiteLevel.assessed ?? kiteLevel.effective}
                 assessed={Boolean(kiteLevel.assessed)} compact />
             </div>
-            <div className="relative mt-3 flex items-center justify-between gap-4">
+            <div className="relative mt-2 flex items-center justify-between gap-4">
               <div className="min-w-0">
                 <p className="flex items-center gap-2">
                   <Icon name="clock" className="!h-6 !w-6 shrink-0 text-brand" />
@@ -197,11 +197,11 @@ export default async function ProgressPage({
                 </div>
               </div>
             </div>
-            <div className="relative mt-3 h-2 w-full overflow-hidden rounded-full bg-track" role="progressbar"
+            <div className="relative mt-2.5 h-2 w-full overflow-hidden rounded-full bg-track" role="progressbar"
               aria-label="Progresso das horas" aria-valuemin={0} aria-valuemax={100} aria-valuenow={journeyPercent}>
               <span className="block h-full rounded-full bg-brand" style={{ width: `${journeyPercent}%` }} />
             </div>
-            <p className="relative mt-2.5 text-[12px] text-muted">{levelLabel}. Soma de todas as suas reservas confirmadas.</p>
+            <p className="relative mt-2 text-[12px] text-muted">{levelLabel}. Soma de todas as suas reservas confirmadas.</p>
           </section>
 
           {/* Cartões de horas — totais agregados */}
