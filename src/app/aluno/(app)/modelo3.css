@@ -406,3 +406,24 @@ body:has(.theme-beach.theme-mar-profundo) { background:#001829; color:#f4fbff; }
   .theme-mar-profundo .kite-m3-header__kite {width:30%;max-width:320px;}
   .theme-mar-profundo .kite-m3-header__inner {width:72%;}
 }
+
+/* Same photographic coast across secondary banners; only the student shell. */
+.theme-mar-profundo .kite-m3-studenthero {
+  background:linear-gradient(90deg,#001927b8,#00496170),
+             url('/images/vento-ocean-hero.webp') center 52%/cover no-repeat;
+}
+.theme-mar-profundo .kite-m3-studenthero .sunset-photo {
+  opacity:0;
+}
+.theme-mar-profundo .kite-m3-studenthero .sunset-veil {
+  background:linear-gradient(90deg,#001727e8 0%,#00465d80 68%,#00162924),
+             linear-gradient(0deg,#001829cf 0%,transparent 52%);
+}
+.theme-mar-profundo .kite-m3-header__texture {
+  opacity:.12;
+}
+.theme-mar-profundo main :is(h1,h2,h3) {
+  font-family:var(--font-display),var(--font-inter),sans-serif;
+  letter-spacing:-.035em;
+}
+.theme-mar-profundo main :is(.kite-m3-header h1) {font-size:clamp(27px,6vw,38px);}
