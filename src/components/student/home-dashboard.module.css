@@ -60,12 +60,8 @@
 .footnote>svg{color:#ff9a35}
 .footnote>span{flex:1}
 .footnote a{display:inline-flex;align-items:center;gap:5px}
-.searchHeading{position:relative;isolation:isolate;min-height:170px;overflow:hidden;margin:30px 0;border-radius:23px;border:1px solid #29bcd8}
-.searchHeading>img{position:absolute;z-index:-2;inset:0;width:100%;height:100%;object-fit:cover}
-.promoShade{position:absolute;z-index:-1;inset:0;background:linear-gradient(90deg,#00182afa,#003248ca 50%,#0034494b)}
-.promoContent{padding:23px 27px}
-.promoContent h2{font-size:clamp(25px,3vw,35px);font-style:italic;font-weight:850;line-height:1.06;margin-top:9px}
-.promoContent a{display:inline-flex;align-items:center;gap:8px;margin-top:13px;font-size:12px;color:#00e7ef;font-weight:800}
+.promoBanner{display:block;overflow:hidden;margin:28px 0 30px;border-radius:20px;border:1px solid #2a86a8;box-shadow:0 14px 34px #000f2066;line-height:0}
+.promoBanner img{display:block;width:100%;height:auto}
 @media(max-width:767px){
  .dashboard{padding-top:0}
  .welcome{min-height:358px;margin:0 -16px;border-radius:0}
@@ -95,7 +91,7 @@
  .cardArrow{width:31px;height:31px;right:11px;bottom:11px}
  .footnote{font-size:11px}
  .footnote>span{flex:1 1 75%}
- .searchHeading{margin-top:24px}
+ .promoBanner{margin-top:22px}
 }
 @media(max-width:340px){.insights{grid-template-columns:1fr}.actions{grid-template-columns:1fr}}
 

@@ -187,15 +187,19 @@ export function HomeDashboard({
         </>
       ) : null}
 
-      <div className={styles.searchHeading}>
-        <img src="/images/prea-coast.webp" alt="" loading="lazy" />
-        <div className={styles.promoShade} aria-hidden="true" />
-        <div className={styles.promoContent}>
-          <span className={styles.eyebrow}>CONTINUE NO SEU RITMO</span>
-          <h2>Seu próximo<br />bordo começa aqui.</h2>
-          <a href="#buscar-aula">Escolher uma aula <Icon name="arrow" /></a>
-        </div>
-      </div>
+      <a
+        href="#buscar-aula"
+        className={styles.promoBanner}
+        aria-label="Seu próximo bordo começa aqui — aulas de kitesurf para todos os níveis, no seu ritmo, com instrutores experientes. Agendar uma aula."
+      >
+        <img
+          src="/images/promo-bordo.jpg"
+          alt=""
+          width={1671}
+          height={666}
+          loading="lazy"
+        />
+      </a>
     </section>
   );
 }
