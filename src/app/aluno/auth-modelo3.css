@@ -63,3 +63,17 @@
   .kite-m3-auth .kite-m3-auth-kite {right:-22%;width:76%;}
   .kite-m3-auth .kite-m3-logo__name {font-size:24px;}
 }
+
+/* Real photographic equipment replaces the previous SVG artwork. */
+.kite-m3-auth .kite-m3-auth-kite {
+  width:min(56%,310px);
+  right:-5%;
+  top:4%;
+  object-fit:contain;
+  filter:drop-shadow(0 12px 14px #001626a8);
+}
+.kite-m3-auth .sunset-photo {object-position:70% center;}
+.kite-m3-auth .sunset-veil {
+  background:linear-gradient(95deg,#001a2cf2,#003a5089 67%,#001c2c3e),
+             linear-gradient(0deg,#001829 0%,transparent 75%);
+}

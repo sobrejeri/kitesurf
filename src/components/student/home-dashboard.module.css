@@ -173,3 +173,258 @@
 
 /* Override .welcome > img's full-inset rule so the illustrated kite sits on the RIGHT. */
 .welcome>.heroKite {left:auto;bottom:auto;}
+
+
+/* -----------------------------------------------------------------
+   REFERÊNCIA APROVADA · home com fotografia real, não um kite vetorial.
+   CSS Module: only the student's dashboard is affected.
+   ----------------------------------------------------------------- */
+.dashboard {
+  --aqua:#06dce8;
+  background:radial-gradient(ellipse at 75% 3%,#07516c 0%,#001b2f 57%,#001828 100%);
+}
+.welcome {
+  isolation:isolate;
+  overflow:hidden;
+  min-height:355px;
+  border:0;
+  border-radius:0 0 26px 26px;
+  background:linear-gradient(140deg,#002f49,#0872a1 52%,#002f43);
+}
+.welcome>.heroPhoto {
+  position:absolute;
+  inset:0;
+  width:100%;
+  height:100%;
+  object-fit:cover;
+  object-position:65% 53%;
+  z-index:-2;
+  opacity:.99;
+  filter:saturate(1.12) contrast(1.1) brightness(.97);
+  mask-image:linear-gradient(#000 62%,transparent 100%);
+  -webkit-mask-image:linear-gradient(#000 62%,transparent 100%);
+}
+.welcome>.heroShade {
+  position:absolute;
+  inset:0;
+  z-index:-1;
+  background:
+    linear-gradient(90deg,#001c34f2 1%,#00334bb0 52%,#00274436 100%),
+    linear-gradient(180deg,#001b3155 0%,transparent 30%,#001c30 95%);
+  mask-image:none;
+  -webkit-mask-image:none;
+}
+.welcome>.heroKite {
+  position:absolute;
+  z-index:1;
+  inset:auto;
+  left:auto;
+  bottom:auto;
+  right:1.5%;
+  top:12%;
+  display:block;
+  width:min(48%,440px);
+  height:70%;
+  object-fit:contain;
+  object-position:center right;
+  opacity:1;
+  filter:drop-shadow(0 16px 15px #00172ca8);
+  pointer-events:none;
+}
+.welcome>.heroContent {
+  position:relative;
+  z-index:2;
+  max-width:690px;
+  padding:27px 30px 28px;
+}
+.brandName {
+  font-family:var(--font-display),sans-serif;
+  font-size:clamp(28px,3vw,40px);
+  font-weight:900;
+  font-style:italic;
+  line-height:1.05;
+  letter-spacing:-.07em;
+  text-shadow:0 4px 16px #001529b2;
+}
+.brandName span {color:#bdff00}
+.brandDescriptor {font-size:10px;font-weight:850;letter-spacing:.23em;}
+.brandDescriptor svg {color:#05e7ed;}
+.heroBrand {margin-bottom:27px;}
+.welcome .eyebrow {
+  display:block;
+  color:#1be1ee;
+  font-size:12px;
+  font-weight:850;
+  letter-spacing:.18em;
+  text-shadow:0 2px 9px #001b35;
+}
+.welcome h1 {
+  margin:10px 0 17px;
+  font-family:var(--font-script),cursive;
+  font-weight:700;
+  font-size:clamp(52px,7.2vw,79px);
+  line-height:.81;
+  letter-spacing:-.015em;
+  color:#fff;
+  text-shadow:0 3px 11px #00132bc9;
+}
+.welcome h1 em {
+  display:inline-block;
+  position:relative;
+  font-style:normal;
+  color:#baff00;
+}
+.welcome h1 em::after {
+  content:"";
+  position:absolute;
+  left:9%;
+  right:0;
+  bottom:-10px;
+  height:5px;
+  border-radius:100% 50% 40% 80%;
+  background:#baff00;
+  transform:rotate(-4deg);
+}
+.welcome p {
+  max-width:35ch;
+  color:#f5fbff;
+  font-size:15px;
+  line-height:1.38;
+  text-shadow:0 2px 7px #001b2c;
+}
+.cards {margin-top:12px;}
+.card {
+  border-color:#1bc9d7;
+  background:linear-gradient(138deg,#075068 0%,#002e46 85%);
+  box-shadow:0 9px 24px #000a2070,inset 0 1px 0 #a6eaf01a;
+}
+.next {
+  border:2px solid transparent;
+  background:linear-gradient(135deg,#063f55,#002f48 93%) padding-box,
+             linear-gradient(105deg,#00eef2 2%,#aaff00 58%,#bdff00 96%) border-box;
+  box-shadow:0 9px 24px #000f1e90,0 0 21px #adfa001e;
+  border-radius:26px;
+  padding:19px 20px 18px;
+}
+.next:before {opacity:.18;width:62%;background-position:55% 50%;}
+.nextBody {margin-top:0;gap:14px;}
+.instructorCol {padding-right:13px;border-right:1px solid #52e7df77;}
+.instructorPhoto img,.instructorInitials {
+  border:2px solid #03f4f2;
+  border-radius:18px;
+  box-shadow:0 0 0 2px #104d6066;
+}
+.instructorName {color:white;font-weight:850;}
+.seal {background:#bcff00;color:#041c2b;border-color:#053747;}
+.status {
+  border:0;
+  background:linear-gradient(105deg,#aaff00,#d8ff26);
+  color:#052535;
+  font-weight:800;
+  padding:7px 13px;
+  box-shadow:0 4px 13px #aafa0034;
+}
+.status svg {color:#052535;}
+.nextWhen {
+  font-family:var(--font-display),sans-serif;
+  font-size:clamp(21px,3vw,31px);
+  color:white;
+  font-weight:800;
+  line-height:1.05;
+  margin:8px 0 6px;
+}
+.nextMeta {font-size:12px;line-height:1.35;}
+.nextMeta svg,.label svg {color:#bdff06;}
+.bookingCode {
+  padding:5px 11px;
+  background:linear-gradient(105deg,#7429cd,#9726db);
+  color:white;
+  font-weight:750;
+  border-radius:999px;
+}
+.chatBtn {border:2px solid #d7faff;background:#002941c7;color:#fff;}
+.insights {gap:10px;margin-top:10px;}
+.insightCard {
+  border:1.5px solid #1addde;
+  background:linear-gradient(145deg,#07495f,#002c44 85%);
+  min-height:176px;
+}
+.levelCard {border-color:#54cda5;}
+.levelCard:before {
+  background:radial-gradient(circle,#b3fa004a,transparent 75%);
+}
+.insightCard h2 {color:white;}
+.insightCard .progressTitle {color:#baff00;}
+.progress {height:7px;background:#315c74;}
+.progress span {background:linear-gradient(90deg,#baff00,#00e6dc);}
+.cardArrow {
+  width:40px;height:40px;
+  border:2px solid #d0ff78;
+  color:#06283c;
+  background:linear-gradient(135deg,#a8ff00,#dcff34);
+  box-shadow:0 5px 16px #afff0044;
+}
+.footnote {
+  border:1.5px solid #1bcbd7;
+  background:linear-gradient(135deg,#03465b,#002b43);
+  border-radius:20px;
+  box-shadow:0 5px 20px #00122150;
+}
+.footnote>svg {color:#baff00;}
+.footnote a,.agendaHeading a,.agenda li>a {color:#bdff06;}
+.dashboard a:focus-visible {outline-color:#bdff06;}
+@media (max-width:767px) {
+ .welcome {margin:0 -16px;min-height:0;border-radius:0;}
+ .welcome>.heroContent {max-width:none;padding:calc(env(safe-area-inset-top) + 74px) 20px 30px;}
+ .welcome>.heroPhoto {object-position:63% 50%;}
+ .welcome>.heroKite {
+   right:-7%;
+   top:calc(env(safe-area-inset-top) + 62px);
+   width:57%;
+   height:238px;
+   max-height:58%;
+   object-position:top right;
+ }
+ .heroBrand {margin-bottom:34px;}
+ .brandName {font-size:clamp(27px,7.5vw,34px);}
+ .brandDescriptor {font-size:9px;letter-spacing:.18em;}
+ .welcome .eyebrow {font-size:11px;letter-spacing:.14em;}
+ .welcome h1 {font-size:clamp(46px,12.5vw,61px);margin:9px 0 16px;line-height:.85;}
+ .welcome h1 em::after {bottom:-6px;height:4px;}
+ .welcome p {font-size:14px;max-width:31ch;}
+ .cards {margin-top:9px;}
+ .next {padding:17px 14px 16px;border-radius:23px;}
+ .nextBody {gap:11px;}
+ .instructorCol {padding-right:10px;}
+ .instructorPhoto img,.instructorInitials {width:60px;height:60px;}
+ .nextDetails {padding-right:24px;}
+ .nextWhen {font-size:clamp(17px,5.2vw,22px);line-height:1.02;}
+ .nextMeta {font-size:11px;gap:4px 6px;}
+ .nextMeta svg,.label svg {width:14px;height:14px;}
+ .next .label {max-width:calc(100% - 107px);font-size:11px;}
+ .status {padding:5px 9px;top:12px;right:12px;font-size:10px;}
+ .bookingCode {font-size:10px;padding:4px 9px;}
+ .insights {gap:9px;margin-top:10px;}
+ .insightCard {min-height:153px;padding:15px 12px 44px;border-radius:20px;}
+ .insightCard h2 {font-size:clamp(19px,5.2vw,23px);}
+ .insightCard .progressTitle {font-size:clamp(19px,5.4vw,23px);}
+ .insightCard .label {font-size:10px;}
+ .insightCard p {font-size:11px;}
+ .cardArrow {width:32px;height:32px;right:10px;bottom:11px;}
+ .footnote {padding:13px 14px;margin-top:12px;font-size:12px;}
+}
+@media (max-width:350px) {
+ .welcome>.heroKite {right:-10%;width:59%;top:calc(env(safe-area-inset-top) + 54px);}
+ .welcome h1 {font-size:45px;}
+ .brandName {font-size:26px;}
+ .heroBrand {margin-bottom:28px;}
+ .instructorCol {padding-right:7px;}
+ .nextWhen {font-size:17px;}
+}
+@media (min-width:768px) {
+ .welcome {min-height:430px;border-radius:25px;}
+ .welcome>.heroKite {top:0;right:1%;width:46%;height:95%;}
+ .welcome>.heroContent {max-width:62%;padding:44px 45px 45px;}
+ .welcome h1 {font-size:clamp(64px,6.9vw,88px);}
+ .cards {margin-top:18px;}
+}

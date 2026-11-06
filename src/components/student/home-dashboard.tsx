@@ -39,15 +39,15 @@ export function HomeDashboard({
     <section className={styles.dashboard} aria-labelledby="student-dashboard-title">
       <header className={styles.welcome}>
         <img
-          src="/images/kite-lesson.webp"
+          src="/images/vento-ocean-hero.webp"
           alt=""
-          width={1254}
-          height={1254}
+          width={1440}
+          height={810}
           className={styles.heroPhoto}
           fetchPriority="high"
         />
         <div className={styles.heroShade} aria-hidden="true" />
-        <img src="/images/kite-modelo3.svg" alt="" aria-hidden="true" className={styles.heroKite} />
+        <img src="/images/vento-kite-real.webp" alt="" aria-hidden="true" className={styles.heroKite} />
         <div className={styles.heroContent}>
           <div className={styles.heroBrand} aria-label="VentoKite, aulas de kitesurf">
             <span className={styles.brandName}>Vento<span>Kite</span></span>
