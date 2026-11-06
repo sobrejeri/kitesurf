@@ -422,7 +422,9 @@ body:has(.theme-beach.theme-mar-profundo) { background:#001829; color:#f4fbff; }
 .theme-mar-profundo .kite-m3-header__texture {
   opacity:.12;
 }
-.theme-mar-profundo main :is(h1,h2,h3) {
+/* Preserve Caveat script lettering in the personalized home banner. */
+.theme-mar-profundo .kite-modelo3 :is(h1,h2,h3),
+.theme-mar-profundo .mar-profundo-page :is(h2,h3) {
   font-family:var(--font-display),var(--font-inter),sans-serif;
   letter-spacing:-.035em;
 }
