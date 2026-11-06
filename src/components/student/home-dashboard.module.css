@@ -3,9 +3,9 @@
 
 /* VentoKite 2026 redesign - student homepage only */
 .dashboard{padding-top:0;--aqua:#00e6ee}
-.welcome{min-height:365px;border-radius:27px;box-shadow:0 18px 40px #00101daa}
-.welcome>.heroPhoto{object-position:63% 50%;filter:saturate(1.25) contrast(1.12)}
-.welcome>.heroShade{position:absolute;inset:0;padding:0;z-index:-1;background:linear-gradient(90deg,#001528fa,#003249cb 52%,#003c5266),linear-gradient(0deg,#001728bb,transparent 65%)}
+.welcome{min-height:365px;border:0;border-radius:27px 27px 0 0;box-shadow:none;background:transparent}
+.welcome>.heroPhoto{object-position:63% 50%;filter:saturate(1.25) contrast(1.12);-webkit-mask-image:linear-gradient(to bottom,#000 55%,transparent 97%);mask-image:linear-gradient(to bottom,#000 55%,transparent 97%)}
+.welcome>.heroShade{position:absolute;inset:0;padding:0;z-index:-1;background:linear-gradient(90deg,#001528fa,#003249cb 52%,#003c5266),linear-gradient(0deg,#001a30 2%,#001728bb 14%,transparent 60%);-webkit-mask-image:linear-gradient(to bottom,#000 55%,transparent 99%);mask-image:linear-gradient(to bottom,#000 55%,transparent 99%)}
 .welcome:after{display:none}
 .welcome>.heroContent{position:relative;max-width:600px;padding:30px 36px 36px}
 .heroBrand{display:flex;flex-direction:column;align-items:flex-start;margin-bottom:34px}
