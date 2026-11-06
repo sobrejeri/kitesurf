@@ -1,0 +1,143 @@
+/*
+ * VentoKite Modelo 03 — aluno only.
+ * Visually inspired by the lime, purple, graphite and cyan Duotone kite.
+ * Deliberately scoped to three student pages, avoiding changes to admin,
+ * instructor, partner, payment, scheduling and the exploration home.
+ */
+body:has(.kite-modelo3) .theme-beach.theme-mar-profundo {
+  --color-brand: #c2ff05;
+  --color-brand-hover: #d5ff4d;
+  --color-brand-bar: #b8f800;
+  --color-brand-focus: #c2ff05;
+  --color-brand-soft: #244623;
+  --color-brand-tint: #073f48;
+  --color-brand-wash: #042d42;
+  --color-on-brand: #08202e;
+  --color-on-brand-muted: #dcffa5;
+  --color-surface: #05324c;
+  --color-canvas: #00182c;
+  --color-backdrop: #001423;
+  --color-sand: #073149;
+  --color-line: #178b9b;
+  --color-line-input: #168c9d;
+  --color-line-ghost: #176c85;
+  --color-track: #145468;
+  --color-stat-icon: #c2ff05;
+  --color-tabbar: #001829;
+  --color-tabbar-ink: #d2e3ed;
+  --shadow-card: 0 12px 36px #000e2066, inset 0 1px 0 #79deff17;
+  background: radial-gradient(ellipse 120% 40% at 72% 0, #065874, #00182c 68%);
+}
+body:has(.kite-modelo3) { background: #00182c; }
+body:has(.kite-modelo3) .theme-mar-profundo .text-brand,
+body:has(.kite-modelo3) .theme-mar-profundo .text-sunrise { color: #c2ff05; }
+body:has(.kite-modelo3) .theme-mar-profundo .btn-primary {
+  color: #072333;
+  background: linear-gradient(120deg,#aaff00,#d8ff24);
+  box-shadow: 0 8px 25px #b8ff0040;
+}
+body:has(.kite-modelo3) .theme-mar-profundo .vento-desktop-student-header nav a[aria-current="page"] { color: #c2ff05; border-color: #c2ff05; }
+body:has(.kite-modelo3) .theme-mar-profundo nav[aria-label="Navegação do aluno"].fixed {
+  border-color: #1b8293;
+  background: #001626f7;
+  box-shadow: 0 -12px 34px #00bed31c;
+}
+body:has(.kite-modelo3) .theme-mar-profundo nav[aria-label="Navegação do aluno"].fixed a[aria-current="page"],
+body:has(.kite-modelo3) .theme-mar-profundo nav[aria-label="Navegação do aluno"].fixed a[aria-current="page"] span:last-child { color: #c2ff05; }
+body:has(.kite-modelo3) .theme-mar-profundo nav[aria-label="Navegação do aluno"].fixed a[aria-current="page"] span.bg-brand { background: #c2ff05; }
+body:has(.kite-modelo3) .theme-mar-profundo nav[aria-label="Navegação do aluno"].fixed a[aria-label="Agendar"] > span:first-child {
+  background: linear-gradient(140deg,#acff00,#d6ff28);
+  box-shadow: 0 6px 24px #abff0077;
+  color: #041d2d;
+}
+body:has(.kite-modelo3) .theme-mar-profundo nav[aria-label="Navegação do aluno"].fixed a[aria-label="Agendar"] > span:nth-child(2) { color: #c2ff05; }
+body:has(.kite-modelo3) .theme-mar-profundo .vento-desktop-student-header { border-color:#187587; background:#002637; }
+
+.kite-modelo3 { position:relative; min-width:0; padding-bottom: 24px; }
+.kite-modelo3::after {
+  content:"";
+  position:absolute; z-index:0; left:-24px; right:-24px; bottom:0;
+  height:18px; pointer-events:none;
+  background:linear-gradient(110deg,#9dff00 0%,#02b7d1 35%,#02344d 65%,#b6ff00 100%);
+  clip-path:polygon(0 55%,19% 6%,45% 70%,68% 21%,87% 68%,100% 20%,100% 100%,0 100%);
+  opacity:.8;
+}
+.kite-modelo3 > :not(.kite-m3-header) { position:relative; z-index:1; }
+
+.kite-m3-header {
+  position:relative; isolation:isolate; overflow:hidden;
+  min-height:174px; margin:0 -16px 20px;
+  padding:calc(env(safe-area-inset-top) + 15px) 20px 16px;
+  background:radial-gradient(ellipse 83% 90% at 76% 36%,#086e95 0%,transparent 75%),linear-gradient(125deg,#001b2c,#00445e 60%,#001728);
+}
+.kite-m3-header__texture {
+  position:absolute;inset:0;z-index:-1;
+  background:linear-gradient(90deg,#001727ea 0%,#00172799 50%,#00172711 100%),url('/images/prea-coast.webp') center 43%/cover no-repeat;
+  opacity:.6;
+}
+.kite-m3-header__inner { position:relative;z-index:2;width:min(70%,550px); }
+.kite-m3-logo { display:inline-flex;flex-direction:column;gap:2px;line-height:1; text-decoration:none; }
+.kite-m3-logo__name {font-size:clamp(26px,6.8vw,41px);font-weight:900;letter-spacing:-.075em;font-style:italic;color:#fff;text-shadow:0 2px 8px #00192f66;}
+.kite-m3-logo__name strong {color:#baff00;}
+.kite-m3-logo__sub {font-size:clamp(8px,2.2vw,11px);font-weight:800;letter-spacing:.2em;color:#f5fcff;white-space:nowrap;}
+.kite-m3-logo__sub span {color:#03d8e5;font-size:18px;vertical-align:middle;}
+.kite-m3-header__heading { margin-top:24px; }
+.kite-m3-header__eyebrow { color:#12dbe5;font-size:10px;font-weight:800;letter-spacing:.18em; }
+.kite-m3-header__heading h1 {margin-top:6px;color:#fff;font-size:clamp(24px,6.4vw,36px);font-weight:850;line-height:1.08;letter-spacing:-.045em;}
+.kite-m3-header__subtitle {margin-top:6px;color:#d6edf5;font-size:12px;line-height:1.5;}
+.kite-m3-header__action {display:inline-flex;align-items:center;gap:6px;margin-top:12px;padding:8px 13px;border:1px solid #b9ff03;border-radius:999px;background:#baff00;color:#002035;font-size:12px;font-weight:800;}
+.kite-m3-header__kite {position:absolute;z-index:1;width:min(80%,450px);right:-9%;top:6px;transform:rotate(9deg);filter:drop-shadow(0 18px 18px #00132277);pointer-events:none;opacity:.97;}
+
+.kite-modelo3 .bg-surface {
+  background-color:#05324c;
+  background-image:linear-gradient(135deg,#0449634d,#00283c20);
+  border-color:#1a8998;
+}
+.kite-modelo3 .border-line {border-color:#1a8998;}
+.kite-modelo3 .bg-brand-soft {background-color:#205634;}
+.kite-modelo3 .bg-track {background-color:#15576a;}
+.kite-modelo3 .bg-brand {background-color:#baff00;}
+.kite-modelo3 .text-brand {color:#baff00;}
+.kite-modelo3 .text-muted {color:#b9d4df;}
+.kite-modelo3 .text-label {color:#d6e7f1;}
+.kite-modelo3 .sunset-photo {filter:saturate(1.28) contrast(1.08) brightness(.94);}
+.kite-modelo3 :is(a,button):focus-visible {outline-color:#c2ff05;outline-offset:3px;}
+.kite-modelo3 .rounded-\[22px\],
+.kite-modelo3 .rounded-\[18px\] {box-shadow:0 12px 26px #00101e52,inset 0 1px 0 #48daf11a;}
+
+.kite-modelo3 [role="tablist"] {margin-top:0;background:#002c44;border:1px solid #1c8c9e;padding:5px;box-shadow:inset 0 1px 0 #40cfe51f;}
+.kite-modelo3 [role="tab"] {min-width:0;font-size:clamp(11px,3.4vw,14px);}
+.kite-modelo3 [role="tab"][aria-selected="true"] {
+  border-color:#b6fa00;background:linear-gradient(125deg,#aaff00,#dcff2b);
+  color:#062337;font-weight:800;box-shadow:0 4px 18px #9dff0025;
+}
+.kite-modelo3 [role="tab"][aria-selected="true"] .icon {color:#062337;}
+.kite-modelo3 [role="tab"][aria-selected="false"] {color:#d1e5ec;}
+.kite-modelo3 [role="tab"][aria-selected="false"] .icon {color:#9dd6dd;}
+.kite-modelo3 .kite-m3-profile-card {
+  border-color:#1a8998;background:linear-gradient(180deg,#003650,#00273c);
+  box-shadow:inset 0 1px 0 #baff0020,0 16px 35px #000b1f66;
+}
+.kite-modelo3 .kite-m3-profile-card > .grid > .grid:first-child {align-self:center;}
+.kite-modelo3 .kite-m3-profile-card button {border-color:#b4fa00;color:#dbffaf;}
+.kite-modelo3 .kite-m3-journey-section {background:linear-gradient(135deg,#05536c,#002c42);}
+.kite-modelo3 .kite-m3-journey-section .bg-\[\#159c84\] {background-color:#2fba8c;}
+.kite-modelo3 .kite-m3-progress-header {position:relative;isolation:isolate;}
+.kite-modelo3 .kite-m3-progress-header::before {
+  content:"";position:absolute;z-index:-1;inset:-18px -12px -8px;
+  background:radial-gradient(ellipse 80% 80% at 83% 9%,#074d68,transparent 78%);
+  border-radius:24px;
+}
+@media (min-width:768px) {
+  .kite-m3-header {margin:0 0 24px;min-height:230px;border:1px solid #188a96;border-radius:22px;padding:23px 30px;}
+  .kite-m3-header__kite {width:min(60%,530px);right:2%;top:-32px;}
+  .kite-m3-header__inner {width:62%;}
+  .kite-m3-header__heading {margin-top:24px;}
+  .kite-modelo3 .kite-m3-journey-section {min-height:200px;}
+}
+@media (max-width:359px) {
+  .kite-m3-header__kite{width:82%;right:-22%;}
+  .kite-m3-logo__name{font-size:25px;}
+  .kite-modelo3 [role="tab"]{font-size:10px;gap:4px;}
+}
+@media(prefers-reduced-motion:reduce){.kite-modelo3 *{scroll-behavior:auto;}}
