@@ -254,7 +254,12 @@ export function StudentShell({
 
       <main className="relative mx-auto max-w-6xl px-4 pb-tabbar md:px-8 md:pb-0 md:pt-6">{children}</main>
       <SiteFooter />
-      <TabBar items={tabs} label="Navegação do aluno" variant="underline" />
+      <TabBar
+        items={tabs}
+        label="Navegação do aluno"
+        variant="underline"
+        center={{ label: 'Agendar', href: '/aluno/inicio#buscar-aula', icon: 'calendar' }}
+      />
     </div>
   );
 }

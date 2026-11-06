@@ -56,12 +56,15 @@ export function MobileHeader({
 export function TabBar({
   items,
   more,
+  center,
   breakpoint = 'md',
   label,
   variant = 'pill',
 }: {
   items: readonly TabItem[];
   more?: { links: readonly SheetLink[]; footer?: React.ReactNode; title: string };
+  /** A highlighted call-to-action placed in the middle of the bar (e.g. "Agendar"). */
+  center?: TabItem;
   breakpoint?: 'md' | 'lg';
   label: string;
   /** "underline": rounded dark bar with an orange underline (sunset theme). */
@@ -73,6 +76,28 @@ export function TabBar({
   const open = openAt === pathname;
   const closeSheet = useCallback(() => setOpenAt(null), []);
   const moreActive = more ? !items.some((item) => isActive(pathname, item)) : false;
+  const mid = Math.ceil(items.length / 2);
+
+  const renderItem = (item: TabItem) => {
+    const active = isActive(pathname, item);
+    return (
+      <li key={item.href} className="flex-1">
+        <Link
+          href={item.href}
+          aria-current={active ? 'page' : undefined}
+          className={`press flex flex-col items-center gap-0.5 py-1 ${variant === 'underline' ? 'text-[11px]' : 'text-[10px]'} ${active ? `font-[550] ${variant === 'underline' ? 'text-sunrise' : 'text-brand'}` : 'text-tabbar-ink'}`}
+        >
+          <span className={`grid h-8 w-14 place-items-center rounded-full transition-colors ${active && variant === 'pill' ? 'bg-brand-soft' : ''}`}>
+            <Icon name={item.icon} className={`!h-[22px] !w-[22px] ${active ? '[stroke-width:1.9]' : ''}`} />
+          </span>
+          {item.label}
+          {variant === 'underline' ? (
+            <span className={`mt-1 h-[3px] w-8 rounded-full ${active ? 'bg-brand' : 'bg-transparent'}`} aria-hidden="true" />
+          ) : null}
+        </Link>
+      </li>
+    );
+  };
 
   return (
     <>
@@ -81,26 +106,23 @@ export function TabBar({
         className={`pb-safe fixed inset-x-0 bottom-0 z-40 border-t border-line/80 bg-tabbar/95 backdrop-blur-xl ${variant === 'underline' ? 'rounded-t-[26px] shadow-[0_-10px_30px_#00000059]' : ''} ${breakpoint === 'md' ? 'md:hidden' : 'lg:hidden'}`}
       >
         <ul className={`mx-auto flex max-w-lg items-stretch justify-around px-1 ${variant === 'underline' ? 'pt-3' : 'pt-1.5'}`}>
-          {items.map((item) => {
-            const active = isActive(pathname, item);
-            return (
-              <li key={item.href} className="flex-1">
-                <Link
-                  href={item.href}
-                  aria-current={active ? 'page' : undefined}
-                  className={`press flex flex-col items-center gap-0.5 py-1 ${variant === 'underline' ? 'text-[11px]' : 'text-[10px]'} ${active ? `font-[550] ${variant === 'underline' ? 'text-sunrise' : 'text-brand'}` : 'text-tabbar-ink'}`}
-                >
-                  <span className={`grid h-8 w-14 place-items-center rounded-full transition-colors ${active && variant === 'pill' ? 'bg-brand-soft' : ''}`}>
-                    <Icon name={item.icon} className={`!h-[22px] !w-[22px] ${active ? '[stroke-width:1.9]' : ''}`} />
-                  </span>
-                  {item.label}
-                  {variant === 'underline' ? (
-                    <span className={`mt-1 h-[3px] w-8 rounded-full ${active ? 'bg-brand' : 'bg-transparent'}`} aria-hidden="true" />
-                  ) : null}
-                </Link>
-              </li>
-            );
-          })}
+          {(center ? items.slice(0, mid) : items).map(renderItem)}
+          {center ? (
+            <li className="flex-1">
+              <Link
+                href={center.href}
+                aria-label={center.label}
+                className="press flex flex-col items-center gap-1 py-1 text-tabbar-ink"
+              >
+                <span className="-mt-[22px] grid h-[52px] w-[52px] place-items-center rounded-full bg-gradient-to-br from-[#00d7e9] to-[#05f0ec] text-[#002b3b] shadow-[0_9px_22px_#00d8e480] ring-[5px] ring-tabbar/95">
+                  <Icon name={center.icon} className="!h-[25px] !w-[25px] [stroke-width:2]" />
+                </span>
+                <span className={`${variant === 'underline' ? 'text-[11px]' : 'text-[10px]'} font-[650] text-sunrise`}>{center.label}</span>
+                {variant === 'underline' ? <span className="mt-1 h-[3px] w-8 rounded-full bg-transparent" aria-hidden="true" /> : null}
+              </Link>
+            </li>
+          ) : null}
+          {center ? items.slice(mid).map(renderItem) : null}
           {more ? (
             <li className="flex-1">
               <button
