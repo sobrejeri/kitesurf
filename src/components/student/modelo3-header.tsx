@@ -44,7 +44,7 @@ export function KiteModelo3Header({
           </Link>
         ) : null}
       </div>
-      <img className="kite-m3-header__kite" src="/images/kite-modelo3.svg" alt="" aria-hidden="true" />
+      <img className="kite-m3-header__kite" src="/images/vento-kite-real.webp" alt="" aria-hidden="true" />
     </header>
   );
 }
