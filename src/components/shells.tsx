@@ -142,6 +142,7 @@ const STUDENT_SUBPAGES = [
 
 const STUDENT_MENU: readonly SheetLink[] = [
   { label: 'Central de aulas', href: '/aluno/central', icon: 'grid' },
+  { label: 'Laboratório 3D do kite', href: '/laboratorio-kite.html', icon: 'wind' },
   { label: 'Avisos', href: '/aluno/avisos', icon: 'bell' },
   { label: 'Regras das aulas', href: '/aluno/politicas', icon: 'shield' },
   { label: 'Imprevistos', href: '/aluno/ocorrencias', icon: 'wind' },
@@ -198,6 +199,9 @@ export function StudentShell({
                 </Link>
               );
             })}
+            <Link href="/laboratorio-kite.html" className="flex items-center border-b-2 border-transparent text-[14px] font-medium text-muted hover:text-ink">
+              Laboratório 3D
+            </Link>
           </nav>
           <div className="flex items-center gap-3">
             <Link href="/aluno/avisos" aria-label="Avisos" className="grid h-10 w-10 place-items-center rounded-full border border-line text-label">
