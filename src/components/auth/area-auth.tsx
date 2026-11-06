@@ -20,7 +20,7 @@ function AuthFrame({ area, title, highlight, lead, children }: { area: AppArea; 
     <div className={`${area === 'aluno' ? 'theme-beach kite-m3-auth' : 'theme-sunset'} relative min-h-dvh overflow-hidden bg-canvas text-ink`}>
       <img src={area === 'aluno' ? '/images/prea-coast.webp' : '/images/kite-lesson.webp'} alt="" className="sunset-photo absolute inset-x-0 top-0 h-[46dvh] w-full object-cover" />
       <div className="sunset-veil absolute inset-x-0 top-0 h-[46dvh]" aria-hidden="true" />
-      {area === 'aluno' ? <img src="/images/kite-modelo3.svg" alt="" aria-hidden="true" className="kite-m3-auth-kite" /> : null}
+      {area === 'aluno' ? <img src="/images/vento-kite-real.webp" alt="" aria-hidden="true" className="kite-m3-auth-kite" /> : null}
       <main className="pt-safe pb-safe relative mx-auto flex min-h-dvh max-w-md flex-col px-5">
         <div className="pt-6">
           {area === 'aluno' ? <KiteModelo3Brand compact /> : <StudentBrand subtitle={info.subtitle} onPhoto />}
