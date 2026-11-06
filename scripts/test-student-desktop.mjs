@@ -30,8 +30,8 @@ assert.ok(lessons.includes('vento-student-desktop-lessons') && css.includes('.ve
 assert.ok(sunset.includes("ocean: { src: '/images/prea-coast.webp'"),
   'Ocean page headers must not use the blurry 3.8 KB thumbnail');
 assert.ok(home.includes('vento-student-desktop-home') &&
-  home.includes('vento-desktop-course-cards'),
-  'Explore desktop should have its own page composition');
+  home.includes('<HomeDashboard') && home.includes('<LessonSearch'),
+  'Explore must retain the actual dashboard for returning students and lesson search for new students');
 const desktopSearchRule = css.match(/\.vento-student-desktop-home \.vento-desktop-search \{([^}]+)\}/s)?.[1] ?? '';
 const desktopColumns = desktopSearchRule.match(/grid-template-columns:([^;]+);/s)?.[1] ?? '';
 assert.ok((desktopColumns.match(/minmax\([^)]*\)/g) ?? []).length === 6 &&
