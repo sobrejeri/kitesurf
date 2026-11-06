@@ -46,7 +46,6 @@ export default async function AccountPage() {
     .flatMap((booking) => booking.booking_meetings.filter((m) => m.status === 'done'))
     .sort((a, b) => b.starts_at.localeCompare(a.starts_at))
     .slice(0, 3);
-  const firstName = viewer.fullName.split(' ')[0];
 
   return (
     <div className="kite-modelo3">
