@@ -1,0 +1,65 @@
+
+/* VentoKite Modelo 03 — access screens are outside the signed-in shell. */
+.theme-beach.kite-m3-auth {
+  --color-brand:#bdff06;
+  --color-brand-hover:#d5ff42;
+  --color-on-brand:#072333;
+  --color-on-brand-muted:#e4ffbe;
+  --color-brand-soft:#144738;
+  --color-brand-tint:#073b4e;
+  --color-ink:#f4fbff;
+  --color-label:#d8e9f2;
+  --color-muted:#b6d1df;
+  --color-surface:#04334b;
+  --color-canvas:#001829;
+  --color-sand:#07344c;
+  --color-line:#2b8294;
+  --color-line-input:#2b8294;
+  --color-track:#145369;
+  background:radial-gradient(ellipse 125% 50% at 75% 2%,#066c82,#001829 68%);
+  color:#f4fbff;
+  color-scheme:dark;
+}
+.kite-m3-auth .sunset-veil {
+  background:linear-gradient(90deg,#001a2bf7,#002e44a3 70%,#001c2c65),
+             linear-gradient(180deg,transparent 20%,#001829 100%);
+}
+.kite-m3-auth .glass {
+  background:#04384ee8;
+  border-color:#25879a;
+  box-shadow:0 16px 44px #000d1f92;
+}
+.kite-m3-auth .text-brand,.kite-m3-auth .text-sunrise {color:#bdff06;}
+.kite-m3-auth .btn-primary {
+  color:#052534;
+  border-color:transparent;
+  background:linear-gradient(110deg,#a9ff00,#dcff30);
+  font-weight:750;
+  box-shadow:0 8px 24px #a8ff0041;
+}
+.kite-m3-auth :is(input,select,textarea) {accent-color:#bdff06;}
+.kite-m3-auth :is(input,select,textarea):focus-visible {outline-color:#bdff06;}
+.kite-m3-auth select option {background:#04324c;color:#fff;}
+.kite-m3-auth .kite-m3-auth-kite {
+  position:absolute;right:-9%;top:1%;width:min(66%,400px);
+  height:40dvh;object-fit:contain;z-index:0;pointer-events:none;opacity:.88;
+  filter:drop-shadow(0 10px 15px #0013228c);
+}
+.kite-m3-auth main {position:relative;z-index:1;}
+.kite-m3-auth .kite-m3-logo {
+  display:inline-flex;flex-direction:column;text-decoration:none;gap:3px;line-height:1;
+}
+.kite-m3-auth .kite-m3-logo__name {
+  font-size:28px;font-weight:900;letter-spacing:-.07em;
+  font-style:italic;color:#fff;text-shadow:0 3px 12px #001c30;
+}
+.kite-m3-auth .kite-m3-logo__name strong {color:#bdff06;}
+.kite-m3-auth .kite-m3-logo__sub {
+  font-size:9px;font-weight:800;letter-spacing:.16em;color:#e4f7fa;
+}
+.kite-m3-auth .kite-m3-logo__sub span {color:#36e9f0;font-size:17px;}
+.kite-m3-auth .rounded-\[22px\] {box-shadow:0 12px 32px #000e2166;}
+@media(max-width:359px){
+  .kite-m3-auth .kite-m3-auth-kite {right:-22%;width:76%;}
+  .kite-m3-auth .kite-m3-logo__name {font-size:24px;}
+}
