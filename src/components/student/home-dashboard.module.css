@@ -20,29 +20,30 @@
 .welcome .searchLink{display:inline-flex;align-items:center;justify-content:center;min-height:48px;gap:11px;padding:11px 19px;margin-top:22px;color:#fff;background:linear-gradient(110deg,#ff8d17,#f6730b);border-radius:99px;font-size:14px;font-weight:800;box-shadow:0 10px 24px #ff831d44}
 .cards{display:block;margin-top:24px}
 .card{border:1px solid #1584a2;border-radius:23px;background:linear-gradient(135deg,#0a4d66,#003049 85%);box-shadow:0 13px 33px #000f2077}
-.next{position:relative;overflow:hidden;padding:22px 26px 24px;border:1px solid #28ddea}
+.next{position:relative;overflow:hidden;padding:15px 18px;border:1px solid #28ddea}
 .next:before{content:"";position:absolute;inset:0 0 0 auto;width:55%;background:url('/images/prea-coast.webp') center / cover no-repeat;opacity:.18;mask-image:linear-gradient(to right,transparent,#000)}
+.nextLink{position:absolute;inset:0;z-index:3;border-radius:inherit}
 .nextHeading{display:flex;align-items:center;justify-content:space-between;gap:9px;flex-wrap:wrap;position:relative}
-.label{font-size:13px;gap:8px}
-.status{display:inline-flex;align-items:center;gap:5px;padding:5px 9px;border-radius:99px;color:#89f4c6;background:#075443;border:1px solid #28bb8d;font-size:11px;font-weight:700}
-.status svg{width:15px;height:15px}
-.nextBody{position:relative;display:flex;gap:16px;align-items:flex-start;min-height:151px;margin-top:18px}
-.instructorPhoto{position:relative;flex:none;z-index:1}
-.instructorPhoto img,.instructorInitials{display:block;width:88px;height:88px;border-radius:20px;object-fit:cover;border:2px solid #2ad3e6;background:#0a4b65}
-.instructorInitials{display:grid;place-items:center;color:#cdeefb;font-weight:850;font-size:30px}
-.seal{position:absolute;right:-5px;bottom:-5px;display:grid;place-items:center;width:26px;height:26px;border-radius:50%;background:#16c9df;color:#04202b;border:3px solid #063347}
-.seal svg{width:14px;height:14px;color:#04202b}
-.nextDetails{position:relative;z-index:1}
-.nextWhen{display:flex;flex-direction:column;gap:9px;margin:0 0 3px}
-.nextWhen strong{font-size:clamp(21px,3vw,29px);font-weight:850;letter-spacing:-.04em}
-.nextWhen span,.nextMeta{display:inline-flex;align-items:center;gap:8px;font-size:13px;color:#dff2fb}
-.nextWhen svg,.nextMeta svg{width:16px;height:16px;color:#00e5ef}
-.nextMeta{margin-top:9px}
-.bookingCode{display:inline-block;padding:5px 9px;background:#0a5270;border-radius:7px;color:#e5faff;font-size:11px;margin-top:12px}
-.actions{position:relative;display:grid;grid-template-columns:1.1fr .9fr;gap:13px;margin-top:17px;padding-top:0}
-.actions a{display:inline-flex;min-height:47px;align-items:center;justify-content:center;gap:8px;border-radius:99px;font-size:14px;font-weight:800;padding:10px 13px}
-.actions .primary,.emptyLesson .primary{color:#003047!important;background:linear-gradient(100deg,#00d7e9,#04f3ee);margin:0}
-.actions .secondary{border:1px solid #c1f5ff;background:#00304e60;color:#f5ffff}
+.label{display:inline-flex;align-items:center;font-size:12px;gap:7px;color:#bfe0ee}
+.status{position:absolute;top:12px;right:13px;z-index:2;display:inline-flex;align-items:center;gap:5px;padding:4px 9px;border-radius:99px;color:#89f4c6;background:#075443e6;border:1px solid #28bb8d;font-size:11px;font-weight:700}
+.status svg{width:14px;height:14px}
+.nextBody{position:relative;z-index:1;display:flex;gap:15px;align-items:center;min-height:0;margin-top:0}
+.instructorCol{display:flex;flex-direction:column;align-items:center;gap:6px;flex:none}
+.instructorPhoto{position:relative;flex:none}
+.instructorPhoto img,.instructorInitials{display:block;width:62px;height:62px;border-radius:16px;object-fit:cover;border:2px solid #2ad3e6;background:#0a4b65}
+.instructorInitials{display:grid;place-items:center;color:#cdeefb;font-weight:850;font-size:22px}
+.instructorName{max-width:78px;text-align:center;font-size:12px;font-weight:750;color:#e4f6fd;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.seal{position:absolute;right:-5px;bottom:-5px;display:grid;place-items:center;width:22px;height:22px;border-radius:50%;background:#16c9df;color:#04202b;border:3px solid #063347}
+.seal svg{width:12px;height:12px;color:#04202b}
+.nextDetails{position:relative;display:flex;flex-direction:column;gap:3px;min-width:0}
+.nextWhen{font-size:clamp(20px,3vw,25px);font-weight:850;letter-spacing:-.04em;margin:1px 0 0;line-height:1.04}
+.nextMeta{display:inline-flex;align-items:center;flex-wrap:wrap;gap:4px 8px;font-size:12.5px;color:#dff2fb;margin:2px 0 0}
+.nextMeta svg,.label svg{width:15px;height:15px;color:#00e5ef}
+.metaItem{display:inline-flex;align-items:center;gap:6px}
+.bookingCode{display:inline-block;align-self:flex-start;padding:4px 8px;background:#0a5270;border-radius:7px;color:#e5faff;font-size:10.5px;margin-top:6px}
+.chatBtn{position:absolute;right:13px;bottom:13px;z-index:4;display:grid;place-items:center;width:40px;height:40px;border-radius:50%;background:#00304eb0;border:1px solid #bdf3ff;color:#eafcff;backdrop-filter:blur(2px)}
+.chatBtn svg{width:18px;height:18px}
+.emptyLesson .primary{color:#003047!important;background:linear-gradient(100deg,#00d7e9,#04f3ee);margin:0}
 .emptyLesson{position:relative;padding-top:18px}
 .emptyLesson h2{font-size:24px;font-weight:800}
 .emptyLesson p{margin-top:8px}
@@ -76,17 +77,17 @@
  .welcome p{font-size:14px}
  .welcome .searchLink{font-size:13px;min-height:44px;padding:9px 14px;margin-top:18px}
  .cards{margin-top:17px}
- .next{padding:17px 17px 20px}
- .label{font-size:12px}
- .status{font-size:10px}
- .nextWhen strong{font-size:23px}
- .nextWhen span,.nextMeta{font-size:12px}
- .nextBody{min-height:0}
- .instructorPhoto img,.instructorInitials{width:72px;height:72px}
- .instructorInitials{font-size:24px}
- .seal{width:22px;height:22px}.seal svg{width:12px;height:12px}
- .actions{gap:8px}
- .actions a{font-size:12px;padding:9px 7px;min-height:44px}
+ .next{padding:14px 15px}
+ .label{font-size:11.5px}
+ .status{font-size:10px;top:11px;right:11px}
+ .nextWhen{font-size:21px}
+ .nextMeta{font-size:12px}
+ .nextBody{min-height:0;gap:13px}
+ .instructorPhoto img,.instructorInitials{width:58px;height:58px}
+ .instructorInitials{font-size:20px}
+ .instructorName{max-width:70px;font-size:11px}
+ .seal{width:21px;height:21px}.seal svg{width:11px;height:11px}
+ .chatBtn{width:38px;height:38px;right:11px;bottom:11px}
  .insights{gap:9px;margin-top:12px}
  .insightCard{padding:16px 12px 52px;min-height:194px}
  .insightCard .label{font-size:11px}
@@ -106,23 +107,17 @@
    44x44px hit area for each small arrow and the primary booking actions. */
 .mobileSummary { display: none; }
 .desktopSummary { display: inline; }
-.nextMeta { display: flex; width: 100%; }
 .cardArrow::after {
   content: "";
   position: absolute;
   inset: -8px;
 }
 @media (max-width: 767px) {
-  .next { padding: 15px 16px 17px; }
-  .nextBody { min-height: 0; margin-top: 12px; }
-  .nextWhen { gap: 6px; }
-  .nextWhen strong { font-size: 21px; }
-  .nextMeta { margin-top: 6px; font-size: 11.5px; max-width: 100%; }
-  .nextWhen span { font-size: 11.5px; }
-  .bookingCode { margin-top: 8px; padding: 4px 8px; font-size: 10px; }
-  .actions { margin-top: 12px; }
-  .actions a { min-height: 44px; font-size: 11.5px; gap: 5px; }
-  .actions a svg { width: 15px; height: 15px; }
+  .next { padding: 14px 15px; }
+  .nextBody { min-height: 0; margin-top: 0; }
+  .nextWhen { font-size: 21px; }
+  .nextMeta { margin-top: 3px; font-size: 11.5px; max-width: 100%; }
+  .bookingCode { margin-top: 6px; padding: 4px 8px; font-size: 10px; }
 
   .insights { gap: 9px; margin-top: 10px; }
   .insightCard {

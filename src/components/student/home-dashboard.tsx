@@ -72,9 +72,15 @@ export function HomeDashboard({
 
       <div className={styles.cards}>
         <article className={[styles.card, styles.next].join(' ')}>
-          <div className={styles.nextHeading}>
-            <span className={styles.label}><Icon name="calendar" />{current ? currentLabel : 'Seu próximo encontro'}</span>
-            {current ? (
+          {current ? (
+            <>
+              <Link
+                className={styles.nextLink}
+                href={current.meeting.status === 'in_progress'
+                  ? lessonEvolutionHref(current.booking.id, current.meeting.id)
+                  : '/aluno/reserva/' + current.booking.id}
+                aria-label={'Ver minha aula de ' + formatDateLong(current.meeting.starts_at)}
+              />
               <span className={styles.status}>
                 <Icon name={current.meeting.status === 'in_progress' ? 'clock' : 'check'} />
                 {current.meeting.status === 'in_progress'
@@ -83,47 +89,41 @@ export function HomeDashboard({
                     ? 'Confirmada'
                     : 'Agendada'}
               </span>
-            ) : null}
-          </div>
-          {current ? (
-            <>
               <div className={styles.nextBody}>
-                <div className={styles.instructorPhoto}>
-                  {instructorPhotoUrl
-                    ? <img src={instructorPhotoUrl} alt="" />
-                    : <span className={styles.instructorInitials}>{initials(current.booking.instructor?.full_name)}</span>}
-                  <span className={styles.seal} aria-hidden="true"><Icon name="check" /></span>
+                <div className={styles.instructorCol}>
+                  <div className={styles.instructorPhoto}>
+                    {instructorPhotoUrl
+                      ? <img src={instructorPhotoUrl} alt="" />
+                      : <span className={styles.instructorInitials}>{initials(current.booking.instructor?.full_name)}</span>}
+                    <span className={styles.seal} aria-hidden="true"><Icon name="check" /></span>
+                  </div>
+                  <span className={styles.instructorName}>{(current.booking.instructor?.full_name ?? 'Instrutor').split(' ')[0]}</span>
                 </div>
                 <div className={styles.nextDetails}>
-                  <p className={styles.nextWhen}>
-                    <strong>{formatDateLong(current.meeting.starts_at)}</strong>
-                    <span><Icon name="clock" />{formatTime(current.meeting.starts_at)} · {formatMinutes(current.meeting.minutes)}</span>
+                  <span className={styles.label}><Icon name="calendar" />{currentLabel}</span>
+                  <strong className={styles.nextWhen}>{formatDateLong(current.meeting.starts_at)}</strong>
+                  <p className={styles.nextMeta}>
+                    <span className={styles.metaItem}><Icon name="clock" />{formatTime(current.meeting.starts_at)} · {formatMinutes(current.meeting.minutes)}</span>
+                    <span className={styles.metaItem}><Icon name="pin" />{current.booking.beach?.name ?? 'Praia da reserva'}</span>
                   </p>
-                  <p className={styles.nextMeta}><Icon name="pin" />{current.booking.beach?.name ?? 'Praia da reserva'}</p>
-                  <p className={styles.nextMeta}><Icon name="user" />Instrutor: {current.booking.instructor?.full_name ?? 'Em definição'}</p>
                   <span className={styles.bookingCode}>{current.booking.code}</span>
                 </div>
               </div>
-              <div className={styles.actions}>
-                <Link
-                  className={styles.primary}
-                  href={current.meeting.status === 'in_progress'
-                    ? lessonEvolutionHref(current.booking.id, current.meeting.id)
-                    : '/aluno/reserva/' + current.booking.id}
-                >
-                  Ver minha aula <Icon name="arrow" />
-                </Link>
-                <Link className={styles.secondary} href={'/aluno/atendimento/' + current.booking.id} aria-label="Conversar com meu instrutor">
-                  <Icon name="chat" /> Conversar
-                </Link>
-              </div>
+              <Link className={styles.chatBtn} href={'/aluno/atendimento/' + current.booking.id} aria-label="Conversar com meu instrutor">
+                <Icon name="chat" />
+              </Link>
             </>
           ) : (
-            <div className={styles.emptyLesson}>
-              <h2>O mar espera por você.</h2>
-              <p>Escolha um novo dia para continuar sua jornada.</p>
-              <a href="#buscar-aula" className={styles.primary}>Encontrar minha aula <Icon name="arrow" /></a>
-            </div>
+            <>
+              <div className={styles.nextHeading}>
+                <span className={styles.label}><Icon name="calendar" />Seu próximo encontro</span>
+              </div>
+              <div className={styles.emptyLesson}>
+                <h2>O mar espera por você.</h2>
+                <p>Escolha um novo dia para continuar sua jornada.</p>
+                <a href="#buscar-aula" className={styles.primary}>Encontrar minha aula <Icon name="arrow" /></a>
+              </div>
+            </>
           )}
         </article>
 
