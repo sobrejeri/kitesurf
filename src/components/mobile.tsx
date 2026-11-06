@@ -156,6 +156,7 @@ export function MenuButton({
   footer,
   label = 'Abrir menu',
   onPhoto = false,
+  className = '',
 }: {
   title: string;
   links: readonly SheetLink[];
@@ -163,6 +164,8 @@ export function MenuButton({
   label?: string;
   /** Over a photo: white icon on a dark frosted circle. */
   onPhoto?: boolean;
+  /** Extra classes for the trigger button (e.g. pointer-events-auto). */
+  className?: string;
 }) {
   const pathname = usePathname();
   const [openAt, setOpenAt] = useState<string | null>(null);
@@ -176,7 +179,7 @@ export function MenuButton({
         aria-haspopup="dialog"
         aria-expanded={open}
         aria-label={label}
-        className={`press grid h-11 w-11 place-items-center rounded-full ${onPhoto ? 'bg-[#0b2a4a]/45 text-white backdrop-blur' : 'text-ink'}`}
+        className={`press grid h-11 w-11 place-items-center rounded-full ${onPhoto ? 'bg-[#0b2a4a]/45 text-white backdrop-blur' : 'text-ink'} ${className}`}
       >
         <Icon name="menu" className="!h-6 !w-6" />
       </button>
