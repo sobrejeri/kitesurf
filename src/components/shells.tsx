@@ -185,9 +185,7 @@ export function StudentShell({
     <div className="theme-beach theme-mar-profundo min-h-dvh bg-canvas text-ink">
       <header className="vento-desktop-student-header hidden border-b border-line bg-chrome md:block">
         <div className="mx-auto flex h-[76px] max-w-6xl items-center justify-between gap-6 px-6 lg:px-8">
-          <Link href="/aluno/inicio" aria-label="Vento — início">
-            <KiteModelo3Brand compact />
-          </Link>
+          <KiteModelo3Brand compact />
           <nav aria-label="Navegação do aluno" className="flex h-full items-stretch gap-7">
             {STUDENT_TABS.slice(0, 3).map((item) => {
               const active = isActive(pathname, item);
@@ -265,6 +263,14 @@ export function StudentShell({
 
       <main className="relative mx-auto max-w-6xl px-4 pb-tabbar md:px-8 md:pb-0 md:pt-6">{children}</main>
       <SiteFooter />
+      <div className="kite-m3-wave-band" aria-hidden="true">
+        <svg viewBox="0 0 1200 110" preserveAspectRatio="none" focusable="false">
+          <path d="M0 69 C185 115 265 34 427 73 S729 113 921 44 1097 24 1200 66 L1200 110 L0 110 Z" fill="#8bff0b" opacity=".96"/>
+          <path d="M0 48 C225 92 322 114 521 59 S866 20 1025 60 1116 94 1200 82 L1200 110 L0 110 Z" fill="#05d4de" opacity=".98"/>
+          <path d="M0 91 C178 52 268 98 448 90 S789 50 957 84 1117 106 1200 76 L1200 110 L0 110 Z" fill="#003e52" opacity=".9"/>
+          <path d="M0 100 C203 113 277 85 482 103 S914 72 1200 107 L1200 110 L0 110 Z" fill="#00192b"/>
+        </svg>
+      </div>
       <TabBar
         items={tabs}
         label="Navegação do aluno"
