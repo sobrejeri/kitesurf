@@ -23,7 +23,7 @@
 .next:before{content:"";position:absolute;inset:0 0 0 auto;width:55%;background:url('/images/prea-coast.webp') center / cover no-repeat;opacity:.18;mask-image:linear-gradient(to right,transparent,#000)}
 .nextLink{position:absolute;inset:0;z-index:3;border-radius:inherit}
 .nextHeading{display:flex;align-items:center;justify-content:space-between;gap:9px;flex-wrap:wrap;position:relative}
-.label{display:inline-flex;align-items:center;font-size:12px;gap:7px;color:#bfe0ee}
+.label{display:inline-flex;align-items:center;font-size:12px;gap:7px;color:#bfe0ee;white-space:nowrap}
 .status{position:absolute;top:12px;right:13px;z-index:2;display:inline-flex;align-items:center;gap:5px;padding:4px 9px;border-radius:99px;color:#89f4c6;background:#075443e6;border:1px solid #28bb8d;font-size:11px;font-weight:700}
 .status svg{width:14px;height:14px}
 .nextBody{position:relative;z-index:1;display:flex;gap:15px;align-items:center;min-height:0;margin-top:0}
@@ -34,7 +34,7 @@
 .instructorName{max-width:78px;text-align:center;font-size:12px;font-weight:750;color:#e4f6fd;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .seal{position:absolute;right:-5px;bottom:-5px;display:grid;place-items:center;width:22px;height:22px;border-radius:50%;background:#16c9df;color:#04202b;border:3px solid #063347}
 .seal svg{width:12px;height:12px;color:#04202b}
-.nextDetails{position:relative;display:flex;flex-direction:column;gap:3px;min-width:0}
+.nextDetails{position:relative;display:flex;flex-direction:column;gap:3px;min-width:0;flex:1}
 .nextWhen{font-size:clamp(20px,3vw,25px);font-weight:850;letter-spacing:-.04em;margin:1px 0 0;line-height:1.04}
 .nextMeta{display:inline-flex;align-items:center;flex-wrap:wrap;gap:4px 8px;font-size:12.5px;color:#dff2fb;margin:2px 0 0}
 .nextMeta svg,.label svg{width:15px;height:15px;color:#00e5ef}
