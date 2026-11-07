@@ -39,7 +39,6 @@ export default async function BuildLessonPage({ searchParams }: { searchParams: 
   return (
     <div className="mar-profundo-page mar-profundo-page--booking">
       <StudentHero eyebrow="Seu próximo bordo" title="Monte sua aula" highlight="aula" lead="Escolha suas horas e os dias para ir ao mar." compact image="ocean" />
-      <div className="mt-4 md:mt-7" />
       <LessonBuilder quotes={quotes} beaches={beaches} defaults={defaultsFrom(params, beaches, kiteLevel.effective)}
         studentLevel={kiteLevel.effective} occupiedSlots={occupiedSlots}
         startEditing={!(params.praia || params.nivel || params.idioma || params.horas || params.dia)} />
