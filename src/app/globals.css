@@ -490,3 +490,27 @@ body:has(.theme-beach) {
 .update-toast {
   animation: toast-rise 0.3s cubic-bezier(0.2, 0.8, 0.2, 1);
 }
+
+
+/* One owner-approved logo everywhere: full canopy, waves and wordmark.
+   The supplied artwork includes white letters and a white original canvas,
+   so the white surface is intentional instead of destructive transparency. */
+.vento-official-logo {
+  display: block;
+  box-sizing: border-box;
+  width: 224px;
+  max-width: 100%;
+  height: auto;
+  aspect-ratio: 1200 / 347;
+  padding: 2px;
+  border: 1px solid rgba(217, 232, 233, .86);
+  border-radius: 9px;
+  background: #fff;
+  box-shadow: 0 4px 16px rgba(0, 18, 35, .20);
+  object-fit: contain;
+}
+.vento-official-logo--compact { width: 192px; }
+@media (max-width: 767px) {
+  .vento-official-logo { width: min(61vw, 226px); }
+  .vento-official-logo--compact { width: min(48vw, 187px); }
+}
