@@ -72,4 +72,23 @@ assert.ok(sheet.includes('href={link.href}') &&
   sheet.includes('onClick={onClose}'),
   'Mobile menu navigation must close the sheet even when the URL does not change');
 
+const menuTheme = read('src/app/globals.css');
+assert.ok(shell.includes('studentStyle') &&
+  sheet.includes("studentStyle ? 'vento-student-menu' : ''") &&
+  sheet.includes('vento-student-menu-tile') &&
+  sheet.includes('vento-student-menu-icon') &&
+  sheet.includes('vento-student-menu-label'),
+  'Student-only menu must separate icon squares and text without changing other role menus');
+assert.ok(menuTheme.includes('.vento-student-menu .vento-student-menu-tile {') &&
+  menuTheme.includes('width: min(70%, 90px)') &&
+  menuTheme.includes('aspect-ratio: 1 / 1') &&
+  menuTheme.includes('.vento-student-menu .vento-student-menu-icon {') &&
+  menuTheme.includes('width: 80% !important') &&
+  menuTheme.includes('height: 80% !important'),
+  'Student mobile menu tiles must be 70%-width squares with 80%-sized icons');
+assert.ok(menuTheme.includes('color: #baff06') &&
+  menuTheme.includes('border-top: 1px solid #20bfc9') &&
+  menuTheme.includes('.vento-student-menu .vento-student-menu-label'),
+  'Student sheet must use the lime/turquoise brand and labels outside icon tiles');
+
 console.log('PASS: desktop layout and profile photo plus layered meeting-conflict protection');
