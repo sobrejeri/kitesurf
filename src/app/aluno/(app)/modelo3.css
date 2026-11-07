@@ -568,12 +568,21 @@ body:has(.theme-beach.theme-mar-profundo) { background:#001829; color:#f4fbff; }
     rgba(0,0,0,.54) 83%, transparent 100%);
 }
 .theme-mar-profundo .kite-modelo3--lessons .kite-m3-header {
-  /* Share the continuous background with the tabs instead of clipping it. */
+  /* The action is removed: shrink the banner without sacrificing the
+     photographic background shared with the lesson tabs underneath. */
   background: transparent;
-  padding-bottom: 7px;
-  margin-bottom: 3px;
+  min-height: 0;
+  padding-top: calc(env(safe-area-inset-top) + 10px);
+  padding-bottom: 3px;
+  margin-bottom: -6px;
   border: 0;
   box-shadow: none;
+}
+.theme-mar-profundo .kite-modelo3--lessons .kite-m3-header__heading {
+  margin-top: 5px;
+}
+.theme-mar-profundo .kite-modelo3--lessons .kite-m3-header__subtitle {
+  margin-top: 4px;
 }
 .theme-mar-profundo .kite-modelo3--lessons [role="tablist"] {
   margin-top: 0;
@@ -590,13 +599,18 @@ body:has(.theme-beach.theme-mar-profundo) { background:#001829; color:#f4fbff; }
     border-radius: 22px;
   }
   .theme-mar-profundo .kite-modelo3--lessons .kite-m3-header {
-    padding-bottom: 13px;
-    margin-bottom: 8px;
+    min-height: 0;
+    padding-top: 18px;
+    padding-bottom: 10px;
+    margin-bottom: 0;
+  }
+  .theme-mar-profundo .kite-modelo3--lessons .kite-m3-header__heading {
+    margin-top: 12px;
   }
 }
 @media (max-width: 359px) {
   .theme-mar-profundo .kite-modelo3--lessons .kite-m3-header {
-    padding-bottom: 5px;
-    margin-bottom: 2px;
+    padding-bottom: 2px;
+    margin-bottom: -4px;
   }
 }
