@@ -98,11 +98,16 @@ export default async function AccountPage() {
               <dd className="text-ink">{viewer.language}</dd>
             </div>
           </dl>
-          <form action={signOut} className="mt-5 flex justify-center sm:justify-start">
-            <button type="submit" className="press flex items-center gap-2.5 rounded-full border border-brand/70 px-6 py-3 text-[14px] font-semibold text-brand">
-              <Icon name="logout" className="!h-5 !w-5" /> Sair da conta
-            </button>
-          </form>
+          <div className="mt-5 flex flex-wrap items-center justify-center gap-3 sm:justify-start">
+            <ButtonLink href="/aluno/recuperar" variant="ghost" size="sm">
+              Redefinir senha por e-mail
+            </ButtonLink>
+            <form action={signOut}>
+              <button type="submit" className="press flex min-h-11 items-center gap-2.5 rounded-full border border-brand/70 px-6 py-2.5 text-[14px] font-semibold text-brand">
+                <Icon name="logout" className="!h-5 !w-5" /> Sair da conta
+              </button>
+            </form>
+          </div>
         </section>
 
         <section className="relative overflow-hidden rounded-[22px] border border-line bg-surface p-5">
