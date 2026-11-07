@@ -15,10 +15,10 @@ export function OfficialLogo({
 }) {
   return (
     <img
-      src="/images/ventokite-logo-oficial.webp"
+      src="/images/ventokite-logo-transparente.png"
       alt="VentoKite — Aulas de Kitesurf"
-      width={1200}
-      height={347}
+      width={960}
+      height={264}
       decoding="async"
       className={`vento-official-logo ${compact ? 'vento-official-logo--compact' : ''} ${className}`.trim()}
     />

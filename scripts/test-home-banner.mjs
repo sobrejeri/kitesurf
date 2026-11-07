@@ -46,10 +46,20 @@ const studentHero = readFileSync('src/components/student/modelo3-header.tsx', 'u
 const dashboard = readFileSync('src/components/student/home-dashboard.tsx', 'utf8');
 const sunset = readFileSync('src/components/student/sunset.tsx', 'utf8');
 const shells = readFileSync('src/components/shells.tsx', 'utf8');
-assert.ok(statSync('public/images/ventokite-logo-oficial.webp').size > 15_000,
-  'Official VentoKite wordmark asset must be present in usable quality');
-assert.ok(officialSource.includes('ventokite-logo-oficial.webp'),
-  'OfficialLogo must load the owner-provided brand image');
+const transparentLogoPath = 'public/images/ventokite-logo-transparente.png';
+const transparentLogo = readFileSync(transparentLogoPath);
+assert.ok(transparentLogo.length > 30_000 && transparentLogo.subarray(1, 4).toString() === 'PNG'
+  && transparentLogo[25] === 6,
+  'VentoKite logo must be a real RGBA PNG with a transparency channel');
+assert.ok(officialSource.includes('ventokite-logo-transparente.png') &&
+  !officialSource.includes('ventokite-logo-oficial.webp'),
+  'OfficialLogo must load the transparent official brand PNG, never the white-backed source');
+const authFrame = readFileSync('src/components/auth/area-auth.tsx', 'utf8');
+assert.ok(authFrame.includes('kite-m3-auth-login-intro') &&
+  authFrame.includes('<KiteModelo3Brand compact />') &&
+  authFrame.includes('Bem-vindo <span className="text-sunrise">de volta.</span>') &&
+  authFrame.includes('Acesse suas aulas.'),
+  'Student login must center the logo immediately above a compact welcome message');
 for (const [name, content] of [
   ['student hero', studentHero],
   ['student dashboard', dashboard],

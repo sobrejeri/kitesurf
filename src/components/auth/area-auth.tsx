@@ -16,30 +16,41 @@ import { Field, Note, inputClass } from '../ui';
 function AuthFrame({ area, title, highlight, lead, children }: { area: AppArea; title: string; highlight: string; lead: string; children: React.ReactNode }) {
   const info = APP_AREAS[area];
   const at = title.lastIndexOf(highlight);
+  const studentLogin = area === 'aluno' && title === 'Bem-vindo de volta.';
   return (
     <div className={`${area === 'aluno' ? 'theme-beach kite-m3-auth' : 'theme-sunset'} relative min-h-dvh overflow-hidden bg-canvas text-ink`}>
       <img src={area === 'aluno' ? '/images/vento-ocean-hero.webp' : '/images/kite-lesson.webp'} alt="" className="sunset-photo absolute inset-x-0 top-0 h-[46dvh] w-full object-cover" />
       <div className="sunset-veil absolute inset-x-0 top-0 h-[46dvh]" aria-hidden="true" />
       {area === 'aluno' ? <img src="/images/vento-kite-real.webp" alt="" aria-hidden="true" className="kite-m3-auth-kite" /> : null}
       <main className="pt-safe pb-safe relative mx-auto flex min-h-dvh max-w-md flex-col px-5">
-        <div className="pt-6">
-          {area === 'aluno' ? <KiteModelo3Brand compact /> : <StudentBrand subtitle={info.subtitle} onPhoto />}
-        </div>
-        <div className="mt-[14dvh]">
-          <h1 className="text-[36px] font-bold leading-[1.05] tracking-[-1px] text-white">
-            {at >= 0 ? (
-              <>
-                {title.slice(0, at)}
-                <span className="text-sunrise">{highlight}</span>
-                {title.slice(at + highlight.length)}
-              </>
-            ) : (
-              title
-            )}
-          </h1>
-          <p className="mt-2 text-[15px] text-[#dfe5ee]">{lead}</p>
-        </div>
-        <div className="glass mt-6 rounded-[24px] border border-line p-5 shadow-search">{children}</div>
+        {studentLogin ? (
+          <div className="kite-m3-auth-login-intro">
+            <KiteModelo3Brand compact />
+            <h1 className="kite-m3-auth-login-title">
+              Bem-vindo <span className="text-sunrise">de volta.</span>
+            </h1>
+            <p className="kite-m3-auth-login-lead">{lead}</p>
+          </div>
+        ) : (
+          <>
+            <div className="pt-6">
+              {area === 'aluno' ? <KiteModelo3Brand compact /> : <StudentBrand subtitle={info.subtitle} onPhoto />}
+            </div>
+            <div className="mt-[14dvh]">
+              <h1 className="text-[36px] font-bold leading-[1.05] tracking-[-1px] text-white">
+                {at >= 0 ? (
+                  <>
+                    {title.slice(0, at)}
+                    <span className="text-sunrise">{highlight}</span>
+                    {title.slice(at + highlight.length)}
+                  </>
+                ) : title}
+              </h1>
+              <p className="mt-2 text-[15px] text-[#dfe5ee]">{lead}</p>
+            </div>
+          </>
+        )}
+        <div className={`glass rounded-[24px] border border-line p-5 shadow-search ${studentLogin ? 'kite-m3-auth-login-panel' : 'mt-6'}`}>{children}</div>
         <span className="flex-1" />
         <p className="py-6 text-center text-[12px] text-muted">{info.appName} · Preá e Jericoacoara</p>
       </main>
@@ -60,7 +71,7 @@ export function AreaLogin({
 }) {
   const info = APP_AREAS[area];
   return (
-    <AuthFrame area={area} title={area === 'aluno' ? 'Bem-vindo de volta.' : `Entrar no ${info.appName}.`} highlight={area === 'aluno' ? 'de volta.' : info.appName.replace('Vento ', '') + '.'} lead={`Acesso para ${info.audience}.`}>
+    <AuthFrame area={area} title={area === 'aluno' ? 'Bem-vindo de volta.' : `Entrar no ${info.appName}.`} highlight={area === 'aluno' ? 'de volta.' : info.appName.replace('Vento ', '') + '.'} lead={area === 'aluno' ? 'Acesse suas aulas.' : `Acesso para ${info.audience}.`}>
       {confirmed ? <Note icon="check" className="mb-4">E-mail confirmado. Agora é só entrar.</Note> : null}
       {wrongAccount ? (
         <Note tone="warning" className="mb-4">Este app é para {info.audience}. Entre com a conta certa.</Note>
