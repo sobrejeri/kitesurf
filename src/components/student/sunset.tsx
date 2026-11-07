@@ -1,4 +1,5 @@
 import { Icon, type IconName } from '../icon';
+import { OfficialLogo } from '../official-logo';
 
 /**
  * Building blocks of the student area's sunset look: the wave mark, the photo
@@ -16,13 +17,15 @@ export function WaveMark({ className = '' }: { className?: string }) {
 }
 
 export function StudentBrand({ subtitle = 'Aulas de kitesurf', onPhoto = false }: { subtitle?: string; onPhoto?: boolean }) {
+  const roleLabel = subtitle.toLowerCase() === 'aulas de kitesurf' ? null : subtitle;
   return (
-    <span className="flex items-center gap-2.5">
-      <WaveMark className="h-9 w-14" />
-      <span className="leading-none">
-        <span className={`block text-[24px] font-bold tracking-[-0.6px] ${onPhoto ? 'text-white' : 'text-logo-ink'}`}>Vento</span>
-        <span className={`mt-0.5 block text-[9px] font-medium uppercase tracking-[2px] ${onPhoto ? 'text-white/85' : 'text-label'}`}>{subtitle}</span>
-      </span>
+    <span className="inline-flex min-w-0 flex-col items-start gap-1">
+      <OfficialLogo compact />
+      {roleLabel ? (
+        <span className={`pl-1 text-[10px] font-semibold uppercase tracking-[.08em] ${onPhoto ? 'text-white/90' : 'text-label'}`}>
+          {roleLabel}
+        </span>
+      ) : null}
     </span>
   );
 }

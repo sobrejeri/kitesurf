@@ -1,6 +1,7 @@
 import Link from 'next/link';
 
 import { Icon } from '@/components/icon';
+import { OfficialLogo } from '@/components/official-logo';
 import type { StudentBooking } from '@/lib/data';
 import type { StudentKiteLevel } from '@/lib/student-kite-level';
 import { studentHomeSummary } from '@/lib/student-home';
@@ -49,9 +50,8 @@ export function HomeDashboard({
         <div className={styles.heroShade} aria-hidden="true" />
         <img src="/images/vento-kite-real.webp" alt="" aria-hidden="true" className={styles.heroKite} />
         <div className={styles.heroContent}>
-          <div className={styles.heroBrand} aria-label="VentoKite, aulas de kitesurf">
-            <span className={styles.brandName}>Vento<span>Kite</span></span>
-            <span className={styles.brandDescriptor}>AULAS DE KITESURF <Icon name="waves" /></span>
+          <div className={styles.heroBrand}>
+            <OfficialLogo />
           </div>
           <span className={styles.eyebrow}>SEU ESPAÇO NO KITE</span>
           <h1 id="student-dashboard-title">Bons ventos,<br /><em>{firstName || 'aluno'}!</em></h1>

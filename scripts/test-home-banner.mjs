@@ -39,4 +39,25 @@ assert.ok(home.includes('getStudentBookingInstructorAvatar') &&
   home.includes('instructorPhotoUrl={instructorPhotoUrl}'),
   'Returning students keep the actual instructor photo where available');
 
+// The app must use the same official owner-supplied artwork in every header.
+const official = 'src/components/official-logo.tsx';
+const officialSource = readFileSync(official, 'utf8');
+const studentHero = readFileSync('src/components/student/modelo3-header.tsx', 'utf8');
+const dashboard = readFileSync('src/components/student/home-dashboard.tsx', 'utf8');
+const sunset = readFileSync('src/components/student/sunset.tsx', 'utf8');
+const shells = readFileSync('src/components/shells.tsx', 'utf8');
+assert.ok(statSync('public/images/ventokite-logo-oficial.webp').size > 15_000,
+  'Official VentoKite wordmark asset must be present in usable quality');
+assert.ok(officialSource.includes('ventokite-logo-oficial.webp'),
+  'OfficialLogo must load the owner-provided brand image');
+for (const [name, content] of [
+  ['student hero', studentHero],
+  ['student dashboard', dashboard],
+  ['public Explore', home],
+  ['partner/workspace headers', sunset],
+  ['generic headers', shells],
+]) {
+  assert.ok(content.includes('OfficialLogo'), name + ' should use the official wordmark');
+}
+
 console.log('PASS: current student home dashboard and photo campaign preserve booking route');

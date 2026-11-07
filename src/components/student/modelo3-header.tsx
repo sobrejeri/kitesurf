@@ -1,5 +1,6 @@
 import Link from 'next/link';
 import { Icon } from '@/components/icon';
+import { OfficialLogo } from '@/components/official-logo';
 
 /**
  * VentoKite Modelo 03: visual-only hero for student screens.
@@ -9,8 +10,7 @@ export function KiteModelo3Brand({ compact = false }: { compact?: boolean }) {
   return (
     <Link href="/aluno/inicio" className={`kite-m3-logo ${compact ? 'kite-m3-logo--compact' : ''}`}
       aria-label="VentoKite — início">
-      <span className="kite-m3-logo__name">Vento<strong>Kite</strong></span>
-      <span className="kite-m3-logo__sub">AULAS DE KITESURF <span aria-hidden="true">≋</span></span>
+      <OfficialLogo compact={compact} />
     </Link>
   );
 }
