@@ -238,6 +238,7 @@ export function StudentShell({
           <MenuButton
             className="pointer-events-auto kite-m3-menu-button"
             onPhoto
+            studentStyle
             title="Menu"
             links={STUDENT_MENU}
             footer={
