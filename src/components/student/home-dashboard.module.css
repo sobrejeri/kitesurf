@@ -435,13 +435,47 @@
    full-bleed width rather than extending farther than the student canvas. */
 @media (max-width: 767px) {
   .dashboard {
+    position: relative;
+    isolation: isolate;
     display: block;
     width: 100%;
     min-width: 0;
     max-width: 100%;
-    /* Do not clip the full-bleed hero: the student shell already prevents
-       horizontal page scrolling at the viewport boundary. */
     overflow: visible;
+    background: transparent;
+  }
+  /* The coastline must continue BELOW the hero, instead of being clipped
+     where the first booking card starts. This one backdrop spans both. */
+  .dashboard::before {
+    content: "";
+    position: absolute;
+    z-index: 0;
+    pointer-events: none;
+    top: 0;
+    left: calc(50% - 50vw);
+    width: 100vw;
+    height: clamp(640px, 92svh, 920px);
+    background:
+      linear-gradient(180deg,
+        rgba(0,24,41,.03) 0%,
+        rgba(0,24,41,.12) 47%,
+        rgba(0,24,41,.46) 76%,
+        #001829 100%),
+      linear-gradient(90deg,
+        rgba(0,26,44,.88) 0%,
+        rgba(0,42,61,.59) 50%,
+        rgba(0,45,64,.14) 100%),
+      url('/images/vento-ocean-hero.webp') 57% 48% / cover no-repeat;
+    -webkit-mask-image: linear-gradient(to bottom,
+      #000 0%, #000 50%, rgba(0,0,0,.87) 69%,
+      rgba(0,0,0,.42) 87%, transparent 100%);
+    mask-image: linear-gradient(to bottom,
+      #000 0%, #000 50%, rgba(0,0,0,.87) 69%,
+      rgba(0,0,0,.42) 87%, transparent 100%);
+  }
+  .dashboard > :is(.welcome, .pending, .cards, .footnote, .agendaHeading, .agenda) {
+    position: relative;
+    z-index: 1;
   }
   .welcome {
     position: relative;
@@ -454,23 +488,18 @@
     margin-right: calc(50% - 50vw);
     overflow: hidden;
     border-radius: 0;
-    background: #00344e;
+    background: transparent;
   }
+  /* Hide only the duplicate photo layer on mobile: the shared backdrop on
+     .dashboard now provides a single continuous photographic surface. */
   .welcome > .heroPhoto {
-    inset: 0;
-    width: 100%;
-    height: 100%;
-    max-width: 100%;
-    object-fit: cover;
-    object-position: center 55%;
-    -webkit-mask-image: linear-gradient(to bottom, #000 0%, #000 53%, transparent 100%);
-    mask-image: linear-gradient(to bottom, #000 0%, #000 53%, transparent 100%);
+    display: none;
   }
   .welcome > .heroShade {
     inset: 0;
     background:
-      linear-gradient(90deg, #001b32ec 0%, #002b45b8 46%, #002c4660 100%),
-      linear-gradient(180deg, #001b311a 0%, transparent 42%, #001829 100%);
+      linear-gradient(90deg, rgba(0,25,43,.39) 0%, rgba(0,37,57,.21) 57%, transparent 100%),
+      linear-gradient(180deg, rgba(0,24,41,.12) 0%, transparent 54%, rgba(0,24,41,.13) 100%);
     -webkit-mask-image: none;
     mask-image: none;
   }
