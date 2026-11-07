@@ -53,4 +53,23 @@ assert.ok(booking.includes('const timeSlots = parsed.data.meetings.map') &&
   'Server must also guard against forged overlapping meetings');
 assert.ok(booking.includes("create_instructor_request_with_preference"),
   'Student search should still call the secure instructor queue RPC');
+// The phone top menu is nested in a pointer-events:none app bar. Its overlay
+// MUST render at the body level or taps outside cannot close it on iPhones.
+const mobile = read('src/components/mobile.tsx');
+const sheet = mobile.split('function MoreSheet(')[1]?.split('/** Account block')[0] ?? '';
+assert.ok(shell.includes('pointer-events-none pt-safe absolute') &&
+  mobile.includes("import { createPortal } from 'react-dom';") &&
+  sheet.includes('return createPortal(') &&
+  sheet.includes('document.body') &&
+  sheet.includes('pointer-events-auto fixed inset-0 z-[70]'),
+  'Mobile menu dialog must be portaled above the click-through app header and tab bar');
+assert.ok(sheet.includes('aria-label="Fechar menu"') &&
+  sheet.includes('onClick={onClose}') &&
+  sheet.includes("event.key === 'Escape'") &&
+  mobile.includes('current === pathname ? null : pathname'),
+  'Mobile menu must close via a visible button, backdrop, Escape and trigger toggle');
+assert.ok(sheet.includes('href={link.href}') &&
+  sheet.includes('onClick={onClose}'),
+  'Mobile menu navigation must close the sheet even when the URL does not change');
+
 console.log('PASS: desktop layout and profile photo plus layered meeting-conflict protection');

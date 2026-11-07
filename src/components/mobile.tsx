@@ -3,6 +3,7 @@
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { useCallback, useEffect, useId, useRef, useState } from 'react';
+import { createPortal } from 'react-dom';
 
 import { Icon, type IconName } from './icon';
 
@@ -127,7 +128,7 @@ export function TabBar({
             <li className="flex-1">
               <button
                 type="button"
-                onClick={() => setOpenAt(pathname)}
+                onClick={() => setOpenAt((current) => current === pathname ? null : pathname)}
                 aria-haspopup="dialog"
                 aria-expanded={open}
                 className={`press flex w-full flex-col items-center gap-0.5 py-1 ${variant === 'underline' ? 'text-[11px]' : 'text-[10px]'} ${moreActive ? `font-[550] ${variant === 'underline' ? 'text-sunrise' : 'text-brand'}` : 'text-tabbar-ink'}`}
@@ -175,7 +176,7 @@ export function MenuButton({
     <>
       <button
         type="button"
-        onClick={() => setOpenAt(pathname)}
+        onClick={() => setOpenAt((current) => current === pathname ? null : pathname)}
         aria-haspopup="dialog"
         aria-expanded={open}
         aria-label={label}
@@ -226,8 +227,11 @@ function MoreSheet({
 
   if (!open) return null;
 
-  return (
-    <div className="fixed inset-0 z-50 lg:hidden" role="presentation">
+  // The menu trigger sits inside a click-through header
+  // (pointer-events: none). Portaling the sheet to document.body removes
+  // that inherited hit-testing constraint and places it ABOVE the tab bar.
+  return createPortal(
+    <div className="pointer-events-auto fixed inset-0 z-[70] lg:hidden" role="presentation">
       <button type="button" aria-label="Fechar menu" onClick={onClose} className="sheet-backdrop absolute inset-0 bg-[#1b2433]/40" />
       <div
         ref={panel}
@@ -238,9 +242,17 @@ function MoreSheet({
         className="sheet-panel pb-safe absolute inset-x-0 bottom-0 max-h-[85dvh] overflow-y-auto rounded-t-[24px] bg-surface px-4 pt-2 shadow-[0_-12px_40px_#1b243326] focus:outline-none"
       >
         <span className="mx-auto mb-3 block h-1 w-10 rounded-full bg-line-ghost" aria-hidden="true" />
-        <p id={titleId} className="px-1 text-[16px] font-semibold">
-          {title}
-        </p>
+        <div className="flex items-center justify-between gap-3 px-1">
+          <p id={titleId} className="text-[16px] font-semibold">{title}</p>
+          <button
+            type="button"
+            onClick={onClose}
+            aria-label="Fechar menu"
+            className="press inline-flex min-h-11 items-center gap-2 rounded-full border border-line px-3 text-[13px] font-semibold text-brand"
+          >
+            Fechar <span className="text-xl leading-none" aria-hidden="true">×</span>
+          </button>
+        </div>
         <ul className="mt-4 grid grid-cols-3 gap-2.5">
           {links.map((link) => {
             const active = isActive(pathname, link);
@@ -248,6 +260,7 @@ function MoreSheet({
               <li key={link.href}>
                 <Link
                   href={link.href}
+                  onClick={onClose}
                   aria-current={active ? 'page' : undefined}
                   className={`press flex h-full flex-col items-center gap-2 rounded-search border px-2 py-3.5 text-center text-[11px] leading-tight ${active ? 'border-brand-focus bg-brand-soft font-[550] text-brand' : 'border-line bg-canvas text-label'}`}
                 >
@@ -260,7 +273,8 @@ function MoreSheet({
         </ul>
         {footer ? <div className="mt-4 border-t border-line pt-4 pb-2">{footer}</div> : <div className="h-4" />}
       </div>
-    </div>
+    </div>,
+    document.body,
   );
 }
 
