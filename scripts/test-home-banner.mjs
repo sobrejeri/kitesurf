@@ -70,4 +70,18 @@ for (const [name, content] of [
   assert.ok(content.includes('OfficialLogo'), name + ' should use the official wordmark');
 }
 
+const atlanticoStyle = readFileSync('src/app/aluno/(app)/atlantico.css', 'utf8');
+assert.ok(atlanticoStyle.includes('width: min(42.7vw, 158px)') &&
+  atlanticoStyle.includes('.vento-atlantico-brand .vento-official-logo'),
+  'Public Atlântico header should use the official logo at 70% mobile size');
+assert.ok(atlanticoStyle.includes('.vento-atlantico-home .vento-atlantico-search {') &&
+  atlanticoStyle.includes('background:transparent;') &&
+  atlanticoStyle.includes('box-shadow:none;') &&
+  atlanticoStyle.includes('-webkit-backdrop-filter:none;'),
+  'Public booking form must not have the old outer card background, outline or blur');
+assert.ok(atlanticoStyle.includes('width:min(100%,210px)') &&
+  atlanticoStyle.includes('height:40px;') &&
+  atlanticoStyle.includes('min-height:40px!important'),
+  'Mobile Avançar CTA should be shorter and narrower than before');
+
 console.log('PASS: current student home dashboard and photo campaign preserve booking route');
