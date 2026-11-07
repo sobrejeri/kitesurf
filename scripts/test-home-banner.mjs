@@ -10,12 +10,16 @@ const search = readFileSync('src/components/student/lesson-search.tsx', 'utf8');
 assert.ok(home.includes('<HomeDashboard bookings={bookings}') &&
   home.includes('const returning=bookings.length>0'),
   'Returning students must continue to receive their personal lessons dashboard');
-assert.ok(home.includes('src="/images/promo-bordo.jpg"') &&
-  home.includes('href="/aluno/reservar"') &&
-  home.includes('aria-label="Seu próximo bordo começa aqui'),
-  'New students need the campaign banner linked to booking with an accessible label');
-assert.ok(statSync('public/images/promo-bordo.jpg').size > 100_000,
-  'The booking banner must be a proper high-resolution image');
+assert.ok(home.includes('src="/images/kite-lesson.webp"') &&
+  home.includes('id="atlantico-hero-title"') &&
+  home.includes('Liberdade em') &&
+  home.includes('vento-atlantico-hero-wave') &&
+  home.includes('vento-atlantico-search-container'),
+  'New students must see the full photographic Atlântico hero leading directly into lesson search');
+assert.ok(!home.includes('src="/images/promo-bordo.jpg"'),
+  'Do not regress to the old shallow promotional image with baked-in text');
+assert.ok(statSync('public/images/kite-lesson.webp').size > 100_000,
+  'The photographic cover must use a proper high-resolution kitesurf image');
 assert.ok(home.includes('<LessonSearch') &&
   home.includes('studentLevel={kiteLevel?.effective'),
   'New students must keep the lesson search below the banner, respecting the selected level');
