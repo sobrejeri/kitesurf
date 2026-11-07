@@ -1,0 +1,235 @@
+/*
+ * VentoKite · Atlântico (model 01)
+ * Mobile-first treatment for the public/no-booking Explore flow only.
+ * State, prices, date validation and booking submission remain in LessonSearch.
+ */
+.vento-atlantico-home { min-width:0; --atlantico-lime:#bbff08; --atlantico-turquoise:#06d8e6; }
+.vento-atlantico-brand { display:none; }
+.vento-atlantico-hero-wave { display:none; }
+.vento-atlantico-home :is(button,a,select,input,summary):focus-visible {
+  outline:2px solid var(--atlantico-lime);
+  outline-offset:3px;
+}
+@media (max-width:767px) {
+  .vento-atlantico-home {
+    position:relative;
+    isolation:isolate;
+    padding-bottom:12px;
+    background:transparent;
+  }
+  .vento-atlantico-brand {
+    display:flex;
+    flex-direction:column;
+    gap:4px;
+    padding:0 4px 15px;
+    line-height:1;
+  }
+  .vento-atlantico-brand-name {
+    color:#fff;
+    font-family:var(--font-display),sans-serif;
+    font-style:italic;
+    font-weight:900;
+    font-size:clamp(27px,7.4vw,35px);
+    letter-spacing:-.075em;
+    text-shadow:0 3px 12px #001e35bb;
+  }
+  .vento-atlantico-brand-name strong { color:var(--atlantico-lime); }
+  .vento-atlantico-brand-caption {
+    color:#e8f8fc;
+    font-size:9px;
+    font-weight:800;
+    letter-spacing:.19em;
+  }
+  .vento-atlantico-brand-caption span { color:var(--atlantico-turquoise);font-size:16px; }
+  .vento-atlantico-hero {
+    display:block;
+    position:relative;
+    overflow:hidden;
+    border:1px solid #23bdcf;
+    border-radius:22px 22px 14px 14px;
+    box-shadow:0 15px 30px #00121e8c;
+    background:#00344f;
+  }
+  .vento-atlantico-hero-image {
+    display:block;
+    width:100%;
+    height:auto;
+    filter:saturate(1.06) contrast(1.06);
+  }
+  .vento-atlantico-hero-wave {
+    display:block;
+    position:absolute;
+    bottom:-1px;
+    left:0;
+    width:100%;
+    height:25px;
+    pointer-events:none;
+  }
+  .vento-atlantico-search-container {
+    position:relative;
+    z-index:2;
+    margin-top:0;
+  }
+  .vento-atlantico-home .vento-atlantico-search {
+    display:grid;
+    gap:10px;
+    margin-top:-15px;
+    padding:17px 14px 15px;
+    border:1px solid #1f8da2;
+    border-radius:25px;
+    background:linear-gradient(155deg,#053a53f7 0%,#00283efc 85%);
+    box-shadow:0 15px 36px #000e20a6,inset 0 1px 0 #57d6e825;
+    backdrop-filter:blur(10px);
+  }
+  .vento-atlantico-search > div:first-child { padding:0 3px; }
+  .vento-atlantico-search > div:first-child > p {
+    font-size:13px;
+    font-weight:800;
+    color:#f3fbff;
+  }
+  .vento-atlantico-search > div:first-child > a {
+    color:#c7e2ec;
+    background:#00344b;
+    border:1px solid #1b6982;
+  }
+  .vento-atlantico-home .vento-atlantico-level-options {
+    grid-template-columns:repeat(3,minmax(0,1fr));
+    gap:6px;
+    padding:5px;
+    border-radius:17px;
+    background:#00263a;
+    border:1px solid #164d65;
+  }
+  .vento-atlantico-home .vento-atlantico-level {
+    display:flex;
+    flex-direction:column;
+    justify-content:center;
+    gap:3px;
+    height:52px;
+    min-width:0;
+    padding:5px 2px;
+    border-radius:13px;
+    font-size:clamp(10px,3vw,12px);
+    line-height:1.12;
+    background:#073c56;
+    border:1px solid #165a74;
+    color:#d8edf4;
+    box-shadow:none;
+  }
+  .vento-atlantico-home .vento-atlantico-level:has(input:checked) {
+    background:linear-gradient(120deg,#adff00,#d5ff31);
+    border-color:#e1ff6d;
+    color:#05283b;
+    font-weight:850;
+    box-shadow:0 5px 15px #baff0030;
+  }
+  .vento-atlantico-home .vento-atlantico-level:has(input:focus-visible) {
+    outline:2px solid #f4ff9c;
+    outline-offset:2px;
+  }
+  .vento-atlantico-level-icon { display:block; flex-shrink:0; }
+  .vento-atlantico-home .vento-atlantico-lesson-desc {
+    align-items:flex-start;
+    gap:10px;
+    padding:11px 12px;
+    border:1px solid #20879b;
+    border-radius:15px;
+    background:#06374c;
+  }
+  .vento-atlantico-desc-icon {
+    display:grid;
+    flex-shrink:0;
+    place-items:center;
+    height:31px;
+    width:31px;
+    border-radius:10px;
+    color:var(--atlantico-lime);
+    background:#0b4e5a;
+  }
+  .vento-atlantico-home .vento-atlantico-lesson-desc p {
+    line-height:1.34;
+    overflow-wrap:anywhere;
+  }
+  .vento-atlantico-level-details summary {
+    display:inline-flex;
+    min-height:25px;
+    align-items:center;
+    font-weight:700;
+    text-decoration:underline;
+    text-underline-offset:3px;
+  }
+  .vento-atlantico-home .vento-atlantico-fields {
+    display:grid;
+    grid-template-columns:minmax(0,1fr);
+    gap:7px;
+    padding:0;
+    background:none;
+  }
+  .vento-atlantico-home .vento-atlantico-field {
+    min-width:0;
+    min-height:55px;
+    gap:11px;
+    padding:9px 13px;
+    border:1px solid #1b647b;
+    border-radius:14px;
+    background:#05364e;
+    box-shadow:inset 0 1px 0 #ffffff0b;
+  }
+  .vento-atlantico-home .vento-atlantico-field > .icon {
+    width:20px!important;
+    height:20px!important;
+    color:var(--atlantico-lime);
+  }
+  .vento-atlantico-home .vento-atlantico-field :is(select,input,button) {
+    font-size:14px;
+    color:#f3faff;
+  }
+  .vento-atlantico-home .vento-atlantico-field .text-muted {
+    font-size:10px;
+    line-height:1.1;
+    color:#b9d0db;
+  }
+  .vento-atlantico-home .vento-atlantico-field > .icon:last-child {
+    width:16px!important;
+    height:16px!important;
+    color:#c7eaf0;
+  }
+  .vento-atlantico-home .vento-atlantico-hours {
+    min-height:54px;
+    gap:8px;
+    padding:5px 8px 5px 13px;
+    border-radius:14px;
+    background:#05364e;
+    border:1px solid #1b647b;
+  }
+  .vento-atlantico-home .vento-atlantico-hours > .icon {
+    width:20px!important;
+    height:20px!important;
+    color:var(--atlantico-lime);
+  }
+  .vento-atlantico-home .vento-atlantico-hours > span { font-size:12px; }
+  .vento-atlantico-home .vento-atlantico-hours button { height:35px;width:35px; }
+  .vento-atlantico-home .vento-desktop-search-quote {margin:0;color:#c3dae4;font-size:11px;}
+  .vento-atlantico-home .vento-desktop-search-quote strong {color:var(--atlantico-lime);}
+  .vento-atlantico-home .vento-desktop-search-submit {
+    display:flex;
+    justify-content:center;
+    gap:9px;
+    width:min(100%,290px);
+    min-height:47px!important;
+    margin:0 auto;
+    padding:9px 18px;
+    border-radius:999px;
+    background:linear-gradient(115deg,#aaff00,#dbff2c);
+    color:#062638;
+    font-size:15px!important;
+    font-weight:850;
+    box-shadow:0 7px 20px #bdff0040;
+  }
+  .vento-atlantico-home .vento-student-home-benefits { display:none; }
+}
+@media (max-width:359px) {
+  .vento-atlantico-home .vento-atlantico-level {font-size:10px;}
+  .vento-atlantico-home .vento-atlantico-search {padding-inline:11px;}
+  .vento-atlantico-home .vento-atlantico-hours {gap:5px;}
+}
