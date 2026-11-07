@@ -144,23 +144,23 @@
   color:#154b65!important;
   font-weight:750;
 }
-.vento-voucher-paper .vento-voucher-meeting details > summary {
+.vento-voucher-paper .vento-voucher-meeting details.group > summary {
   background:#daeff7!important;
   border:1px solid #94d1df;
   color:#0b4863!important;
   font-size:13px;
   font-weight:750;
 }
-.vento-voucher-paper .vento-voucher-meeting details > summary:hover {
+.vento-voucher-paper .vento-voucher-meeting details.group > summary:hover {
   background:#c5e9f2!important;
 }
-.vento-voucher-paper .vento-voucher-meeting details > summary span {
+.vento-voucher-paper .vento-voucher-meeting details.group > summary span {
   color:#065a74!important;
 }
-.vento-voucher-paper .vento-voucher-meeting details > summary + div {
+.vento-voucher-paper .vento-voucher-meeting details.group > summary + div {
   color:#234e65;
 }
-.vento-voucher-paper .vento-voucher-meeting > details summary {
+.vento-voucher-paper .vento-voucher-meeting details:not(.group) > summary {
   color:#25607a;
   font-size:12px;
 }
