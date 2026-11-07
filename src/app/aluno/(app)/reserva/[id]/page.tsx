@@ -10,7 +10,7 @@ import { Icon } from '@/components/icon';
 import { StudentHero } from '@/components/student/sunset';
 import { StudentInstructorPhoto } from '@/components/student/instructor-photo';
 import { MeetingQR } from '@/components/student/meeting-qr';
-import { Badge, ButtonLink, Card, Eyebrow, Note, ProgressBar } from '@/components/ui';
+import { Badge, ButtonLink, Card, Note, ProgressBar } from '@/components/ui';
 import { requireRole } from '@/lib/auth';
 import { BOOKING_STATUS_LABELS, LEVEL_LABELS, MEETING_STATUS_LABELS, getBookingForViewer, learningBalance } from '@/lib/data';
 import { formatDateLong, formatMinutes, formatMoney, formatTime } from '@/lib/format';
