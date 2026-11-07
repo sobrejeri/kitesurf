@@ -2,6 +2,7 @@ import type { Metadata } from 'next';
 import Link from 'next/link';
 
 import { Icon, type IconName } from '@/components/icon';
+import { KiteLevelMedal } from '@/components/student/kite-level-medal';
 import { KiteModelo3Header } from '@/components/student/modelo3-header';
 import { requireRole } from '@/lib/auth';
 import { listBookingsForStudent } from '@/lib/data';
