@@ -428,3 +428,75 @@
  .welcome h1 {font-size:clamp(64px,6.9vw,88px);}
  .cards {margin-top:18px;}
 }
+
+
+/* Keep the real kite and coastal photograph INSIDE the phone viewport.
+   A negative right offset clipped the kite; the hero now uses its actual
+   full-bleed width rather than extending farther than the student canvas. */
+@media (max-width: 767px) {
+  .dashboard {
+    display: block;
+    width: 100%;
+    min-width: 0;
+    max-width: 100%;
+    overflow-x: clip;
+  }
+  .welcome {
+    box-sizing: border-box;
+    width: calc(100% + 32px);
+    max-width: calc(100% + 32px);
+    margin-left: -16px;
+    margin-right: -16px;
+    overflow: hidden;
+    border-radius: 0;
+    background: #00344e;
+  }
+  .welcome > .heroPhoto {
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    max-width: 100%;
+    object-fit: cover;
+    object-position: center 55%;
+    -webkit-mask-image: linear-gradient(to bottom, #000 0%, #000 53%, transparent 100%);
+    mask-image: linear-gradient(to bottom, #000 0%, #000 53%, transparent 100%);
+  }
+  .welcome > .heroShade {
+    inset: 0;
+    background:
+      linear-gradient(90deg, #001b32ec 0%, #002b45b8 46%, #002c4660 100%),
+      linear-gradient(180deg, #001b311a 0%, transparent 42%, #001829 100%);
+    -webkit-mask-image: none;
+    mask-image: none;
+  }
+  .welcome > .heroKite {
+    inset: auto;
+    left: auto;
+    bottom: auto;
+    right: 8px;
+    top: calc(env(safe-area-inset-top) + 54px);
+    width: min(47%, 210px);
+    height: min(245px, 61%);
+    max-width: calc(100% - 24px);
+    object-fit: contain;
+    object-position: center right;
+    opacity: 1;
+  }
+  .welcome > .heroContent {
+    box-sizing: border-box;
+    width: 100%;
+    min-width: 0;
+    max-width: 100%;
+  }
+  .cards, .next, .insights, .insightCard, .footnote {
+    min-width: 0;
+    max-width: 100%;
+  }
+}
+@media (max-width: 350px) {
+  .welcome > .heroKite {
+    right: 6px;
+    width: 45%;
+    top: calc(env(safe-area-inset-top) + 48px);
+  }
+}
