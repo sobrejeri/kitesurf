@@ -492,21 +492,21 @@ body:has(.theme-beach) {
 }
 
 
-/* One owner-approved logo everywhere: full canopy, waves and wordmark.
-   The supplied artwork includes white letters and a white original canvas,
-   so the white surface is intentional instead of destructive transparency. */
+/* The owner-supplied VentoKite PNG already contains true alpha: white
+   letters and waves are artwork, NOT a background. Never put a white
+   rectangle behind the shared brand in student/staff headers or auth. */
 .vento-official-logo {
   display: block;
   box-sizing: border-box;
   width: 224px;
   max-width: 100%;
   height: auto;
-  aspect-ratio: 1200 / 347;
-  padding: 2px;
-  border: 1px solid rgba(217, 232, 233, .86);
-  border-radius: 9px;
-  background: #fff;
-  box-shadow: 0 4px 16px rgba(0, 18, 35, .20);
+  aspect-ratio: 960 / 264;
+  padding: 0;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+  box-shadow: none;
   object-fit: contain;
 }
 .vento-official-logo--compact { width: 192px; }
