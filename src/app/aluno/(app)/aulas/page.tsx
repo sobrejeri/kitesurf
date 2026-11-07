@@ -57,8 +57,8 @@ export default async function MyLessonsPage({searchParams}:{searchParams:Promise
       : a.past ? 1 : -1);
 
   return (
-    <div className="vento-student-desktop-lessons kite-modelo3">
-      <KiteModelo3Header title="Minhas aulas" subtitle="Acompanhe suas aulas, detalhes e status." actionHref="/aluno/reservar" actionLabel="Nova aula" />
+    <div className="vento-student-desktop-lessons kite-modelo3 kite-modelo3--lessons">
+      <KiteModelo3Header title="Minhas aulas" subtitle="Acompanhe suas aulas, detalhes e status." />
       <MyLessons key={initialTab} initialTab={initialTab} lessons={lessons} />
     </div>
   );
