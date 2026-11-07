@@ -530,3 +530,73 @@ body:has(.theme-beach.theme-mar-profundo) { background:#001829; color:#f4fbff; }
     min-height: 112px;
   }
 }
+
+
+/* "Minhas aulas" — one photographic backdrop for the entire banner + tab area.
+   Previously the image ended at the header's bottom edge, leaving a hard seam
+   and a large navy gap before "Próximas aulas". Keep the kite image and data intact. */
+.kite-modelo3--lessons {
+  isolation: isolate;
+  background: #001829;
+}
+.kite-modelo3--lessons::before {
+  content: "";
+  position: absolute;
+  z-index: 0;
+  top: 0;
+  left: -16px;
+  right: -16px;
+  height: clamp(400px, 60svh, 590px);
+  pointer-events: none;
+  background:
+    linear-gradient(90deg,
+      rgba(0, 25, 43, .91) 0%,
+      rgba(0, 37, 55, .76) 38%,
+      rgba(0, 46, 65, .33) 68%,
+      rgba(0, 45, 62, .08) 100%),
+    linear-gradient(180deg,
+      rgba(0, 24, 41, .03) 0%,
+      rgba(0, 24, 41, .12) 45%,
+      rgba(0, 24, 41, .50) 76%,
+      #001829 100%),
+    url('/images/vento-ocean-hero.webp') center 56% / cover no-repeat;
+  -webkit-mask-image: linear-gradient(to bottom,
+    #000 0%, #000 52%, rgba(0,0,0,.93) 66%,
+    rgba(0,0,0,.54) 83%, transparent 100%);
+  mask-image: linear-gradient(to bottom,
+    #000 0%, #000 52%, rgba(0,0,0,.93) 66%,
+    rgba(0,0,0,.54) 83%, transparent 100%);
+}
+.theme-mar-profundo .kite-modelo3--lessons .kite-m3-header {
+  /* Share the continuous background with the tabs instead of clipping it. */
+  background: transparent;
+  padding-bottom: 7px;
+  margin-bottom: 3px;
+  border: 0;
+  box-shadow: none;
+}
+.theme-mar-profundo .kite-modelo3--lessons [role="tablist"] {
+  margin-top: 0;
+}
+/* Let the photographic fade show behind the tabs without reducing contrast. */
+.theme-mar-profundo .kite-modelo3--lessons [role="tablist"] {
+  background: rgba(0, 44, 68, .90);
+}
+@media (min-width: 768px) {
+  .kite-modelo3--lessons::before {
+    left: 0;
+    right: 0;
+    height: 570px;
+    border-radius: 22px;
+  }
+  .theme-mar-profundo .kite-modelo3--lessons .kite-m3-header {
+    padding-bottom: 13px;
+    margin-bottom: 8px;
+  }
+}
+@media (max-width: 359px) {
+  .theme-mar-profundo .kite-modelo3--lessons .kite-m3-header {
+    padding-bottom: 5px;
+    margin-bottom: 2px;
+  }
+}
