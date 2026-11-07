@@ -5,7 +5,6 @@ import { uploadStudentAvatar } from '@/app/actions/student';
 import { Icon } from '@/components/icon';
 import { createSupabaseServerClient } from '@/lib/supabase/server';
 import { ProfileEditor } from '@/components/student/profile-editor';
-import { KiteLevelMedal } from '@/components/student/kite-level-medal';
 import { KiteLevelEditor } from '@/components/student/kite-level-editor';
 import { getStudentKiteLevel } from '@/lib/student-kite-level';
 import { KITE_LEVEL_BADGES } from '@/lib/kite-steps';
@@ -48,7 +47,7 @@ export default async function AccountPage() {
     .slice(0, 3);
 
   return (
-    <div className="kite-modelo3">
+    <div className="kite-modelo3 kite-modelo3--profile">
       <KiteModelo3Header />
 
       <div className="grid gap-4 lg:grid-cols-2">
@@ -58,7 +57,7 @@ export default async function AccountPage() {
               action={uploadStudentAvatar}
               photoUrl={avatarUrl}
               name={viewer.fullName || 'Aluno'}
-              accent="cyan"
+              accent="lime"
               enabled={avatarReady}
             />
             <div className="min-w-0 w-full flex-1">
@@ -66,18 +65,14 @@ export default async function AccountPage() {
                 <p className="min-w-0 break-words text-[21px] font-extrabold leading-tight text-ink">
                   {viewer.fullName?.trim() || 'Aluno'}
                 </p>
-                <KiteLevelMedal
-                  level={kiteLevel.effective}
-                  assessed={kiteLevel.assessed !== null}
-                  compact
-                />
+
               </div>
               <p className={
                 'mt-1 text-[14px] font-semibold ' +
                 (kiteLevel.effective === 'first_time' ? 'text-[#f8bc82]' :
                   kiteLevel.effective === 'returning' ? 'text-[#d5e4f2]' : 'text-[#f8dd84]')
               }>
-                {KITE_LEVEL_BADGES[kiteLevel.effective].label} · {KITE_LEVEL_BADGES[kiteLevel.effective].metal}
+                {KITE_LEVEL_BADGES[kiteLevel.effective].label}
               </p>
             </div>
             <div className="w-full sm:col-span-2">
