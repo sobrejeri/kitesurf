@@ -152,7 +152,7 @@ export default async function ProgressPage({
     : `${KITE_LEVEL_BADGES[kiteLevel.effective].label} (informado)`;
 
   return (
-    <div className="kite-modelo3">
+    <div className="kite-modelo3 kite-modelo3--evolution">
       <KiteModelo3Header />
       {bookings.length === 0 ? (
         <section className="rounded-[22px] border border-line bg-surface p-5">
