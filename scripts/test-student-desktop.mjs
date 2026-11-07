@@ -98,4 +98,17 @@ assert.ok(menuTheme.includes('color: #baff06') &&
   menuTheme.includes('.vento-student-menu .vento-student-menu-label'),
   'Student sheet must use the lime/turquoise brand and labels outside icon tiles');
 
+// "Conta e acesso" is redundant with the existing student Perfil tab.
+// Keep old bookmarks working, and keep every account action available.
+const studentProfile = read('src/app/aluno/(app)/conta/page.tsx');
+const legacyAccess = read('src/app/aluno/(app)/acesso/page.tsx');
+assert.ok(!shell.includes("label: 'Conta e acesso'") &&
+  shell.includes("{ label: 'Perfil', href: '/aluno/conta'") &&
+  legacyAccess.includes("redirect('/aluno/conta')"),
+  'Student menu must avoid a redundant account page while old bookmarks redirect to Perfil');
+assert.ok(studentProfile.includes('<ProfileEditor') &&
+  studentProfile.includes('href="/aluno/recuperar"') &&
+  studentProfile.includes('action={signOut}'),
+  'Student Perfil must retain profile editing, password recovery, and sign out');
+
 console.log('PASS: desktop layout and profile photo plus layered meeting-conflict protection');
