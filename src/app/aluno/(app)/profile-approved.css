@@ -1,0 +1,28 @@
+/* Approved student profile: integrate content with the ocean background. */
+.kite-modelo3--profile {
+  background: radial-gradient(ellipse 95% 55% at 50% 24%,rgba(0,115,135,.32),transparent 79%);
+}
+.kite-modelo3.kite-modelo3--profile .kite-m3-profile-card {
+  border:0;
+  border-radius:0;
+  padding:12px 6px 24px;
+  background:transparent;
+  box-shadow:none;
+  backdrop-filter:none;
+}
+.kite-modelo3--profile .kite-m3-profile-card .border-y {
+  border-top:0;
+  border-bottom:0;
+}
+.kite-modelo3--profile .kite-m3-profile-card dl > div {
+  border-color:rgba(61,190,201,.46);
+}
+.kite-modelo3--profile .kite-m3-profile-card button {
+  color:#ceff58;
+}
+.kite-modelo3--profile .kite-m3-profile-card .text-\[\#f8bc82\] {
+  color:#c2ff4b;
+}
+@media(min-width:768px){
+  .kite-modelo3.kite-modelo3--profile .kite-m3-profile-card {padding:22px;}
+}

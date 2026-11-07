@@ -9,7 +9,8 @@ import { ActionForm } from '@/components/action-form';
 import { Icon } from '@/components/icon';
 import { StudentHero } from '@/components/student/sunset';
 import { StudentInstructorPhoto } from '@/components/student/instructor-photo';
-import { Badge, ButtonLink, Card, Eyebrow, Note, ProgressBar } from '@/components/ui';
+import { MeetingQR } from '@/components/student/meeting-qr';
+import { Badge, ButtonLink, Card, Note, ProgressBar } from '@/components/ui';
 import { requireRole } from '@/lib/auth';
 import { BOOKING_STATUS_LABELS, LEVEL_LABELS, MEETING_STATUS_LABELS, getBookingForViewer, learningBalance } from '@/lib/data';
 import { formatDateLong, formatMinutes, formatMoney, formatTime } from '@/lib/format';
@@ -56,6 +57,8 @@ export default async function BookingPage({ params }: { params: Promise<{ id: st
   const donePercent = balance.contracted ? Math.round((balance.done / balance.contracted) * 100) : 0;
   const reservedPercent = balance.contracted ? Math.round((balance.scheduled / balance.contracted) * 100) : 0;
   const instructorName = booking.instructor?.full_name ?? 'Instrutor a confirmar';
+  const pendingMeetings=booking.booking_meetings.filter(m=>m.status==='scheduled');
+  const nextMeeting=pendingMeetings[0];
   const avatarUrl = booking.instructor_id
     ? await getStudentBookingInstructorAvatar(booking.id)
     : null;
@@ -109,14 +112,24 @@ export default async function BookingPage({ params }: { params: Promise<{ id: st
 
       <div className="mt-6 grid gap-5 lg:grid-cols-[1.5fr_1fr]">
         <div className="grid content-start gap-5">
-          <Card>
-            <div className="border-b border-[#16728a]/60 pb-4">
+          <section className="vento-voucher">
+            <header className="vento-voucher-banner">
+              <img src="/images/kite-lesson.webp" alt="" className="vento-voucher-banner-photo" />
+              <div className="vento-voucher-banner-shade" aria-hidden="true" />
+              <div className="vento-voucher-banner-copy">
+                <span className="vento-voucher-banner-mark"><Icon name="calendar" className="!h-8 !w-8" /></span>
+                <span><strong>VOUCHER DA RESERVA</strong><small>Aulas de kitesurf • VentoKite</small></span>
+              </div>
+            </header>
+            <div className="vento-voucher-paper">
+              <div className="border-b border-[#16728a]/60 pb-4">
               <p className="text-[11px] font-bold uppercase tracking-[.18em] text-[#56dce7]">
                 Detalhes da reserva
               </p>
               <h2 className="mt-2 text-[21px] font-extrabold leading-[1.2] tracking-[-.5px] text-ink sm:text-[23px]">
                 Aula particular de kitesurf
               </h2>
+              <p className="mt-1 text-[12px] font-semibold">Reserva: {booking.code}</p>
               <div className="mt-3 flex flex-wrap items-center gap-2">
                 <span
                   className={'inline-flex min-h-8 items-center gap-1.5 rounded-full border px-3 py-1 text-[12px] font-bold ' + statusStyles[booking.status]}
@@ -203,6 +216,50 @@ export default async function BookingPage({ params }: { params: Promise<{ id: st
                 </li>
               ))}
             </ul>
+            <div className="vento-voucher-bottom">
+              <div className="vento-voucher-qr-column">
+                <h3 className="vento-voucher-subtitle"><Icon name="calendar" />Validação do encontro</h3>
+                {booking.status==='confirmed' && booking.instructor_id && nextMeeting ? (
+                  <>
+                    <p className="vento-voucher-qr-caption">
+                      {formatDateLong(nextMeeting.starts_at)} às {formatTime(nextMeeting.starts_at)}
+                    </p>
+                    <MeetingQR meetingId={nextMeeting.id} presenceCode={booking.presence_code} />
+                    {pendingMeetings.length>1 ? <details className="vento-voucher-more-codes">
+                      <summary>QR Codes dos outros encontros ({pendingMeetings.length-1})</summary>
+                      {pendingMeetings.slice(1).map(meeting=><div key={meeting.id} className="vento-voucher-secondary-qr">
+                        <p>{formatDateLong(meeting.starts_at)} às {formatTime(meeting.starts_at)}</p>
+                        <MeetingQR meetingId={meeting.id} presenceCode={booking.presence_code}/>
+                      </div>)}
+                    </details>:null}
+                  </>
+                ) : <p className="vento-voucher-muted">
+                  {booking.status==='confirmed'?'Aguardando confirmação de instrutor ou novo encontro.':'O código de presença fica disponível após confirmar a reserva.'}
+                </p>}
+              </div>
+              <div className="vento-voucher-payment-column">
+                <h3 className="vento-voucher-subtitle"><Icon name="wallet" />Dados do pagamento</h3>
+                <dl className="vento-voucher-payment-list">
+                  <div><dt>Aulas • {booking.total_hours}h</dt><dd>{formatMoney(booking.hourly_rate_cents*booking.total_hours)}</dd></div>
+                  {booking.with_transport?<div><dt>Transporte de apoio</dt><dd>{formatMoney(booking.transport_cents)}</dd></div>:null}
+                  <div className="vento-voucher-payment-total"><dt>Total da reserva</dt><dd>{formatMoney(booking.total_cents)}</dd></div>
+                </dl>
+                <p className="vento-voucher-payment-status">
+                  <Icon name={VALIDATION_WITHOUT_CHECKOUT || booking.is_test?'info':awaiting?'clock':booking.status==='cancelled'?'back':'check'}/>
+                  {VALIDATION_WITHOUT_CHECKOUT || booking.is_test
+                    ? 'Aula de teste • sem cobrança'
+                    : awaiting ? 'Pagamento pendente'
+                    : booking.status==='cancelled' ? 'Reserva cancelada' : 'Reserva confirmada'}
+                </p>
+                {VALIDATION_WITHOUT_CHECKOUT ? <p className="vento-voucher-muted">
+                  Valores de referência. Sem transação financeira nesta fase.
+                </p> : null}
+              </div>
+            </div>
+            <div className="vento-voucher-reminders">
+              <h3><Icon name="info"/>Informações importantes</h3>
+              <p>Chegue com 15 minutos de antecedência. Use protetor solar e roupa adequada. Os equipamentos estão inclusos na aula.</p>
+            </div>
             <nav aria-label="Ações da reserva" className="mt-5 grid w-full gap-2.5">
               {!awaiting && booking.status !== 'cancelled' ? (
                 <ButtonLink
@@ -230,7 +287,8 @@ export default async function BookingPage({ params }: { params: Promise<{ id: st
                 Imprevistos, cancelamento ou ausência
               </Link>
             </nav>
-          </Card>
+            </div>
+          </section>
 
           <Card>
             <div className="flex items-center justify-between">
@@ -283,17 +341,7 @@ export default async function BookingPage({ params }: { params: Promise<{ id: st
               )}
             </Card>
           ) : null}
-          {booking.status === 'confirmed' ? (
-            <Card className="text-center">
-              <Eyebrow>Na hora da aula</Eyebrow>
-              <h2 className="mt-2 text-[16px]">Seu código de presença</h2>
-              <p className="mt-1 text-[12px] text-muted">Mostre ao instrutor para iniciar o atendimento.</p>
-              <p className="tabular mt-4 rounded-search border border-line bg-brand-tint py-5 text-[36px] font-semibold tracking-[4px] text-brand">
-                {booking.presence_code}
-              </p>
-              <p className="mt-3 text-[11px] text-muted">Reserva {booking.code}</p>
-            </Card>
-          ) : null}
+          {awaiting ? (
           <Card>
             <div className="flex items-center justify-between">
               <span className="text-[13px] text-label">{VALIDATION_WITHOUT_CHECKOUT ? 'Validação da plataforma' : booking.is_test ? 'Simulação' : 'Pagamento'}</span>
@@ -346,6 +394,7 @@ export default async function BookingPage({ params }: { params: Promise<{ id: st
               </div>
             ) : null}
           </Card>
+          ) : null}
         </div>
       </div>
     </>

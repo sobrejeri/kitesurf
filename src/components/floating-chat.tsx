@@ -22,6 +22,7 @@ export function FloatingChat({area,viewerId}: {area:ChatArea;viewerId:string}) {
   const [mounted,setMounted] = useState(false);
   const [threads,setThreads] = useState<ChatThread[]>([]);
   const [open,setOpen] = useState(false);
+  const [attachmentsOpen,setAttachmentsOpen] = useState(false);
   const [selectedId,setSelectedId] = useState<string|null>(null);
   const [detail,setDetail] = useState<ChatThread|null>(null);
   const [messages,setMessages] = useState<ChatMessage[]>([]);
@@ -92,7 +93,7 @@ export function FloatingChat({area,viewerId}: {area:ChatArea;viewerId:string}) {
       setMessages([]);setDetail(null);setHasOlder(false);historyLoaded.current=false;follow.current=true;
       setPeerLastSeen(null);setPeerRead(null);setLocationDraft(null);lastRead.current='';
     }
-    setError('');setConnectionError('');setSelectedId(id);setOpen(true);
+    setError('');setConnectionError('');setAttachmentsOpen(false);setSelectedId(id);setOpen(true);
   },[selectedId]);
 
   // Existing "Conversar" links open the dock; modified clicks keep full-page navigation.
@@ -194,7 +195,7 @@ export function FloatingChat({area,viewerId}: {area:ChatArea;viewerId:string}) {
     }catch{setError('Não foi possível carregar as mensagens anteriores.');}
     finally{setLoadingOlder(false);}
   }
-  function minimize(){setOpen(false);launcher.current?.focus();}
+  function minimize(){setAttachmentsOpen(false);setOpen(false);launcher.current?.focus();}
   async function visibility(visible:boolean){
     if(visibilityBusy.current)return;visibilityBusy.current=true;setShowOnline(visible);
     try{const response=await fetch(endpoint,{method:'POST',headers:{'Content-Type':'application/json','x-vento-chat':'1'},body:JSON.stringify({type:'visibility',visible})});
@@ -235,7 +236,9 @@ export function FloatingChat({area,viewerId}: {area:ChatArea;viewerId:string}) {
   }
   if (!mounted) return null;
   const unread=threads.reduce((sum,t)=>sum+t.unread,0);
-  return createPortal(<aside className={`${styles.dock} ${area === 'aluno' ? styles.studentDock : ''}`} aria-label="Chat flutuante Vento">
+  return createPortal(<>
+    {area==='aluno' && open ? <button type="button" className={styles.scrim} onClick={minimize} aria-label="Fechar conversa e voltar ao aplicativo" /> : null}
+    <aside className={`${styles.dock} ${area === 'aluno' ? styles.studentDock : ''}`} aria-label="Chat flutuante Vento">
     <span className={styles.sr} aria-live="polite">{unread?`${unread} mensagens não lidas no chat.`:''}</span>
     {open ? <section className={styles.panel} role="dialog" aria-modal="false"
       aria-label={thread?`Conversa com ${thread.name}`:'Minhas conversas'}
@@ -269,14 +272,8 @@ export function FloatingChat({area,viewerId}: {area:ChatArea;viewerId:string}) {
         <p className={styles.context}>{thread?chatThreadTag(thread):'Conversa da reserva selecionada'}. <a href={`/${area}/atendimento/${selectedId}`} target="_blank" rel="noopener noreferrer">Abrir histórico completo</a></p>
         {connectionError?<p className={styles.error} role="status">{connectionError}</p>:null}
         {error?<p className={styles.error} role="alert">{error}</p>:null}
-        <div className={styles.tools}>
-          <input ref={photoInput} type="file" accept="image/jpeg,image/png,image/webp,image/gif,image/heic,image/heif" hidden onChange={event=>{void upload(event.target.files?.[0]);event.target.value='';}}/>
-          <input ref={fileInput} type="file" accept={CHAT_FILE_TYPES.join(',')} hidden onChange={event=>{void upload(event.target.files?.[0]);event.target.value='';}}/>
-          <button type="button" disabled={!featuresReady || uploading || sending} onClick={()=>photoInput.current?.click()}>Foto</button>
-          <button type="button" disabled={!featuresReady || uploading || sending} onClick={()=>fileInput.current?.click()}>Arquivo</button>
-          <button type="button" disabled={!featuresReady || uploading || sending || locating} onClick={locate}>📍 {locating?'Localizando…':'Localização'}</button>
-          <small>{uploading?'Enviando arquivo…':'Até 10 MB'}</small>
-        </div>
+        <input ref={photoInput} type="file" accept="image/jpeg,image/png,image/webp,image/gif,image/heic,image/heif" hidden onChange={event=>{void upload(event.target.files?.[0]);event.target.value='';setAttachmentsOpen(false);}}/>
+        <input ref={fileInput} type="file" accept={CHAT_FILE_TYPES.join(',')} hidden onChange={event=>{void upload(event.target.files?.[0]);event.target.value='';setAttachmentsOpen(false);}}/>
         {locationDraft?<div className={styles.locationConfirm}>
           <p>Compartilhar sua localização atual com {thread?.name}? Precisão aproximada: {Math.round(locationDraft.accuracy)} m.</p>
           <button type="button" disabled={sending} onClick={shareLocation}>Enviar localização</button>
@@ -286,6 +283,18 @@ export function FloatingChat({area,viewerId}: {area:ChatArea;viewerId:string}) {
           <textarea ref={input} rows={2} maxLength={2000} value={drafts[selectedId] ?? ''}
             aria-label="Sua mensagem no chat flutuante" placeholder="Escreva sua mensagem…"
             onChange={event=>setDrafts(previous=>({...previous,[selectedId]:event.target.value}))}/>
+          <div className={styles.attachWrap}>
+            <button type="button" className={styles.attachToggle} aria-label="Anexar foto, arquivo ou localização"
+              aria-expanded={attachmentsOpen} aria-controls="vento-chat-anexos" disabled={!featuresReady || uploading || sending}
+              onClick={()=>setAttachmentsOpen(v=>!v)}>
+              <Icon name={attachmentsOpen?'minus':'plus'}/>
+            </button>
+            {attachmentsOpen ? <div id="vento-chat-anexos" className={styles.attachPopover} role="group" aria-label="Opções de anexo">
+              <button type="button" disabled={!featuresReady || uploading || sending} onClick={()=>photoInput.current?.click()}><Icon name="image" />Foto</button>
+              <button type="button" disabled={!featuresReady || uploading || sending} onClick={()=>fileInput.current?.click()}><Icon name="file" />Arquivo</button>
+              <button type="button" disabled={!featuresReady || uploading || sending || locating} onClick={()=>{setAttachmentsOpen(false);locate();}}><Icon name="pin" />{locating?'Localizando…':'Localização'}</button>
+            </div>:null}
+          </div>
           <button type="submit" aria-label="Enviar mensagem" disabled={sending || uploading || !detail || !(drafts[selectedId] ?? '').trim()}><Icon name={sending?'clock':'arrow'}/></button>
         </form>
       </>}
@@ -297,5 +306,6 @@ export function FloatingChat({area,viewerId}: {area:ChatArea;viewerId:string}) {
       <button ref={launcher} type="button" className={styles.launcher} aria-label={open?'Minimizar chat':'Abrir minhas conversas'} aria-expanded={open}
         onClick={()=>open?minimize():setOpen(true)}><Icon name={open?'minus':'chat'}/>{unread?<b className={styles.badge}>{unread>99?'99+':unread}</b>:null}</button>
     </div>
-  </aside>,document.body);
+  </aside>
+  </>,document.body);
 }

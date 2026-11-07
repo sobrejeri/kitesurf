@@ -1,0 +1,88 @@
+/* VentoKite approved ticket-style booking voucher.
+   A single ticket with multiple meetings, QR + 4 digits left, finances right. */
+.vento-voucher {
+  overflow:hidden;
+  border:1px solid #13cbd9;
+  border-radius:25px;
+  background:#f5faff;
+  box-shadow:0 16px 34px #00172e66;
+  color:#072a42;
+}
+.vento-voucher-banner {
+  position:relative;isolation:isolate;min-height:135px;overflow:hidden;
+  background:#005271;color:#fff;
+}
+.vento-voucher-banner-photo {position:absolute;inset:0;width:100%;height:100%;object-fit:cover;object-position:78% 45%;z-index:-2}
+.vento-voucher-banner-shade {position:absolute;inset:0;z-index:-1;background:linear-gradient(95deg,#00253fea 3%,#00344bc9 52%,transparent 100%)}
+.vento-voucher-banner-copy {display:flex;align-items:center;gap:10px;max-width:70%;padding:28px 17px}
+.vento-voucher-banner-mark {color:#baff06}
+.vento-voucher-banner-copy strong {display:block;font-size:clamp(17px,4vw,25px);font-weight:900;line-height:1.05}
+.vento-voucher-banner-copy small {display:block;margin-top:5px;font-size:11px;color:#daf6fa}
+.vento-voucher-paper {padding:16px;background:#f8fcff;color:#082842}
+.vento-voucher-paper :is(.text-ink,.text-white) {color:#082842!important}
+.vento-voucher-paper :is(.text-label,.text-muted) {color:#53738b!important}
+.vento-voucher-paper .text-\[\#bad5e3\],.vento-voucher-paper .text-\[\#b9d5e5\],
+.vento-voucher-paper .text-\[\#bad0e1\],.vento-voucher-paper .text-\[\#f6fbff\] {color:#0b3651!important}
+.vento-voucher-paper > .border-b {border-color:#bfd9e6}
+.vento-voucher-paper > .flex.items-center {border-color:#8bdcda}
+.vento-voucher-paper > dl {display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:5px}
+.vento-voucher-paper > dl > div {
+  display:flex;flex-direction:column;justify-content:flex-start;align-items:center;
+  gap:5px;padding:9px 5px;border:1px solid #c4e1eb;border-radius:14px;
+  background:#eef8fd;text-align:center;
+}
+.vento-voucher-paper > dl > div > span {width:30px;height:30px;border-radius:50%;background:#d4eff6;color:#007f9c}
+.vento-voucher-paper > dl dt {font-size:10px!important}
+.vento-voucher-paper > dl dd {font-size:clamp(10px,2.8vw,13px)!important;overflow-wrap:anywhere}
+.vento-voucher-paper li {color:#153c53}
+.vento-voucher-paper ul > li {border-color:#c3e2ec;background:#eaf6fb}
+.vento-voucher-paper ul > li strong {font-weight:850}
+.vento-voucher-paper h3 {font-weight:850;color:#0d3650}
+.vento-voucher-paper a {color:#087e9b}
+.vento-voucher-bottom {display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:0;margin-top:18px;
+  padding:14px 8px;border:1px solid #c2dfeb;border-radius:18px;background:#f0f8fc}
+.vento-voucher-bottom > div {min-width:0;padding:0 8px}
+.vento-voucher-bottom > div+div {border-left:1px dashed #90bece}
+.vento-voucher-subtitle {display:flex;align-items:center;gap:5px;margin:0 0 8px;font-size:clamp(11px,2.9vw,14px)!important;font-weight:850;color:#073e59}
+.vento-voucher-subtitle svg {width:18px;height:18px;color:#048da5;flex-shrink:0}
+.vento-voucher-qr-column{text-align:center}
+.vento-voucher-qr-column .vento-voucher-subtitle{justify-content:center}
+.vento-voucher-qr-caption{font-size:10px;color:#3a657c}
+.vento-voucher-qr{display:grid;justify-items:center;gap:3px}
+.vento-voucher-qr svg{display:block;width:min(82%,185px);height:auto;aspect-ratio:1;padding:3px;border:3px solid #baff06;border-radius:12px;background:#fff}
+.vento-voucher-code-label {margin-top:5px;font-size:10px;color:#164f67}
+.vento-voucher-code {display:block;padding:3px 14px;border-radius:999px;background:#baff06;
+  color:#03263c;font-size:clamp(20px,5vw,27px);font-weight:900;letter-spacing:.15em;font-variant-numeric:tabular-nums}
+.vento-voucher-qr small,.vento-voucher-muted{display:block;margin-top:5px;font-size:10px;line-height:1.4;color:#426278}
+.vento-voucher-more-codes {margin-top:10px;font-size:11px;text-align:left}
+.vento-voucher-more-codes summary {cursor:pointer;color:#06758c;text-decoration:underline}
+.vento-voucher-secondary-qr{padding:12px 0;border-top:1px solid #bfdbe5;text-align:center}
+.vento-voucher-payment-list > div {display:flex;justify-content:space-between;align-items:flex-start;gap:6px;
+  padding:6px 0;border-bottom:1px solid #d7e8ed;font-size:11px}
+.vento-voucher-payment-list dt {min-width:0;color:#3a5b72}
+.vento-voucher-payment-list dd {font-weight:800;color:#082c43;white-space:nowrap}
+.vento-voucher-payment-list .vento-voucher-payment-total {padding:8px 4px;border:0;border-radius:8px;background:#dcffb2}
+.vento-voucher-payment-status{display:flex;align-items:center;justify-content:center;gap:5px;
+  margin-top:12px;padding:7px 4px;border-radius:9px;background:#d3fabb;color:#0c6d35;font-size:11px;font-weight:850;text-align:center}
+.vento-voucher-payment-status svg{width:18px;height:18px;flex-shrink:0}
+.vento-voucher-reminders {margin-top:13px;padding:10px;border:1px solid #b8dce8;border-radius:14px;background:#f7fbff}
+.vento-voucher-reminders h3 {display:flex;gap:6px;align-items:center;font-size:13px}
+.vento-voucher-reminders svg {width:17px;height:17px;color:#0499ad}
+.vento-voucher-reminders p{margin-top:6px;font-size:11px;line-height:1.45;color:#385a70}
+.vento-voucher nav {display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.vento-voucher nav a {white-space:normal}
+@media(max-width:420px) {
+ .vento-voucher-banner{min-height:112px}
+ .vento-voucher-banner-copy{max-width:66%;padding:22px 12px}
+ .vento-voucher-paper{padding:11px}
+ .vento-voucher-bottom{padding:11px 3px}
+ .vento-voucher-bottom>div{padding:0 5px}
+ .vento-voucher-paper > dl {gap:3px}
+ .vento-voucher-paper > dl > div {padding:8px 2px}
+ .vento-voucher-paper > dl dt {font-size:9px!important}
+ .vento-voucher-paper > dl dd {font-size:10px!important}
+}
+@media(max-width:350px) {
+ .vento-voucher-bottom{grid-template-columns:1fr;gap:14px}
+ .vento-voucher-bottom>div+div{border-left:0;border-top:1px dashed #90bece;padding-top:12px}
+}

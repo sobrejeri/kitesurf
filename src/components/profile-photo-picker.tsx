@@ -11,7 +11,7 @@ type Props = {
   action: (previous: ActionState, form: FormData) => Promise<ActionState>;
   photoUrl: string | null;
   name: string;
-  accent?: 'orange' | 'cyan';
+  accent?: 'orange' | 'cyan' | 'lime';
   enabled?: boolean;
 };
 
@@ -28,7 +28,7 @@ export function ProfilePhotoPicker({ action, photoUrl, name, accent = 'orange', 
   const inputRef = useRef<HTMLInputElement>(null);
   const hasPhoto = Boolean(photoUrl);
   const isOrange = accent === 'orange';
-  const tone = isOrange ? 'text-[#ff861e]' : 'text-[#00dfed]';
+  const tone = isOrange ? 'text-[#ff861e]' : accent === 'lime' ? 'text-[#baff06]' : 'text-[#00dfed]';
 
   function choosePhoto() {
     if (pending || !enabled || !inputRef.current) return;
@@ -70,7 +70,7 @@ export function ProfilePhotoPicker({ action, photoUrl, name, accent = 'orange', 
         disabled={!enabled || pending}
       />
       <div className="relative h-[118px] w-[118px] shrink-0">
-        <div className={'absolute inset-0 overflow-hidden rounded-full border-2 border-white/20 bg-[#173148] ' + (isOrange ? 'ring-2 ring-[#ff861e]/20' : 'ring-2 ring-[#00ddeb]/20')}>
+        <div className={'absolute inset-0 overflow-hidden rounded-full border-2 border-white/20 bg-[#173148] ' + (isOrange ? 'ring-2 ring-[#ff861e]/20' : accent === 'lime' ? 'border-[#baff06] ring-2 ring-[#baff06]/40' : 'ring-2 ring-[#00ddeb]/20')}>
           {photoUrl ? (
             <img src={photoUrl} alt={'Foto de perfil de ' + name} className="h-full w-full object-cover" />
           ) : null}
@@ -82,7 +82,7 @@ export function ProfilePhotoPicker({ action, photoUrl, name, accent = 'orange', 
             title="Atualizar foto"
             onClick={choosePhoto}
             disabled={pending || !enabled}
-            className="press absolute -bottom-0.5 -right-1 grid h-[44px] w-[44px] place-items-center rounded-full border-[4px] border-[#07182b] bg-white text-[#14253b] shadow-lg disabled:opacity-60 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white"
+            className={`press absolute -bottom-0.5 -right-1 grid h-[44px] w-[44px] place-items-center rounded-full border-[4px] border-[#07182b] shadow-lg disabled:opacity-60 focus-visible:outline-2 focus-visible:outline-offset-2 ${accent === 'lime' ? 'bg-[#002a40] text-[#baff06] ring-2 ring-[#baff06]' : 'bg-white text-[#14253b]'}` }
           >
             <Icon name="plus" className="!h-5 !w-5" />
           </button>

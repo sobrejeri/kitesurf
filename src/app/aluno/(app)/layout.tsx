@@ -1,6 +1,8 @@
 import './mar-profundo.css';
 import './modelo3.css';
 import './atlantico.css';
+import './profile-approved.css';
+import './voucher-approved.css';
 
 import { signOut } from '@/app/actions/auth';
 import { StudentShell } from '@/components/shells';
