@@ -210,10 +210,10 @@ export function LessonBuilder({
           const active = step === n;
           return (
             <Fragment key={label}>
-              <li className="flex items-center gap-2.5">
+              <li className="flex items-center gap-2.5" aria-current={active ? 'step' : undefined}>
                 <span
-                  className={`grid h-9 w-9 shrink-0 place-items-center rounded-full text-[15px] font-bold ${
-                    active || done ? 'btn-primary text-white shadow-button' : 'bg-sand text-muted'
+                  className={`lesson-step-number grid h-9 w-9 shrink-0 place-items-center rounded-full text-[15px] font-extrabold ${
+                    active || done ? 'lesson-step-number--active' : 'lesson-step-number--upcoming'
                   }`}
                 >
                   {done ? <Icon name="check" className="!h-5 !w-5" /> : n}
