@@ -2,7 +2,6 @@ import type { Metadata } from 'next';
 import Link from 'next/link';
 
 import { Icon, type IconName } from '@/components/icon';
-import { KiteLevelMedal } from '@/components/student/kite-level-medal';
 import { KiteModelo3Header } from '@/components/student/modelo3-header';
 import { requireRole } from '@/lib/auth';
 import { listBookingsForStudent } from '@/lib/data';
@@ -166,14 +165,12 @@ export default async function ProgressPage({
         <>
           {/* Seu tempo no mar — sem caixa e sem imagem de fundo */}
           <section className="kite-m3-progress-header px-1 pt-1 pb-2">
-            <div className="flex items-center justify-between gap-3">
+            <div className="flex items-center gap-3">
               <h2 className="flex items-center gap-2.5 text-[17px] font-bold text-ink">
                 <Icon name="waves" className="!h-6 !w-6 text-brand" />Seu tempo no mar
               </h2>
-              <KiteLevelMedal level={kiteLevel.assessed ?? kiteLevel.effective}
-                assessed={Boolean(kiteLevel.assessed)} compact />
             </div>
-            <div className="relative mt-2 flex items-center justify-between gap-4">
+            <div className="relative mt-1 flex items-center justify-between gap-4">
               <div className="min-w-0">
                 <p className="flex items-center gap-2">
                   <Icon name="clock" className="!h-6 !w-6 shrink-0 text-brand" />
@@ -181,7 +178,7 @@ export default async function ProgressPage({
                 </p>
                 <p className="mt-1 text-[12px] text-muted">de {formatMinutes(totalContracted)} realizados</p>
               </div>
-              <div className="relative h-[92px] w-[92px] shrink-0" role="progressbar"
+              <div className="relative h-[84px] w-[84px] shrink-0" role="progressbar"
                 aria-label="Percentual de horas realizadas"
                 aria-valuemin={0} aria-valuemax={100} aria-valuenow={journeyPercent}>
                 <svg viewBox="0 0 92 92" className="h-full w-full -rotate-90" aria-hidden="true">
@@ -196,15 +193,15 @@ export default async function ProgressPage({
                 </div>
               </div>
             </div>
-            <div className="relative mt-2.5 h-2 w-full overflow-hidden rounded-full bg-track" role="progressbar"
+            <div className="relative mt-1.5 h-2 w-full overflow-hidden rounded-full bg-track" role="progressbar"
               aria-label="Progresso das horas" aria-valuemin={0} aria-valuemax={100} aria-valuenow={journeyPercent}>
               <span className="block h-full rounded-full bg-brand" style={{ width: `${journeyPercent}%` }} />
             </div>
-            <p className="relative mt-2 text-[12px] text-muted">{levelLabel}. Soma de todas as suas reservas confirmadas.</p>
+            <p className="relative mt-1.5 text-[12px] text-muted">{levelLabel}. Soma de todas as suas reservas confirmadas.</p>
           </section>
 
           {/* Cartões de horas — totais agregados */}
-          <section className="mt-4 grid grid-cols-2 gap-3">
+          <section className="mt-3 grid grid-cols-2 gap-3">
             <JourneyMetric icon="calendar" label="Horas contratadas" value={formatMinutes(totalContracted)} sub="Reservas confirmadas" href="/aluno/aulas" />
             <JourneyMetric icon="chart" label="Horas realizadas" value={formatMinutes(totalDone)} sub="Aulas registradas" href="/aluno/aulas?aba=anteriores" />
             <JourneyMetric icon="calendar" label="Horas agendadas" value={formatMinutes(totalScheduled)} sub="Próximos encontros" href="/aluno/aulas" />
