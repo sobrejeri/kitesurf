@@ -141,3 +141,84 @@
   .kite-m3-auth .kite-m3-auth-login-intro { margin-top: 96px; }
   .kite-m3-auth .kite-m3-auth-login-intro .vento-official-logo { width: 315px; }
 }
+
+
+/* Approved student sign-in: full-height coastal photograph and a genuinely
+   90%-transparent (10%-opaque) form panel. Keep this scoped to sign-in only:
+   account creation and the instructor/partner/admin entry points are untouched. */
+.kite-m3-auth.kite-m3-auth--student-login {
+  background: #00233d;
+  isolation: isolate;
+}
+.kite-m3-auth--student-login > .sunset-photo {
+  position: absolute;
+  inset: 0;
+  height: 100%;
+  width: 100%;
+  object-fit: cover;
+  object-position: 68% center;
+  filter: saturate(1.16) brightness(.96) contrast(1.04);
+}
+.kite-m3-auth--student-login > .sunset-veil {
+  position: absolute;
+  inset: 0;
+  height: 100%;
+  width: 100%;
+  background:
+    linear-gradient(180deg,
+      rgba(0, 24, 43, .42) 0%,
+      rgba(0, 26, 45, .26) 40%,
+      rgba(0, 27, 46, .36) 70%,
+      rgba(0, 24, 41, .60) 100%),
+    linear-gradient(90deg,
+      rgba(0, 22, 42, .30) 0%,
+      transparent 83%);
+}
+.kite-m3-auth--student-login .kite-m3-auth-login-intro .vento-official-logo {
+  width: min(68vw, 282px);
+}
+.kite-m3-auth--student-login .kite-m3-auth-login-title {
+  margin-top: 8px;
+  font-weight: 900;
+  letter-spacing: -.045em;
+}
+.kite-m3-auth--student-login .kite-m3-auth-login-lead {
+  margin-top: 6px;
+  color: #effaff;
+  text-shadow: 0 2px 7px #00182bab;
+}
+.kite-m3-auth.kite-m3-auth--student-login .kite-m3-auth-login-panel {
+  /* rgba alpha .10 = 10% opacity, 90% transparency. */
+  background: rgba(4, 56, 78, .10);
+  border: 1px solid rgba(35, 224, 234, .84);
+  border-radius: 25px;
+  box-shadow: 0 15px 42px rgba(0, 17, 35, .20);
+  -webkit-backdrop-filter: none;
+  backdrop-filter: none;
+}
+.kite-m3-auth--student-login .kite-m3-auth-login-panel input {
+  background: rgba(0, 39, 63, .18);
+  color: #ffffff;
+  border-color: rgba(92, 223, 233, .85);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, .06);
+}
+.kite-m3-auth--student-login .kite-m3-auth-login-panel input:focus {
+  background: rgba(0, 39, 63, .30);
+  border-color: #bdff06;
+}
+.kite-m3-auth--student-login .kite-m3-auth-login-panel .text-label {
+  color: #f2fbff;
+}
+@media (max-width: 359px) {
+  .kite-m3-auth--student-login .kite-m3-auth-login-intro .vento-official-logo {
+    width: min(72vw, 258px);
+  }
+  .kite-m3-auth--student-login .kite-m3-auth-login-title {
+    font-size: 24px;
+  }
+}
+@media (min-width: 768px) {
+  .kite-m3-auth--student-login .kite-m3-auth-login-intro .vento-official-logo {
+    width: 282px;
+  }
+}
