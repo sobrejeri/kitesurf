@@ -111,4 +111,22 @@ assert.ok(studentProfile.includes('<ProfileEditor') &&
   studentProfile.includes('action={signOut}'),
   'Student Perfil must retain profile editing, password recovery, and sign out');
 
+// Voucher foreground colors must remain readable on both the light ticket
+// and the instructor's dark photo card. Mobile information tiles must not
+// squeeze four tiny labels into one row.
+const voucherCss = read('src/app/aluno/(app)/voucher-approved.css');
+const voucherScreen = read('src/app/aluno/(app)/reserva/[id]/page.tsx');
+assert.ok(voucherScreen.includes('vento-voucher-instructor') &&
+  voucherScreen.includes('vento-voucher-meeting') &&
+  voucherScreen.includes('vento-voucher-eyebrow') &&
+  voucherCss.includes('.vento-voucher-instructor .text-white') &&
+  voucherCss.includes('color:#fff!important') &&
+  !voucherCss.includes('.vento-voucher-paper :is(.text-ink,.text-white)'),
+  'Voucher must not recolor light instructor text dark on a navy card');
+assert.ok(voucherCss.includes('.vento-voucher-meeting .bg-brand-soft') &&
+  voucherCss.includes('details.group > summary') &&
+  voucherCss.includes('grid-template-columns:repeat(2,minmax(0,1fr))') &&
+  voucherCss.includes('.vento-voucher-paper .vento-voucher-eyebrow'),
+  'Mobile voucher must use readable two-column tiles and distinct reschedule/status contrast');
+
 console.log('PASS: desktop layout and profile photo plus layered meeting-conflict protection');
