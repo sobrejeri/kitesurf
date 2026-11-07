@@ -4,6 +4,7 @@ import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 
 import { Icon, type IconName } from './icon';
+import { OfficialLogo } from './official-logo';
 import { MenuButton, MobileHeader, SheetAccount, TabBar, isActive, type SheetLink, type TabItem } from './mobile';
 import { StudentBrand } from './student/sunset';
 import { KiteModelo3Brand } from './student/modelo3-header';
@@ -23,19 +24,12 @@ import { Avatar } from './ui';
  */
 
 export function Logo({ size = 'md' }: { size?: 'md' | 'sm' }) {
-  const box = size === 'sm' ? 26 : 34;
   return (
-    <Link href="/" className="inline-flex items-center gap-2.5" aria-label="Vento — início">
-      <img src="/icon.svg" alt="" width={box} height={box} className="rounded-lg" />
-      <span
-        className={`font-semibold tracking-[-1.3px] text-logo-ink ${size === 'sm' ? 'text-[19px]' : 'text-[26px]'}`}
-      >
-        vento <span className="text-brand">.</span>
-      </span>
+    <Link href="/" className="inline-flex min-w-0 items-center" aria-label="VentoKite — início">
+      <OfficialLogo compact={size === 'sm'} />
     </Link>
   );
 }
-
 
 export interface TopBarViewer {
   name: string;
