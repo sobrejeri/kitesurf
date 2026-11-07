@@ -158,10 +158,12 @@ export function MenuButton({
   label = 'Abrir menu',
   onPhoto = false,
   className = '',
+  studentStyle = false,
 }: {
   title: string;
   links: readonly SheetLink[];
   footer?: React.ReactNode;
+  studentStyle?: boolean;
   label?: string;
   /** Over a photo: white icon on a dark frosted circle. */
   onPhoto?: boolean;
@@ -184,7 +186,7 @@ export function MenuButton({
       >
         <Icon name="menu" className="!h-6 !w-6" />
       </button>
-      <MoreSheet open={open} onClose={closeSheet} title={title} links={links} footer={footer} />
+      <MoreSheet open={open} onClose={closeSheet} title={title} links={links} footer={footer} studentStyle={studentStyle} />
     </>
   );
 }
@@ -196,12 +198,14 @@ function MoreSheet({
   title,
   links,
   footer,
+  studentStyle = false,
 }: {
   open: boolean;
   onClose: () => void;
   title: string;
   links: readonly SheetLink[];
   footer?: React.ReactNode;
+  studentStyle?: boolean;
 }) {
   const pathname = usePathname();
   const titleId = useId();
@@ -231,7 +235,7 @@ function MoreSheet({
   // (pointer-events: none). Portaling the sheet to document.body removes
   // that inherited hit-testing constraint and places it ABOVE the tab bar.
   return createPortal(
-    <div className="pointer-events-auto fixed inset-0 z-[70] lg:hidden" role="presentation">
+    <div className={`pointer-events-auto fixed inset-0 z-[70] lg:hidden ${studentStyle ? 'vento-student-menu' : ''}`} role="presentation">
       <button type="button" aria-label="Fechar menu" onClick={onClose} className="sheet-backdrop absolute inset-0 bg-[#1b2433]/40" />
       <div
         ref={panel}
@@ -241,19 +245,19 @@ function MoreSheet({
         tabIndex={-1}
         className="sheet-panel pb-safe absolute inset-x-0 bottom-0 max-h-[85dvh] overflow-y-auto rounded-t-[24px] bg-surface px-4 pt-2 shadow-[0_-12px_40px_#1b243326] focus:outline-none"
       >
-        <span className="mx-auto mb-3 block h-1 w-10 rounded-full bg-line-ghost" aria-hidden="true" />
+        <span className={`mx-auto mb-3 block h-1 w-10 rounded-full bg-line-ghost ${studentStyle ? 'vento-student-menu-grip' : ''}`} aria-hidden="true" />
         <div className="flex items-center justify-between gap-3 px-1">
           <p id={titleId} className="text-[16px] font-semibold">{title}</p>
           <button
             type="button"
             onClick={onClose}
             aria-label="Fechar menu"
-            className="press inline-flex min-h-11 items-center gap-2 rounded-full border border-line px-3 text-[13px] font-semibold text-brand"
+            className={`press inline-flex min-h-11 items-center gap-2 rounded-full border border-line px-3 text-[13px] font-semibold text-brand ${studentStyle ? 'vento-student-menu-close' : ''}`}
           >
             Fechar <span className="text-xl leading-none" aria-hidden="true">×</span>
           </button>
         </div>
-        <ul className="mt-4 grid grid-cols-3 gap-2.5">
+        <ul className={`mt-4 grid grid-cols-3 gap-2.5 ${studentStyle ? 'vento-student-menu-grid' : ''}`}>
           {links.map((link) => {
             const active = isActive(pathname, link);
             return (
@@ -262,16 +266,29 @@ function MoreSheet({
                   href={link.href}
                   onClick={onClose}
                   aria-current={active ? 'page' : undefined}
-                  className={`press flex h-full flex-col items-center gap-2 rounded-search border px-2 py-3.5 text-center text-[11px] leading-tight ${active ? 'border-brand-focus bg-brand-soft font-[550] text-brand' : 'border-line bg-canvas text-label'}`}
+                  className={studentStyle
+                    ? 'vento-student-menu-link press flex h-full flex-col items-center gap-1.5 text-center'
+                    : `press flex h-full flex-col items-center gap-2 rounded-search border px-2 py-3.5 text-center text-[11px] leading-tight ${active ? 'border-brand-focus bg-brand-soft font-[550] text-brand' : 'border-line bg-canvas text-label'}`}
                 >
-                  <Icon name={link.icon} className="!h-[22px] !w-[22px] text-brand" />
-                  {link.label}
+                  {studentStyle ? (
+                    <>
+                      <span className={`vento-student-menu-tile ${active ? 'vento-student-menu-tile--active' : ''}`} aria-hidden="true">
+                        <Icon name={link.icon} className="vento-student-menu-icon" />
+                      </span>
+                      <span className="vento-student-menu-label">{link.label}</span>
+                    </>
+                  ) : (
+                    <>
+                      <Icon name={link.icon} className="!h-[22px] !w-[22px] text-brand" />
+                      {link.label}
+                    </>
+                  )}
                 </Link>
               </li>
             );
           })}
         </ul>
-        {footer ? <div className="mt-4 border-t border-line pt-4 pb-2">{footer}</div> : <div className="h-4" />}
+        {footer ? <div className={`mt-4 border-t border-line pt-4 pb-2 ${studentStyle ? 'vento-student-menu-footer' : ''}`}>{footer}</div> : <div className="h-4" />}
       </div>
     </div>,
     document.body,
