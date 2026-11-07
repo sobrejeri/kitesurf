@@ -331,10 +331,22 @@ body:has(.theme-beach.theme-mar-profundo) { background:#001829; color:#f4fbff; }
 }
 
 /* Fidelity pass for the approved photographic reference. */
+/* Approved "Minhas aulas" photo treatment: readable on the left, visible sea and
+   realistic kite on the right, fading smoothly into the student canvas below. */
 .theme-mar-profundo .kite-m3-header {
   background:
-    linear-gradient(90deg,#001c2be8 0%,#003c567d 65%,#0026373f),
-    url('/images/vento-ocean-hero.webp') center 55%/cover no-repeat;
+    linear-gradient(180deg,
+      rgba(0,24,41,.02) 0%,
+      rgba(0,24,41,.02) 56%,
+      rgba(0,24,41,.13) 73%,
+      rgba(0,24,41,.50) 88%,
+      #001829 100%),
+    linear-gradient(90deg,
+      rgba(0,25,43,.91) 0%,
+      rgba(0,37,55,.78) 38%,
+      rgba(0,46,65,.36) 68%,
+      rgba(0,45,62,.09) 100%),
+    url('/images/vento-ocean-hero.webp') center 56%/cover no-repeat;
 }
 .theme-mar-profundo .kite-m3-header__kite {
   width:min(45%,245px);
@@ -419,8 +431,19 @@ body:has(.theme-beach.theme-mar-profundo) { background:#001829; color:#f4fbff; }
   background:linear-gradient(90deg,#001727e8 0%,#00465d80 68%,#00162924),
              linear-gradient(0deg,#001829cf 0%,transparent 52%);
 }
+/* Prevent a second coast photo from creating an uneven/dirty overlay. */
 .theme-mar-profundo .kite-m3-header__texture {
-  opacity:.12;
+  display:none;
+}
+/* Shorter separation between "AULAS DE KITESURF" and "SEU ESPAÇO NO KITE". */
+.theme-mar-profundo .kite-m3-header__heading {
+  margin-top:9px;
+}
+.theme-mar-profundo .kite-m3-header__subtitle {
+  max-width:33ch;
+}
+@media (min-width:768px) {
+  .theme-mar-profundo .kite-m3-header__heading {margin-top:16px;}
 }
 /* Preserve Caveat script lettering in the personalized home banner. */
 .theme-mar-profundo .kite-modelo3 :is(h1,h2,h3),
