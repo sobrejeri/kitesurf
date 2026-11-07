@@ -77,3 +77,67 @@
   background:linear-gradient(95deg,#001a2cf2,#003a5089 67%,#001c2c3e),
              linear-gradient(0deg,#001829 0%,transparent 75%);
 }
+
+
+/* Student login — transparent official PNG centered directly above the welcome
+   heading. The sign-up form and other area logins keep their own layout. */
+.kite-m3-auth .kite-m3-auth-login-intro {
+  position: relative;
+  z-index: 2;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  width: 100%;
+  margin-top: clamp(82px, 15dvh, 148px);
+  text-align: center;
+}
+.kite-m3-auth .kite-m3-auth-login-intro .kite-m3-logo {
+  display: block;
+  max-width: 100%;
+  line-height: 0;
+}
+.kite-m3-auth .kite-m3-auth-login-intro .vento-official-logo {
+  display: block;
+  width: min(78vw, 315px);
+  max-width: 100%;
+  height: auto;
+  object-fit: contain;
+  background: transparent;
+  border: 0;
+  box-shadow: none;
+  border-radius: 0;
+}
+.kite-m3-auth .kite-m3-auth-login-title {
+  margin: 17px 0 0;
+  color: #fff;
+  font-size: clamp(25px, 6.7vw, 32px);
+  font-weight: 800;
+  letter-spacing: -.045em;
+  line-height: 1.15;
+  text-wrap: balance;
+}
+.kite-m3-auth .kite-m3-auth-login-lead {
+  margin: 5px 0 0;
+  color: #dbeef5;
+  font-size: 14px;
+  line-height: 1.35;
+}
+.kite-m3-auth .kite-m3-auth-login-panel {
+  position: relative;
+  z-index: 2;
+  margin-top: 20px;
+}
+@media (max-width: 359px) {
+  .kite-m3-auth .kite-m3-auth-login-intro {
+    margin-top: 73px;
+  }
+  .kite-m3-auth .kite-m3-auth-login-intro .vento-official-logo {
+    width: min(80vw, 285px);
+  }
+  .kite-m3-auth .kite-m3-auth-login-title { font-size: 25px; }
+  .kite-m3-auth .kite-m3-auth-login-panel { margin-top: 15px; }
+}
+@media (min-width: 768px) {
+  .kite-m3-auth .kite-m3-auth-login-intro { margin-top: 96px; }
+  .kite-m3-auth .kite-m3-auth-login-intro .vento-official-logo { width: 315px; }
+}
