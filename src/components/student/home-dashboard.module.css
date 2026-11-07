@@ -201,8 +201,8 @@
   z-index:-2;
   opacity:.99;
   filter:saturate(1.12) contrast(1.1) brightness(.97);
-  mask-image:linear-gradient(#000 62%,transparent 100%);
-  -webkit-mask-image:linear-gradient(#000 62%,transparent 100%);
+  mask-image:linear-gradient(#000 50%,transparent 100%);
+  -webkit-mask-image:linear-gradient(#000 50%,transparent 100%);
 }
 .welcome>.heroShade {
   position:absolute;
@@ -211,8 +211,8 @@
   background:
     linear-gradient(90deg,#001c34f2 1%,#00334bb0 52%,#00274436 100%),
     linear-gradient(180deg,#001b3155 0%,transparent 30%,#001c30 95%);
-  mask-image:none;
-  -webkit-mask-image:none;
+  mask-image:linear-gradient(#000 48%,transparent 100%);
+  -webkit-mask-image:linear-gradient(#000 48%,transparent 100%);
 }
 .welcome>.heroKite {
   position:absolute;
@@ -374,8 +374,8 @@
 .footnote a,.agendaHeading a,.agenda li>a {color:#bdff06;}
 .dashboard a:focus-visible {outline-color:#bdff06;}
 @media (max-width:767px) {
- .welcome {margin:0 -16px;min-height:0;border-radius:0;}
- .welcome>.heroContent {max-width:none;padding:calc(env(safe-area-inset-top) + 74px) 20px 30px;}
+ .welcome {margin:0 -16px;min-height:0;border-radius:0;background:transparent;}
+ .welcome>.heroContent {max-width:none;padding:calc(env(safe-area-inset-top) + 16px) 20px 24px;}
  .welcome>.heroPhoto {object-position:63% 50%;}
  .welcome>.heroKite {
    right:-7%;
