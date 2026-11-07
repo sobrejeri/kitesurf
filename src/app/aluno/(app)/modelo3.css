@@ -655,8 +655,14 @@ body:has(.theme-beach.theme-mar-profundo) { background:#001829; color:#f4fbff; }
   border: 0;
   box-shadow: none;
 }
-.theme-mar-profundo .mar-profundo-page--booking .ocean-hero .sunset-veil {
-  background: linear-gradient(90deg, rgba(0, 25, 43, .60) 0%, rgba(0, 25, 43, .18) 61%, transparent 100%);
+/* Avoid rendering a second cropped photograph and a second dark veil only
+   inside the hero. Both used to stop abruptly at the header's bottom edge,
+   producing the horizontal seam seen above the stepper. The shared background
+   on .mar-profundo-page--booking::before already paints the full scene and
+   fades into the page, continuously underneath the hero and steps. */
+.theme-mar-profundo .mar-profundo-page--booking .ocean-hero > .sunset-photo,
+.theme-mar-profundo .mar-profundo-page--booking .ocean-hero > .sunset-veil {
+  display: none;
 }
 /* The SVG's flat navy bottom had looked like a hard image cutoff. */
 .theme-mar-profundo .mar-profundo-page--booking .ocean-hero > svg.pointer-events-none {
