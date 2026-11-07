@@ -182,7 +182,7 @@ export function StudentShell({
     : STUDENT_TABS.map((tab) => (tab.href === '/aluno/conta' ? { ...tab, label: 'Entrar', href: '/aluno/entrar' } : tab));
 
   return (
-    <div className="theme-beach theme-mar-profundo min-h-dvh bg-canvas text-ink">
+    <div className="theme-beach theme-mar-profundo min-h-dvh w-full min-w-0 max-w-full overflow-x-clip bg-canvas text-ink">
       <header className="vento-desktop-student-header hidden border-b border-line bg-chrome md:block">
         <div className="mx-auto flex h-[76px] max-w-6xl items-center justify-between gap-6 px-6 lg:px-8">
           <KiteModelo3Brand compact />
