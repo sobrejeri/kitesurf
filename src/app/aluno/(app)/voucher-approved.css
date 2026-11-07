@@ -105,8 +105,7 @@
   font-size:18px;
   font-weight:850;
 }
-.vento-voucher-paper .vento-voucher-instructor .text-\\[\\#bad5e3\\],
-.vento-voucher-paper .vento-voucher-instructor .text-\\[\\#b9d5e5\\] {
+.vento-voucher-paper .vento-voucher-instructor p:not(.text-white) {
   color:#cce7f2!important;
 }
 .vento-voucher-paper .vento-voucher-instructor p:first-child {
