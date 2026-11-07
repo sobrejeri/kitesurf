@@ -489,17 +489,20 @@ body:has(.theme-beach.theme-mar-profundo) { background:#001829; color:#f4fbff; }
     rgba(0,0,0,.60) 81%, transparent 100%);
 }
 .theme-mar-profundo .kite-modelo3--evolution .kite-m3-header {
-  /* The shared photo lives on the parent and remains visible below this box. */
+  /* Share the same photo without a hard seam, but keep only the space needed
+     by the logo and safe-area inset above the progress summary. */
   background: transparent;
-  min-height: 152px;
-  padding-bottom: 0;
-  margin-bottom: -8px;
+  min-height: 116px;
+  padding-top: calc(env(safe-area-inset-top) + 10px);
+  padding-bottom: 4px;
+  margin-bottom: -14px;
   border: 0;
   box-shadow: none;
 }
 .theme-mar-profundo .kite-modelo3--evolution .kite-m3-progress-header {
   margin-top: 0;
-  padding-top: 6px;
+  padding-top: 2px;
+  padding-bottom: 2px;
   background: transparent;
 }
 .theme-mar-profundo .kite-modelo3--evolution .kite-m3-progress-header::before {
@@ -513,15 +516,17 @@ body:has(.theme-beach.theme-mar-profundo) { background:#001829; color:#f4fbff; }
     border-radius: 22px;
   }
   .theme-mar-profundo .kite-modelo3--evolution .kite-m3-header {
-    min-height: 186px;
-    margin-bottom: -12px;
+    min-height: 140px;
+    padding-top: 20px;
+    padding-bottom: 4px;
+    margin-bottom: -16px;
   }
   .theme-mar-profundo .kite-modelo3--evolution .kite-m3-progress-header {
-    padding: 12px 24px 8px;
+    padding: 6px 24px 6px;
   }
 }
 @media (max-width: 359px) {
   .theme-mar-profundo .kite-modelo3--evolution .kite-m3-header {
-    min-height: 143px;
+    min-height: 112px;
   }
 }
