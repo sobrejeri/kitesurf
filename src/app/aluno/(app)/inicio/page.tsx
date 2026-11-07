@@ -2,6 +2,7 @@ import type { Metadata } from 'next';
 
 import { LessonSearch } from '@/components/student/lesson-search';
 import { HomeDashboard } from '@/components/student/home-dashboard';
+import { OfficialLogo } from '@/components/official-logo';
 import { listBookingsForStudent, type StudentBooking } from '@/lib/data';
 import { getViewer } from '@/lib/auth';
 import { getQuoteTable, listActiveBeaches, type Beach, type QuoteRow } from '@/lib/data';
@@ -62,11 +63,8 @@ export default async function StudentHomePage() {
             </div>
             <div className="vento-atlantico-hero-shade" aria-hidden="true" />
             <div className="vento-atlantico-hero-copy">
-              <div className="vento-atlantico-brand" aria-label="VentoKite, aulas de kitesurf">
-                <span className="vento-atlantico-brand-name">Vento<strong>Kite</strong></span>
-                <span className="vento-atlantico-brand-caption">
-                  AULAS DE KITESURF <span aria-hidden="true">≋</span>
-                </span>
+              <div className="vento-atlantico-brand">
+                <OfficialLogo />
               </div>
               <div className="vento-atlantico-hero-message">
                 <h1 id="atlantico-hero-title" className="vento-atlantico-hero-title">
