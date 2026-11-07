@@ -53,22 +53,36 @@ export default async function StudentHomePage() {
         <HomeDashboard bookings={bookings} level={kiteLevel} firstName={firstName} instructorPhotoUrl={instructorPhotoUrl} />
       ) : (
         // Primeiro acesso, sem reserva: banner da campanha + busca de aulas.
-        <div className="vento-atlantico-home pt-[calc(env(safe-area-inset-top)+64px)] md:pt-0">
-          <div className="vento-atlantico-brand" aria-label="VentoKite, aulas de kitesurf">
-            <span className="vento-atlantico-brand-name">Vento<strong>Kite</strong></span>
-            <span className="vento-atlantico-brand-caption">AULAS DE KITESURF <span aria-hidden="true">≋</span></span>
-          </div>
-          <a
-            href="/aluno/reservar"
-            aria-label="Seu próximo bordo começa aqui — aulas de kitesurf para todos os níveis, no seu ritmo, com instrutores experientes. Agendar uma aula."
-            className="vento-atlantico-hero press relative block overflow-hidden rounded-[20px] border border-[#2a86a8] shadow-[0_14px_34px_#000f2066]"
-          >
-            <img src="/images/promo-bordo.jpg" alt="" width={1671} height={666} className="vento-atlantico-hero-image block h-auto w-full" />
-            <svg className="vento-atlantico-hero-wave" viewBox="0 0 390 29" preserveAspectRatio="none" aria-hidden="true">
-              <path d="M0 18 C80 -3 134 29 228 14 S342 3 390 12 L390 29 L0 29Z" fill="#04d9e6" />
-              <path d="M0 24 C97 9 155 31 242 22 S341 16 390 21 L390 29 L0 29Z" fill="#00243a" />
+        <div className="vento-atlantico-home md:pt-0">
+          <section className="vento-atlantico-hero" aria-labelledby="atlantico-hero-title">
+            <img
+              src="/images/kite-lesson.webp"
+              alt=""
+              width={1600}
+              height={1000}
+              className="vento-atlantico-hero-image"
+            />
+            <div className="vento-atlantico-hero-shade" aria-hidden="true" />
+            <div className="vento-atlantico-hero-copy">
+              <div className="vento-atlantico-brand" aria-label="VentoKite, aulas de kitesurf">
+                <span className="vento-atlantico-brand-name">Vento<strong>Kite</strong></span>
+                <span className="vento-atlantico-brand-caption">
+                  AULAS DE KITESURF <span aria-hidden="true">≋</span>
+                </span>
+              </div>
+              <p className="vento-atlantico-hero-brush">Liberdade em <strong>cada rajada</strong></p>
+              <h1 id="atlantico-hero-title" className="vento-atlantico-hero-title">
+                <span>Seu próximo</span>
+                <strong>BORDO</strong>
+                <em>começa aqui!</em>
+              </h1>
+              <p className="vento-atlantico-hero-lead">Aulas de kite para todos os níveis, no seu ritmo.</p>
+            </div>
+            <svg className="vento-atlantico-hero-wave" viewBox="0 0 390 32" preserveAspectRatio="none" aria-hidden="true">
+              <path d="M0 18 C80 2 135 30 230 15 S343 4 390 12 L390 32 L0 32Z" fill="#00d7df" />
+              <path d="M0 25 C98 11 151 35 245 23 S342 16 390 23 L390 32 L0 32Z" fill="#00283d" />
             </svg>
-          </a>
+          </section>
           <div className="vento-atlantico-search-container mt-3">
             <LessonSearch defaultDate={lessonDate(1)} quotes={quotes} beaches={beaches}
               studentLevel={kiteLevel?.effective ?? 'first_time'} />

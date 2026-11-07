@@ -113,12 +113,10 @@ export function LessonSearch({
             <p className="text-[12px] font-semibold text-[#d9f5f4]">
               Aula {KITE_LEVEL_BADGES[level].label} · {KITE_LEVEL_BADGES[level].detail}
             </p>
-            <p className="mt-1 text-[11px] text-[#d2ecf3]">
-              {KITE_CURRICULA[level].slice(0, 3).map((item) => item.title).join(' · ')}.
-            </p>
             <details className="vento-atlantico-level-details mt-1 text-[11px] text-[#a8ccd7]">
-              <summary className="cursor-pointer text-[#baff06]">Ver detalhes do nível</summary>
+              <summary className="cursor-pointer text-[#baff06]">O que vou aprender?</summary>
               <p className="mt-1">
+                {KITE_CURRICULA[level].slice(0, 3).map((item) => item.title).join(' · ')}.
                 O instrutor ajustará os exercícios conforme sua segurança e as condições do mar.
                 Perfil: {KITE_LEVEL_BADGES[studentLevel].label}. As opções respeitam seu nível atual.
               </p>
