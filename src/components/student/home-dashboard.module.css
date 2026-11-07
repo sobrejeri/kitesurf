@@ -439,14 +439,19 @@
     width: 100%;
     min-width: 0;
     max-width: 100%;
-    overflow-x: clip;
+    /* Do not clip the full-bleed hero: the student shell already prevents
+       horizontal page scrolling at the viewport boundary. */
+    overflow: visible;
   }
   .welcome {
+    position: relative;
     box-sizing: border-box;
-    width: calc(100% + 32px);
-    max-width: calc(100% + 32px);
-    margin-left: -16px;
-    margin-right: -16px;
+    /* The main has 16px mobile gutters. Center on the actual viewport,
+       including on narrow iPhones, rather than extending a guessed 32px. */
+    width: 100vw;
+    max-width: none;
+    margin-left: calc(50% - 50vw);
+    margin-right: calc(50% - 50vw);
     overflow: hidden;
     border-radius: 0;
     background: #00344e;
