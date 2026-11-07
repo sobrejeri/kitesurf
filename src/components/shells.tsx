@@ -120,7 +120,7 @@ const STUDENT_TABS: readonly TabItem[] = [
   { label: 'Explorar', href: '/aluno/inicio', icon: 'search', match: ['/aluno/reservar'] },
   { label: 'Minhas aulas', href: '/aluno/aulas', icon: 'book', match: ['/aluno/reserva', '/aluno/atendimento', '/aluno/ocorrencias'] },
   { label: 'Evolução', href: '/aluno/evolucao', icon: 'chart' },
-  { label: 'Perfil', href: '/aluno/conta', icon: 'user', match: ['/aluno/central', '/aluno/avisos', '/aluno/politicas', '/aluno/acesso'] },
+  { label: 'Perfil', href: '/aluno/conta', icon: 'user', match: ['/aluno/central', '/aluno/avisos', '/aluno/politicas'] },
 ];
 
 /** Pages reached from inside another tab: they get a back arrow on phones. */
@@ -130,7 +130,6 @@ const STUDENT_SUBPAGES = [
   '/aluno/central',
   '/aluno/avisos',
   '/aluno/politicas',
-  '/aluno/acesso',
   '/aluno/atendimento',
   '/aluno/ocorrencias',
 ];
@@ -142,7 +141,6 @@ const STUDENT_MENU: readonly SheetLink[] = [
   { label: 'Regras das aulas', href: '/aluno/politicas', icon: 'shield' },
   { label: 'Imprevistos', href: '/aluno/ocorrencias', icon: 'wind' },
   { label: 'Conversas', href: '/aluno/atendimento', icon: 'chat' },
-  { label: 'Conta e acesso', href: '/aluno/acesso', icon: 'user' },
 ];
 
 /**
