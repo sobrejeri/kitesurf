@@ -720,3 +720,25 @@ body:has(.theme-beach.theme-mar-profundo) { background:#001829; color:#f4fbff; }
     height: 34px;
   }
 }
+
+
+/* Monte sua aula — compact the empty vertical region on phones.
+   The earlier 328px minimum + generous padding left a long gap between the
+   booking introduction and the stepper. Keep the kite/photo, gradients and
+   real booking form intact, without affecting desktop or other student pages. */
+@media (max-width: 767px) {
+  .theme-mar-profundo .mar-profundo-page--booking .ocean-hero {
+    min-height: 0;
+  }
+  .theme-mar-profundo .mar-profundo-page--booking .ocean-hero > div.relative {
+    min-height: 0;
+    padding-top: calc(env(safe-area-inset-top) + 86px);
+    padding-bottom: 10px;
+  }
+  .theme-mar-profundo .mar-profundo-page--booking > form {
+    margin-top: 2px;
+  }
+  .theme-mar-profundo .mar-profundo-page--booking form > ol {
+    margin-bottom: 14px;
+  }
+}
