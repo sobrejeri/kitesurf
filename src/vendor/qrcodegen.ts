@@ -1,3 +1,4 @@
+// @ts-nocheck -- Upstream MIT library uses valid indexed access; project sets noUncheckedIndexedAccess.
 /* eslint-disable */
 /* 
  * QR Code generator library (TypeScript)
