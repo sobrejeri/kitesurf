@@ -19,9 +19,8 @@
 .vento-voucher-banner-copy strong {display:block;font-size:clamp(17px,4vw,25px);font-weight:900;line-height:1.05}
 .vento-voucher-banner-copy small {display:block;margin-top:5px;font-size:11px;color:#daf6fa}
 .vento-voucher-paper {padding:16px;background:#f8fcff;color:#082842}
-.vento-voucher-paper :is(.text-ink,.text-white) {color:#082842!important}
+.vento-voucher-paper .text-ink {color:#082842!important}
 .vento-voucher-paper :is(.text-label,.text-muted) {color:#53738b!important}
-.vento-voucher-paper .text-\[\#bad5e3\],.vento-voucher-paper .text-\[\#b9d5e5\],
 .vento-voucher-paper .text-\[\#bad0e1\],.vento-voucher-paper .text-\[\#f6fbff\] {color:#0b3651!important}
 .vento-voucher-paper > .border-b {border-color:#bfd9e6}
 .vento-voucher-paper > .flex.items-center {border-color:#8bdcda}
@@ -85,4 +84,133 @@
 @media(max-width:350px) {
  .vento-voucher-bottom{grid-template-columns:1fr;gap:14px}
  .vento-voucher-bottom>div+div{border-left:0;border-top:1px dashed #90bece;padding-top:12px}
+}
+
+
+/* Contrast and typography correction on real student reservation vouchers.
+   Never recolor white/light text intended for dark subcards to dark navy. */
+.vento-voucher-paper .vento-voucher-eyebrow {
+  color:#08758b;
+  font-size:11px;
+  font-weight:850;
+  letter-spacing:.16em;
+}
+.vento-voucher-paper .vento-voucher-instructor {
+  background:linear-gradient(120deg,#07354b,#07516c);
+  border:1px solid #31a1b6;
+  color:#f6fdff;
+}
+.vento-voucher-paper .vento-voucher-instructor .text-white {
+  color:#fff!important;
+  font-size:18px;
+  font-weight:850;
+}
+.vento-voucher-paper .vento-voucher-instructor p:not(.text-white) {
+  color:#cce7f2!important;
+}
+.vento-voucher-paper .vento-voucher-instructor p:first-child {
+  font-size:12px;
+}
+.vento-voucher-paper .vento-voucher-meeting-point {
+  background:#ebf8fc;
+  border:1px solid #a3d6e5;
+  color:#153b52;
+}
+.vento-voucher-paper .vento-voucher-meeting-point .text-brand,
+.vento-voucher-paper .vento-voucher-meeting-point a {
+  color:#006f86!important;
+}
+.vento-voucher-paper .vento-voucher-section-title {
+  font-size:17px;
+  font-weight:850;
+  color:#0a3149;
+}
+.vento-voucher-paper .vento-voucher-meeting-date {
+  font-size:14px;
+  font-weight:800;
+  color:#0b334c;
+  line-height:1.4;
+}
+.vento-voucher-paper .vento-voucher-meeting > div:first-child {
+  align-items:flex-start;
+}
+.vento-voucher-paper .vento-voucher-meeting .bg-brand-soft {
+  background:#d5f4bf!important;
+  color:#175035!important;
+  font-weight:800;
+}
+.vento-voucher-paper .vento-voucher-meeting .bg-quiet-soft {
+  background:#dceef5!important;
+  color:#154b65!important;
+  font-weight:750;
+}
+.vento-voucher-paper .vento-voucher-meeting details.group > summary {
+  background:#daeff7!important;
+  border:1px solid #94d1df;
+  color:#0b4863!important;
+  font-size:13px;
+  font-weight:750;
+}
+.vento-voucher-paper .vento-voucher-meeting details.group > summary:hover {
+  background:#c5e9f2!important;
+}
+.vento-voucher-paper .vento-voucher-meeting details.group > summary span {
+  color:#065a74!important;
+}
+.vento-voucher-paper .vento-voucher-meeting details.group > summary + div {
+  color:#234e65;
+}
+.vento-voucher-paper .vento-voucher-meeting details:not(.group) > summary {
+  color:#25607a;
+  font-size:12px;
+}
+.vento-voucher-paper .vento-voucher-bottom .vento-voucher-subtitle {
+  font-size:13px!important;
+  line-height:1.35;
+  letter-spacing:-.01em;
+}
+.vento-voucher-paper .vento-voucher-payment-list > div {
+  font-size:12px;
+  line-height:1.45;
+}
+.vento-voucher-paper .vento-voucher-payment-total {
+  background:#dcf7ba;
+}
+.vento-voucher-paper .vento-voucher-qr-caption {
+  font-size:11px;
+}
+.vento-voucher-paper .vento-voucher-reminders p {
+  font-size:12px;
+}
+.vento-voucher-paper nav a[href="/aluno/ocorrencias"] {
+  color:#006a82!important;
+  font-size:13px!important;
+  font-weight:700;
+  line-height:1.45;
+}
+.vento-voucher-paper nav a:focus-visible {
+  outline:3px solid #13b7cb;
+  outline-offset:2px;
+}
+@media(max-width:599px) {
+  .vento-voucher-paper > dl {
+    grid-template-columns:repeat(2,minmax(0,1fr));
+    gap:8px;
+  }
+  .vento-voucher-paper > dl > div {
+    min-height:94px;
+    padding:10px 8px;
+  }
+  .vento-voucher-paper > dl dt {
+    font-size:12px!important;
+    line-height:1.3;
+  }
+  .vento-voucher-paper > dl dd {
+    font-size:14px!important;
+    line-height:1.3;
+  }
+}
+@media(min-width:600px) {
+  .vento-voucher-paper > dl dt {font-size:12px!important}
+  .vento-voucher-paper > dl dd {font-size:14px!important}
 }

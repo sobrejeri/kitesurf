@@ -123,7 +123,7 @@ export default async function BookingPage({ params }: { params: Promise<{ id: st
             </header>
             <div className="vento-voucher-paper">
               <div className="border-b border-[#16728a]/60 pb-4">
-              <p className="text-[11px] font-bold uppercase tracking-[.18em] text-[#56dce7]">
+              <p className="vento-voucher-eyebrow text-[11px] font-bold uppercase tracking-[.18em]">
                 Detalhes da reserva
               </p>
               <h2 className="mt-2 text-[21px] font-extrabold leading-[1.2] tracking-[-.5px] text-ink sm:text-[23px]">
@@ -146,7 +146,7 @@ export default async function BookingPage({ params }: { params: Promise<{ id: st
               </div>
             </div>
 
-            <div className="mt-5 flex items-center gap-3 rounded-[18px] border border-[#16748e] bg-[#063e59] p-3">
+            <div className="vento-voucher-instructor mt-5 flex items-center gap-3 rounded-[18px] border border-[#16748e] bg-[#063e59] p-3">
               <StudentInstructorPhoto name={instructorName} url={avatarUrl} />
               <div className="min-w-0 flex-1">
                 <p className="text-[11px] font-medium text-[#bad5e3]">Seu instrutor</p>
@@ -184,7 +184,7 @@ export default async function BookingPage({ params }: { params: Promise<{ id: st
               </Note>
             ) : null}
             {!awaiting && meetingPoint ? (
-              <div className="mt-5 rounded-xl border border-line bg-brand-tint p-4">
+              <div className="vento-voucher-meeting-point mt-5 rounded-xl border border-line bg-brand-tint p-4">
                 <h3 className="text-[14px] font-bold text-ink">Ponto de encontro</h3>
                 <p className="mt-2 text-[13px] font-semibold text-brand">{meetingPoint.title}</p>
                 {meetingPoint.details ? <p className="mt-1 text-[12px] text-muted">{meetingPoint.details}</p> : null}
@@ -194,13 +194,13 @@ export default async function BookingPage({ params }: { params: Promise<{ id: st
                 </a>
               </div>
             ) : null}
-            <h3 className="mt-6 text-[14px]">Encontros</h3>
+            <h3 className="vento-voucher-section-title mt-6 text-[16px]">Encontros</h3>
             <ul className="mt-3 grid gap-2">
               {booking.booking_meetings.map((meeting) => (
-                <li key={meeting.id} className="rounded-search border border-line px-4 py-3 text-[12px]">
+                <li key={meeting.id} className="vento-voucher-meeting rounded-search border border-line px-4 py-3 text-[12px]">
                   <div className="flex items-center justify-between gap-3">
                     <span>
-                      <strong className="block font-[550]">{formatDateLong(meeting.starts_at)} · {formatTime(meeting.starts_at)}</strong>
+                      <strong className="vento-voucher-meeting-date block font-semibold">{formatDateLong(meeting.starts_at)} · {formatTime(meeting.starts_at)}</strong>
                       <span className="text-muted">{formatMinutes(meeting.minutes)}{meeting.status === 'done' ? ` · ${formatMinutes(meeting.done_minutes)} realizados` : ''}</span>
                     </span>
                     <Badge tone={meeting.status === 'done' ? 'quiet' : 'brand'}>{MEETING_STATUS_LABELS[meeting.status]}</Badge>
