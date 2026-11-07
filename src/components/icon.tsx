@@ -102,6 +102,13 @@ const PATHS = {
       <path d="M12 11v5M12 8h.01" />
     </>
   ),
+  image: (
+    <>
+      <rect x="3" y="4" width="18" height="16" rx="2" />
+      <circle cx="8" cy="9" r="1.5" />
+      <path d="m4 17 5-5 3 3 3-3 5 5" />
+    </>
+  ),
   pin: (
     <>
       <path d="M12 21s7-6 7-11a7 7 0 0 0-14 0c0 5 7 11 7 11z" />
