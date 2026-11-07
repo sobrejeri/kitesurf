@@ -17,18 +17,26 @@ function AuthFrame({ area, title, highlight, lead, children }: { area: AppArea; 
   const info = APP_AREAS[area];
   const at = title.lastIndexOf(highlight);
   const studentLogin = area === 'aluno' && title === 'Bem-vindo de volta.';
+  const studentSignup = area === 'aluno' && title === 'Seu primeiro bordo começa aqui.';
+  const studentAuth = studentLogin || studentSignup;
   return (
-    <div className={`${area === 'aluno' ? 'theme-beach kite-m3-auth' : 'theme-sunset'} ${studentLogin ? 'kite-m3-auth--student-login' : ''} relative min-h-dvh overflow-hidden bg-canvas text-ink`}>
-      <img src={studentLogin ? '/images/prea-coast.webp' : area === 'aluno' ? '/images/vento-ocean-hero.webp' : '/images/kite-lesson.webp'} alt="" className="sunset-photo absolute inset-x-0 top-0 h-[46dvh] w-full object-cover" />
+    <div className={`${area === 'aluno' ? 'theme-beach kite-m3-auth' : 'theme-sunset'} ${studentLogin ? 'kite-m3-auth--student-login' : ''} ${studentSignup ? 'kite-m3-auth--student-signup' : ''} relative min-h-dvh overflow-hidden bg-canvas text-ink`}>
+      <img src={studentAuth ? '/images/prea-coast.webp' : area === 'aluno' ? '/images/vento-ocean-hero.webp' : '/images/kite-lesson.webp'} alt="" className="sunset-photo absolute inset-x-0 top-0 h-[46dvh] w-full object-cover" />
       <div className="sunset-veil absolute inset-x-0 top-0 h-[46dvh]" aria-hidden="true" />
-      {area === 'aluno' && !studentLogin ? <img src="/images/vento-kite-real.webp" alt="" aria-hidden="true" className="kite-m3-auth-kite" /> : null}
+      {area === 'aluno' && !studentAuth ? <img src="/images/vento-kite-real.webp" alt="" aria-hidden="true" className="kite-m3-auth-kite" /> : null}
       <main className="pt-safe pb-safe relative mx-auto flex min-h-dvh max-w-md flex-col px-5">
-        {studentLogin ? (
-          <div className="kite-m3-auth-login-intro">
+        {studentAuth ? (
+          <div className={`kite-m3-auth-login-intro ${studentSignup ? 'kite-m3-auth-signup-intro' : ''}`}>
             <KiteModelo3Brand compact />
-            <h1 className="kite-m3-auth-login-title">
-              Bem-vindo <span className="text-sunrise">de volta.</span>
-            </h1>
+            {studentLogin ? (
+              <h1 className="kite-m3-auth-login-title">
+                Bem-vindo <span className="text-sunrise">de volta.</span>
+              </h1>
+            ) : (
+              <h1 className="kite-m3-auth-login-title kite-m3-auth-signup-title">
+                Seu primeiro bordo <span className="text-sunrise">começa aqui.</span>
+              </h1>
+            )}
             <p className="kite-m3-auth-login-lead">{lead}</p>
           </div>
         ) : (
@@ -50,7 +58,7 @@ function AuthFrame({ area, title, highlight, lead, children }: { area: AppArea; 
             </div>
           </>
         )}
-        <div className={`glass rounded-[24px] border border-line p-5 shadow-search ${studentLogin ? 'kite-m3-auth-login-panel' : 'mt-6'}`}>{children}</div>
+        <div className={`glass rounded-[24px] border border-line p-5 shadow-search ${studentLogin ? 'kite-m3-auth-login-panel' : studentSignup ? 'kite-m3-auth-signup-panel' : 'mt-6'}`}>{children}</div>
         <span className="flex-1" />
         <p className="py-6 text-center text-[12px] text-muted">{info.appName} · Preá e Jericoacoara</p>
       </main>
@@ -111,14 +119,14 @@ export function AreaSignup({ area }: { area: Exclude<AppArea, 'admin'> }) {
   const copy = SIGNUP_COPY[area];
   return (
     <AuthFrame area={area} title={copy.title} highlight={copy.highlight} lead={copy.lead}>
-      <ActionForm action={signUp} submitLabel="Criar conta" className="grid gap-4" wideSubmit>
+      <ActionForm action={signUp} submitLabel="Criar conta" className={`grid gap-4 ${area === 'aluno' ? 'kite-m3-auth-signup-form' : ''}`} wideSubmit>
         <input type="hidden" name="role" value={APP_AREAS[area].role} />
         <Field label={area === 'pousada' ? 'Seu nome (responsável)' : 'Nome'}>
-          <input name="fullName" required minLength={2} maxLength={120} autoComplete="name" className={inputClass} />
+          <input name="fullName" required minLength={2} maxLength={120} autoComplete="name" placeholder="Seu nome completo" className={inputClass} />
         </Field>
         {area === 'aluno' ? (
-          <Field label="Qual é seu nível no kitesurf?"
-            hint="Obrigatório. É uma autoavaliação, não um certificado. O instrutor poderá avaliar seu nível após a aula.">
+          <Field label="Seu nível no kitesurf"
+            hint="Autoavaliação inicial. Seu instrutor poderá reavaliar após a aula.">
             <select name="kiteLevel" required defaultValue="" className={inputClass}>
               <option value="" disabled>Selecione seu nível</option>
               <option value="first_time">Iniciante · Bronze</option>
