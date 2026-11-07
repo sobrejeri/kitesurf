@@ -40,7 +40,20 @@
   .vento-atlantico-hero-lead {margin-top:12px;font-size:clamp(12px,3.35vw,14px)}
   .vento-atlantico-hero-wave {height:27px}
   .vento-atlantico-search-container {margin-top:-6px}
-  .vento-atlantico-home .vento-atlantico-search {display:grid;gap:5px;margin-top:0;padding:11px 12px 12px;border:0;border-radius:0;background:linear-gradient(175deg,#00283dfd,#00283eff);box-shadow:0 14px 32px #0015246b}
+  /* Remove the search panel surface and outline entirely: only the
+     individual interactive controls retain their own accessible borders. */
+  .vento-atlantico-home .vento-atlantico-search {
+    display:grid;
+    gap:5px;
+    margin-top:0;
+    padding:11px 12px 12px;
+    border:0;
+    border-radius:0;
+    background:transparent;
+    box-shadow:none;
+    -webkit-backdrop-filter:none;
+    backdrop-filter:none;
+  }
   .vento-atlantico-form-top {position:relative;z-index:10;padding:0 3px}
   .vento-atlantico-form-top > p {font-size:15px;font-weight:800;color:#f8fdff}
   .vento-atlantico-form-actions > a {width:29px;height:29px;background:transparent;border:0;color:#c4e0ec}
@@ -71,7 +84,24 @@
   /* Duration and quote are present in the 2h header popover on mobile.
      Keep the original desktop controls and hidden 'horas' submission value. */
   .vento-atlantico-home .vento-atlantico-hours,.vento-atlantico-home .vento-desktop-search-quote {display:none}
-  .vento-atlantico-home .vento-desktop-search-submit {display:flex;align-items:center;justify-content:center;gap:9px;width:min(100%,250px);min-height:42px!important;margin:2px auto 0;padding:7px 16px;border:0;border-radius:999px;background:linear-gradient(115deg,#a9ff00,#d9ff34);color:#002738;font-size:14px!important;font-weight:900;box-shadow:0 7px 19px #aaff0040}
+  .vento-atlantico-home .vento-desktop-search-submit {
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    gap:7px;
+    width:min(100%,210px);
+    height:40px;
+    min-height:40px!important;
+    margin:5px auto 2px;
+    padding:4px 14px;
+    border:0;
+    border-radius:999px;
+    background:linear-gradient(115deg,#a9ff00,#d9ff34);
+    color:#002738;
+    font-size:13px!important;
+    font-weight:900;
+    box-shadow:0 5px 14px #aaff0035;
+  }
   .vento-atlantico-home .vento-student-home-benefits {display:none}
 }
 @media (min-width:768px) {
@@ -86,4 +116,22 @@
   .vento-atlantico-hero-title em {font-size:41px}
   .vento-atlantico-home .vento-atlantico-level {font-size:10px}
   .vento-atlantico-home .vento-atlantico-search {padding-inline:10px}
+}
+
+
+/* The approved transparent logo at 70% of the prior visual size.
+   Scoped to the public/new-student Atlântico hero, not other app headers. */
+.vento-atlantico-home .vento-atlantico-brand .vento-official-logo {
+  width: 157px;
+  max-width: 100%;
+  height: auto;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  box-shadow: none;
+}
+@media (max-width: 767px) {
+  .vento-atlantico-home .vento-atlantico-brand .vento-official-logo {
+    width: min(42.7vw, 158px); /* 70% of prior min(61vw, 226px) */
+  }
 }
