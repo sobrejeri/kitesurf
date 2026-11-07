@@ -1,235 +1,344 @@
 /*
- * VentoKite · Atlântico (model 01)
- * Mobile-first treatment for the public/no-booking Explore flow only.
- * State, prices, date validation and booking submission remain in LessonSearch.
+ * VentoKite / ATLÂNTICO v2.
+ * A genuine full-bleed photographic cover, not the former small advertisement
+ * followed by the old card layout. Isolated to the booking entry on Explorar
+ * (the personalized home of returning students is untouched).
  */
-.vento-atlantico-home { min-width:0; --atlantico-lime:#bbff08; --atlantico-turquoise:#06d8e6; }
-.vento-atlantico-brand { display:none; }
-.vento-atlantico-hero-wave { display:none; }
-.vento-atlantico-home :is(button,a,select,input,summary):focus-visible {
-  outline:2px solid var(--atlantico-lime);
-  outline-offset:3px;
+.vento-atlantico-home {
+  --atlantico-lime: #bbff08;
+  --atlantico-turquoise: #04d6de;
+  position: relative;
+  min-width: 0;
 }
+.vento-atlantico-home :is(button, a, select, input, summary):focus-visible {
+  outline: 2px solid var(--atlantico-lime);
+  outline-offset: 3px;
+}
+.vento-atlantico-hero {
+  position: relative;
+  isolation: isolate;
+  overflow: hidden;
+  min-height: 284px;
+  border-radius: 21px;
+  background: #004968;
+  color: #fff;
+}
+.vento-atlantico-hero-image,
+.vento-atlantico-hero-shade {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+}
+.vento-atlantico-hero-image {
+  z-index: -2;
+  display: block;
+  object-fit: cover;
+  object-position: 66% 55%;
+  filter: saturate(1.18) contrast(1.06);
+}
+.vento-atlantico-hero-shade {
+  z-index: -1;
+  background:
+    linear-gradient(90deg,#001a2de8 0%,#002d45cc 39%,#00344f66 70%,#00243a22 100%),
+    linear-gradient(180deg,#0016294a 0%,transparent 37%,#001d2ddc 100%);
+}
+.vento-atlantico-hero-copy {
+  position: relative;
+  z-index: 1;
+  box-sizing: border-box;
+  width: 100%;
+  padding: 25px 30px 43px;
+}
+.vento-atlantico-brand {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 3px;
+  line-height: 1;
+}
+.vento-atlantico-brand-name {
+  color: #fff;
+  font-family: var(--font-display), sans-serif;
+  font-style: italic;
+  font-size: clamp(24px,3.6vw,35px);
+  font-weight: 900;
+  letter-spacing: -.075em;
+  text-shadow: 0 3px 14px #0013239e;
+}
+.vento-atlantico-brand-name strong { color: var(--atlantico-lime); }
+.vento-atlantico-brand-caption {
+  color: #eaf7ff;
+  font-size: 8px;
+  font-weight: 800;
+  letter-spacing: .20em;
+}
+.vento-atlantico-brand-caption span { color: var(--atlantico-turquoise); font-size: 15px; }
+.vento-atlantico-hero-brush {
+  width: fit-content;
+  margin: 28px 0 7px;
+  padding: 4px 8px 4px 3px;
+  background: linear-gradient(100deg,#baff08e8,#85e600d5 70%,transparent);
+  color: #052b3c;
+  font-family: var(--font-script), cursive;
+  font-size: clamp(18px,2.7vw,25px);
+  font-weight: 800;
+  line-height: 1;
+  transform: rotate(-2deg);
+}
+.vento-atlantico-hero-title {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  max-width: 75%;
+  margin: 0;
+  color: #fff;
+  text-shadow: 0 3px 15px #001a2fd8;
+}
+.vento-atlantico-hero-title span {
+  font-family: var(--font-script), cursive;
+  font-size: clamp(31px,5vw,45px);
+  font-weight: 750;
+  line-height: .94;
+}
+.vento-atlantico-hero-title strong {
+  font-family: var(--font-display), sans-serif;
+  font-size: clamp(52px,8vw,83px);
+  font-style: italic;
+  font-weight: 950;
+  line-height: .97;
+  letter-spacing: -.07em;
+}
+.vento-atlantico-hero-title em {
+  color: var(--atlantico-lime);
+  font-family: var(--font-script), cursive;
+  font-size: clamp(26px,4.2vw,39px);
+  font-weight: 800;
+  font-style: normal;
+  line-height: 1.05;
+}
+.vento-atlantico-hero-lead {
+  max-width: 29ch;
+  margin: 10px 0 0;
+  color: #eefaff;
+  font-size: 12px;
+  line-height: 1.4;
+  text-shadow: 0 2px 8px #001825;
+}
+.vento-atlantico-hero-wave {
+  position: absolute;
+  z-index: 2;
+  bottom: -1px;
+  left: 0;
+  width: 100%;
+  height: 26px;
+  pointer-events: none;
+}
+.vento-atlantico-search-container { position: relative; z-index: 3; }
+.vento-atlantico-desc-icon { display: grid; flex: 0 0 auto; place-items: center; width: 30px; height: 30px; border-radius: 10px; color: var(--atlantico-lime); background: #0b4f5a; }
+.vento-atlantico-level-details summary { cursor: pointer; color: var(--atlantico-lime); text-decoration: underline; text-underline-offset: 3px; }
+.vento-atlantico-level-icon { display: block; flex-shrink: 0; }
+
 @media (max-width:767px) {
-  .vento-atlantico-home {
-    position:relative;
-    isolation:isolate;
-    padding-bottom:12px;
-    background:transparent;
-  }
-  .vento-atlantico-brand {
-    display:flex;
-    flex-direction:column;
-    gap:4px;
-    padding:0 4px 15px;
-    line-height:1;
-  }
-  .vento-atlantico-brand-name {
-    color:#fff;
-    font-family:var(--font-display),sans-serif;
-    font-style:italic;
-    font-weight:900;
-    font-size:clamp(27px,7.4vw,35px);
-    letter-spacing:-.075em;
-    text-shadow:0 3px 12px #001e35bb;
-  }
-  .vento-atlantico-brand-name strong { color:var(--atlantico-lime); }
-  .vento-atlantico-brand-caption {
-    color:#e8f8fc;
-    font-size:9px;
-    font-weight:800;
-    letter-spacing:.19em;
-  }
-  .vento-atlantico-brand-caption span { color:var(--atlantico-turquoise);font-size:16px; }
+  .vento-atlantico-home { padding-bottom: 10px; }
   .vento-atlantico-hero {
-    display:block;
-    position:relative;
-    overflow:hidden;
-    border:1px solid #23bdcf;
-    border-radius:22px 22px 14px 14px;
-    box-shadow:0 15px 30px #00121e8c;
-    background:#00344f;
+    box-sizing: border-box;
+    width: calc(100% + 32px);
+    max-width: none;
+    margin: 0 -16px;
+    min-height: 365px;
+    border: 0;
+    border-radius: 0;
+    box-shadow: none;
   }
-  .vento-atlantico-hero-image {
-    display:block;
-    width:100%;
-    height:auto;
-    filter:saturate(1.06) contrast(1.06);
+  .vento-atlantico-hero-image { object-position: 64% 48%; }
+  .vento-atlantico-hero-shade {
+    background:
+      linear-gradient(90deg,#001c31f0 0%,#002e48bf 43%,#00364e59 73%,#00314729 100%),
+      linear-gradient(180deg,#001f35a0 0%,transparent 36%,#00253824 64%,#001b2de6 100%);
   }
-  .vento-atlantico-hero-wave {
-    display:block;
-    position:absolute;
-    bottom:-1px;
-    left:0;
-    width:100%;
-    height:25px;
-    pointer-events:none;
+  .vento-atlantico-hero-copy {
+    padding: calc(env(safe-area-inset-top) + 19px) 18px 37px;
   }
-  .vento-atlantico-search-container {
-    position:relative;
-    z-index:2;
-    margin-top:0;
+  .vento-atlantico-brand-name { font-size: clamp(27px,8.2vw,35px); }
+  .vento-atlantico-brand-caption { font-size: 8px; letter-spacing: .19em; }
+  .vento-atlantico-hero-brush {
+    margin-top: 45px;
+    font-size: clamp(16px,4.5vw,20px);
   }
+  .vento-atlantico-hero-title { max-width: 73%; }
+  .vento-atlantico-hero-title span { font-size: clamp(28px,8vw,34px); }
+  .vento-atlantico-hero-title strong { font-size: clamp(53px,15vw,65px); }
+  .vento-atlantico-hero-title em { font-size: clamp(25px,7vw,32px); }
+  .vento-atlantico-hero-lead { max-width: 26ch; margin-top: 10px; font-size: 11px; }
+  .vento-atlantico-search-container { margin-top: -17px; }
   .vento-atlantico-home .vento-atlantico-search {
-    display:grid;
-    gap:10px;
-    margin-top:-15px;
-    padding:17px 14px 15px;
-    border:1px solid #1f8da2;
-    border-radius:25px;
-    background:linear-gradient(155deg,#053a53f7 0%,#00283efc 85%);
-    box-shadow:0 15px 36px #000e20a6,inset 0 1px 0 #57d6e825;
-    backdrop-filter:blur(10px);
+    display: grid;
+    gap: 7px;
+    margin-top: 0;
+    padding: 14px 13px 15px;
+    border: 1px solid #278da0;
+    border-top: 2px solid var(--atlantico-turquoise);
+    border-radius: 24px;
+    background: linear-gradient(152deg,#043950f9 0%,#002a40fc 82%);
+    box-shadow: 0 16px 36px #000e20a5, inset 0 1px 0 #5bd9ed2d;
+    backdrop-filter: blur(10px);
   }
-  .vento-atlantico-search > div:first-child { padding:0 3px; }
-  .vento-atlantico-search > div:first-child > p {
-    font-size:13px;
-    font-weight:800;
-    color:#f3fbff;
+  .vento-atlantico-home .vento-atlantico-search > div:first-child { padding: 0 2px; }
+  .vento-atlantico-home .vento-atlantico-search > div:first-child > p {
+    color: #f5fdff;
+    font-size: 14px;
+    font-weight: 800;
   }
-  .vento-atlantico-search > div:first-child > a {
-    color:#c7e2ec;
-    background:#00344b;
-    border:1px solid #1b6982;
+  .vento-atlantico-home .vento-atlantico-search > div:first-child > a {
+    width: 29px;
+    height: 29px;
+    color: #d4ecf2;
+    background: #06374a;
+    border: 1px solid #337d91;
   }
   .vento-atlantico-home .vento-atlantico-level-options {
-    grid-template-columns:repeat(3,minmax(0,1fr));
-    gap:6px;
-    padding:5px;
-    border-radius:17px;
-    background:#00263a;
-    border:1px solid #164d65;
+    grid-template-columns: repeat(3,minmax(0,1fr));
+    gap: 5px;
+    padding: 4px;
+    border: 1px solid #18586b;
+    border-radius: 16px;
+    background: #002a3d;
   }
   .vento-atlantico-home .vento-atlantico-level {
-    display:flex;
-    flex-direction:column;
-    justify-content:center;
-    gap:3px;
-    height:52px;
-    min-width:0;
-    padding:5px 2px;
-    border-radius:13px;
-    font-size:clamp(10px,3vw,12px);
-    line-height:1.12;
-    background:#073c56;
-    border:1px solid #165a74;
-    color:#d8edf4;
-    box-shadow:none;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    gap: 2px;
+    min-width: 0;
+    height: 48px;
+    padding: 3px 2px;
+    border: 1px solid #195e77;
+    border-radius: 12px;
+    background: #073e55;
+    color: #d9eff5;
+    font-size: clamp(10px,2.9vw,12px);
+    line-height: 1.14;
+    box-shadow: none;
   }
   .vento-atlantico-home .vento-atlantico-level:has(input:checked) {
-    background:linear-gradient(120deg,#adff00,#d5ff31);
-    border-color:#e1ff6d;
-    color:#05283b;
-    font-weight:850;
-    box-shadow:0 5px 15px #baff0030;
+    color: #032839;
+    border-color: #e3ff83;
+    background: linear-gradient(120deg,#adff00,#d6ff35);
+    box-shadow: 0 6px 17px #baff0031;
   }
   .vento-atlantico-home .vento-atlantico-level:has(input:focus-visible) {
-    outline:2px solid #f4ff9c;
-    outline-offset:2px;
+    outline: 2px solid #f0ffc4;
+    outline-offset: 2px;
   }
-  .vento-atlantico-level-icon { display:block; flex-shrink:0; }
   .vento-atlantico-home .vento-atlantico-lesson-desc {
-    align-items:flex-start;
-    gap:10px;
-    padding:11px 12px;
-    border:1px solid #20879b;
-    border-radius:15px;
-    background:#06374c;
-  }
-  .vento-atlantico-desc-icon {
-    display:grid;
-    flex-shrink:0;
-    place-items:center;
-    height:31px;
-    width:31px;
-    border-radius:10px;
-    color:var(--atlantico-lime);
-    background:#0b4e5a;
+    gap: 9px;
+    align-items: flex-start;
+    padding: 9px 10px;
+    border: 1px solid #197b91;
+    border-radius: 13px;
+    background: #04344b;
   }
   .vento-atlantico-home .vento-atlantico-lesson-desc p {
-    line-height:1.34;
-    overflow-wrap:anywhere;
+    margin: 0;
+    font-size: 11px;
+    line-height: 1.32;
   }
-  .vento-atlantico-level-details summary {
-    display:inline-flex;
-    min-height:25px;
-    align-items:center;
-    font-weight:700;
-    text-decoration:underline;
-    text-underline-offset:3px;
+  .vento-atlantico-home .vento-atlantico-level-details {margin-top:3px;}
+  .vento-atlantico-home .vento-atlantico-level-details summary {
+    display: inline-flex;
+    align-items: center;
+    min-height: 25px;
+    font-size: 11px;
+    font-weight: 750;
   }
   .vento-atlantico-home .vento-atlantico-fields {
-    display:grid;
-    grid-template-columns:minmax(0,1fr);
-    gap:7px;
-    padding:0;
-    background:none;
+    display: grid;
+    grid-template-columns: minmax(0,1fr);
+    gap: 6px;
+    padding: 0;
+    background: none;
   }
   .vento-atlantico-home .vento-atlantico-field {
-    min-width:0;
-    min-height:55px;
-    gap:11px;
-    padding:9px 13px;
-    border:1px solid #1b647b;
-    border-radius:14px;
-    background:#05364e;
-    box-shadow:inset 0 1px 0 #ffffff0b;
+    min-width: 0;
+    min-height: 51px;
+    gap: 11px;
+    padding: 7px 12px;
+    border: 1px solid #205f77;
+    border-radius: 12px;
+    background: #06374e;
+    box-shadow: inset 0 1px 0 #ffffff08;
   }
   .vento-atlantico-home .vento-atlantico-field > .icon {
-    width:20px!important;
-    height:20px!important;
-    color:var(--atlantico-lime);
-  }
-  .vento-atlantico-home .vento-atlantico-field :is(select,input,button) {
-    font-size:14px;
-    color:#f3faff;
-  }
-  .vento-atlantico-home .vento-atlantico-field .text-muted {
-    font-size:10px;
-    line-height:1.1;
-    color:#b9d0db;
+    width: 19px!important;
+    height: 19px!important;
+    color: var(--atlantico-lime);
   }
   .vento-atlantico-home .vento-atlantico-field > .icon:last-child {
-    width:16px!important;
-    height:16px!important;
-    color:#c7eaf0;
+    width: 16px!important;
+    height: 16px!important;
+    color: #d8f1f5;
+  }
+  .vento-atlantico-home .vento-atlantico-field :is(select,input,button) {
+    color: #f5fcff;
+    font-size: 14px;
+  }
+  .vento-atlantico-home .vento-atlantico-field .text-muted {
+    color: #adcbd8;
+    font-size: 10px;
+    line-height: 1.1;
   }
   .vento-atlantico-home .vento-atlantico-hours {
-    min-height:54px;
-    gap:8px;
-    padding:5px 8px 5px 13px;
-    border-radius:14px;
-    background:#05364e;
-    border:1px solid #1b647b;
+    min-height: 49px;
+    gap: 7px;
+    padding: 4px 7px 4px 12px;
+    border: 1px solid #205f77;
+    border-radius: 12px;
+    background: #06374e;
   }
   .vento-atlantico-home .vento-atlantico-hours > .icon {
-    width:20px!important;
-    height:20px!important;
-    color:var(--atlantico-lime);
+    width: 19px!important;
+    height: 19px!important;
+    color: var(--atlantico-lime);
   }
-  .vento-atlantico-home .vento-atlantico-hours > span { font-size:12px; }
-  .vento-atlantico-home .vento-atlantico-hours button { height:35px;width:35px; }
-  .vento-atlantico-home .vento-desktop-search-quote {margin:0;color:#c3dae4;font-size:11px;}
-  .vento-atlantico-home .vento-desktop-search-quote strong {color:var(--atlantico-lime);}
+  .vento-atlantico-home .vento-atlantico-hours > span { font-size: 12px; }
+  .vento-atlantico-home .vento-atlantico-hours button { width: 34px; height: 34px; }
+  .vento-atlantico-home .vento-desktop-search-quote {
+    margin: 0;
+    font-size: 11px;
+    color: #c4dce5;
+  }
+  .vento-atlantico-home .vento-desktop-search-quote strong { color: var(--atlantico-lime); }
   .vento-atlantico-home .vento-desktop-search-submit {
-    display:flex;
-    justify-content:center;
-    gap:9px;
-    width:min(100%,290px);
-    min-height:47px!important;
-    margin:0 auto;
-    padding:9px 18px;
-    border-radius:999px;
-    background:linear-gradient(115deg,#aaff00,#dbff2c);
-    color:#062638;
-    font-size:15px!important;
-    font-weight:850;
-    box-shadow:0 7px 20px #bdff0040;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 9px;
+    width: min(100%,290px);
+    min-height: 46px!important;
+    margin: 0 auto;
+    padding: 9px 18px;
+    border: 0;
+    border-radius: 999px;
+    background: linear-gradient(115deg,#aaff00,#dbff32);
+    color: #052538;
+    font-size: 15px!important;
+    font-weight: 850;
+    box-shadow: 0 7px 20px #baff0047;
   }
-  .vento-atlantico-home .vento-student-home-benefits { display:none; }
+  .vento-atlantico-home .vento-student-home-benefits { display: none; }
+}
+@media (min-width:768px) {
+  .vento-atlantico-hero-copy { max-width: 630px; }
+  .vento-atlantico-hero-brush {margin-top: 30px;}
+  .vento-atlantico-hero-wave {height:24px;}
+  .vento-atlantico-search-container {margin-top: 12px;}
 }
 @media (max-width:359px) {
+  .vento-atlantico-hero-copy {padding-inline:15px;}
+  .vento-atlantico-hero-title strong {font-size:50px;}
   .vento-atlantico-home .vento-atlantico-level {font-size:10px;}
-  .vento-atlantico-home .vento-atlantico-search {padding-inline:11px;}
-  .vento-atlantico-home .vento-atlantico-hours {gap:5px;}
+  .vento-atlantico-home .vento-atlantico-search {padding-inline:10px;}
+  .vento-atlantico-home .vento-atlantico-hours {gap:4px;}
 }
