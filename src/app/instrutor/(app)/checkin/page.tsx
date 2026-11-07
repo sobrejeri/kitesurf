@@ -22,7 +22,8 @@ export default async function CheckInPage({searchParams}:{
   const bookings=await listBookingsForInstructor(viewer.id);
   const booking=bookings.find(b=>b.instructor_id===viewer.id && b.booking_meetings.some(m=>m.id===meetingId));
   if(!booking) notFound();
-  const meeting=booking.booking_meetings.find(m=>m.id===meetingId)!;
+  const meeting=booking.booking_meetings.find(m=>m.id===meetingId);
+  if(!meeting) notFound();
   const eligible=booking.status==='confirmed' && meeting.status==='scheduled';
   return <main className="mx-auto flex min-h-dvh max-w-lg flex-col justify-center bg-[#00283e] px-5 py-10 text-[#f0fbff]">
     <section className="rounded-[24px] border border-[#18cbd9] bg-[#04364e] p-6 shadow-2xl">
