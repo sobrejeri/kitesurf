@@ -452,3 +452,76 @@ body:has(.theme-beach.theme-mar-profundo) { background:#001829; color:#f4fbff; }
   letter-spacing:-.035em;
 }
 .theme-mar-profundo main :is(.kite-m3-header h1) {font-size:clamp(27px,6vw,38px);}
+
+
+/* Evolution: continuous coast photo underneath BOTH the short brand banner and
+   the first progress module. The old radial ::before started with a hard-edged
+   teal rectangle below the hero and created the visible horizontal seam. */
+.kite-modelo3--evolution {
+  isolation: isolate;
+}
+.kite-modelo3--evolution::before {
+  content: "";
+  position: absolute;
+  z-index: 0;
+  top: 0;
+  left: -16px;
+  right: -16px;
+  height: clamp(470px, 69svh, 650px);
+  pointer-events: none;
+  background:
+    linear-gradient(90deg,
+      rgba(0, 24, 41, .92) 0%,
+      rgba(0, 33, 51, .74) 39%,
+      rgba(0, 47, 64, .24) 72%,
+      rgba(0, 34, 53, .08) 100%),
+    linear-gradient(180deg,
+      rgba(0, 24, 41, .03) 0%,
+      rgba(0, 24, 41, .08) 43%,
+      rgba(0, 24, 41, .32) 69%,
+      rgba(0, 24, 41, .72) 100%),
+    url('/images/vento-ocean-hero.webp') center 45% / cover no-repeat;
+  -webkit-mask-image: linear-gradient(to bottom,
+    #000 0%, #000 51%, rgba(0,0,0,.96) 64%,
+    rgba(0,0,0,.60) 81%, transparent 100%);
+  mask-image: linear-gradient(to bottom,
+    #000 0%, #000 51%, rgba(0,0,0,.96) 64%,
+    rgba(0,0,0,.60) 81%, transparent 100%);
+}
+.theme-mar-profundo .kite-modelo3--evolution .kite-m3-header {
+  /* The shared photo lives on the parent and remains visible below this box. */
+  background: transparent;
+  min-height: 152px;
+  padding-bottom: 0;
+  margin-bottom: -8px;
+  border: 0;
+  box-shadow: none;
+}
+.theme-mar-profundo .kite-modelo3--evolution .kite-m3-progress-header {
+  margin-top: 0;
+  padding-top: 6px;
+  background: transparent;
+}
+.theme-mar-profundo .kite-modelo3--evolution .kite-m3-progress-header::before {
+  display: none;
+}
+@media (min-width: 768px) {
+  .kite-modelo3--evolution::before {
+    left: 0;
+    right: 0;
+    height: 600px;
+    border-radius: 22px;
+  }
+  .theme-mar-profundo .kite-modelo3--evolution .kite-m3-header {
+    min-height: 186px;
+    margin-bottom: -12px;
+  }
+  .theme-mar-profundo .kite-modelo3--evolution .kite-m3-progress-header {
+    padding: 12px 24px 8px;
+  }
+}
+@media (max-width: 359px) {
+  .theme-mar-profundo .kite-modelo3--evolution .kite-m3-header {
+    min-height: 143px;
+  }
+}
