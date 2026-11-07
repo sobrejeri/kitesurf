@@ -72,11 +72,31 @@ export function LessonSearch({
         }}
         className="glass vento-desktop-search vento-atlantico-search relative z-10 -mt-6 grid gap-2.5 rounded-[28px] border border-white/70 p-4 shadow-search lg:mt-3 lg:p-4"
       >
-        <div className="flex items-center justify-between gap-3 px-1">
+        <div className="vento-atlantico-form-top flex items-center justify-between gap-3 px-1">
           <p className="text-[13px] font-semibold text-ink">Seu nível no kite</p>
-          <Link href="/aluno/politicas" aria-label="Ajuda sobre os níveis" className="grid h-8 w-8 place-items-center rounded-full bg-sand text-label">
-            <Icon name="help" className="!h-[18px] !w-[18px]" />
-          </Link>
+          <div className="vento-atlantico-form-actions">
+            {/* Mobile duration remains selectable without adding a whole row
+                between the three fields and the main CTA. */}
+            <details className="vento-atlantico-hour-popover">
+              <summary aria-label={`Duração: ${hours} horas. Ajustar duração e consultar valor`}>
+                <Icon name="clock" className="!h-4 !w-4" />
+                <span>{hours}h</span>
+                <Icon name="chevronDown" className="!h-3 !w-3" />
+              </summary>
+              <div className="vento-atlantico-hour-panel">
+                <p className="font-semibold">Quantas horas de aula?</p>
+                <Stepper hours={hours} onChange={setHours} />
+                <p aria-live="polite">
+                  {quote
+                    ? `${hours}h × ${formatMoney(quote.hourly_rate_cents)}/hora = ${formatMoney(quote.total_cents)}`
+                    : 'Valores indisponíveis no momento'}
+                </p>
+              </div>
+            </details>
+            <Link href="/aluno/politicas" aria-label="Ajuda sobre os níveis" className="grid h-8 w-8 place-items-center rounded-full bg-sand text-label">
+              <Icon name="help" className="!h-[18px] !w-[18px]" />
+            </Link>
+          </div>
         </div>
         {/* Three plain choices in one segmented control. */}
         <fieldset className="vento-desktop-level-options vento-atlantico-level-options grid grid-cols-3 gap-1 rounded-full bg-sand p-1">
@@ -113,14 +133,9 @@ export function LessonSearch({
             <p className="text-[12px] font-semibold text-[#d9f5f4]">
               Aula {KITE_LEVEL_BADGES[level].label} · {KITE_LEVEL_BADGES[level].detail}
             </p>
-            <details className="vento-atlantico-level-details mt-1 text-[11px] text-[#a8ccd7]">
-              <summary className="cursor-pointer text-[#baff06]">O que vou aprender?</summary>
-              <p className="mt-1">
-                {KITE_CURRICULA[level].slice(0, 3).map((item) => item.title).join(' · ')}.
-                O instrutor ajustará os exercícios conforme sua segurança e as condições do mar.
-                Perfil: {KITE_LEVEL_BADGES[studentLevel].label}. As opções respeitam seu nível atual.
-              </p>
-            </details>
+            <p className="vento-atlantico-lesson-highlights mt-1 text-[11px] text-[#b8d9e2]">
+              {KITE_CURRICULA[level].slice(0, 3).map((item) => item.title).join(' · ')}.
+            </p>
           </div>
         </div>
 

@@ -55,13 +55,11 @@ export default async function StudentHomePage() {
         // Primeiro acesso, sem reserva: banner da campanha + busca de aulas.
         <div className="vento-atlantico-home md:pt-0">
           <section className="vento-atlantico-hero" aria-labelledby="atlantico-hero-title">
-            <img
-              src="/images/kite-lesson.webp"
-              alt=""
-              width={1600}
-              height={1000}
-              className="vento-atlantico-hero-image"
-            />
+            {/* Crop the real promotional kitesurfer to its right-hand photo region;
+                the baked-in campaign lettering remains outside this crop. */}
+            <div className="vento-atlantico-hero-photo" aria-hidden="true">
+              <img src="/images/promo-bordo.jpg" alt="" width={1671} height={666} />
+            </div>
             <div className="vento-atlantico-hero-shade" aria-hidden="true" />
             <div className="vento-atlantico-hero-copy">
               <div className="vento-atlantico-brand" aria-label="VentoKite, aulas de kitesurf">
@@ -70,13 +68,16 @@ export default async function StudentHomePage() {
                   AULAS DE KITESURF <span aria-hidden="true">≋</span>
                 </span>
               </div>
-              <p className="vento-atlantico-hero-brush">Liberdade em <strong>cada rajada</strong></p>
-              <h1 id="atlantico-hero-title" className="vento-atlantico-hero-title">
-                <span>Seu próximo</span>
-                <strong>BORDO</strong>
-                <em>começa aqui!</em>
-              </h1>
-              <p className="vento-atlantico-hero-lead">Aulas de kite para todos os níveis, no seu ritmo.</p>
+              <div className="vento-atlantico-hero-message">
+                <h1 id="atlantico-hero-title" className="vento-atlantico-hero-title">
+                  <span>Liberdade</span>
+                  <span>em cada</span>
+                  <em>rajada</em>
+                </h1>
+                <p className="vento-atlantico-hero-lead">
+                  Seu próximo<br />bordo começa aqui!
+                </p>
+              </div>
             </div>
             <svg className="vento-atlantico-hero-wave" viewBox="0 0 390 32" preserveAspectRatio="none" aria-hidden="true">
               <path d="M0 18 C80 2 135 30 230 15 S343 4 390 12 L390 32 L0 32Z" fill="#00d7df" />
