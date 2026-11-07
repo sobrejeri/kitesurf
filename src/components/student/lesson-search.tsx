@@ -17,8 +17,8 @@ import { buttonClass } from '../ui';
 /** One row of the search card: orange icon, small label, bold value, chevron. */
 function SearchRow({ label, icon, children, chevron = true }: { label: string; icon: IconName; children: React.ReactNode; chevron?: boolean }) {
   return (
-    <label className="relative flex items-center gap-4 rounded-[18px] bg-sand px-4 py-3 lg:rounded-none lg:bg-transparent lg:py-2">
-      <Icon name={icon} className="!h-6 !w-6 shrink-0 text-[#ff6a13]" />
+    <label className="vento-atlantico-field relative flex items-center gap-3 rounded-[16px] bg-sand px-4 py-3 lg:rounded-none lg:bg-transparent lg:py-2">
+      <Icon name={icon} className="!h-5 !w-5 shrink-0 text-brand" />
       <span className="min-w-0 flex-1">
         <span className="block text-[12px] text-muted">{label}</span>
         {children}
@@ -31,10 +31,10 @@ function SearchRow({ label, icon, children, chevron = true }: { label: string; i
 const controlClass =
   'w-full appearance-none bg-transparent text-[16px] font-bold text-ink focus:outline-none lg:text-[15px]';
 
-const LEVELS: readonly { id: LessonLevel; title: string }[] = [
-  { id: 'first_time', title: 'Iniciante' },
-  { id: 'returning', title: 'Intermediário' },
-  { id: 'improving', title: 'Avançado' },
+const LEVELS: readonly { id: LessonLevel; title: string; icon: IconName }[] = [
+  { id: 'first_time', title: 'Iniciante', icon: 'kite' },
+  { id: 'returning', title: 'Intermediário', icon: 'chart' },
+  { id: 'improving', title: 'Avançado', icon: 'star' },
 ];
 
 /**
@@ -70,7 +70,7 @@ export function LessonSearch({
             setDateError('A data escolhida já passou. Selecione hoje ou um dia futuro.');
           }
         }}
-        className="glass vento-desktop-search relative z-10 -mt-6 grid gap-2.5 rounded-[28px] border border-white/70 p-4 shadow-search lg:mt-3 lg:p-4"
+        className="glass vento-desktop-search vento-atlantico-search relative z-10 -mt-6 grid gap-2.5 rounded-[28px] border border-white/70 p-4 shadow-search lg:mt-3 lg:p-4"
       >
         <div className="flex items-center justify-between gap-3 px-1">
           <p className="text-[13px] font-semibold text-ink">Seu nível no kite</p>
@@ -79,7 +79,7 @@ export function LessonSearch({
           </Link>
         </div>
         {/* Three plain choices in one segmented control. */}
-        <fieldset className="vento-desktop-level-options grid grid-cols-3 gap-1 rounded-full bg-sand p-1">
+        <fieldset className="vento-desktop-level-options vento-atlantico-level-options grid grid-cols-3 gap-1 rounded-full bg-sand p-1">
           <legend className="sr-only">Seu nível no kite</legend>
           <div className="vento-desktop-level-select">
             <label htmlFor="desktop-lesson-level">Nível da aula</label>
@@ -95,29 +95,38 @@ export function LessonSearch({
             return (
               <label
                 key={item.id}
-                className={`press flex h-10 cursor-pointer items-center justify-center rounded-full px-1 text-center text-[13px] font-semibold ${on ? 'btn-primary !text-[13px] text-white shadow-button' : 'text-label'}`}
+                className={`vento-atlantico-level press flex h-10 cursor-pointer items-center justify-center gap-1 rounded-full px-1 text-center text-[13px] font-semibold ${on ? 'btn-primary !text-[13px] text-white shadow-button' : 'text-label'}`}
               >
                 <input type="radio" name="nivel" value={item.id} checked={on} onChange={() => setLevel(item.id)} className="sr-only" />
-                {item.title}
+                <Icon name={item.icon} className="vento-atlantico-level-icon !h-4 !w-4" />
+                <span>{item.title}</span>
               </label>
             );
           })}
         </fieldset>
 
-        <div className="vento-desktop-lesson-desc rounded-[15px] border border-[#16819b]/60 bg-[#073c53] px-3 py-3">
-          <p className="text-[12px] font-semibold text-[#b6e7ed]">
-            Aula {KITE_LEVEL_BADGES[level].label} · {KITE_LEVEL_BADGES[level].detail}
-          </p>
-          <p className="mt-1 text-[11px] text-[#d2ecf3]">
-            {KITE_CURRICULA[level].slice(0, 3).map((item) => item.title).join(' · ')}.
-            O instrutor ajustará os exercícios conforme sua segurança e as condições do mar.
-          </p>
-          <p className="mt-1 text-[11px] text-[#a8ccd7]">
-            Perfil: {KITE_LEVEL_BADGES[studentLevel].label}. As opções exibidas respeitam seu nível atual.
-          </p>
+        <div className="vento-desktop-lesson-desc vento-atlantico-lesson-desc flex gap-3 rounded-[15px] border border-[#16819b]/60 bg-[#073c53] px-3 py-3">
+          <span className="vento-atlantico-desc-icon" aria-hidden="true">
+            <Icon name="shield" className="!h-5 !w-5" />
+          </span>
+          <div className="min-w-0 flex-1">
+            <p className="text-[12px] font-semibold text-[#d9f5f4]">
+              Aula {KITE_LEVEL_BADGES[level].label} · {KITE_LEVEL_BADGES[level].detail}
+            </p>
+            <p className="mt-1 text-[11px] text-[#d2ecf3]">
+              {KITE_CURRICULA[level].slice(0, 3).map((item) => item.title).join(' · ')}.
+            </p>
+            <details className="vento-atlantico-level-details mt-1 text-[11px] text-[#a8ccd7]">
+              <summary className="cursor-pointer text-[#baff06]">Ver detalhes do nível</summary>
+              <p className="mt-1">
+                O instrutor ajustará os exercícios conforme sua segurança e as condições do mar.
+                Perfil: {KITE_LEVEL_BADGES[studentLevel].label}. As opções respeitam seu nível atual.
+              </p>
+            </details>
+          </div>
         </div>
 
-        <div className="vento-desktop-search-fields grid gap-2.5 lg:grid-cols-3 lg:gap-0 lg:divide-x lg:divide-line lg:rounded-[18px] lg:bg-sand">
+        <div className="vento-desktop-search-fields vento-atlantico-fields grid gap-2.5 lg:grid-cols-3 lg:gap-0 lg:divide-x lg:divide-line lg:rounded-[18px] lg:bg-sand">
           <SearchRow label="Sua praia" icon="pin">
             <select name="praia" className={controlClass} defaultValue={beaches[0]?.id}>
               {beaches.length === 0 ? <option value="">Nenhuma praia disponível</option> : null}
@@ -147,8 +156,8 @@ export function LessonSearch({
 
         {dateError ? <p role="alert" className="text-[13px] text-warning">{dateError}</p> : null}
 
-        <div className="vento-desktop-search-hours flex items-center gap-3 rounded-[18px] bg-sand py-2.5 pl-4 pr-2">
-          <Icon name="clock" className="!h-6 !w-6 shrink-0 text-[#ff6a13]" />
+        <div className="vento-desktop-search-hours vento-atlantico-hours flex items-center gap-3 rounded-[18px] bg-sand py-2.5 pl-4 pr-2">
+          <Icon name="clock" className="!h-5 !w-5 shrink-0 text-brand" />
           <span className="flex-1 whitespace-nowrap text-[13px] text-muted">Quantas horas?</span>
           <Stepper hours={hours} onChange={setHours} />
         </div>
@@ -167,7 +176,7 @@ export function LessonSearch({
         </p>
 
         <button type="submit" className={buttonClass('primary', 'md', 'vento-desktop-search-submit w-full !min-h-14 !text-[17px]')}>
-          Encontrar minha aula
+          Avançar
           <Icon name="arrow" className="!h-5 !w-5" />
         </button>
       </form>
@@ -199,7 +208,7 @@ function Stepper({ hours, onChange }: { hours: number; onChange: (next: number) 
         aria-label="Menos uma hora"
         disabled={hours <= MIN_HOURS}
         onClick={() => onChange(hours - 1)}
-        className="press grid h-10 w-10 place-items-center rounded-full border-2 border-[#ff7a1a] bg-[#12324a] text-[#ff9b51] shadow-[0_0_0_2px_rgba(255,122,26,0.12)] transition-colors focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#00e3ee] disabled:cursor-not-allowed disabled:border-[#a76b47] disabled:bg-[#17364d] disabled:text-[#edb38b] disabled:shadow-none"
+        className="vento-atlantico-hours-minus press grid h-10 w-10 place-items-center rounded-full border-2 border-[#47849a] bg-[#12324a] text-[#baff06] transition-colors focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#baff06] disabled:cursor-not-allowed disabled:opacity-35"
       >
         <Icon name="minus" className="!h-5 !w-5" />
       </button>
@@ -212,7 +221,7 @@ function Stepper({ hours, onChange }: { hours: number; onChange: (next: number) 
         aria-label="Mais uma hora"
         disabled={hours >= MAX_HOURS}
         onClick={() => onChange(hours + 1)}
-        className="press grid h-10 w-10 place-items-center rounded-full bg-[#ff6a13] text-white shadow-button disabled:opacity-40"
+        className="vento-atlantico-hours-plus press grid h-10 w-10 place-items-center rounded-full bg-[#baff06] text-[#072537] shadow-button disabled:opacity-40"
       >
         <Icon name="plus" className="!h-5 !w-5" />
       </button>
