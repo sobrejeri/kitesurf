@@ -80,12 +80,19 @@ assert.ok(shell.includes('studentStyle') &&
   sheet.includes('vento-student-menu-label'),
   'Student-only menu must separate icon squares and text without changing other role menus');
 assert.ok(menuTheme.includes('.vento-student-menu .vento-student-menu-tile {') &&
-  menuTheme.includes('width: min(70%, 90px)') &&
+  menuTheme.includes('width: min(50%, 64px)') &&
   menuTheme.includes('aspect-ratio: 1 / 1') &&
   menuTheme.includes('.vento-student-menu .vento-student-menu-icon {') &&
   menuTheme.includes('width: 80% !important') &&
   menuTheme.includes('height: 80% !important'),
-  'Student mobile menu tiles must be 70%-width squares with 80%-sized icons');
+  'Student mobile menu tiles must be 50%-width squares with 80%-sized icons');
+assert.ok(menuTheme.includes('max-height: 42dvh') &&
+  menuTheme.includes('overflow-y: auto') &&
+  menuTheme.includes('overscroll-behavior: contain') &&
+  menuTheme.includes('row-gap: 8px') &&
+  menuTheme.includes('font-size: 10px') &&
+  menuTheme.includes('min-height: 42px'),
+  'Compact student menu must stay scrollable, halve its height and preserve accessible controls');
 assert.ok(menuTheme.includes('color: #baff06') &&
   menuTheme.includes('border-top: 1px solid #20bfc9') &&
   menuTheme.includes('.vento-student-menu .vento-student-menu-label'),
