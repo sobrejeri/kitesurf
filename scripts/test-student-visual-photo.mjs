@@ -17,6 +17,7 @@ const dashboard = read('src/components/student/home-dashboard.tsx');
 const header = read('src/components/student/modelo3-header.tsx');
 const hero = read('src/components/student/sunset.tsx');
 const auth = read('src/components/auth/area-auth.tsx');
+const authStyle = read('src/app/aluno/auth-modelo3.css');
 const homeStyle = read('src/components/student/home-dashboard.module.css');
 const sharedStyle = read('src/app/aluno/(app)/modelo3.css');
 const shell = read('src/components/shells.tsx');
@@ -42,4 +43,16 @@ assert.ok(dashboard.includes('studentHomeSummary(bookings)') &&
   dashboard.includes('lessonEvolutionHref(current.booking.id, current.meeting.id)') &&
   dashboard.includes('/aluno/atendimento/'),
   'Visual work must not replace data-bound progress, booking and chat actions');
+assert.ok(auth.includes("studentLogin ? '/images/prea-coast.webp'") &&
+  auth.includes("area === 'aluno' && !studentLogin") &&
+  auth.includes("kite-m3-auth--student-login"),
+  'The student login must show the coast without the floating kite; signup keeps its own design');
+assert.ok(authStyle.includes('.kite-m3-auth--student-login > .sunset-photo') &&
+  authStyle.includes('height: 100%') &&
+  authStyle.includes('background: rgba(4, 56, 78, .10)') &&
+  authStyle.includes('-webkit-backdrop-filter: none'),
+  'Student login glass panel must stay 90% transparent above a full-height photo');
+assert.ok(authStyle.includes('font-weight: 900') &&
+  authStyle.includes('margin-top: 8px'),
+  'Student login must keep its centered logo close to the bold welcome heading');
 console.log('PASS: photographic kite and matching responsive student visual language');
