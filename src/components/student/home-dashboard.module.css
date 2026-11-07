@@ -331,7 +331,7 @@
   color:white;
   font-weight:800;
   line-height:1.05;
-  margin:8px 0 6px;
+  margin:4px 0 4px;
 }
 .nextMeta {font-size:12px;line-height:1.35;}
 .nextMeta svg,.label svg {color:#bdff06;}
@@ -392,8 +392,8 @@
  .welcome h1 {font-size:clamp(46px,12.5vw,61px);margin:9px 0 16px;line-height:.85;}
  .welcome h1 em::after {bottom:-6px;height:4px;}
  .welcome p {font-size:14px;max-width:31ch;}
- .cards {margin-top:9px;}
- .next {padding:17px 14px 16px;border-radius:23px;}
+ .cards {margin-top:7px;}
+ .next {padding:14px 14px 13px;border-radius:23px;}
  .nextBody {gap:11px;}
  .instructorCol {padding-right:10px;}
  .instructorPhoto img,.instructorInitials {width:60px;height:60px;}
@@ -401,11 +401,11 @@
  .nextWhen {font-size:clamp(17px,5.2vw,22px);line-height:1.02;}
  .nextMeta {font-size:11px;gap:4px 6px;}
  .nextMeta svg,.label svg {width:14px;height:14px;}
- .next .label {max-width:calc(100% - 107px);font-size:11px;}
+ .next .label {font-size:11px;}
  .status {padding:5px 9px;top:12px;right:12px;font-size:10px;}
  .bookingCode {font-size:10px;padding:4px 9px;}
- .insights {gap:9px;margin-top:10px;}
- .insightCard {min-height:153px;padding:15px 12px 44px;border-radius:20px;}
+ .insights {gap:8px;margin-top:8px;}
+ .insightCard {min-height:130px;padding:13px 12px 38px;border-radius:20px;}
  .insightCard h2 {font-size:clamp(19px,5.2vw,23px);}
  .insightCard .progressTitle {font-size:clamp(19px,5.4vw,23px);}
  .insightCard .label {font-size:10px;}
