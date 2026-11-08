@@ -61,7 +61,7 @@ assert.ok(shell.includes('pointer-events-none pt-safe absolute') &&
   mobile.includes("import { createPortal } from 'react-dom';") &&
   sheet.includes('return createPortal(') &&
   sheet.includes('document.body') &&
-  sheet.includes('pointer-events-auto fixed inset-0 z-[70]'),
+  sheet.includes("studentStyle ? 'z-[300] vento-student-menu' : 'z-[70]'"),
   'Mobile menu dialog must be portaled above the click-through app header and tab bar');
 assert.ok(sheet.includes('aria-label="Fechar menu"') &&
   sheet.includes('onClick={onClose}') &&
@@ -74,7 +74,7 @@ assert.ok(sheet.includes('href={link.href}') &&
 
 const menuTheme = read('src/app/globals.css');
 assert.ok(shell.includes('studentStyle') &&
-  sheet.includes("studentStyle ? 'vento-student-menu' : ''") &&
+  sheet.includes("studentStyle ? 'z-[300] vento-student-menu' : 'z-[70]'") &&
   sheet.includes('vento-student-menu-tile') &&
   sheet.includes('vento-student-menu-icon') &&
   sheet.includes('vento-student-menu-label'),
@@ -380,6 +380,32 @@ assert.ok(
   studentNavigationCss.includes('background:#0b3a4e !important') &&
   studentNavigationCss.includes('a[aria-label="Agendar"][aria-current="page"] > span:first-child'),
   'Exactly one highlighted tab must be visible in one fixed shared bar on every student screen',
+);
+
+
+// The logged-in student avatar must be shown in the bottom menu too. A failed
+// or expired signed URL uses the existing initials fallback safely.
+const studentAvatar = read('src/components/student/profile-avatar.tsx');
+const studentChatStyles = read('src/components/floating-chat.module.css');
+assert.ok(
+  shell.includes('photoUrl={photoUrl} signOut={signOut} />') &&
+  mobile.includes('photoUrl?: string | null;') &&
+  mobile.includes('import { StudentProfileAvatar }') &&
+  mobile.includes('<StudentProfileAvatar name={name} initials={initials} photoUrl={photoUrl} />') &&
+  mobile.includes('{photoUrl ? (') &&
+  mobile.includes('{initials}') &&
+  studentAvatar.includes('onError={() => setFailedUrl(photoUrl)}') &&
+  studentLayout.includes("createSignedUrl(profile.avatar_path, 3600)"),
+  'Student menu should reuse the same private signed avatar URL as the app header, falling back to initials',
+);
+assert.ok(
+  sheet.includes("studentStyle ? 'z-[300] vento-student-menu' : 'z-[70]'") &&
+  studentChatStyles.includes('.studentDock { z-index:250; }') &&
+  studentChatStyles.includes('z-index:249') &&
+  sheet.includes('return createPortal(') &&
+  sheet.includes('document.body') &&
+  sheet.includes('aria-modal="true"'),
+  'Student menu modal must visually cover chat bubbles/launcher and scrim without changing other areas',
 );
 
 console.log('PASS: desktop layout and profile photo plus layered meeting-conflict protection');
