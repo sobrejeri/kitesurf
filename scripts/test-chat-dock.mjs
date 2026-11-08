@@ -76,7 +76,7 @@ assert.ok(
   'Dismiss all must preserve unread messages for reappearance on a new message, while X closes one chat',
 );
 assert.ok(
-  floatingChat.includes('aria-label="Alternar entre conversas"') &&
+  floatingChat.includes('aria-label="Alternar entre conversas recentes ou abertas"') &&
   floatingChat.includes('className={styles.threadSwitchButton}') &&
   floatingChat.includes('aria-pressed={selected}') &&
   floatingChat.includes('onClick={() => show(t.id)}') &&
@@ -128,3 +128,49 @@ assert.ok(
   'Composer emoji picker must work with existing drafts and preserve caret and character limit',
 );
 console.log('PASS: iOS keyboard-aware chat viewport and accessible emoji picker');
+
+// Historical reservations with the same instructor must not generate a photo
+// gallery at the top of one active chat. Only unread OR explicitly opened
+// conversations are eligible; different reservations with one person still
+// show a single portrait in the switcher.
+const {chatSwitcherThreads}=await import('../src/lib/chat-dock.ts');
+const denilsonHistory=[
+  {id:'denilson-selected',peerId:'denilson',name:'Denilson',lastAt:'2026-11-06T11:00:00Z',unread:0},
+  {id:'denilson-older-1',peerId:'denilson',name:'Denilson',lastAt:'2026-11-04T11:00:00Z',unread:0},
+  {id:'denilson-older-2',peerId:'denilson',name:'Denilson',lastAt:'2026-11-03T11:00:00Z',unread:0},
+  {id:'denilson-older-3',peerId:'denilson',name:'Denilson',lastAt:'2026-11-02T11:00:00Z',unread:0},
+];
+assert.deepEqual(
+  chatSwitcherThreads(denilsonHistory,'denilson-selected',['denilson-selected']).map(t=>t.id),
+  ['denilson-selected'],
+  'Opening one lesson must not show portraits of every older reservation with Denilson',
+);
+const newLucia={id:'lucia-new',peerId:'lucia',name:'Lucia',lastAt:'2026-11-07T11:00:00Z',unread:3};
+assert.deepEqual(
+  chatSwitcherThreads([...denilsonHistory,newLucia],'denilson-selected',['denilson-selected']).map(t=>t.id),
+  ['denilson-selected','lucia-new'],
+  'A new unread chat from a different person may appear beside the opened contact',
+);
+assert.deepEqual(
+  chatSwitcherThreads([...denilsonHistory,newLucia],'denilson-selected',['denilson-selected'],{'lucia-new':newLucia.lastAt}).map(t=>t.id),
+  ['denilson-selected'],
+  'A dismissed unread bubble must not reappear in the open chat photo switcher',
+);
+assert.deepEqual(
+  chatSwitcherThreads(denilsonHistory.map(t=>t.id==='denilson-older-1'?{...t,unread:5}:t),
+    'denilson-selected',['denilson-selected','denilson-older-2']).map(t=>t.id),
+  ['denilson-selected'],
+  'Even new messages on another booking with the same person cannot duplicate their portrait',
+);
+assert.ok(
+  floatingChat.includes('const [openedIds,setOpenedIds] = useState<string[]>([])') &&
+  floatingChat.includes('setOpenedIds(previous=>previous.includes(id)?previous:[...previous,id])') &&
+  floatingChat.includes('const switcherThreads=chatSwitcherThreads(threads,selectedId,openedIds,hiddenUnread)') &&
+  floatingChat.includes('selectedId && switcherThreads.length > 1 ? (') &&
+  floatingChat.includes('switcherThreads.map(t => {') &&
+  !floatingChat.includes('threads.map(t => {') &&
+  floatingChat.includes("setOpenedIds([])"),
+  'The photo row must be hidden for just one contact and never render all historical threads',
+);
+console.log('PASS: active chat photo row excludes duplicate historical reservations');
+

@@ -32,6 +32,34 @@ export function chatBubbles(threads: readonly ChatThread[]) {
     .sort((a,b) => b.lastAt.localeCompare(a.lastAt))
     .slice(0,5);
 }
+/** Small photo row inside an open chat: only newly received messages or
+ * chats opened by this user during the current session belong here.
+ * Multiple bookings with one person share ONE portrait, with priority for
+ * the selected reservation. The full inbox remains available in the menu. */
+export function chatSwitcherThreads(
+  threads: readonly ChatThread[],
+  selectedId: string | null,
+  openedIds: readonly string[],
+  hiddenUnread: Readonly<Record<string,string>> = {},
+): ChatThread[] {
+  const opened = new Set(openedIds);
+  const isFreshUnread = (thread:ChatThread) =>
+    thread.unread > 0 && hiddenUnread[thread.id] !== thread.lastAt;
+  const relevant = threads
+    .filter(t => t.id === selectedId || opened.has(t.id) || isFreshUnread(t))
+    .sort((a,b) => {
+      if (a.id === selectedId && b.id !== selectedId) return -1;
+      if (b.id === selectedId && a.id !== selectedId) return 1;
+      const unreadDifference = Number(isFreshUnread(b)) - Number(isFreshUnread(a));
+      return unreadDifference || b.lastAt.localeCompare(a.lastAt);
+    });
+  const people = new Map<string,ChatThread>();
+  for (const thread of relevant) {
+    if (!people.has(thread.peerId)) people.set(thread.peerId, thread);
+  }
+  return [...people.values()];
+}
+
 export function mergeChatMessages(previous: readonly ChatMessage[], incoming: readonly ChatMessage[]) {
   const rows = new Map([...previous,...incoming].map(message=>[message.id,message]));
   return [...rows.values()].sort((a,b)=>Date.parse(a.created_at)-Date.parse(b.created_at) || a.id.localeCompare(b.id));
