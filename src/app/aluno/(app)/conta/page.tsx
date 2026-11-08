@@ -41,6 +41,9 @@ export default async function AccountPage() {
       console.error('[student-profile] Error while loading avatar', error);
     }
   }
+  const completedMeetings = bookings.flatMap(booking=>
+    booking.booking_meetings.filter(meeting=>meeting.status==='done'));
+  const totalRecordedMinutes = completedMeetings.reduce((total,meeting)=>total+meeting.done_minutes,0);
   const history = bookings
     .flatMap((booking) => booking.booking_meetings.filter((m) => m.status === 'done'))
     .sort((a, b) => b.starts_at.localeCompare(a.starts_at))
@@ -49,6 +52,17 @@ export default async function AccountPage() {
   return (
     <div className="kite-modelo3 kite-modelo3--profile">
       <KiteModelo3Header />
+      <header className="vento-pc-desktop-only vento-pc-banner vento-pc-profile-banner"
+        style={{backgroundImage:"linear-gradient(90deg,#00233eea 2%,#00364d9c 47%,transparent),url('/images/kite-lesson.webp')"}}>
+        <span className="vento-pc-overline">SEU ESPAÇO NO KITE</span>
+        <h1>Meu <em>Perfil</em></h1>
+        <p>Gerencie seus dados e acompanhe sua jornada no kitesurf.</p>
+      </header>
+      <section className="vento-pc-desktop-only vento-pc-profile-stats" aria-label="Resumo do aluno">
+        <div><Icon name="calendar"/><span>Encontros realizados<strong>{completedMeetings.length}</strong></span></div>
+        <div><Icon name="clock"/><span>Seu tempo no mar<strong>{formatMinutes(totalRecordedMinutes)}</strong></span></div>
+        <div><Icon name="chart"/><span>Nível atual<strong>{KITE_LEVEL_BADGES[kiteLevel.effective].label}</strong></span></div>
+      </section>
 
       <div className="grid gap-4 lg:grid-cols-2">
         <section className="kite-m3-profile-card rounded-[22px] border border-line bg-surface p-5">
