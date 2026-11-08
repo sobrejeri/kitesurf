@@ -1,7 +1,8 @@
 'use client';
 
 import Link from 'next/link';
-import { usePathname } from 'next/navigation';
+import { usePathname, useRouter } from 'next/navigation';
+import { useRef } from 'react';
 
 import { Icon, type IconName } from './icon';
 import { OfficialLogo } from './official-logo';
@@ -123,6 +124,16 @@ const STUDENT_TABS: readonly TabItem[] = [
   { label: 'Perfil', href: '/aluno/conta', icon: 'user', match: ['/aluno/central', '/aluno/avisos', '/aluno/politicas'] },
 ];
 
+/** Fixed order of the five bottom tabs on student phones (including Agendar). 
+ * Other student routes are deliberately excluded from swipe navigation. */
+const STUDENT_SWIPE_ROUTES = [
+  '/aluno/inicio',
+  '/aluno/aulas',
+  '/aluno/reservar',
+  '/aluno/evolucao',
+  '/aluno/conta',
+] as const;
+
 /** Pages reached from inside another tab: they get a back arrow on phones. */
 const STUDENT_SUBPAGES = [
   '/aluno/reservar',
@@ -163,6 +174,75 @@ export function StudentShell({
   signOut: () => Promise<void>;
 }) {
   const pathname = usePathname();
+  const router = useRouter();
+  const swipeStart = useRef<{ x: number; y: number; at: number } | null>(null);
+  const swipeTabIndex = (STUDENT_SWIPE_ROUTES as readonly string[]).indexOf(pathname);
+
+  // Native vertical scrolling and horizontal UI controls always take precedence.
+  // Only the exact five bottom tabs accept a one-finger horizontal swipe on phones.
+  const onStudentTouchStart = (event: React.TouchEvent<HTMLElement>) => {
+    swipeStart.current = null;
+    if (!signedIn || swipeTabIndex < 0 || window.innerWidth >= 768 ||
+        event.touches.length !== 1) return;
+    const target = event.target;
+    if (!(target instanceof Element) || !event.currentTarget.contains(target)) return;
+    // Simple links and buttons still allow swiping across their cards. The
+    // recognized gesture cancels the synthetic tap/click in onTouchEnd.
+    if (target.closest(
+      'input,textarea,select,[role="dialog"],[role="tablist"],' +
+      '[role="slider"],[contenteditable="true"],' +
+      '[data-student-swipe-ignore],[data-carousel],.overflow-x-auto,.overflow-x-scroll,.snap-x'
+    )) return;
+
+    // Respect scrollable carousels even when overflow is set by custom CSS.
+    let element: Element | null = target;
+    while (element && element !== event.currentTarget) {
+      const node = element as HTMLElement;
+      if (node.scrollWidth > node.clientWidth + 6) {
+        const overflow = window.getComputedStyle(element).overflowX;
+        if (overflow === 'auto' || overflow === 'scroll') return;
+      }
+      element = element.parentElement;
+    }
+    const touch = event.touches.item(0);
+    if (!touch) return;
+    swipeStart.current = { x: touch.clientX, y: touch.clientY, at: Date.now() };
+  };
+
+  const onStudentTouchMove = (event: React.TouchEvent<HTMLElement>) => {
+    const start = swipeStart.current;
+    const touch = event.touches.item(0);
+    if (!start || !touch || event.touches.length !== 1) {
+      swipeStart.current = null;
+      return;
+    }
+    const dx = Math.abs(touch.clientX - start.x);
+    const dy = Math.abs(touch.clientY - start.y);
+    if (dy > 24 && dy > dx) swipeStart.current = null;
+  };
+
+  const onStudentTouchEnd = (event: React.TouchEvent<HTMLElement>) => {
+    const start = swipeStart.current;
+    swipeStart.current = null;
+    if (!start || swipeTabIndex < 0 || event.changedTouches.length !== 1 ||
+        Date.now() - start.at > 1200) return;
+    const touch = event.changedTouches.item(0);
+    if (!touch) return;
+    const dx = touch.clientX - start.x;
+    const dy = touch.clientY - start.y;
+    const minDistance = Math.max(64, Math.min(100, window.innerWidth * .17));
+    if (Math.abs(dx) < minDistance || Math.abs(dx) < Math.abs(dy) * 1.4) return;
+    // Avoid a second navigation via a synthesized click on a card or button.
+    // Touchend is not registered as a passive listener by React.
+    event.preventDefault();
+
+    // Left moves forward; right moves backward. The first and last tab are hard edges.
+    const nextIndex = swipeTabIndex + (dx < 0 ? 1 : -1);
+    if (nextIndex < 0 || nextIndex >= STUDENT_SWIPE_ROUTES.length) return;
+    const nextRoute = STUDENT_SWIPE_ROUTES[nextIndex];
+    if (nextRoute) router.push(nextRoute);
+  };
+
   // The four approved screens and the remaining student workflows share one
   // desktop workspace. Mobile keeps its exact original shell and components.
   const desktopRedesign = [
@@ -306,7 +386,13 @@ export function StudentShell({
         </div>
       </div>
 
-      <main className="vento-student-main relative mx-auto max-w-6xl px-4 pb-tabbar md:px-8 md:pb-0 md:pt-6">{children}</main>
+      <main
+        className="vento-student-main relative mx-auto max-w-6xl px-4 pb-tabbar md:px-8 md:pb-0 md:pt-6"
+        onTouchStart={onStudentTouchStart}
+        onTouchMove={onStudentTouchMove}
+        onTouchEnd={onStudentTouchEnd}
+        onTouchCancel={() => { swipeStart.current = null; }}
+      >{children}</main>
       <SiteFooter />
       <div className="kite-m3-wave-band" aria-hidden="true">
         <svg viewBox="0 0 1200 110" preserveAspectRatio="none" focusable="false">

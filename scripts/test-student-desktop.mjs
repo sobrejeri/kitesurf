@@ -296,4 +296,44 @@ assert.ok(
   'Profile avatar must sit nearer the existing 70%-size logo, without altering the portrait',
 );
 
+
+
+// Phone app should swipe only across the five main bottom tabs, in the exact
+// displayed order. Interior booking, conversation and incident routes are not
+// swipe destinations, and desktop/vertical interaction remains unaffected.
+const phoneTabs = [
+  '/aluno/inicio', '/aluno/aulas', '/aluno/reservar',
+  '/aluno/evolucao', '/aluno/conta',
+];
+const swipeDeclaration = shell.match(/const STUDENT_SWIPE_ROUTES = \[([\s\S]*?)\] as const;/)?.[1] ?? '';
+assert.deepEqual(
+  [...swipeDeclaration.matchAll(/'(\/aluno\/[^']+)'/g)].map((match) => match[1]),
+  phoneTabs,
+  'Student swipe destinations must match the five visual tabs, including the central Agendar',
+);
+assert.ok(
+  shell.includes("const swipeTabIndex = (STUDENT_SWIPE_ROUTES as readonly string[]).indexOf(pathname)") &&
+  shell.includes('!signedIn || swipeTabIndex < 0 || window.innerWidth >= 768') &&
+  shell.includes('event.touches.length !== 1') &&
+  shell.includes("Date.now() - start.at > 1200") &&
+  shell.includes('Math.abs(dx) < minDistance || Math.abs(dx) < Math.abs(dy) * 1.4') &&
+  shell.includes('swipeTabIndex + (dx < 0 ? 1 : -1)') &&
+  shell.includes('nextIndex < 0 || nextIndex >= STUDENT_SWIPE_ROUTES.length') &&
+  shell.includes('if (nextRoute) router.push(nextRoute)'),
+  'Only mobile signed-in student tabs accept intentional horizontal gestures, with hard boundaries',
+);
+assert.ok(
+  shell.includes("!event.currentTarget.contains(target)") &&
+  shell.includes('[data-student-swipe-ignore],[data-carousel]') &&
+  shell.includes(".overflow-x-auto,.overflow-x-scroll,.snap-x") &&
+  shell.includes("window.getComputedStyle(element).overflowX") &&
+  shell.includes("if (dy > 24 && dy > dx) swipeStart.current = null") &&
+  shell.includes("event.preventDefault()") &&
+  shell.includes('onTouchStart={onStudentTouchStart}') &&
+  shell.includes('onTouchMove={onStudentTouchMove}') &&
+  shell.includes('onTouchEnd={onStudentTouchEnd}') &&
+  shell.includes('onTouchCancel={() => { swipeStart.current = null; }}'),
+  'Swipe navigation must preserve page scroll, internal carousels, dialogs, and ordinary taps',
+);
+
 console.log('PASS: desktop layout and profile photo plus layered meeting-conflict protection');
