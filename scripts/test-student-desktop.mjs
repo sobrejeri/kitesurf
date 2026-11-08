@@ -277,4 +277,23 @@ assert.ok(
   'Profile interactions and existing mobile component mounting must remain unchanged',
 );
 
+
+// The profile's mobile back arrow uses an actual local route (not browser
+// history) and must not displace the centered brand or the menu.
+assert.ok(
+  shell.includes("pathname === '/aluno/conta' ? (") &&
+  shell.includes('href="/aluno/inicio" aria-label="Voltar ao início"') &&
+  shell.includes('<Icon name="back" />') &&
+  shell.includes('className="pointer-events-auto kite-m3-menu-button"'),
+  'Profile mobile top bar must offer an accessible back arrow and retain the menu',
+);
+assert.ok(
+  mobileProfileCss.includes('min-height:124px;') &&
+  mobileProfileCss.includes('margin-bottom:0;') &&
+  mobileProfileCss.includes('padding-bottom:4px;') &&
+  mobileProfileCss.includes('width:min(42.7vw,158px)') &&
+  mobileProfilePage.includes('<ProfilePhotoPicker'),
+  'Profile avatar must sit nearer the existing 70%-size logo, without altering the portrait',
+);
+
 console.log('PASS: desktop layout and profile photo plus layered meeting-conflict protection');

@@ -45,6 +45,10 @@
     border:0;
     border-radius:0;
     box-shadow:none;
+    /* Bring the avatar closer to the logo without shrinking either. */
+    min-height:124px;
+    margin-bottom:0;
+    padding-bottom:4px;
   }
   .theme-mar-profundo .kite-modelo3--profile .kite-m3-header__inner {
     width:100%;

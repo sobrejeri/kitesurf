@@ -274,7 +274,11 @@ export function StudentShell({
           the tabs on "Minhas aulas"); only its own buttons take clicks. */}
       <div className="pointer-events-none pt-safe absolute inset-x-0 top-0 z-30 md:hidden">
         <div className="flex h-16 items-center gap-1 px-4">
-          {subpage ? (
+          {pathname === '/aluno/conta' ? (
+            <Link href="/aluno/inicio" aria-label="Voltar ao início" className="press pointer-events-auto -ml-2 grid h-11 w-11 place-items-center rounded-full border border-[#2a8397] bg-[#002a40]/80 text-white focus-visible:outline-2 focus-visible:outline-[#baff08]">
+              <Icon name="back" />
+            </Link>
+          ) : subpage ? (
             <button type="button" onClick={() => history.back()} aria-label="Voltar" className="press pointer-events-auto -ml-2 grid h-10 w-10 place-items-center rounded-full text-white">
               <Icon name="back" />
             </button>
