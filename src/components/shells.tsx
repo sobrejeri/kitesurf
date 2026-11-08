@@ -204,13 +204,14 @@ export function StudentShell({
       }
       element = element.parentElement;
     }
-    const touch = event.touches[0];
+    const touch = event.touches.item(0);
+    if (!touch) return;
     swipeStart.current = { x: touch.clientX, y: touch.clientY, at: Date.now() };
   };
 
   const onStudentTouchMove = (event: React.TouchEvent<HTMLElement>) => {
     const start = swipeStart.current;
-    const touch = event.touches[0];
+    const touch = event.touches.item(0);
     if (!start || !touch || event.touches.length !== 1) {
       swipeStart.current = null;
       return;
@@ -225,7 +226,8 @@ export function StudentShell({
     swipeStart.current = null;
     if (!start || swipeTabIndex < 0 || event.changedTouches.length !== 1 ||
         Date.now() - start.at > 1200) return;
-    const touch = event.changedTouches[0];
+    const touch = event.changedTouches.item(0);
+    if (!touch) return;
     const dx = touch.clientX - start.x;
     const dy = touch.clientY - start.y;
     const minDistance = Math.max(64, Math.min(100, window.innerWidth * .17));
@@ -237,7 +239,8 @@ export function StudentShell({
     // Left moves forward; right moves backward. The first and last tab are hard edges.
     const nextIndex = swipeTabIndex + (dx < 0 ? 1 : -1);
     if (nextIndex < 0 || nextIndex >= STUDENT_SWIPE_ROUTES.length) return;
-    router.push(STUDENT_SWIPE_ROUTES[nextIndex]);
+    const nextRoute = STUDENT_SWIPE_ROUTES[nextIndex];
+    if (nextRoute) router.push(nextRoute);
   };
 
   // The four approved screens and the remaining student workflows share one
