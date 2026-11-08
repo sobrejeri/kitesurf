@@ -79,7 +79,8 @@ export function StudentSwipePager({
   }, [pathname]);
 
   useEffect(() => {
-    if (!active) return;
+    // Do not fetch adjacent private pages on desktop: this pager is phone-only.
+    if (!active || window.innerWidth >= 768) return;
     const frame = viewport.current;
     const page = current.current;
     const incoming = preview.current;
