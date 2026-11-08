@@ -1,0 +1,135 @@
+/* VentoKite — login, signup, recovery and reset desktop-only visual system.
+   At widths below 1024px the original mobile/PWA styles remain authoritative. */
+.vento-pc-auth-story{display:none}
+@media(min-width:1024px){
+  .theme-beach.kite-m3-auth.vento-pc-auth-shell{
+    display:grid;grid-template-columns:minmax(0,1.18fr) minmax(440px,.82fr);
+    align-items:stretch;min-height:100dvh;padding:0;overflow-x:hidden;
+    background:#001a2e;color:#f3fcff;
+  }
+  .vento-pc-auth-shell>.sunset-photo,
+  .vento-pc-auth-shell>.sunset-veil,
+  .vento-pc-auth-shell>.kite-m3-auth-kite{
+    display:none!important
+  }
+  .vento-pc-auth-shell .vento-pc-auth-story{
+    position:relative;isolation:isolate;display:flex;flex-direction:column;
+    align-items:flex-start;justify-content:space-between;overflow:hidden;
+    min-height:100dvh;border-right:1px solid #18879b;background:#01455f;
+  }
+  .vento-pc-auth-story .vento-pc-auth-photo{
+    position:absolute;inset:0;z-index:-2;display:block;width:100%;height:100%;
+    object-fit:cover;object-position:61% 50%;
+  }
+  .vento-pc-auth-story .vento-pc-auth-shade{
+    position:absolute;inset:0;z-index:-1;
+    background:linear-gradient(100deg,#002136f2 4%,#004359c8 52%,#00738a32 100%),
+      linear-gradient(0deg,#002239bd 2%,transparent 58%);
+  }
+  .vento-pc-auth-story-content{
+    display:flex;flex-direction:column;align-items:flex-start;position:relative;
+    gap:0;max-width:770px;padding:clamp(33px,4.5vw,80px);
+  }
+  .vento-pc-auth-story-content .vento-official-logo{width:min(85%,300px);height:auto;object-fit:contain}
+  .vento-pc-auth-brand{width:100%;margin-bottom:clamp(70px,10vh,145px)}
+  .vento-pc-auth-overline{
+    position:relative;padding-left:65px;color:#baff08;font-size:12px;letter-spacing:.22em;
+    font-weight:850;text-transform:uppercase;
+  }
+  .vento-pc-auth-overline:before{
+    position:absolute;top:7px;left:0;content:"";height:5px;width:50px;
+    border-radius:8px;background:#baff08;
+  }
+  .vento-pc-auth-story h2{
+    margin:19px 0 14px;color:#fff;max-width:690px;font-weight:950;
+    letter-spacing:-.05em;line-height:1.02;
+    font-size:clamp(43px,4.45vw,78px);
+    text-shadow:0 8px 22px #00243f90;
+  }
+  .vento-pc-auth-story h2 em{font-style:italic;color:#baff08}
+  .vento-pc-auth-story p{
+    max-width:540px;font-size:clamp(17px,1.25vw,21px);
+    color:#e0f1f8;line-height:1.55;
+  }
+  .vento-pc-auth-waves{
+    width:100%;min-height:80px;margin-top:auto;
+    background:linear-gradient(174deg,transparent 0 30%,#0de4dc 31% 42%,#aaff08 45% 58%,#003c53 64% 100%);
+    opacity:.9;clip-path:polygon(0 27%,15% 34%,32% 26%,51% 38%,66% 23%,81% 34%,100% 20%,100% 100%,0 100%);
+  }
+  .theme-beach.kite-m3-auth.vento-pc-auth-shell>main{
+    position:relative;display:flex;flex-direction:column;align-self:stretch;justify-content:center;
+    width:100%;max-width:660px;min-height:100dvh;
+    padding:55px clamp(28px,4.3vw,83px) 28px;margin:0 auto;
+    background:radial-gradient(ellipse 105% 65% at 80% 0%,#094c61,#001f35 83%);
+  }
+  .vento-pc-auth-shell .kite-m3-auth-login-intro,
+  .vento-pc-auth-shell .kite-m3-auth-signup-intro{
+    display:flex;align-items:flex-start;text-align:left;max-width:100%;
+    width:100%;margin:0 0 19px;
+  }
+  .vento-pc-auth-shell .kite-m3-auth-login-intro>.kite-m3-logo,
+  .vento-pc-auth-shell .kite-m3-auth-signup-intro>.kite-m3-logo{
+    display:none!important
+  }
+  .vento-pc-auth-shell .kite-m3-auth-login-title{
+    font-family:var(--font-space-grotesk),system-ui,sans-serif;
+    font-size:clamp(28px,2.7vw,46px)!important;line-height:1.06;
+    font-weight:900;letter-spacing:-.04em;text-align:left;color:#fff;
+  }
+  .vento-pc-auth-shell .kite-m3-auth-login-lead{
+    color:#d6e9f1;text-align:left;font-size:16px;margin-top:8px;
+  }
+  .vento-pc-auth-shell .kite-m3-auth-login-panel,
+  .vento-pc-auth-shell .kite-m3-auth-signup-panel{
+    width:100%;max-width:none;margin:0;padding:28px 28px 26px;
+    border-radius:23px;border:1px solid #28899d;
+    background:linear-gradient(120deg,#064158f5,#012d45f2);
+    box-shadow:0 16px 38px #00101f73;
+  }
+  .vento-pc-auth-shell .glass :is(input,select,textarea){
+    background:#002b42;border-color:#25899c;color:#fff;font-size:16px;min-height:46px;
+  }
+  .vento-pc-auth-shell .glass :is(input,select,textarea):focus-visible{
+    outline:2px solid #baff08;outline-offset:2px
+  }
+  .vento-pc-auth-shell .glass button[type="submit"]{
+    min-height:49px;border-radius:999px;font-size:16px;font-weight:900;
+  }
+  .vento-pc-auth-shell>main>p:last-child{
+    margin-top:20px;padding:0;text-align:center;font-size:12px;color:#b6d5e0
+  }
+  .vento-pc-auth-shell.vento-pc-recovery-auth>main{
+    display:flex;flex-direction:column;align-items:stretch;justify-content:center;
+    width:100%;max-width:650px;
+  }
+  .vento-pc-recovery-auth main>.kite-m3-logo{
+    display:none!important
+  }
+  .vento-pc-recovery-auth main>h1{
+    margin:0 0 21px;font-size:clamp(31px,3vw,45px);
+    font-family:var(--font-space-grotesk),system-ui,sans-serif;font-weight:900;
+    letter-spacing:-.035em;line-height:1.1;color:#fff;
+  }
+  .vento-pc-recovery-auth main>.rounded-\[22px\]{
+    padding:29px;border:1px solid #258aa0;background:linear-gradient(140deg,#06475d,#002d44);
+    border-radius:23px;box-shadow:0 14px 34px #000f1d5b
+  }
+  .vento-pc-recovery-auth main>.rounded-\[22px\] p{
+    font-size:15px;line-height:1.6;
+  }
+  .vento-pc-recovery-auth main>.rounded-\[22px\] input{
+    min-height:48px;background:#002d42;color:#fff;border-color:#278b9b;
+  }
+  .vento-pc-recovery-auth main>.rounded-\[22px\] button[type="submit"]{
+    min-height:48px;border-radius:99px;font-size:15px
+  }
+  .vento-pc-recovery-auth main>a{margin-top:24px;color:#baff08;font-size:14px;font-weight:750}
+}
+@media(min-width:1024px) and (max-width:1280px){
+  .theme-beach.kite-m3-auth.vento-pc-auth-shell{
+    grid-template-columns:minmax(0,1fr) minmax(420px,1fr)
+  }
+  .vento-pc-auth-story-content{padding:40px}
+  .vento-pc-auth-story h2{font-size:clamp(38px,4vw,58px)}
+  .theme-beach.kite-m3-auth.vento-pc-auth-shell>main{padding:36px}
+}
