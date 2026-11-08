@@ -24,15 +24,13 @@ export const chatBookingId = (href: string, area: ChatArea): string | null => {
   const match = href.match(new RegExp(`^/${area}/atendimento/([a-f0-9-]{36})$`, 'i'));
   return match?.[1] ?? null;
 };
+/** Each notification bubble represents one reservation conversation, not a
+ * merged peer: opening it must clear only its own real unread messages. */
 export function chatBubbles(threads: readonly ChatThread[]) {
-  const people = new Map<string, ChatThread>();
-  for (const thread of [...threads].sort((a,b) => b.lastAt.localeCompare(a.lastAt))) {
-    if (!thread.unread) continue;
-    const existing = people.get(thread.peerId);
-    if (existing) existing.unread += thread.unread;
-    else people.set(thread.peerId, { ...thread });
-  }
-  return [...people.values()].slice(0,3);
+  return [...threads]
+    .filter(thread => thread.unread > 0)
+    .sort((a,b) => b.lastAt.localeCompare(a.lastAt))
+    .slice(0,5);
 }
 export function mergeChatMessages(previous: readonly ChatMessage[], incoming: readonly ChatMessage[]) {
   const rows = new Map([...previous,...incoming].map(message=>[message.id,message]));
