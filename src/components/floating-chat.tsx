@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useRef, useState, type CSSProperties, type PointerEvent as ReactPointerEvent } from 'react';
 import { createPortal } from 'react-dom';
-import { chatBookingId, chatBubbles, mergeChatMessages, chatWasRead, presenceLabel, chatThreadTag, type ChatRead, type ChatArea, type ChatMessage, type ChatThread } from '@/lib/chat-dock';
+import { chatBookingId, chatBubbles, chatSwitcherThreads, mergeChatMessages, chatWasRead, presenceLabel, chatThreadTag, type ChatRead, type ChatArea, type ChatMessage, type ChatThread } from '@/lib/chat-dock';
 import {CHAT_FILE_TYPES,MAX_CHAT_FILE} from '@/lib/chat-files';
 import { initials } from '@/lib/people';
 import { Icon } from './icon';
@@ -42,6 +42,9 @@ export function FloatingChat({area,viewerId}: {area:ChatArea;viewerId:string}) {
   const [emojiOpen,setEmojiOpen] = useState(false);
   const [visibleViewport,setVisibleViewport] = useState<{top:number;height:number;keyboard:boolean}|null>(null);
   const [selectedId,setSelectedId] = useState<string|null>(null);
+  // Never show the full booking history as a row of repeated contact photos.
+  // Only sessions the user opened, or new unread conversations, get a tab.
+  const [openedIds,setOpenedIds] = useState<string[]>([]);
   const [detail,setDetail] = useState<ChatThread|null>(null);
   const [messages,setMessages] = useState<ChatMessage[]>([]);
   const [hasOlder,setHasOlder] = useState(false);
@@ -73,6 +76,7 @@ export function FloatingChat({area,viewerId}: {area:ChatArea;viewerId:string}) {
   const endpoint = `/${area}/chat-live`;
   const visibleUnread=threads.filter(t=>t.unread>0 && hiddenUnread[t.id]!==t.lastAt);
   const bubbleList=chatBubbles(visibleUnread);
+  const switcherThreads=chatSwitcherThreads(threads,selectedId,openedIds,hiddenUnread);
   const stackWidth=58+Math.max(0,bubbleList.length-1)*18;
   const stackHeight=58+Math.max(0,bubbleList.length-1)*10;
   const extraUnreadThreads=Math.max(0,visibleUnread.length-bubbleList.length);
@@ -82,7 +86,7 @@ export function FloatingChat({area,viewerId}: {area:ChatArea;viewerId:string}) {
 
   const refreshInbox = useCallback(async (signal?:AbortSignal) => {
     const response = await fetch(endpoint,{cache:'no-store',signal});
-    const clear = () => {setThreads([]);setMessages([]);setDrafts({});setDetail(null);setOpen(false);setSelectedId(null);setLocationDraft(null);selectedRef.current=null;};
+    const clear = () => {setThreads([]);setMessages([]);setDrafts({});setDetail(null);setOpen(false);setSelectedId(null);setOpenedIds([]);setHiddenUnread({});setLocationDraft(null);selectedRef.current=null;};
     if (response.status===401 || response.status===403 || response.redirected) {
       clear();throw new Error('Entre novamente para abrir as conversas.');
     }
@@ -111,6 +115,8 @@ export function FloatingChat({area,viewerId}: {area:ChatArea;viewerId:string}) {
   },[refreshInbox]);
 
   const show = useCallback((id:string) => {
+    // A conversation enters the photo switcher only once it was opened.
+    setOpenedIds(previous=>previous.includes(id)?previous:[...previous,id]);
     selectedRef.current=id;
     if (selectedId!==id) {
       setMessages([]);setDetail(null);setHasOlder(false);historyLoaded.current=false;follow.current=true;
@@ -426,10 +432,10 @@ export function FloatingChat({area,viewerId}: {area:ChatArea;viewerId:string}) {
           <small>{selectedId?thread?chatThreadTag(thread):'Reserva':'Mensagens das suas aulas'}</small></div>
         <button type="button" aria-label="Fechar conversa" title="Fechar conversa" onClick={minimize}><Icon name="close" /></button>
       </header>
-      {threads.length ? (
-        <nav className={styles.threadSwitcher} aria-label="Alternar entre conversas">
+      {selectedId && switcherThreads.length > 1 ? (
+        <nav className={styles.threadSwitcher} aria-label="Alternar entre conversas recentes ou abertas">
           <div className={styles.threadSwitcherScroll}>
-            {threads.map(t => {
+            {switcherThreads.map(t => {
               const selected = selectedId === t.id;
               return (
                 <button type="button" key={t.id}
