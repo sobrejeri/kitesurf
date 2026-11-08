@@ -39,3 +39,51 @@ assert.equal(chatFileMatches(new TextEncoder().encode('<script>bad</script>'),'i
 assert.equal(chatFileMatches(new Uint8Array([255,216,255,0]),'image/jpeg'),true);
 assert.equal(chatFileMatches(new Uint8Array([0,65]),'text/plain'),false);
 console.log('PASS: receipts, presence, reservation dates and attachment format checks');
+
+
+// Messenger-style UI regression: one draggable unread stack, a safe dismiss
+// target, X to close the active window, and photo switching inside the chat.
+const {readFileSync}=await import('node:fs');
+const floatingChat=readFileSync(new URL('../src/components/floating-chat.tsx',import.meta.url),'utf8');
+const floatingCss=readFileSync(new URL('../src/components/floating-chat.module.css',import.meta.url),'utf8');
+const lineIcons=readFileSync(new URL('../src/components/icon.tsx',import.meta.url),'utf8');
+assert.ok(
+  !floatingChat.includes('ref={launcher}') &&
+  floatingChat.includes("const visibleUnread=threads.filter(t=>t.unread>0 && hiddenUnread[t.id]!==t.lastAt)") &&
+  floatingChat.includes('const bubbleList=chatBubbles(visibleUnread)') &&
+  floatingChat.includes('const extraUnreadThreads=') &&
+  floatingChat.includes('onClick={()=>{if(suppressBubbleClick.current)return;show(t.id);}}') &&
+  floatingChat.includes('onPointerDown={onBubbleDown}') &&
+  floatingChat.includes('onPointerMove={onBubbleMove}') &&
+  floatingChat.includes('onPointerUp={onBubbleUp}') &&
+  floatingChat.includes("if(!drag.moved) event.currentTarget.setPointerCapture(event.pointerId)") &&
+  floatingChat.includes("bubbleSide.current=side") &&
+  floatingChat.includes("setBubblePosition({") &&
+  floatingCss.includes('.bubbles {') && floatingCss.includes('touch-action:none') &&
+  floatingCss.includes('.bubblesDragging {'),
+  'Unread conversation avatars must be draggable between the two screen sides without intercepting taps',
+);
+assert.ok(
+  floatingChat.includes('const dismissAllBubbles=useCallback') &&
+  floatingChat.includes('for(const t of threads) if(t.unread>0) next[t.id]=t.lastAt') &&
+  floatingChat.includes('dismissAllBubbles();return;') &&
+  floatingChat.includes("styles.trashTarget") &&
+  floatingChat.includes("styles.trashTargetHot") &&
+  floatingChat.includes('aria-label="Solte aqui para fechar todas as bolinhas de conversa"') &&
+  floatingChat.includes('setHiddenUnread(previous=>({...previous,[current.id]:current.lastAt}))') &&
+  floatingChat.includes('aria-label="Fechar conversa"') &&
+  lineIcons.includes('close: <path'),
+  'Dismiss all must preserve unread messages for reappearance on a new message, while X closes one chat',
+);
+assert.ok(
+  floatingChat.includes('aria-label="Alternar entre conversas"') &&
+  floatingChat.includes('className={styles.threadSwitchButton}') &&
+  floatingChat.includes('aria-pressed={selected}') &&
+  floatingChat.includes('onClick={() => show(t.id)}') &&
+  floatingChat.includes("url.pathname.replace(/\\/$/, '') ===") &&
+  floatingCss.includes('.threadSwitcherScroll {') &&
+  floatingCss.includes('.threadSwitchButton[aria-pressed="true"]') &&
+  floatingCss.includes('.studentDock .badge,.studentDock .count { background:#e6334e;color:#fff; }'),
+  'Open chat must offer horizontal thumbnail switching, menu access and red unread counters',
+);
+console.log('PASS: messenger-style stacked unread bubbles, side snapping, dismiss X and top photo switcher');
