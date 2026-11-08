@@ -218,7 +218,7 @@ assert.ok(desktopBuilderPage.includes('<LessonBuilder') &&
   authUI.includes('<StudentDesktopAuthStory') &&
   recoveryUI.includes('<StudentDesktopAuthStory'),
   'Existing booking, QR, queue, chat and authentication functionality must remain mounted');
-assert.ok(secondaryCss.includes('.vento-pc-voucher-qr svg') &&
+assert.ok(secondaryCss.includes('.vento-voucher-qr svg') &&
   secondaryCss.includes('.vento-pc-incidents-screen') &&
   secondaryCss.includes('.vento-pc-central-screen') &&
   authCss.includes('.vento-pc-recovery-auth'),
