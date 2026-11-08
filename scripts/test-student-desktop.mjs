@@ -167,4 +167,12 @@ assert.ok(studentEvolution.includes('vento-pc-evolution-columns') &&
   studentProfile.includes('ProfileEditor'),
   'Desktop evolution and profile must retain real data and photo/edit actions');
 
+// Desktop evolution refinements must never hide the mobile timeline or its states.
+assert.ok(pcCss.includes('Desktop evolution follow-up: readable stage cards') &&
+  pcCss.includes('.kite-m3-journey-section > ol > li > span[aria-hidden="true"]') &&
+  pcCss.includes('display:none!important') &&
+  pcCss.includes('@media (min-width:1024px) and (max-width:1500px)') &&
+  studentEvolution.includes('kiteStageStatus(curriculumSkills, step.id)'),
+  'Desktop evolution keeps real status calculations while hiding only conflicting desktop connectors');
+
 console.log('PASS: desktop layout and profile photo plus layered meeting-conflict protection');
