@@ -297,3 +297,118 @@
   .vento-student-redesign .kite-modelo3--profile > .kite-m3-header {display:none!important}
   .vento-student-redesign .vento-pc-profile-stats {display:grid}
 }
+
+/* Desktop evolution follow-up: readable stage cards without the mobile
+   timeline connectors, which collided when laid out in two columns. */
+@media (min-width:1024px) {
+  .vento-student-redesign .kite-modelo3--evolution .kite-m3-progress-header {
+    padding:26px 30px!important;
+    border-color:#188ca0;
+  }
+  .vento-student-redesign .kite-modelo3--evolution .kite-m3-progress-header h2 {
+    font-size:25px!important;
+  }
+  .vento-student-redesign .kite-modelo3--evolution .kite-m3-progress-header .tabular.text-\[30px\] {
+    font-size:48px!important;
+  }
+  .vento-student-redesign .kite-modelo3--evolution .kite-m3-progress-header .relative.h-\[84px\]{
+    width:140px;
+    height:140px;
+  }
+  .vento-student-redesign .kite-modelo3--evolution .kite-m3-progress-header .text-\[19px\] {
+    font-size:28px!important;
+    color:#fff;
+  }
+  .vento-student-redesign .kite-modelo3--evolution .kite-m3-progress-header .text-\[9px\] {
+    font-size:12px!important;
+    line-height:1.2;
+    color:#cde4ef;
+  }
+  .vento-student-redesign .kite-modelo3--evolution .kite-m3-progress-header .text-\[12px\] {
+    font-size:15px!important;
+    line-height:1.5;
+    color:#cee4ed;
+  }
+  .vento-student-redesign .kite-modelo3--evolution .vento-pc-evolution-metrics > a .text-\[12px\]{
+    font-size:15px!important;
+  }
+  .vento-student-redesign .kite-modelo3--evolution .vento-pc-evolution-metrics > a .text-\[11px\]{
+    font-size:13px!important;
+  }
+  .vento-student-redesign .kite-modelo3--evolution .vento-pc-evolution-columns > section {
+    min-height:0;
+  }
+  .vento-student-redesign .kite-modelo3--evolution .kite-m3-journey-section {
+    background:linear-gradient(120deg,#043d54f5,#00374dde)!important;
+  }
+  .vento-student-redesign .kite-modelo3--evolution .kite-m3-journey-section > ol {
+    gap:13px;
+    margin-top:22px;
+    align-items:stretch;
+  }
+  .vento-student-redesign .kite-modelo3--evolution .kite-m3-journey-section > ol > li {
+    min-height:126px;
+    padding:15px 13px;
+    border:1px solid #237b8e;
+    border-radius:16px;
+    background:#032f44e8;
+    gap:12px;
+    align-items:flex-start;
+  }
+  .vento-student-redesign .kite-modelo3--evolution .kite-m3-journey-section > ol > li > span[aria-hidden="true"]{
+    display:none!important;
+  }
+  .vento-student-redesign .kite-modelo3--evolution .kite-m3-journey-section > ol > li > span:nth-last-child(2){
+    width:42px;
+    height:42px;
+    min-width:42px;
+    font-size:15px;
+  }
+  .vento-student-redesign .kite-modelo3--evolution .kite-m3-journey-section > ol > li strong {
+    font-size:16px!important;
+    line-height:1.35;
+    color:#fff;
+  }
+  .vento-student-redesign .kite-modelo3--evolution .kite-m3-journey-section > ol > li .text-\[12px\]{
+    font-size:13px!important;
+    line-height:1.45;
+    color:#c4e0e9;
+  }
+  .vento-student-redesign .kite-modelo3--evolution .kite-m3-journey-section > ol > li .text-\[11px\]{
+    display:block;
+    margin-top:8px;
+    font-size:13px!important;
+    line-height:1.3;
+    color:var(--pc-neon);
+  }
+  .vento-student-redesign .kite-modelo3--evolution .kite-m3-journey-section > div:first-of-type h2 {
+    font-size:25px!important;
+  }
+  .vento-student-redesign .kite-modelo3--evolution .kite-m3-journey-section > div:first-of-type p {
+    font-size:14px!important;
+    line-height:1.5;
+  }
+  .vento-student-redesign .kite-modelo3--evolution .vento-pc-evolution-columns > section:nth-child(2) h2 {
+    font-size:23px!important;
+  }
+  .vento-student-redesign .kite-modelo3--evolution .vento-pc-evolution-columns > section:nth-child(2) li strong {
+    font-size:15px!important;
+    line-height:1.3;
+  }
+  .vento-student-redesign .kite-modelo3--evolution .vento-pc-evolution-columns > section:nth-child(2) li .text-\[11px\]{
+    font-size:12px!important;
+    line-height:1.35;
+  }
+  .vento-student-redesign .kite-modelo3--evolution .vento-pc-evolution-columns > section:nth-child(2) li a {
+    min-height:76px;
+    padding:13px 15px;
+  }
+}
+@media (min-width:1024px) and (max-width:1500px) {
+  .vento-student-redesign .kite-modelo3--evolution .kite-m3-journey-section > ol {
+    grid-template-columns:1fr;
+  }
+  .vento-student-redesign .kite-modelo3--evolution .kite-m3-journey-section > ol > li{
+    min-height:98px;
+  }
+}
