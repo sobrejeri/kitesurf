@@ -294,7 +294,7 @@ export function StudentShell({
             links={STUDENT_MENU}
             footer={
               signedIn ? (
-                <SheetAccount name={name} subtitle="Aluno" initials={initials} signOut={signOut} />
+                <SheetAccount name={name} subtitle="Aluno" initials={initials} photoUrl={photoUrl} signOut={signOut} />
               ) : (
                 <div className="grid grid-cols-2 gap-2">
                   <Link href="/aluno/entrar" className="press rounded-full border border-line py-3 text-center text-[14px] font-[550] text-ink">Entrar</Link>
