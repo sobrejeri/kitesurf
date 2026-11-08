@@ -8,6 +8,7 @@ import { rateInstructor } from '@/app/actions/ratings';
 import { ActionForm } from '@/components/action-form';
 import { Icon } from '@/components/icon';
 import { StudentHero } from '@/components/student/sunset';
+import { DesktopPageHeader } from '@/components/student/desktop-page-header';
 import { StudentInstructorPhoto } from '@/components/student/instructor-photo';
 import { MeetingQR } from '@/components/student/meeting-qr';
 import { Badge, ButtonLink, Card, Note, ProgressBar } from '@/components/ui';
@@ -101,16 +102,17 @@ export default async function BookingPage({ params }: { params: Promise<{ id: st
   };
 
   return (
-    <>
-      <StudentHero
+    <div className="vento-pc-secondary-page vento-pc-voucher-screen">
+      <DesktopPageHeader eyebrow="DETALHES DA SUA AULA" title="Voucher da reserva" lead="Encontros, instrutor, validação e informações financeiras em um só lugar." icon="calendar" variant="lesson" backHref="/aluno/aulas" />
+      <div className="vento-pc-original-hero"><StudentHero
         eyebrow={heroCopy.eyebrow}
         title={heroCopy.title}
         lead={heroCopy.lead}
         compact
         image="lesson"
-      />
+      /></div>
 
-      <div className="mt-6 grid gap-5 lg:grid-cols-[1.5fr_1fr]">
+      <div className="vento-pc-secondary-main vento-pc-voucher-layout mt-6 grid gap-5 lg:grid-cols-[1.5fr_1fr]">
         <div className="grid content-start gap-5">
           <section className="vento-voucher">
             <header className="vento-voucher-banner">
@@ -397,6 +399,6 @@ export default async function BookingPage({ params }: { params: Promise<{ id: st
           ) : null}
         </div>
       </div>
-    </>
+    </div>
   );
 }
