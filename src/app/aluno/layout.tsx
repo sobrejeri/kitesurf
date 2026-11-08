@@ -1,5 +1,6 @@
 import type { Metadata, Viewport } from 'next';
 import './auth-modelo3.css';
+import './auth-pc.css';
 
 /**
  * Vento as its own installable app: its own manifest (scope /aluno/), icon

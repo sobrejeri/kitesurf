@@ -144,7 +144,10 @@ assert.ok(pcCss.includes('@media (min-width:1024px)') &&
   pcCss.includes('.vento-pc-evolution-columns{display:contents}') &&
   studentLayout.includes("import './desktop-redesign.css'"),
   'Desktop redesign must be scoped to >=1024px and preserve original mobile components');
-assert.ok(shell.includes("const desktopRedesign = ['/aluno/inicio','/aluno/aulas','/aluno/evolucao','/aluno/conta'].includes(pathname)") &&
+assert.ok(shell.includes('const desktopRedesign = [') &&
+  shell.includes("'/aluno/inicio','/aluno/aulas','/aluno/evolucao','/aluno/conta'") &&
+  shell.includes("'/aluno/reservar','/aluno/atendimento','/aluno/avisos'") &&
+  shell.includes('reserva|solicitacao|atendimento') &&
   shell.includes('vento-pc-sidebar') && shell.includes('aria-current={pathname===item.href') &&
   shell.includes('vento-student-main') && shell.includes('vento-pc-account-bar'),
   'Approved desktop sidebar must be route-scoped, navigable and keyboard-accessible');
@@ -174,5 +177,76 @@ assert.ok(pcCss.includes('Desktop evolution follow-up: readable stage cards') &&
   pcCss.includes('@media (min-width:1024px) and (max-width:1500px)') &&
   studentEvolution.includes('kiteStageStatus(curriculumSkills, step.id)'),
   'Desktop evolution keeps real status calculations while hiding only conflicting desktop connectors');
+
+// Student screens 05–17 now share the same desktop-only visual design.
+// The existing server actions, forms, QR validation, chat and mobile markup stay intact.
+const secondaryCss = read('src/app/aluno/(app)/desktop-secondary.css');
+const authCss = read('src/app/aluno/auth-pc.css');
+const authLayout = read('src/app/aluno/layout.tsx');
+const authUI = read('src/components/auth/area-auth.tsx');
+const recoveryUI = read('src/components/auth/password-recovery.tsx');
+const desktopHeader = read('src/components/student/desktop-page-header.tsx');
+assert.ok(studentLayout.includes("import './desktop-secondary.css'") &&
+  authLayout.includes("import './auth-pc.css'") &&
+  secondaryCss.includes('@media(min-width:1024px)') &&
+  authCss.includes('@media(min-width:1024px)') &&
+  secondaryCss.includes('.vento-pc-secondary-desktop-header{display:none}') &&
+  authCss.includes('.vento-pc-auth-story{display:none}') &&
+  desktopHeader.includes('vento-pc-detail-hero'),
+  'Remaining screens must be desktop-only with mobile visual fallback');
+const remainingRoutes = [
+  'reservar/page.tsx','reserva/[id]/page.tsx','solicitacao/[id]/page.tsx',
+  'atendimento/page.tsx','atendimento/[id]/page.tsx','avisos/page.tsx',
+  'central/page.tsx','ocorrencias/page.tsx','politicas/page.tsx',
+];
+for(const route of remainingRoutes){
+  const page=read('src/app/aluno/(app)/'+route);
+  assert.ok(page.includes('DesktopPageHeader') &&
+    page.includes('vento-pc-secondary-page'),
+    'Missing desktop visual layout for student route '+route);
+}
+const desktopBuilderPage = read('src/app/aluno/(app)/reservar/page.tsx');
+const desktopBookingPage = read('src/app/aluno/(app)/reserva/[id]/page.tsx');
+const desktopRequestPage = read('src/app/aluno/(app)/solicitacao/[id]/page.tsx');
+const desktopChatPage = read('src/app/aluno/(app)/atendimento/[id]/page.tsx');
+assert.ok(desktopBuilderPage.includes('<LessonBuilder') &&
+  desktopBookingPage.includes('<MeetingQR') &&
+  desktopRequestPage.includes('<RequestPoller') &&
+  desktopChatPage.includes('<BookingChat') &&
+  authUI.includes('<ActionForm') &&
+  recoveryUI.includes('<ActionForm') &&
+  authUI.includes('<StudentDesktopAuthStory') &&
+  recoveryUI.includes('<StudentDesktopAuthStory'),
+  'Existing booking, QR, queue, chat and authentication functionality must remain mounted');
+assert.ok(secondaryCss.includes('.vento-voucher-qr svg') &&
+  secondaryCss.includes('.vento-pc-incidents-screen') &&
+  secondaryCss.includes('.vento-pc-central-screen') &&
+  authCss.includes('.vento-pc-recovery-auth'),
+  'Desktop system must include voucher, support and recovery layouts');
+
+
+
+// Visual refinement regression: desktop reading surfaces and chat bubbles.
+// Prevent global dark-theme text overrides from making light backgrounds unreadable.
+assert.ok(
+  secondaryCss.includes('.vento-pc-conversations-screen .vento-pc-secondary-main > .rounded-card') &&
+  secondaryCss.includes('.vento-pc-notices-screen .vento-pc-secondary-main > .rounded-card') &&
+  secondaryCss.includes('background:#f7fbff;color:#0a2b41') &&
+  secondaryCss.includes('background:#f8fcff;border-color:#badde9;color:#0c3045') &&
+  secondaryCss.includes('ol li > .bg-sand.text-ink') &&
+  secondaryCss.includes('color:#113449!important') &&
+  secondaryCss.includes('ol li > .bg-brand') &&
+  secondaryCss.includes('color:#092c3d!important'),
+  'Desktop inbox/notification cards and incoming/outgoing chat bubbles must retain readable contrast',
+);
+assert.ok(
+  secondaryCss.includes('.vento-pc-voucher-layout .vento-voucher-paper') &&
+  secondaryCss.includes('.vento-pc-policies-screen .vento-pc-secondary-main .rounded-card') &&
+  secondaryCss.includes('@media (min-width:1024px) and (max-width:1190px)') &&
+  secondaryCss.includes('@media (min-width:1024px) and (prefers-reduced-motion:reduce)') &&
+  authCss.includes('Screens 14–17: refined desktop sign-in family') &&
+  authCss.includes('@media(min-width:1024px) and (max-height:800px)'),
+  'Desktop refinement must keep the voucher and policy reading layouts, compact screens and reduced motion',
+);
 
 console.log('PASS: desktop layout and profile photo plus layered meeting-conflict protection');

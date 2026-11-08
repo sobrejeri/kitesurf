@@ -6,6 +6,7 @@ import { APP_AREAS, type AppArea } from '@/lib/app-areas';
 import { ActionForm } from '../action-form';
 import { StudentBrand } from '../student/sunset';
 import { KiteModelo3Brand } from '../student/modelo3-header';
+import { StudentDesktopAuthStory } from './student-desktop-story';
 import { Field, Note, inputClass } from '../ui';
 
 /**
@@ -20,7 +21,8 @@ function AuthFrame({ area, title, highlight, lead, children }: { area: AppArea; 
   const studentSignup = area === 'aluno' && title === 'Seu primeiro bordo começa aqui.';
   const studentAuth = studentLogin || studentSignup;
   return (
-    <div className={`${area === 'aluno' ? 'theme-beach kite-m3-auth' : 'theme-sunset'} ${studentLogin ? 'kite-m3-auth--student-login' : ''} ${studentSignup ? 'kite-m3-auth--student-signup' : ''} relative min-h-dvh overflow-hidden bg-canvas text-ink`}>
+    <div className={`${area === 'aluno' ? 'theme-beach kite-m3-auth vento-pc-auth-shell' : 'theme-sunset'} ${studentLogin ? 'kite-m3-auth--student-login' : ''} ${studentSignup ? 'kite-m3-auth--student-signup' : ''} relative min-h-dvh overflow-hidden bg-canvas text-ink`}>
+      {area === 'aluno' ? <StudentDesktopAuthStory kind={studentLogin ? 'login' : 'signup'}/> : null}
       <img src={studentAuth ? '/images/prea-coast.webp' : area === 'aluno' ? '/images/vento-ocean-hero.webp' : '/images/kite-lesson.webp'} alt="" className="sunset-photo absolute inset-x-0 top-0 h-[46dvh] w-full object-cover" />
       <div className="sunset-veil absolute inset-x-0 top-0 h-[46dvh]" aria-hidden="true" />
       {area === 'aluno' && !studentAuth ? <img src="/images/vento-kite-real.webp" alt="" aria-hidden="true" className="kite-m3-auth-kite" /> : null}

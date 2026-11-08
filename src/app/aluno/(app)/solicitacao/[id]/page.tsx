@@ -1,4 +1,5 @@
 import type { Metadata } from 'next';
+import { DesktopPageHeader } from '@/components/student/desktop-page-header';
 import { notFound } from 'next/navigation';
 
 import { RequestPoller } from '@/components/student/request-poller';
@@ -48,7 +49,9 @@ export default async function InstructorRequestPage({ params }: { params: Promis
       ? suggestion as Suggestion : null;
   const accepted = request.status === 'accepted' && Boolean(request.booking_id);
   return (
-    <>
+    <div className="vento-pc-secondary-page vento-pc-request-screen">
+      <DesktopPageHeader eyebrow="SUA SOLICITAÇÃO" title="Busca de instrutor" lead="Acompanhe a oferta, os retornos e as sugestões de horários." icon="users" backHref="/aluno/aulas" variant="coast"/>
+      <div className="vento-pc-secondary-main">
       <PageHeader eyebrow="Sua solicitação" title={accepted ? 'Instrutor encontrado!' : 'Procurando seu instrutor'}
         lead={accepted ? (VALIDATION_WITHOUT_CHECKOUT ? 'Sua aula foi aceita. Confira a reserva e confirme sem cobrança.' : 'Sua aula foi aceita. Agora é só concluir o pagamento de teste.') :
           'Enviamos a proposta aos profissionais compatíveis, seguindo a fila de atendimento.'}/>
@@ -106,6 +109,7 @@ export default async function InstructorRequestPage({ params }: { params: Promis
           </>
         )}
       </Card>
-    </>
+      </div>
+    </div>
   );
 }

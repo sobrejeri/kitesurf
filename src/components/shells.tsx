@@ -163,9 +163,13 @@ export function StudentShell({
   signOut: () => Promise<void>;
 }) {
   const pathname = usePathname();
-  // First approved desktop batch: only these routes get the new workspace.
-  // Other student pages and every mobile route keep their existing shell.
-  const desktopRedesign = ['/aluno/inicio','/aluno/aulas','/aluno/evolucao','/aluno/conta'].includes(pathname);
+  // The four approved screens and the remaining student workflows share one
+  // desktop workspace. Mobile keeps its exact original shell and components.
+  const desktopRedesign = [
+    '/aluno/inicio','/aluno/aulas','/aluno/evolucao','/aluno/conta',
+    '/aluno/reservar','/aluno/atendimento','/aluno/avisos',
+    '/aluno/central','/aluno/ocorrencias','/aluno/politicas',
+  ].includes(pathname) || /^\/aluno\/(?:reserva|solicitacao|atendimento)\/[^/]+$/.test(pathname);
   const desktopLinks: readonly { href: string; label: string; icon: IconName }[] = [
     {href:'/aluno/inicio',label:'Início',icon:'home'},
     {href:'/aluno/aulas',label:'Minhas aulas',icon:'calendar'},

@@ -1,4 +1,5 @@
 import type { Metadata } from 'next';
+import { DesktopPageHeader } from '@/components/student/desktop-page-header';
 
 import { ButtonLink, Card, PageHeader } from '@/components/ui';
 import { requireRole } from '@/lib/auth';
@@ -11,7 +12,9 @@ export default async function ConversationsPage() {
   const bookings = await listBookingsForStudent(viewer.id);
   const conversations = bookings.filter(b => b.status === 'confirmed' || b.status === 'completed');
   return (
-    <>
+    <div className="vento-pc-secondary-page vento-pc-conversations-screen">
+      <DesktopPageHeader eyebrow="ATENDIMENTO" title="Minhas conversas" lead="Fale com os instrutores das suas reservas confirmadas." icon="chat" backHref="/aluno/aulas" variant="lesson"/>
+      <div className="vento-pc-secondary-main">
       <PageHeader eyebrow="Atendimento" title="Minhas conversas" lead="Fale diretamente com seu instrutor após a confirmação da aula."/>
       <Card>
         {conversations.length === 0 ? <p className="text-[13px] text-muted">Ainda não existem conversas disponíveis. As mensagens são liberadas após a confirmação da aula.</p> : (
@@ -28,6 +31,7 @@ export default async function ConversationsPage() {
           </ul>
         )}
       </Card>
-    </>
+      </div>
+    </div>
   );
 }
