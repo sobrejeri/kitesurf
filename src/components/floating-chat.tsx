@@ -46,7 +46,6 @@ export function FloatingChat({area,viewerId}: {area:ChatArea;viewerId:string}) {
   const visibilityBusy=useRef(false);
   const box = useRef<HTMLDivElement>(null);
   const input = useRef<HTMLTextAreaElement>(null);
-  const launcher = useRef<HTMLButtonElement>(null);
   const follow = useRef(true);
   const historyLoaded = useRef(false);
   const restoreScroll = useRef<{height:number;top:number}|null>(null);
@@ -105,7 +104,15 @@ export function FloatingChat({area,viewerId}: {area:ChatArea;viewerId:string}) {
       const url = new URL(anchor.href,window.location.href);
       if (url.origin!==window.location.origin || url.search || url.hash) return;
       const id=chatBookingId(url.pathname,area);
-      if (id) {event.preventDefault();show(id);}
+      if (id) {event.preventDefault();show(id);return;}
+      // Menu > Conversas opens the same floating inbox without creating a
+      // permanent launcher. Modified clicks can still open the full page.
+      if (url.pathname.replace(/\/$/, '') === `/${area}/atendimento`) {
+        event.preventDefault();
+        selectedRef.current=null;
+        setSelectedId(null);
+        setOpen(true);
+      }
     };
     // Capture before Next Link handles the click at the React root.
     document.addEventListener('click',click,true);
@@ -195,7 +202,7 @@ export function FloatingChat({area,viewerId}: {area:ChatArea;viewerId:string}) {
     }catch{setError('Não foi possível carregar as mensagens anteriores.');}
     finally{setLoadingOlder(false);}
   }
-  function minimize(){setAttachmentsOpen(false);setOpen(false);launcher.current?.focus();}
+  function minimize(){setAttachmentsOpen(false);setOpen(false);}
   async function visibility(visible:boolean){
     if(visibilityBusy.current)return;visibilityBusy.current=true;setShowOnline(visible);
     try{const response=await fetch(endpoint,{method:'POST',headers:{'Content-Type':'application/json','x-vento-chat':'1'},body:JSON.stringify({type:'visibility',visible})});
@@ -236,6 +243,8 @@ export function FloatingChat({area,viewerId}: {area:ChatArea;viewerId:string}) {
   }
   if (!mounted) return null;
   const unread=threads.reduce((sum,t)=>sum+t.unread,0);
+  const bubbleList=chatBubbles(threads);
+  const extraUnreadThreads=Math.max(0,threads.filter(t=>t.unread>0).length-bubbleList.length);
   return createPortal(<>
     {area==='aluno' && open ? <button type="button" className={styles.scrim} onClick={minimize} aria-label="Fechar conversa e voltar ao aplicativo" /> : null}
     <aside className={`${styles.dock} ${area === 'aluno' ? styles.studentDock : ''}`} aria-label="Chat flutuante Vento">
@@ -250,6 +259,27 @@ export function FloatingChat({area,viewerId}: {area:ChatArea;viewerId:string}) {
           <small>{selectedId?thread?chatThreadTag(thread):'Reserva':'Mensagens das suas aulas'}</small></div>
         <button type="button" aria-label="Minimizar conversa" onClick={minimize}><Icon name="minus" /></button>
       </header>
+      {threads.length ? (
+        <nav className={styles.threadSwitcher} aria-label="Alternar entre conversas">
+          <div className={styles.threadSwitcherScroll}>
+            {threads.map(t => {
+              const selected = selectedId === t.id;
+              return (
+                <button type="button" key={t.id}
+                  className={styles.threadSwitchButton}
+                  aria-label={`Conversa com ${t.name}, reserva ${t.code}${t.unread && !selected ? `, ${t.unread} mensagens não lidas` : ''}`}
+                  aria-pressed={selected}
+                  title={chatThreadTag(t)}
+                  onClick={() => show(t.id)}>
+                  <Photo thread={t}/>
+                  <span className={styles.threadSwitchName}>{t.name}</span>
+                  {!selected && t.unread > 0 ? <b className={styles.badge}>{t.unread > 99 ? '99+' : t.unread}</b> : null}
+                </button>
+              );
+            })}
+          </div>
+        </nav>
+      ) : null}
       {!selectedId ? <div className={styles.list}>
         <label className={styles.visibility}><input type="checkbox" checked={showOnline} disabled={!featuresReady} onChange={event=>visibility(event.target.checked)}/> Mostrar quando estou online</label>
         {!featuresReady?<p>Os novos recursos de presença, arquivos e localização aguardam ativação.</p>:null}
@@ -299,13 +329,29 @@ export function FloatingChat({area,viewerId}: {area:ChatArea;viewerId:string}) {
         </form>
       </>}
     </section>:null}
-    <div className={styles.bubbles}>
-      {chatBubbles(threads).filter(t=>!open || t.id!==selectedId).map(t=><button type="button" key={t.peerId} className={styles.bubble} onClick={()=>show(t.id)} title={`${t.name} · ${t.unread} mensagens não lidas`} aria-label={`Abrir mensagem de ${t.name}`}>
-        <Photo thread={t}/><span className={styles.messageIcon}><Icon name="chat"/></span><b className={styles.badge}>{t.unread>99?'99+':t.unread}</b>
-      </button>)}
-      <button ref={launcher} type="button" className={styles.launcher} aria-label={open?'Minimizar chat':'Abrir minhas conversas'} aria-expanded={open}
-        onClick={()=>open?minimize():setOpen(true)}><Icon name={open?'minus':'chat'}/>{unread?<b className={styles.badge}>{unread>99?'99+':unread}</b>:null}</button>
-    </div>
+    {!open && bubbleList.length ? (
+      <div className={styles.bubbles} role="group" aria-label="Conversas com mensagens não lidas"
+        style={{width:`${58+(bubbleList.length-1)*18}px`,height:`${58+(bubbleList.length-1)*10}px`}}>
+        {[...bubbleList].reverse().map((t, reversedIndex) => {
+          const index = bubbleList.length - 1 - reversedIndex;
+          return (
+            <button type="button" key={t.id} className={styles.bubble}
+              style={{right:`${index*18}px`,bottom:`${index*10}px`,zIndex:10-index}}
+              onClick={()=>show(t.id)}
+              title={`${t.name} · ${t.unread} mensagens não lidas · ${chatThreadTag(t)}`}
+              aria-label={`Abrir conversa com ${t.name}, ${t.unread} mensagens não lidas`}>
+              <Photo thread={t}/>
+              <b className={styles.badge}>{t.unread>99?'99+':t.unread}</b>
+            </button>
+          );
+        })}
+        {extraUnreadThreads > 0 ? (
+          <button type="button" className={styles.moreUnread}
+            onClick={()=>{selectedRef.current=null;setSelectedId(null);setOpen(true);}}
+            aria-label={`Abrir mais ${extraUnreadThreads} conversas com mensagens não lidas`}>+${extraUnreadThreads}</button>
+        ) : null}
+      </div>
+    ) : null}
   </aside>
   </>,document.body);
 }
