@@ -1,6 +1,6 @@
 'use client';
 
-import { useCallback, useEffect, useRef, useState, type PointerEvent as ReactPointerEvent } from 'react';
+import { useCallback, useEffect, useRef, useState, type CSSProperties, type PointerEvent as ReactPointerEvent } from 'react';
 import { createPortal } from 'react-dom';
 import { chatBookingId, chatBubbles, mergeChatMessages, chatWasRead, presenceLabel, chatThreadTag, type ChatRead, type ChatArea, type ChatMessage, type ChatThread } from '@/lib/chat-dock';
 import {CHAT_FILE_TYPES,MAX_CHAT_FILE} from '@/lib/chat-files';
@@ -8,6 +8,13 @@ import { initials } from '@/lib/people';
 import { Icon } from './icon';
 import {ChatMessageExtras} from './chat-message-extras';
 import styles from './floating-chat.module.css';
+
+const CHAT_EMOJIS = [
+  '😀','😄','😁','😂','🤣','😊','🥰','😍','😘','😎',
+  '😉','😢','😭','🥹','🤔','😮','😴','🥳','🤩','😡',
+  '👍','👏','🙌','🙏','🤝','👋','❤️','💚','💙','🔥',
+  '🎉','✨','🌊','🏄','🪁','☀️','💪','✅','🚀','💯',
+] as const;
 
 function Photo({thread}: {thread:ChatThread}) {
   const [failed,setFailed] = useState<string|null>(null);
@@ -32,6 +39,8 @@ export function FloatingChat({area,viewerId}: {area:ChatArea;viewerId:string}) {
   const bubbleSide = useRef<'left'|'right'>('right');
   const [open,setOpen] = useState(false);
   const [attachmentsOpen,setAttachmentsOpen] = useState(false);
+  const [emojiOpen,setEmojiOpen] = useState(false);
+  const [visibleViewport,setVisibleViewport] = useState<{top:number;height:number;keyboard:boolean}|null>(null);
   const [selectedId,setSelectedId] = useState<string|null>(null);
   const [detail,setDetail] = useState<ChatThread|null>(null);
   const [messages,setMessages] = useState<ChatMessage[]>([]);
@@ -55,6 +64,7 @@ export function FloatingChat({area,viewerId}: {area:ChatArea;viewerId:string}) {
   const visibilityBusy=useRef(false);
   const box = useRef<HTMLDivElement>(null);
   const input = useRef<HTMLTextAreaElement>(null);
+  const viewportRaf = useRef<number|null>(null);
   const follow = useRef(true);
   const historyLoaded = useRef(false);
   const restoreScroll = useRef<{height:number;top:number}|null>(null);
@@ -106,7 +116,7 @@ export function FloatingChat({area,viewerId}: {area:ChatArea;viewerId:string}) {
       setMessages([]);setDetail(null);setHasOlder(false);historyLoaded.current=false;follow.current=true;
       setPeerLastSeen(null);setPeerRead(null);setLocationDraft(null);lastRead.current='';
     }
-    setError('');setConnectionError('');setAttachmentsOpen(false);setSelectedId(id);setOpen(true);
+    setError('');setConnectionError('');setAttachmentsOpen(false);setEmojiOpen(false);setSelectedId(id);setOpen(true);
   },[selectedId]);
 
   // Existing "Conversar" links open the dock; modified clicks keep full-page navigation.
@@ -152,9 +162,50 @@ export function FloatingChat({area,viewerId}: {area:ChatArea;viewerId:string}) {
       finally {if (!controller.signal.aborted) timer=setTimeout(update,3000);}
     };
     void update();
-    input.current?.focus();
+    // On iPhone, focusing on open summons the keyboard and scrolls the
+    // fixed window under the status bar before it can measure VisualViewport.
+    // The user decides when to focus the composer.
+    if (window.innerWidth >= 768) input.current?.focus();
     return ()=>{controller.abort();clearTimeout(timer);};
   },[endpoint,open,selectedId,viewerId]);
+
+  // iOS WebKit keeps fixed portals relative to the layout viewport while
+  // the keyboard shrinks/pans its *visual* viewport. Follow both resize and
+  // scroll; this keeps the header visible and the composer above the keyboard.
+  useEffect(()=>{
+    if(!open)return;
+    const vv=window.visualViewport;
+    if(!vv)return;
+    const sync=()=>{
+      if(window.innerWidth>=768)return;
+      const top=Math.max(0,vv.offsetTop);
+      const height=Math.max(230,vv.height);
+      const keyboard=window.innerHeight-(vv.height+vv.offsetTop)>110;
+      setVisibleViewport(previous=>
+        previous && Math.abs(previous.top-top)<1 && Math.abs(previous.height-height)<1 &&
+        previous.keyboard===keyboard ? previous : {top,height,keyboard});
+    };
+    const schedule=()=>{
+      if(viewportRaf.current!==null)window.cancelAnimationFrame(viewportRaf.current);
+      viewportRaf.current=window.requestAnimationFrame(()=>{
+        viewportRaf.current=null;
+        sync();
+      });
+    };
+    sync();
+    vv.addEventListener('resize',schedule);
+    vv.addEventListener('scroll',schedule);
+    window.addEventListener('resize',schedule);
+    window.addEventListener('orientationchange',schedule);
+    return ()=>{
+      vv.removeEventListener('resize',schedule);
+      vv.removeEventListener('scroll',schedule);
+      window.removeEventListener('resize',schedule);
+      window.removeEventListener('orientationchange',schedule);
+      if(viewportRaf.current!==null)window.cancelAnimationFrame(viewportRaf.current);
+      viewportRaf.current=null;
+    };
+  },[open]);
 
   useEffect(()=>{
     const el=box.current;
@@ -181,6 +232,23 @@ export function FloatingChat({area,viewerId}: {area:ChatArea;viewerId:string}) {
           notificationIds:t.notificationIds.filter(id=>!read.has(id)),unread:Math.max(0,t.unread-read.size)}));}})
       .catch(()=>{}).finally(()=>{marking.current=false;});
   },[endpoint,last,open,selectedId,threads,featuresReady]);
+
+  function insertEmoji(emoji:string){
+    if(!selectedId)return;
+    const textarea=input.current;
+    const current=drafts[selectedId]??'';
+    const start=textarea?.selectionStart??current.length;
+    const end=textarea?.selectionEnd??start;
+    const next=current.slice(0,start)+emoji+current.slice(end);
+    if(next.length>2000)return;
+    const caret=start+emoji.length;
+    setDrafts(previous=>({...previous,[selectedId]:next}));
+    setEmojiOpen(false);
+    window.requestAnimationFrame(()=>{
+      textarea?.focus({preventScroll:true});
+      textarea?.setSelectionRange(caret,caret);
+    });
+  }
 
   async function send(event:React.SubmitEvent<HTMLFormElement>) {
     event.preventDefault();if (!selectedId || sending) return;
@@ -226,6 +294,7 @@ export function FloatingChat({area,viewerId}: {area:ChatArea;viewerId:string}) {
     selectedRef.current=null;
     setSelectedId(null);
     setAttachmentsOpen(false);
+    setEmojiOpen(false);
     setOpen(false);
   }
   async function visibility(visible:boolean){
@@ -339,7 +408,13 @@ export function FloatingChat({area,viewerId}: {area:ChatArea;viewerId:string}) {
   const unread=threads.reduce((sum,t)=>sum+t.unread,0);
   return createPortal(<>
     {area==='aluno' && open ? <button type="button" className={styles.scrim} onClick={minimize} aria-label="Fechar conversa e voltar ao aplicativo" /> : null}
-    <aside className={`${styles.dock} ${area === 'aluno' ? styles.studentDock : ''}`} aria-label="Chat flutuante Vento">
+    <aside
+      className={`${styles.dock} ${area === 'aluno' ? styles.studentDock : ''} ${open?styles.dockOpen:''} ${open&&visibleViewport?.keyboard?styles.dockKeyboard:''}`}
+      style={open&&visibleViewport ? ({
+        '--chat-vv-top':`${visibleViewport.top}px`,
+        '--chat-vv-height':`${visibleViewport.height}px`
+      } as CSSProperties) : undefined}
+      aria-label="Chat flutuante Vento">
     <span className={styles.sr} aria-live="polite">{unread?`${unread} mensagens não lidas no chat.`:''}</span>
     {open ? <section className={styles.panel} role="dialog" aria-modal="false"
       aria-label={thread?`Conversa com ${thread.name}`:'Minhas conversas'}
@@ -402,13 +477,28 @@ export function FloatingChat({area,viewerId}: {area:ChatArea;viewerId:string}) {
           <button type="button" onClick={()=>setLocationDraft(null)}>Cancelar</button>
         </div>:null}
         <form className={styles.compose} onSubmit={send}>
+          {emojiOpen ? (
+            <div id="vento-chat-emojis" className={styles.emojiPopover} role="group" aria-label="Escolha um emoji">
+              {CHAT_EMOJIS.map(emoji=>(
+                <button type="button" key={emoji} className={styles.emojiChoice}
+                  aria-label={`Inserir emoji ${emoji}`}
+                  onClick={()=>insertEmoji(emoji)}>{emoji}</button>
+              ))}
+            </div>
+          ) : null}
+          <button type="button" className={styles.emojiToggle}
+            aria-label={emojiOpen?'Fechar opções de emoji':'Escolher emoji'}
+            aria-expanded={emojiOpen} aria-controls="vento-chat-emojis"
+            onClick={()=>{setAttachmentsOpen(false);setEmojiOpen(value=>!value);}}>
+            <span aria-hidden="true">😊</span>
+          </button>
           <textarea ref={input} rows={2} maxLength={2000} value={drafts[selectedId] ?? ''}
             aria-label="Sua mensagem no chat flutuante" placeholder="Escreva sua mensagem…"
             onChange={event=>setDrafts(previous=>({...previous,[selectedId]:event.target.value}))}/>
           <div className={styles.attachWrap}>
             <button type="button" className={styles.attachToggle} aria-label="Anexar foto, arquivo ou localização"
               aria-expanded={attachmentsOpen} aria-controls="vento-chat-anexos" disabled={!featuresReady || uploading || sending}
-              onClick={()=>setAttachmentsOpen(v=>!v)}>
+              onClick={()=>{setEmojiOpen(false);setAttachmentsOpen(v=>!v);}}>
               <Icon name={attachmentsOpen?'minus':'plus'}/>
             </button>
             {attachmentsOpen ? <div id="vento-chat-anexos" className={styles.attachPopover} role="group" aria-label="Opções de anexo">
