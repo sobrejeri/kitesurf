@@ -1,4 +1,5 @@
 import Link from 'next/link';
+import type {CSSProperties,ReactNode} from 'react';
 import { Icon } from '@/components/icon';
 import type { StudentBooking } from '@/lib/data';
 import type { StudentKiteLevel } from '@/lib/student-kite-level';
@@ -11,7 +12,7 @@ export function DesktopStudentHome({bookings,level,firstName,children}:{
   bookings:StudentBooking[];
   level:StudentKiteLevel|null;
   firstName?:string;
-  children?:React.ReactNode;
+  children?:ReactNode;
 }) {
   const summary=studentHomeSummary(bookings);
   const current=summary.current;
@@ -55,7 +56,7 @@ export function DesktopStudentHome({bookings,level,firstName,children}:{
         <div className="vento-pc-progress-panel">
           <h3><Icon name="chart"/> Seu progresso no kite</h3>
           <div className="vento-pc-progress-row">
-            <div className="vento-pc-ring" style={{'--vento-progress':`${summary.percent}%`} as React.CSSProperties}
+            <div className="vento-pc-ring" style={{'--vento-progress':`${summary.percent}%`} as CSSProperties}
               role="progressbar" aria-valuemin={0} aria-valuemax={100} aria-valuenow={summary.percent}
               aria-label="Percentual de horas registradas na reserva">
               <strong>{summary.percent}%</strong><span>da reserva</span>
