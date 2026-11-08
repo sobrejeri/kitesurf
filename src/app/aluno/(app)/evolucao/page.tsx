@@ -208,7 +208,7 @@ export default async function ProgressPage({
           </section>
 
           {/* Cartões de horas — totais agregados */}
-          <section className="mt-3 grid grid-cols-2 gap-3">
+          <section className="vento-pc-evolution-metrics mt-3 grid grid-cols-2 gap-3">
             <JourneyMetric icon="calendar" label="Horas contratadas" value={formatMinutes(totalContracted)} sub="Reservas confirmadas" href="/aluno/aulas" />
             <JourneyMetric icon="chart" label="Horas realizadas" value={formatMinutes(totalDone)} sub="Aulas registradas" href="/aluno/aulas?aba=anteriores" />
             <JourneyMetric icon="calendar" label="Horas agendadas" value={formatMinutes(totalScheduled)} sub="Próximos encontros" href="/aluno/aulas" />
