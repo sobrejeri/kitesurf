@@ -6,6 +6,7 @@ import { useCallback, useEffect, useId, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
 
 import { Icon, type IconName } from './icon';
+import { StudentProfileAvatar } from './student/profile-avatar';
 
 /**
  * Phone chrome: a compact header, a tab bar and a "Mais" sheet. Shown below
@@ -238,7 +239,7 @@ function MoreSheet({
   // (pointer-events: none). Portaling the sheet to document.body removes
   // that inherited hit-testing constraint and places it ABOVE the tab bar.
   return createPortal(
-    <div className={`pointer-events-auto fixed inset-0 z-[70] lg:hidden ${studentStyle ? 'vento-student-menu' : ''}`} role="presentation">
+    <div className={`pointer-events-auto fixed inset-0 ${studentStyle ? 'z-[300] vento-student-menu' : 'z-[70]'} lg:hidden`} role="presentation">
       <button type="button" aria-label="Fechar menu" onClick={onClose} className="sheet-backdrop absolute inset-0 bg-[#1b2433]/40" />
       <div
         ref={panel}
@@ -303,12 +304,15 @@ export function SheetAccount({
   name,
   subtitle,
   initials,
+  photoUrl,
   signOut,
   areas,
 }: {
   name: string;
   subtitle: string;
   initials: string;
+  /** Same authenticated profile photo used in the student's desktop header. */
+  photoUrl?: string | null;
   signOut: () => Promise<void>;
   areas?: readonly { label: string; href: string }[];
 }) {
@@ -324,9 +328,13 @@ export function SheetAccount({
         </div>
       ) : null}
       <div className="flex items-center gap-3">
-        <span className="grid h-10 w-10 place-items-center rounded-full bg-avatar-1 text-[13px] font-[550] text-avatar-1-ink" aria-hidden="true">
-          {initials}
-        </span>
+        {photoUrl ? (
+          <StudentProfileAvatar name={name} initials={initials} photoUrl={photoUrl} />
+        ) : (
+          <span className="grid h-10 w-10 place-items-center rounded-full bg-avatar-1 text-[13px] font-[550] text-avatar-1-ink" aria-hidden="true">
+            {initials}
+          </span>
+        )}
         <span className="min-w-0 flex-1 text-[13px] leading-tight">
           <strong className="block truncate font-[550]">{name}</strong>
           <span className="text-[11px] text-muted">{subtitle}</span>
