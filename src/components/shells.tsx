@@ -185,10 +185,12 @@ export function StudentShell({
     if (!signedIn || swipeTabIndex < 0 || window.innerWidth >= 768 ||
         event.touches.length !== 1) return;
     const target = event.target;
-    if (!(target instanceof Element)) return;
+    if (!(target instanceof Element) || !event.currentTarget.contains(target)) return;
+    // Simple links and buttons still allow swiping across their cards. The
+    // recognized gesture cancels the synthetic tap/click in onTouchEnd.
     if (target.closest(
-      'a,button,input,textarea,select,summary,label,[role="dialog"],' +
-      '[role="tablist"],[role="slider"],[contenteditable="true"],' +
+      'input,textarea,select,[role="dialog"],[role="tablist"],' +
+      '[role="slider"],[contenteditable="true"],' +
       '[data-student-swipe-ignore],[data-carousel],.overflow-x-auto,.overflow-x-scroll,.snap-x'
     )) return;
 
@@ -228,6 +230,9 @@ export function StudentShell({
     const dy = touch.clientY - start.y;
     const minDistance = Math.max(64, Math.min(100, window.innerWidth * .17));
     if (Math.abs(dx) < minDistance || Math.abs(dx) < Math.abs(dy) * 1.4) return;
+    // Avoid a second navigation via a synthesized click on a card or button.
+    // Touchend is not registered as a passive listener by React.
+    event.preventDefault();
 
     // Left moves forward; right moves backward. The first and last tab are hard edges.
     const nextIndex = swipeTabIndex + (dx < 0 ? 1 : -1);
