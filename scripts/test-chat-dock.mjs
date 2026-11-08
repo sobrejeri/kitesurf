@@ -87,3 +87,44 @@ assert.ok(
   'Open chat must offer horizontal thumbnail switching, menu access and red unread counters',
 );
 console.log('PASS: messenger-style stacked unread bubbles, side snapping, dismiss X and top photo switcher');
+
+
+// iPhone keyboard regression: chat must follow VisualViewport (including
+// offsetTop while Safari pans the page) rather than disappear behind the
+// status bar or keyboard. Do not force the keyboard open on chat launch.
+assert.ok(
+  floatingChat.includes('const vv=window.visualViewport') &&
+  floatingChat.includes('const top=Math.max(0,vv.offsetTop)') &&
+  floatingChat.includes('const height=Math.max(230,vv.height)') &&
+  floatingChat.includes("vv.addEventListener('resize',schedule)") &&
+  floatingChat.includes("vv.addEventListener('scroll',schedule)") &&
+  floatingChat.includes("vv.removeEventListener('resize',schedule)") &&
+  floatingChat.includes("vv.removeEventListener('scroll',schedule)") &&
+  floatingChat.includes("if (window.innerWidth >= 768) input.current?.focus()") &&
+  floatingChat.includes("'--chat-vv-height'") &&
+  floatingChat.includes("'--chat-vv-top'") &&
+  floatingChat.includes("open?styles.dockOpen:''") &&
+  floatingCss.includes('.dockOpen.dockKeyboard .panel') &&
+  floatingCss.includes('top:calc(var(--chat-vv-top') &&
+  floatingCss.includes('max-height:calc(var(--chat-vv-height') &&
+  floatingCss.includes('.dockOpen .log {min-height:0'),
+  'On iPhone the chat header and composer must remain visible as the software keyboard opens',
+);
+assert.ok(
+  floatingChat.includes('const CHAT_EMOJIS = [') &&
+  floatingChat.includes('function insertEmoji(emoji:string)') &&
+  floatingChat.includes('const start=textarea?.selectionStart??current.length') &&
+  floatingChat.includes('const end=textarea?.selectionEnd??start') &&
+  floatingChat.includes('const next=current.slice(0,start)+emoji+current.slice(end)') &&
+  floatingChat.includes('if(next.length>2000)return') &&
+  floatingChat.includes('setSelectionRange(caret,caret)') &&
+  floatingChat.includes('aria-label="Escolha um emoji"') &&
+  floatingChat.includes("emojiOpen?'Fechar opções de emoji':'Escolher emoji'") &&
+  floatingChat.includes('aria-expanded={emojiOpen}') &&
+  floatingChat.includes("setEmojiOpen(value=>!value)") &&
+  floatingCss.includes('.emojiPopover {') &&
+  floatingCss.includes('.emojiChoice {') &&
+  floatingCss.includes('.emojiToggle {'),
+  'Composer emoji picker must work with existing drafts and preserve caret and character limit',
+);
+console.log('PASS: iOS keyboard-aware chat viewport and accessible emoji picker');
