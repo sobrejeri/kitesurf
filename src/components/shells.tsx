@@ -2,7 +2,7 @@
 
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
-import { useRef } from 'react';
+import { useEffect, useRef } from 'react';
 
 import { Icon, type IconName } from './icon';
 import { OfficialLogo } from './official-logo';
@@ -176,7 +176,50 @@ export function StudentShell({
   const pathname = usePathname();
   const router = useRouter();
   const swipeStart = useRef<{ x: number; y: number; at: number } | null>(null);
+  const swipeMainRef = useRef<HTMLElement | null>(null);
   const swipeTabIndex = (STUDENT_SWIPE_ROUTES as readonly string[]).indexOf(pathname);
+
+  // Prevent iOS standalone Safari from showing its own back/forward preview
+  // (two cut-off page snapshots with duplicated bottom bars) on tab gestures.
+  // Keep browser-native vertical scrolling and nested horizontal scrollers.
+  useEffect(() => {
+    const main = swipeMainRef.current;
+    if (!main || !signedIn || swipeTabIndex < 0) return;
+
+    const ignoredTarget = (target: EventTarget | null) =>
+      target instanceof Element && Boolean(target.closest(
+        'input,textarea,select,[role="dialog"],[role="tablist"],' +
+        '[role="slider"],[contenteditable="true"],' +
+        '[data-student-swipe-ignore],[data-carousel],.overflow-x-auto,.overflow-x-scroll,.snap-x'
+      ));
+
+    const blockNativeEdge = (event: TouchEvent) => {
+      if (window.innerWidth >= 768 || event.touches.length !== 1 ||
+          ignoredTarget(event.target)) return;
+      const first = event.touches.item(0);
+      if (!first) return;
+      // iOS reserves the first/last pixels for interactive browser history.
+      // Suppress that browser transition only inside a main-tab content area.
+      if (first.clientX <= 28 || first.clientX >= window.innerWidth - 28)
+        event.preventDefault();
+    };
+
+    const blockHorizontalPagePan = (event: TouchEvent) => {
+      const first = event.touches.item(0);
+      const start = swipeStart.current;
+      if (!start || !first || window.innerWidth >= 768) return;
+      const deltaX = Math.abs(first.clientX - start.x);
+      const deltaY = Math.abs(first.clientY - start.y);
+      if (deltaX > 12 && deltaX > deltaY * 1.4) event.preventDefault();
+    };
+
+    main.addEventListener('touchstart', blockNativeEdge, { capture: true, passive: false });
+    main.addEventListener('touchmove', blockHorizontalPagePan, { passive: false });
+    return () => {
+      main.removeEventListener('touchstart', blockNativeEdge, true);
+      main.removeEventListener('touchmove', blockHorizontalPagePan);
+    };
+  }, [signedIn, swipeTabIndex]);
 
   // Native vertical scrolling and horizontal UI controls always take precedence.
   // Only the exact five bottom tabs accept a one-finger horizontal swipe on phones.
@@ -240,7 +283,8 @@ export function StudentShell({
     const nextIndex = swipeTabIndex + (dx < 0 ? 1 : -1);
     if (nextIndex < 0 || nextIndex >= STUDENT_SWIPE_ROUTES.length) return;
     const nextRoute = STUDENT_SWIPE_ROUTES[nextIndex];
-    if (nextRoute) router.push(nextRoute);
+    // Tab swipes replace history entries: no iOS back-preview between tabs.
+    if (nextRoute) router.replace(nextRoute, { scroll: true });
   };
 
   // The four approved screens and the remaining student workflows share one
@@ -387,6 +431,8 @@ export function StudentShell({
       </div>
 
       <main
+        ref={swipeMainRef}
+        data-student-swipe={signedIn && swipeTabIndex >= 0 ? 'true' : undefined}
         className="vento-student-main relative mx-auto max-w-6xl px-4 pb-tabbar md:px-8 md:pb-0 md:pt-6"
         onTouchStart={onStudentTouchStart}
         onTouchMove={onStudentTouchMove}
