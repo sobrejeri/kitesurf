@@ -298,58 +298,73 @@ assert.ok(
 
 
 
-// Phone app should swipe only across the five main bottom tabs, in the exact
-// displayed order. Interior booking, conversation and incident routes are not
-// swipe destinations, and desktop/vertical interaction remains unaffected.
+// The visible content must follow the finger. Adjacent authenticated page
+// snapshots are only inert visuals; route navigation stays server-authorized.
+const pager = read('src/components/student/swipe-pager.tsx');
 const phoneTabs = [
   '/aluno/inicio', '/aluno/aulas', '/aluno/reservar',
   '/aluno/evolucao', '/aluno/conta',
 ];
-const swipeDeclaration = shell.match(/const STUDENT_SWIPE_ROUTES = \[([\s\S]*?)\] as const;/)?.[1] ?? '';
+const swipeDeclaration = pager.match(/export const STUDENT_SWIPE_ROUTES = \[([\s\S]*?)\] as const;/)?.[1] ?? '';
 assert.deepEqual(
   [...swipeDeclaration.matchAll(/'(\/aluno\/[^']+)'/g)].map((match) => match[1]),
   phoneTabs,
-  'Student swipe destinations must match the five visual tabs, including the central Agendar',
+  'Student swipe track must match the visual order including middle Agendar',
 );
 assert.ok(
-  shell.includes("const swipeTabIndex = (STUDENT_SWIPE_ROUTES as readonly string[]).indexOf(pathname)") &&
-  shell.includes('!signedIn || swipeTabIndex < 0 || window.innerWidth >= 768') &&
-  shell.includes('event.touches.length !== 1') &&
-  shell.includes("Date.now() - start.at > 1200") &&
-  shell.includes('Math.abs(dx) < minDistance || Math.abs(dx) < Math.abs(dy) * 1.4') &&
-  shell.includes('swipeTabIndex + (dx < 0 ? 1 : -1)') &&
-  shell.includes('nextIndex < 0 || nextIndex >= STUDENT_SWIPE_ROUTES.length') &&
-  shell.includes('if (nextRoute) router.replace(nextRoute, { scroll: true })'),
-  'Only mobile signed-in student tabs accept intentional horizontal gestures, with hard boundaries',
+  shell.includes("import { StudentSwipePager } from './student/swipe-pager'") &&
+  shell.includes('<StudentSwipePager pathname={pathname} signedIn={signedIn}>') &&
+  shell.includes('</StudentSwipePager>') &&
+  !shell.includes('onTouchStart={onStudentTouchStart}') &&
+  pager.includes("signedIn && index >= 0") &&
+  pager.includes("const isMobile = () => window.innerWidth < 768") &&
+  pager.includes('if (!route) {') &&
+  pager.includes("const direction = dx < 0 ? 1 : -1") &&
+  pager.includes("STUDENT_SWIPE_ROUTES[index + direction] ?? null"),
+  'Only exact student mobile tabs may swipe; Explorar right and Perfil left are hard stops',
 );
 assert.ok(
-  shell.includes("!event.currentTarget.contains(target)") &&
-  shell.includes('[data-student-swipe-ignore],[data-carousel]') &&
-  shell.includes(".overflow-x-auto,.overflow-x-scroll,.snap-x") &&
-  shell.includes("window.getComputedStyle(element).overflowX") &&
-  shell.includes("if (dy > 24 && dy > dx) swipeStart.current = null") &&
-  shell.includes("event.preventDefault()") &&
-  shell.includes('onTouchStart={onStudentTouchStart}') &&
-  shell.includes('onTouchMove={onStudentTouchMove}') &&
-  shell.includes('onTouchEnd={onStudentTouchEnd}') &&
-  shell.includes('onTouchCancel={() => { swipeStart.current = null; }}'),
-  'Swipe navigation must preserve page scroll, internal carousels, dialogs, and ordinary taps',
+  pager.includes("page.addEventListener('touchmove', onMove, { passive: false })") &&
+  pager.includes("page.addEventListener('touchstart', onStart, { passive: false })") &&
+  pager.includes("event.preventDefault()") &&
+  pager.includes("g.axis = 'vertical'; return") &&
+  pager.includes("Math.abs(dx) < 12 || Math.abs(dx) < Math.abs(dy) * 1.3") &&
+  pager.includes("target.closest(IGNORE_SWIPE)") &&
+  pager.includes("window.getComputedStyle(node).overflowX") &&
+  pager.includes("onMove") &&
+  pager.includes("page.style.transform = \`translate3d(\${g.dx}px,0,0)\`") &&
+  pager.includes("incoming.style.transform = \`translate3d(\${offset + g.dx}px,0,0)\`") &&
+  pager.includes('incoming.style.transform = \x27translate3d(0,0,0)\x27') &&
+  pager.includes("router.replace(destination, { scroll: true })"),
+  'Interactive swipe must follow the finger, attach neighbor, snap/rollback, and preserve vertical controls',
+);
+assert.ok(
+  pager.includes("await fetch(route, {") &&
+  pager.includes("credentials: 'same-origin'") &&
+  pager.includes("response.headers.get('content-type')?.includes('text/html')") &&
+  pager.includes("doc.querySelector('main.vento-student-main')") &&
+  pager.includes("main.querySelectorAll('script,style,iframe,object,embed,link,meta,template')") &&
+  pager.includes("ref={preview} inert aria-hidden=\x22true\x22") &&
+  !pager.includes('<TabBar') &&
+  !pager.includes('<FloatingChat') &&
+  pager.includes("window.matchMedia('(prefers-reduced-motion: reduce)')"),
+  'Adjacent page preview must be authenticated, inert, script-free and exclude duplicated nav or chat',
 );
 
-
-
-// iOS PWA repair: browser history preview must not render two clipped student
-// pages or two navigation bars while a route swipe is interpreted.
 const studentNavComponent = read('src/components/mobile.tsx');
 const studentNavigationCss = read('src/app/aluno/(app)/modelo3.css');
+assert.ok(studentNavigationCss.includes('Interactive student pager: neighboring PAGE CONTENT moves with the finger') &&
+  studentNavigationCss.includes('.vento-student-swipe-viewport') &&
+  studentNavigationCss.includes('.vento-student-swipe-preview') &&
+  studentNavigationCss.includes('touch-action:pan-y'),
+  'Swipe preview must stay clipped inside one mobile viewport with vertical scroll available');
 assert.ok(
-  shell.includes("main.addEventListener('touchstart', blockNativeEdge, { capture: true, passive: false })") &&
-  shell.includes("main.addEventListener('touchmove', blockHorizontalPagePan, { passive: false })") &&
-  shell.includes("first.clientX <= 28 || first.clientX >= window.innerWidth - 28") &&
-  shell.includes("deltaX > 12 && deltaX > deltaY * 1.4") &&
-  shell.includes("router.replace(nextRoute, { scroll: true })") &&
-  shell.includes("ref={swipeMainRef}") &&
-  shell.includes("data-student-swipe={signedIn && swipeTabIndex >= 0 ? 'true' : undefined}"),
+  pager.includes("touch.clientX <= 28 || touch.clientX >= window.innerWidth - 28") &&
+  pager.includes("page.addEventListener('touchstart', onStart, { passive: false })") &&
+  pager.includes("page.addEventListener('touchmove', onMove, { passive: false })") &&
+  pager.includes("router.replace(destination, { scroll: true })") &&
+  pager.includes('ref={viewport}') &&
+  pager.includes('data-student-swipe={active ? \x27true\x27 : undefined}'),
   'Mobile tab swipes must suppress iOS edge history and horizontal page pan while preserving vertical scroll',
 );
 assert.ok(
