@@ -423,11 +423,9 @@
     max-width:88%;
   }
 }
-@media (prefers-reduced-motion: reduce) {
-  @media (min-width:1024px) {
-    .vento-student-redesign .vento-pc-secondary-main .rounded-card,
-    .vento-student-redesign .vento-pc-central-screen .vento-pc-secondary-main > ul > li > a {
-      transition:none;
-    }
+@media (min-width:1024px) and (prefers-reduced-motion:reduce) {
+  .vento-student-redesign .vento-pc-secondary-main .rounded-card,
+  .vento-student-redesign .vento-pc-central-screen .vento-pc-secondary-main > ul > li > a {
+    transition:none;
   }
 }
