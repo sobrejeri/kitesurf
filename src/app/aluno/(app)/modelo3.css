@@ -822,7 +822,7 @@ body:has(.theme-beach.theme-mar-profundo) { background:#001829; color:#f4fbff; }
 .vento-student-swipe-preview { display:none; }
 
 @media (max-width:767px) {
-  .theme-mar-profundo .vento-student-swipe-viewport {
+  .theme-mar-profundo .vento-student-swipe-viewport[data-student-swipe="true"] {
     display:block;
     position:relative;
     isolation:isolate;
