@@ -149,7 +149,9 @@ assert.ok(shell.includes('const desktopRedesign = [') &&
   shell.includes("'/aluno/reservar','/aluno/atendimento','/aluno/avisos'") &&
   shell.includes('reserva|solicitacao|atendimento') &&
   shell.includes('vento-pc-sidebar') && shell.includes('aria-current={pathname===item.href') &&
-  shell.includes('vento-student-main') && shell.includes('vento-pc-account-bar'),
+  shell.includes('<StudentSwipePager pathname={pathname} signedIn={signedIn}>') &&
+  shell.includes("import { StudentSwipePager } from './student/swipe-pager'") &&
+  shell.includes('vento-pc-account-bar'),
   'Approved desktop sidebar must be route-scoped, navigable and keyboard-accessible');
 assert.ok(studentHomePage.includes('<DesktopStudentHome bookings={bookings}') &&
   studentHomePage.includes('<HomeDashboard bookings={bookings}') &&
