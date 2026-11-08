@@ -1,4 +1,5 @@
 import type { Metadata } from 'next';
+import { DesktopPageHeader } from '@/components/student/desktop-page-header';
 
 import { StudentHero } from '@/components/student/sunset';
 
@@ -17,9 +18,18 @@ const ITEMS = [
 
 export default function StudentHubPage() {
   return (
-    <>
+    <div className="vento-pc-secondary-page vento-pc-central-screen">
+      <DesktopPageHeader eyebrow="CENTRAL DE ATENDIMENTO"
+        title="Central de aulas"
+        lead="Tudo que você precisa para acompanhar suas aulas e encontrar ajuda."
+        icon="grid"
+        backHref="/aluno/inicio" variant="lesson"/>
+      <div className="vento-pc-original-hero">
       <StudentHero eyebrow="Fluxos da plataforma" title="Central de aulas" highlight="aulas" lead="Tudo organizado por etapa, sem perder os dados já preenchidos." compact />
+      </div>
+      <div className="vento-pc-secondary-main">
       <Hub bare title="Central de aulas" items={ITEMS} notice="Seus registros ficam vinculados à sua conta. A validação atual não realiza cobranças nem repasses." />
-    </>
+      </div>
+    </div>
   );
 }
