@@ -748,3 +748,69 @@ body:has(.theme-beach.theme-mar-profundo) { background:#001829; color:#f4fbff; }
     margin-bottom: 14px;
   }
 }
+
+
+/* Mobile student navigation is a single stable application-level footer.
+   Do not re-skin or shift it when route content swaps underneath on iOS. */
+@media (max-width:767px) {
+  html:has(.vento-student-single-tabbar),
+  body:has(.vento-student-single-tabbar) {
+    overscroll-behavior-x:none;
+    overflow-x:hidden;
+    overflow-x:clip;
+  }
+  .theme-mar-profundo .vento-student-main[data-student-swipe="true"] {
+    width:100%;
+    min-width:0;
+    max-width:100%;
+    overflow-x:clip;
+    overscroll-behavior-x:none;
+  }
+  .theme-mar-profundo nav.vento-student-single-tabbar[aria-label="Navegação do aluno"].fixed {
+    position:fixed;
+    left:0;right:0;bottom:0;
+    width:100%;max-width:100%;
+    transform:none;
+    background:linear-gradient(180deg,#002638f8,#001524fd 72%) !important;
+    border-top:1px solid #1a98a9;
+    border-radius:28px 28px 0 0;
+    box-shadow:0 -10px 32px #000e20a3;
+    color:#c8d9e4;
+  }
+  .theme-mar-profundo nav.vento-student-single-tabbar[aria-label="Navegação do aluno"].fixed > ul {
+    width:100%;max-width:512px;margin-inline:auto;
+  }
+  .theme-mar-profundo nav.vento-student-single-tabbar[aria-label="Navegação do aluno"].fixed a[aria-current="page"] {
+    color:#baff08 !important;
+  }
+  .theme-mar-profundo nav.vento-student-single-tabbar[aria-label="Navegação do aluno"].fixed a:not([aria-current="page"]) {
+    color:#c8d9e4 !important;
+  }
+  .theme-mar-profundo nav.vento-student-single-tabbar[aria-label="Navegação do aluno"].fixed a[aria-current="page"] > span:last-child {
+    background:#baff08;
+  }
+  .theme-mar-profundo nav.vento-student-single-tabbar[aria-label="Navegação do aluno"].fixed a:not([aria-current="page"]) > span:last-child {
+    background:transparent;
+  }
+  /* Elevated central action stays in its place but glows only on Agendar. */
+  .theme-mar-profundo nav.vento-student-single-tabbar[aria-label="Navegação do aluno"].fixed a[aria-label="Agendar"] > span:first-child {
+    width:58px;height:58px;
+    border:5px solid #023141;
+  }
+  .theme-mar-profundo nav.vento-student-single-tabbar[aria-label="Navegação do aluno"].fixed a[aria-label="Agendar"]:not([aria-current="page"]) > span:first-child {
+    background:#0b3a4e !important;
+    color:#c5d7e1 !important;
+    box-shadow:none !important;
+  }
+  .theme-mar-profundo nav.vento-student-single-tabbar[aria-label="Navegação do aluno"].fixed a[aria-label="Agendar"][aria-current="page"] > span:first-child {
+    background:linear-gradient(145deg,#b6ff00,#d7ff25) !important;
+    color:#001d2d !important;
+    box-shadow:0 5px 28px #b9ff0070 !important;
+  }
+  .theme-mar-profundo nav.vento-student-single-tabbar[aria-label="Navegação do aluno"].fixed a[aria-label="Agendar"]:not([aria-current="page"]) > span:nth-child(2) {
+    color:#c8d9e4 !important;
+  }
+  .theme-mar-profundo nav.vento-student-single-tabbar[aria-label="Navegação do aluno"].fixed a[aria-label="Agendar"][aria-current="page"] > span:nth-child(2) {
+    color:#baff08 !important;
+  }
+}

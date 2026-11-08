@@ -78,9 +78,11 @@ export function TabBar({
   const closeSheet = useCallback(() => setOpenAt(null), []);
   const moreActive = more ? !items.some((item) => isActive(pathname, item)) : false;
   const mid = Math.ceil(items.length / 2);
+  const centerActive = Boolean(center && isActive(pathname, center));
 
   const renderItem = (item: TabItem) => {
-    const active = isActive(pathname, item);
+    // When Agendar is open, do not highlight Explorar through its match route.
+    const active = !centerActive && isActive(pathname, item);
     return (
       <li key={item.href} className="flex-1">
         <Link
@@ -104,7 +106,7 @@ export function TabBar({
     <>
       <nav
         aria-label={label}
-        className={`pb-safe fixed inset-x-0 bottom-0 z-40 border-t border-line/80 bg-tabbar/95 backdrop-blur-xl ${variant === 'underline' ? 'rounded-t-[26px] shadow-[0_-10px_30px_#00000059]' : ''} ${breakpoint === 'md' ? 'md:hidden' : 'lg:hidden'}`}
+        className={`vento-student-single-tabbar pb-safe fixed inset-x-0 bottom-0 z-40 border-t border-line/80 bg-tabbar/95 backdrop-blur-xl ${variant === 'underline' ? 'rounded-t-[26px] shadow-[0_-10px_30px_#00000059]' : ''} ${breakpoint === 'md' ? 'md:hidden' : 'lg:hidden'}`}
       >
         <ul className={`mx-auto flex max-w-lg items-stretch justify-around px-1 ${variant === 'underline' ? 'pt-3' : 'pt-1.5'}`}>
           {(center ? items.slice(0, mid) : items).map(renderItem)}
@@ -113,13 +115,14 @@ export function TabBar({
               <Link
                 href={center.href}
                 aria-label={center.label}
-                className="press flex flex-col items-center gap-1 py-1 text-tabbar-ink"
+                aria-current={centerActive ? 'page' : undefined}
+                className={`press flex flex-col items-center gap-1 py-1 ${centerActive ? 'text-sunrise font-semibold' : 'text-tabbar-ink'}`}
               >
-                <span className="-mt-[22px] grid h-[52px] w-[52px] place-items-center rounded-full bg-gradient-to-br from-[#00d7e9] to-[#05f0ec] text-[#002b3b] shadow-[0_9px_22px_#00d8e480] ring-[5px] ring-tabbar/95">
+                <span className={`-mt-[22px] grid h-[52px] w-[52px] place-items-center rounded-full border-[5px] border-[#023141] transition-colors ${centerActive ? 'bg-[#baff08] text-[#002b3b] shadow-[0_9px_22px_#baff0870]' : 'bg-[#0b3a4e] text-[#c5d7e1] shadow-none'}`}>
                   <Icon name={center.icon} className="!h-[25px] !w-[25px] [stroke-width:2]" />
                 </span>
-                <span className={`${variant === 'underline' ? 'text-[11px]' : 'text-[10px]'} font-[650] text-sunrise`}>{center.label}</span>
-                {variant === 'underline' ? <span className="mt-1 h-[3px] w-8 rounded-full bg-transparent" aria-hidden="true" /> : null}
+                <span className={`${variant === 'underline' ? 'text-[11px]' : 'text-[10px]'} font-[650] ${centerActive ? 'text-sunrise' : 'text-tabbar-ink'}`}>{center.label}</span>
+                {variant === 'underline' ? <span className={`mt-1 h-[3px] w-8 rounded-full ${centerActive ? 'bg-brand' : 'bg-transparent'}`} aria-hidden="true" /> : null}
               </Link>
             </li>
           ) : null}

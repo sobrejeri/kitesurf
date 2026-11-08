@@ -319,7 +319,7 @@ assert.ok(
   shell.includes('Math.abs(dx) < minDistance || Math.abs(dx) < Math.abs(dy) * 1.4') &&
   shell.includes('swipeTabIndex + (dx < 0 ? 1 : -1)') &&
   shell.includes('nextIndex < 0 || nextIndex >= STUDENT_SWIPE_ROUTES.length') &&
-  shell.includes('if (nextRoute) router.push(nextRoute)'),
+  shell.includes('if (nextRoute) router.replace(nextRoute, { scroll: true })'),
   'Only mobile signed-in student tabs accept intentional horizontal gestures, with hard boundaries',
 );
 assert.ok(
@@ -334,6 +334,35 @@ assert.ok(
   shell.includes('onTouchEnd={onStudentTouchEnd}') &&
   shell.includes('onTouchCancel={() => { swipeStart.current = null; }}'),
   'Swipe navigation must preserve page scroll, internal carousels, dialogs, and ordinary taps',
+);
+
+
+
+// iOS PWA repair: browser history preview must not render two clipped student
+// pages or two navigation bars while a route swipe is interpreted.
+const studentNavComponent = read('src/components/mobile.tsx');
+const studentNavigationCss = read('src/app/aluno/(app)/modelo3.css');
+assert.ok(
+  shell.includes("main.addEventListener('touchstart', blockNativeEdge, { capture: true, passive: false })") &&
+  shell.includes("main.addEventListener('touchmove', blockHorizontalPagePan, { passive: false })") &&
+  shell.includes("first.clientX <= 28 || first.clientX >= window.innerWidth - 28") &&
+  shell.includes("deltaX > 12 && deltaX > deltaY * 1.4") &&
+  shell.includes("router.replace(nextRoute, { scroll: true })") &&
+  shell.includes("ref={swipeMainRef}") &&
+  shell.includes("data-student-swipe={signedIn && swipeTabIndex >= 0 ? 'true' : undefined}"),
+  'Mobile tab swipes must suppress iOS edge history and horizontal page pan while preserving vertical scroll',
+);
+assert.ok(
+  studentNavComponent.includes("const centerActive = Boolean(center && isActive(pathname, center))") &&
+  studentNavComponent.includes("const active = !centerActive && isActive(pathname, item)") &&
+  studentNavComponent.includes("aria-current={centerActive ? 'page' : undefined}") &&
+  studentNavComponent.includes("vento-student-single-tabbar") &&
+  studentNavigationCss.includes("Mobile student navigation is a single stable application-level footer") &&
+  studentNavigationCss.includes("nav.vento-student-single-tabbar") &&
+  studentNavigationCss.includes('a[aria-label="Agendar"]:not([aria-current="page"]) > span:first-child') &&
+  studentNavigationCss.includes('background:#0b3a4e !important') &&
+  studentNavigationCss.includes('a[aria-label="Agendar"][aria-current="page"] > span:first-child'),
+  'Exactly one highlighted tab must be visible in one fixed shared bar on every student screen',
 );
 
 console.log('PASS: desktop layout and profile photo plus layered meeting-conflict protection');
