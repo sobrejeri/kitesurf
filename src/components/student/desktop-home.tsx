@@ -16,6 +16,7 @@ export function DesktopStudentHome({bookings,level,firstName,children}:{
 }) {
   const summary=studentHomeSummary(bookings);
   const current=summary.current;
+  const firstPending=summary.pending[0];
   const studentLevel=level?KITE_LEVEL_BADGES[level.effective].label:'Acompanhe sua evolução';
   const instructor=current?.booking.instructor?.full_name ?? 'Instrutor a confirmar';
   return <div className="vento-pc-page vento-pc-home">
@@ -70,9 +71,9 @@ export function DesktopStudentHome({bookings,level,firstName,children}:{
             </div>
           </div>
         </div>
-        {summary.pending.length ? <div className="vento-pc-pending">
+        {firstPending ? <div className="vento-pc-pending">
           <Icon name="clock"/> {summary.pending.length} reserva(s) aguardando confirmação
-          <Link href={`/aluno/reserva/${summary.pending[0].id}`}>Revisar</Link>
+          <Link href={`/aluno/reserva/${firstPending.id}`}>Revisar</Link>
         </div>:null}
         {summary.unrecorded.length ? <Link className="vento-pc-unrecorded" href="/aluno/aulas?aba=anteriores">
           {summary.unrecorded.length} encontro(s) aguardam registro do instrutor <Icon name="arrow"/>
