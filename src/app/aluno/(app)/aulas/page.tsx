@@ -1,6 +1,7 @@
 import type { Metadata } from 'next';
 
 import { MyLessons, type LessonCard } from '@/components/student/my-lessons';
+import { DesktopStudentLessons } from '@/components/student/desktop-lessons';
 import { KiteModelo3Header } from '@/components/student/modelo3-header';
 import { requireRole } from '@/lib/auth';
 import { BOOKING_STATUS_LABELS, MEETING_STATUS_LABELS, listBookingsForStudent } from '@/lib/data';
@@ -58,8 +59,13 @@ export default async function MyLessonsPage({searchParams}:{searchParams:Promise
 
   return (
     <div className="vento-student-desktop-lessons kite-modelo3 kite-modelo3--lessons">
+      <div className="vento-pc-desktop-only">
+        <DesktopStudentLessons lessons={lessons} initialTab={initialTab}/>
+      </div>
+      <div className="vento-pc-mobile-original">
       <KiteModelo3Header title="Minhas aulas" subtitle="Acompanhe suas aulas, detalhes e status." />
       <MyLessons key={initialTab} initialTab={initialTab} lessons={lessons} />
+      </div>
     </div>
   );
 }
