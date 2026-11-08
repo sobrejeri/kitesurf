@@ -1,6 +1,6 @@
 'use client';
 
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useRef, useState, type PointerEvent as ReactPointerEvent } from 'react';
 import { createPortal } from 'react-dom';
 import { chatBookingId, chatBubbles, mergeChatMessages, chatWasRead, presenceLabel, chatThreadTag, type ChatRead, type ChatArea, type ChatMessage, type ChatThread } from '@/lib/chat-dock';
 import {CHAT_FILE_TYPES,MAX_CHAT_FILE} from '@/lib/chat-files';
@@ -21,6 +21,15 @@ function Photo({thread}: {thread:ChatThread}) {
 export function FloatingChat({area,viewerId}: {area:ChatArea;viewerId:string}) {
   const [mounted,setMounted] = useState(false);
   const [threads,setThreads] = useState<ChatThread[]>([]);
+  // Dismissing an avatar hides only the current unread batch. A newer
+  // incoming message brings the bubble back without deleting messages.
+  const [hiddenUnread,setHiddenUnread] = useState<Record<string,string>>({});
+  const [bubblePosition,setBubblePosition] = useState<{x:number;y:number}|null>(null);
+  const [draggingBubble,setDraggingBubble] = useState(false);
+  const [trashHot,setTrashHot] = useState(false);
+  const bubbleDrag = useRef<{id:number;x:number;y:number;left:number;top:number;moved:boolean}|null>(null);
+  const suppressBubbleClick = useRef(false);
+  const bubbleSide = useRef<'left'|'right'>('right');
   const [open,setOpen] = useState(false);
   const [attachmentsOpen,setAttachmentsOpen] = useState(false);
   const [selectedId,setSelectedId] = useState<string|null>(null);
@@ -46,13 +55,17 @@ export function FloatingChat({area,viewerId}: {area:ChatArea;viewerId:string}) {
   const visibilityBusy=useRef(false);
   const box = useRef<HTMLDivElement>(null);
   const input = useRef<HTMLTextAreaElement>(null);
-  const launcher = useRef<HTMLButtonElement>(null);
   const follow = useRef(true);
   const historyLoaded = useRef(false);
   const restoreScroll = useRef<{height:number;top:number}|null>(null);
   const marking = useRef(false);
   const selectedRef = useRef<string|null>(null);
   const endpoint = `/${area}/chat-live`;
+  const visibleUnread=threads.filter(t=>t.unread>0 && hiddenUnread[t.id]!==t.lastAt);
+  const bubbleList=chatBubbles(visibleUnread);
+  const stackWidth=58+Math.max(0,bubbleList.length-1)*18;
+  const stackHeight=58+Math.max(0,bubbleList.length-1)*10;
+  const extraUnreadThreads=Math.max(0,visibleUnread.length-bubbleList.length);
   const last = messages.at(-1);
   const first = messages[0];
   const thread = detail?.id === selectedId ? detail : threads.find(t=>t.id===selectedId);
@@ -105,7 +118,15 @@ export function FloatingChat({area,viewerId}: {area:ChatArea;viewerId:string}) {
       const url = new URL(anchor.href,window.location.href);
       if (url.origin!==window.location.origin || url.search || url.hash) return;
       const id=chatBookingId(url.pathname,area);
-      if (id) {event.preventDefault();show(id);}
+      if (id) {event.preventDefault();show(id);return;}
+      // Menu > Conversas opens the same floating inbox without creating a
+      // permanent launcher. Modified clicks can still open the full page.
+      if (url.pathname.replace(/\/$/, '') === `/${area}/atendimento`) {
+        event.preventDefault();
+        selectedRef.current=null;
+        setSelectedId(null);
+        setOpen(true);
+      }
     };
     // Capture before Next Link handles the click at the React root.
     document.addEventListener('click',click,true);
@@ -195,7 +216,18 @@ export function FloatingChat({area,viewerId}: {area:ChatArea;viewerId:string}) {
     }catch{setError('Não foi possível carregar as mensagens anteriores.');}
     finally{setLoadingOlder(false);}
   }
-  function minimize(){setAttachmentsOpen(false);setOpen(false);launcher.current?.focus();}
+  function minimize(){
+    // Closing an open chat hides that conversation's existing notification
+    // bubble; other unread conversations remain visible and selectable.
+    if(selectedId){
+      const current=threads.find(t=>t.id===selectedId);
+      if(current) setHiddenUnread(previous=>({...previous,[current.id]:current.lastAt}));
+    }
+    selectedRef.current=null;
+    setSelectedId(null);
+    setAttachmentsOpen(false);
+    setOpen(false);
+  }
   async function visibility(visible:boolean){
     if(visibilityBusy.current)return;visibilityBusy.current=true;setShowOnline(visible);
     try{const response=await fetch(endpoint,{method:'POST',headers:{'Content-Type':'application/json','x-vento-chat':'1'},body:JSON.stringify({type:'visibility',visible})});
@@ -234,6 +266,75 @@ export function FloatingChat({area,viewerId}: {area:ChatArea;viewerId:string}) {
     }catch(cause){if(selectedRef.current===id)setError(cause instanceof Error?cause.message:'Não foi possível compartilhar a localização.');}
     finally{setSending(false);}
   }
+  const dismissAllBubbles=useCallback(()=>{
+    setHiddenUnread(previous=>{
+      const next={...previous};
+      for(const t of threads) if(t.unread>0) next[t.id]=t.lastAt;
+      return next;
+    });
+    setDraggingBubble(false);setTrashHot(false);setBubblePosition(null);
+  },[threads]);
+
+  const onBubbleDown=(event:ReactPointerEvent<HTMLDivElement>)=>{
+    if(event.button!==0 || bubbleDrag.current || !bubbleList.length)return;
+    const box=event.currentTarget.getBoundingClientRect();
+    bubbleDrag.current={id:event.pointerId,x:event.clientX,y:event.clientY,left:box.left,top:box.top,moved:false};
+  };
+  const onBubbleMove=(event:ReactPointerEvent<HTMLDivElement>)=>{
+    const drag=bubbleDrag.current;
+    if(!drag || drag.id!==event.pointerId)return;
+    const dx=event.clientX-drag.x,dy=event.clientY-drag.y;
+    if(!drag.moved && Math.hypot(dx,dy)<7)return;
+    if(!drag.moved) event.currentTarget.setPointerCapture(event.pointerId);
+    drag.moved=true;
+    setDraggingBubble(true);
+    const width=window.innerWidth,height=window.innerHeight;
+    setBubblePosition({
+      x:Math.max(8,Math.min(width-stackWidth-8,drag.left+dx)),
+      y:Math.max(65,Math.min(height-stackHeight-30,drag.top+dy))
+    });
+    const targetY=height-(area==='aluno'?128:110);
+    setTrashHot(Math.abs(event.clientX-width/2)<73 && Math.abs(event.clientY-targetY)<73);
+  };
+  const onBubbleUp=(event:ReactPointerEvent<HTMLDivElement>)=>{
+    const drag=bubbleDrag.current;
+    if(!drag || drag.id!==event.pointerId)return;
+    bubbleDrag.current=null;
+    if(event.currentTarget.hasPointerCapture(event.pointerId))
+      event.currentTarget.releasePointerCapture(event.pointerId);
+    setDraggingBubble(false);
+    setTrashHot(false);
+    if(!drag.moved)return;
+    suppressBubbleClick.current=true;
+    window.setTimeout(()=>{suppressBubbleClick.current=false;},100);
+    const width=window.innerWidth,height=window.innerHeight;
+    const targetY=height-(area==='aluno'?128:110);
+    if(Math.abs(event.clientX-width/2)<73 && Math.abs(event.clientY-targetY)<73){
+      dismissAllBubbles();return;
+    }
+    const dx=event.clientX-drag.x,dy=event.clientY-drag.y;
+    const x=Math.max(8,Math.min(width-stackWidth-8,drag.left+dx));
+    const side=x+stackWidth/2<width/2?'left':'right';
+    bubbleSide.current=side;
+    setBubblePosition({
+      x:side==='left'?12:Math.max(12,width-stackWidth-12),
+      y:Math.max(65,Math.min(height-stackHeight-95,drag.top+dy))
+    });
+  };
+  useEffect(()=>{
+    const onResize=()=>{
+      setBubblePosition(previous=>{
+        if(!previous)return null;
+        return {
+          x:bubbleSide.current==='left'?12:Math.max(12,window.innerWidth-stackWidth-12),
+          y:Math.max(65,Math.min(window.innerHeight-stackHeight-95,previous.y))
+        };
+      });
+    };
+    window.addEventListener('resize',onResize);
+    return ()=>window.removeEventListener('resize',onResize);
+  },[stackWidth,stackHeight]);
+
   if (!mounted) return null;
   const unread=threads.reduce((sum,t)=>sum+t.unread,0);
   return createPortal(<>
@@ -248,8 +349,29 @@ export function FloatingChat({area,viewerId}: {area:ChatArea;viewerId:string}) {
         {thread ? <Photo thread={thread}/> : null}
         <div><strong>{selectedId?(thread?.name ?? 'Carregando conversa…'):'Minhas conversas'}</strong>
           <small>{selectedId?thread?chatThreadTag(thread):'Reserva':'Mensagens das suas aulas'}</small></div>
-        <button type="button" aria-label="Minimizar conversa" onClick={minimize}><Icon name="minus" /></button>
+        <button type="button" aria-label="Fechar conversa" title="Fechar conversa" onClick={minimize}><Icon name="close" /></button>
       </header>
+      {threads.length ? (
+        <nav className={styles.threadSwitcher} aria-label="Alternar entre conversas">
+          <div className={styles.threadSwitcherScroll}>
+            {threads.map(t => {
+              const selected = selectedId === t.id;
+              return (
+                <button type="button" key={t.id}
+                  className={styles.threadSwitchButton}
+                  aria-label={`Conversa com ${t.name}, reserva ${t.code}${t.unread && !selected ? `, ${t.unread} mensagens não lidas` : ''}`}
+                  aria-pressed={selected}
+                  title={chatThreadTag(t)}
+                  onClick={() => show(t.id)}>
+                  <Photo thread={t}/>
+                  <span className={styles.threadSwitchName}>{t.name}</span>
+                  {!selected && t.unread > 0 ? <b className={styles.badge}>{t.unread > 99 ? '99+' : t.unread}</b> : null}
+                </button>
+              );
+            })}
+          </div>
+        </nav>
+      ) : null}
       {!selectedId ? <div className={styles.list}>
         <label className={styles.visibility}><input type="checkbox" checked={showOnline} disabled={!featuresReady} onChange={event=>visibility(event.target.checked)}/> Mostrar quando estou online</label>
         {!featuresReady?<p>Os novos recursos de presença, arquivos e localização aguardam ativação.</p>:null}
@@ -299,13 +421,38 @@ export function FloatingChat({area,viewerId}: {area:ChatArea;viewerId:string}) {
         </form>
       </>}
     </section>:null}
-    <div className={styles.bubbles}>
-      {chatBubbles(threads).filter(t=>!open || t.id!==selectedId).map(t=><button type="button" key={t.peerId} className={styles.bubble} onClick={()=>show(t.id)} title={`${t.name} · ${t.unread} mensagens não lidas`} aria-label={`Abrir mensagem de ${t.name}`}>
-        <Photo thread={t}/><span className={styles.messageIcon}><Icon name="chat"/></span><b className={styles.badge}>{t.unread>99?'99+':t.unread}</b>
-      </button>)}
-      <button ref={launcher} type="button" className={styles.launcher} aria-label={open?'Minimizar chat':'Abrir minhas conversas'} aria-expanded={open}
-        onClick={()=>open?minimize():setOpen(true)}><Icon name={open?'minus':'chat'}/>{unread?<b className={styles.badge}>{unread>99?'99+':unread}</b>:null}</button>
-    </div>
+    {!open && bubbleList.length ? (
+      <div className={`${styles.bubbles} ${draggingBubble?styles.bubblesDragging:''}`} role="group"
+        aria-label="Conversas com mensagens não lidas. Arraste para uma lateral ou até o X para ocultar."
+        style={{width:stackWidth,height:stackHeight,...(bubblePosition?{left:bubblePosition.x,top:bubblePosition.y,right:'auto',bottom:'auto'}:{})}}
+        onPointerDown={onBubbleDown} onPointerMove={onBubbleMove} onPointerUp={onBubbleUp}
+        onPointerCancel={()=>{bubbleDrag.current=null;setDraggingBubble(false);setTrashHot(false);setBubblePosition(null);}}>
+        {[...bubbleList].reverse().map((t, reversedIndex) => {
+          const index = bubbleList.length - 1 - reversedIndex;
+          return (
+            <button type="button" key={t.id} className={styles.bubble}
+              style={{right:`${index*18}px`,bottom:`${index*10}px`,zIndex:10-index}}
+              onClick={()=>{if(suppressBubbleClick.current)return;show(t.id);}}
+              title={`${t.name} · ${t.unread} mensagens não lidas · ${chatThreadTag(t)}`}
+              aria-label={`Abrir conversa com ${t.name}, ${t.unread} mensagens não lidas`}>
+              <Photo thread={t}/>
+              <b className={styles.badge}>{t.unread>99?'99+':t.unread}</b>
+            </button>
+          );
+        })}
+        {extraUnreadThreads > 0 ? (
+          <button type="button" className={styles.moreUnread}
+            onClick={()=>{if(suppressBubbleClick.current)return;selectedRef.current=null;setSelectedId(null);setOpen(true);}}
+            aria-label={`Abrir mais ${extraUnreadThreads} conversas com mensagens não lidas`}>+${extraUnreadThreads}</button>
+        ) : null}
+      </div>
+    ) : null}
   </aside>
+  {draggingBubble ? (
+    <div className={`${styles.trashTarget} ${trashHot?styles.trashTargetHot:''} ${area==='aluno'?styles.trashStudent:''}`}
+      role="status" aria-label="Solte aqui para fechar todas as bolinhas de conversa">
+      <Icon name="close" /><span>Solte para fechar todas</span>
+    </div>
+  ) : null}
   </>,document.body);
 }
