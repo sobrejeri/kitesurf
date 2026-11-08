@@ -2,6 +2,7 @@ import type { Metadata } from 'next';
 
 import { LessonSearch } from '@/components/student/lesson-search';
 import { HomeDashboard } from '@/components/student/home-dashboard';
+import { DesktopStudentHome } from '@/components/student/desktop-home';
 import { OfficialLogo } from '@/components/official-logo';
 import { listBookingsForStudent, type StudentBooking } from '@/lib/data';
 import { getViewer } from '@/lib/auth';
@@ -49,6 +50,13 @@ export default async function StudentHomePage() {
 
   return (
     <div className="vento-student-desktop-home">
+      <div className="vento-pc-desktop-only">
+        <DesktopStudentHome bookings={bookings} level={kiteLevel} firstName={firstName}>
+          {!returning ? <LessonSearch defaultDate={lessonDate(1)} quotes={quotes} beaches={beaches}
+            studentLevel={kiteLevel?.effective ?? 'first_time'} /> : null}
+        </DesktopStudentHome>
+      </div>
+      <div className="vento-pc-mobile-original">
       {returning ? (
         // Aluno com aula registrada: apenas o painel (próxima aula, horas, nível).
         <HomeDashboard bookings={bookings} level={kiteLevel} firstName={firstName} instructorPhotoUrl={instructorPhotoUrl} />
@@ -88,6 +96,7 @@ export default async function StudentHomePage() {
           </div>
         </div>
       )}
+      </div>
       {historyUnavailable ? (
         <p role="status" className="my-5 rounded-xl border border-line bg-surface p-4 text-sm text-label">Não foi possível carregar suas aulas agora. <a className="text-brand underline" href="/aluno/inicio">Tentar novamente</a></p>
       ) : null}

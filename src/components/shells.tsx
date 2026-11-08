@@ -163,6 +163,20 @@ export function StudentShell({
   signOut: () => Promise<void>;
 }) {
   const pathname = usePathname();
+  // First approved desktop batch: only these routes get the new workspace.
+  // Other student pages and every mobile route keep their existing shell.
+  const desktopRedesign = ['/aluno/inicio','/aluno/aulas','/aluno/evolucao','/aluno/conta'].includes(pathname);
+  const desktopLinks: readonly { href: string; label: string; icon: IconName }[] = [
+    {href:'/aluno/inicio',label:'Início',icon:'home'},
+    {href:'/aluno/aulas',label:'Minhas aulas',icon:'calendar'},
+    {href:'/aluno/evolucao',label:'Evolução',icon:'chart'},
+    {href:'/aluno/conta',label:'Perfil',icon:'user'},
+    {href:'/aluno/atendimento',label:'Atendimento',icon:'chat'},
+    {href:'/aluno/avisos',label:'Avisos',icon:'bell'},
+    {href:'/aluno/central',label:'Central de aulas',icon:'book'},
+    {href:'/aluno/ocorrencias',label:'Ocorrências',icon:'shield'},
+    {href:'/aluno/politicas',label:'Políticas e regras',icon:'file'},
+  ];
   const subpage = STUDENT_SUBPAGES.some((route) => pathname.startsWith(route));
   // Minhas aulas has its own tab switcher, so the phone top drops the menu there.
   const hideTopMenu = pathname === '/aluno/aulas' || pathname.startsWith('/aluno/aulas/')
@@ -174,7 +188,37 @@ export function StudentShell({
     : STUDENT_TABS.map((tab) => (tab.href === '/aluno/conta' ? { ...tab, label: 'Entrar', href: '/aluno/entrar' } : tab));
 
   return (
-    <div className="theme-beach theme-mar-profundo min-h-dvh w-full min-w-0 max-w-full overflow-x-clip bg-canvas text-ink">
+    <div className={`theme-beach theme-mar-profundo min-h-dvh w-full min-w-0 max-w-full overflow-x-clip bg-canvas text-ink ${desktopRedesign ? 'vento-student-redesign' : ''}`}>
+      {desktopRedesign ? (
+        <aside className="vento-pc-sidebar" aria-label="Menu lateral do aluno">
+          <Link className="vento-pc-sidebar-logo" href="/aluno/inicio" aria-label="VentoKite — Início"><OfficialLogo /></Link>
+          <nav className="vento-pc-side-nav" aria-label="Páginas do aluno">
+            {desktopLinks.map((item,index)=>(
+              <Link key={item.href} href={item.href}
+                aria-current={pathname===item.href?'page':undefined}
+                className={`vento-pc-side-link ${pathname===item.href?'is-active':''} ${index===6?'with-divider':''}`}>
+                <Icon name={item.icon} /> <span>{item.label}</span>
+              </Link>
+            ))}
+            <Link className="vento-pc-side-link" href="/laboratorio-kite.html"><Icon name="kite" /><span>Laboratório 3D</span></Link>
+          </nav>
+          {signedIn ? (
+            <form className="vento-pc-side-signout" action={signOut}>
+              <button type="submit"><Icon name="logout"/> Sair da conta</button>
+            </form>
+          ) : <Link className="vento-pc-side-signout" href="/aluno/entrar"><Icon name="user"/> Entrar</Link>}
+          <div className="vento-pc-side-waves" aria-hidden="true" />
+        </aside>
+      ) : null}
+      {desktopRedesign ? (
+        <div className="vento-pc-account-bar">
+          <Link href="/aluno/avisos" aria-label="Consultar avisos" className="vento-pc-notification"><Icon name="bell"/></Link>
+          <Link href={signedIn?'/aluno/conta':'/aluno/entrar'} className="vento-pc-account">
+            <StudentProfileAvatar name={name} initials={initials} photoUrl={photoUrl}/>
+            <strong>{name}</strong><Icon name="chevronDown"/>
+          </Link>
+        </div>
+      ) : null}
       <header className="vento-desktop-student-header hidden border-b border-line bg-chrome md:block">
         <div className="mx-auto flex h-[76px] max-w-6xl items-center justify-between gap-6 px-6 lg:px-8">
           <KiteModelo3Brand compact />
@@ -254,7 +298,7 @@ export function StudentShell({
         </div>
       </div>
 
-      <main className="relative mx-auto max-w-6xl px-4 pb-tabbar md:px-8 md:pb-0 md:pt-6">{children}</main>
+      <main className="vento-student-main relative mx-auto max-w-6xl px-4 pb-tabbar md:px-8 md:pb-0 md:pt-6">{children}</main>
       <SiteFooter />
       <div className="kite-m3-wave-band" aria-hidden="true">
         <svg viewBox="0 0 1200 110" preserveAspectRatio="none" focusable="false">

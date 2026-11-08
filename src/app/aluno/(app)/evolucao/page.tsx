@@ -154,6 +154,12 @@ export default async function ProgressPage({
   return (
     <div className="kite-modelo3 kite-modelo3--evolution">
       <KiteModelo3Header />
+      <header className="vento-pc-desktop-only vento-pc-banner vento-pc-evolution-banner"
+        style={{backgroundImage:"linear-gradient(90deg,#00233eea 2%,#00364d9c 47%,transparent),url('/images/kite-lesson.webp')"}}>
+        <span className="vento-pc-overline">SEU APRENDIZADO</span>
+        <h1>Minha <em>Evolução</em></h1>
+        <p>Acompanhe suas conquistas e seus próximos passos no kitesurf.</p>
+      </header>
       {bookings.length === 0 ? (
         <section className="rounded-[22px] border border-line bg-surface p-5">
           <p className="text-[13px] text-muted">Você ainda não possui reservas.</p>
@@ -202,13 +208,14 @@ export default async function ProgressPage({
           </section>
 
           {/* Cartões de horas — totais agregados */}
-          <section className="mt-3 grid grid-cols-2 gap-3">
+          <section className="vento-pc-evolution-metrics mt-3 grid grid-cols-2 gap-3">
             <JourneyMetric icon="calendar" label="Horas contratadas" value={formatMinutes(totalContracted)} sub="Reservas confirmadas" href="/aluno/aulas" />
             <JourneyMetric icon="chart" label="Horas realizadas" value={formatMinutes(totalDone)} sub="Aulas registradas" href="/aluno/aulas?aba=anteriores" />
             <JourneyMetric icon="calendar" label="Horas agendadas" value={formatMinutes(totalScheduled)} sub="Próximos encontros" href="/aluno/aulas" />
             <JourneyMetric icon="wallet" label="Saldo disponível" value={formatMinutes(totalBalance)} sub="Para os próximos encontros" href="/aluno/reservar" />
           </section>
 
+          <div className="vento-pc-evolution-columns">
           {/* Seu caminho no kite — currículo agregado com linha do tempo */}
           <section className="kite-m3-journey-section relative mt-5 overflow-hidden rounded-[22px] border border-line bg-surface p-4">
             <img src="/images/prea-coast.webp" alt="" aria-hidden="true"
@@ -310,6 +317,7 @@ export default async function ProgressPage({
             )}
           </section>
 
+          </div>
           {/* Detalhe da reserva selecionada */}
           {selected ? (
             <section id="detalhes-reserva"
