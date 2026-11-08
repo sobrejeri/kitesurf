@@ -16,6 +16,12 @@ const CHAT_EMOJIS = [
   '🎉','✨','🌊','🏄','🪁','☀️','💪','✅','🚀','💯',
 ] as const;
 
+type BubbleGlowStyle = CSSProperties & {
+  '--bubble-ring-alpha': string;
+  '--bubble-glow-alpha': string;
+  '--bubble-shadow-alpha': string;
+};
+
 function Photo({thread}: {thread:ChatThread}) {
   const [failed,setFailed] = useState<string|null>(null);
   return <span className={styles.photo}>
@@ -540,7 +546,7 @@ export function FloatingChat({area,viewerId}: {area:ChatArea;viewerId:string}) {
                 '--bubble-ring-alpha':Math.max(.02,.10-index*.02).toFixed(2),
                 '--bubble-glow-alpha':Math.max(.05,.25-index*.05).toFixed(2),
                 '--bubble-shadow-alpha':Math.max(.28,.65-index*.09).toFixed(2)
-              } as CSSProperties}
+              } as BubbleGlowStyle}
               onClick={()=>{if(suppressBubbleClick.current)return;show(t.id);}}
               title={`${t.name} · ${t.unread} mensagens não lidas · ${chatThreadTag(t)}`}
               aria-label={`Abrir conversa com ${t.name}, ${t.unread} mensagens não lidas`}>
