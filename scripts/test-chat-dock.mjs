@@ -177,12 +177,37 @@ console.log('PASS: active chat photo row excludes duplicate historical reservati
 
 assert.ok(
   floatingCss.includes('Approved halo: a soft teal/lime glow sits BEHIND the portrait') &&
-  floatingCss.includes('0 0 0 5px rgba(186,255,8,.10)') &&
-  floatingCss.includes('0 0 22px 4px rgba(36,211,197,.25)') &&
-  floatingCss.includes('0 8px 26px rgba(0,19,35,.65)') &&
+  floatingCss.includes('rgba(186,255,8,var(--bubble-ring-alpha,.10))') &&
+  floatingCss.includes('rgba(36,211,197,var(--bubble-glow-alpha,.25))') &&
+  floatingCss.includes('rgba(0,19,35,var(--bubble-shadow-alpha,.65))') &&
   floatingCss.includes('.bubbles .badge {') &&
   floatingCss.includes('background:#e6334e;') &&
   floatingCss.includes('touch-action:none;'),
   'Unread profile bubbles must have their approved soft shadow while preserving the red badge and touch drag',
 );
 console.log('PASS: subtle avatar bubble halo remains visible without changing unread badge or drag');
+
+
+// The avatars should form a single side-by-side row instead of a descending
+// staircase. Depth is expressed only in fading shadows, never dimming photos.
+assert.ok(
+  floatingChat.includes('const bubbleStep=58;') &&
+  floatingChat.includes('const stackWidth=58+Math.max(0,bubbleList.length-1)*bubbleStep;') &&
+  floatingChat.includes('const stackHeight=58;') &&
+  floatingChat.includes("bubbleSide.current==='left'?styles.bubblesLeft:''") &&
+  floatingChat.includes('left:\`\${index*bubbleStep}px\`') &&
+  floatingChat.includes('right:\`\${index*bubbleStep}px\`') &&
+  floatingChat.includes('bottom:0,') &&
+  floatingChat.includes("'--bubble-ring-alpha':Math.max(.02,.10-index*.02).toFixed(2)") &&
+  floatingChat.includes("'--bubble-glow-alpha':Math.max(.05,.25-index*.05).toFixed(2)") &&
+  floatingChat.includes("'--bubble-shadow-alpha':Math.max(.28,.65-index*.09).toFixed(2)") &&
+  !floatingChat.includes("bottom:\`\${index*10}px\`") &&
+  floatingCss.includes('.bubbles::before {') &&
+  floatingCss.includes('.bubblesLeft::before {') &&
+  floatingCss.includes('filter:blur(14px);') &&
+  floatingCss.includes('rgba(36,211,197,0) 100%') &&
+  floatingCss.includes('.bubbles .badge {') &&
+  floatingChat.includes('onPointerDown={onBubbleDown}'),
+  'Unread avatars must sit in one horizontal row, with progressively softer halo and unchanged badges and drag gestures',
+);
+console.log('PASS: horizontally aligned avatar notifications with fading background glow');

@@ -124,6 +124,7 @@
   right:16px;
   bottom:calc(110px + env(safe-area-inset-bottom));
   display:block;
+  isolation:isolate;
   margin:0;
   padding:0;
   pointer-events:auto;
@@ -131,6 +132,27 @@
   -webkit-user-select:none;
   user-select:none;
   transition:left .22s cubic-bezier(.2,.8,.2,1),top .22s cubic-bezier(.2,.8,.2,1);
+}
+/* Continuous soft halo across the horizontal line: strongest beside the
+   newest avatar and gently fades toward the other conversations. */
+.bubbles::before {
+  content:"";
+  position:absolute;
+  z-index:0;
+  inset:-12px;
+  border-radius:999px;
+  pointer-events:none;
+  background:linear-gradient(to left,
+    rgba(101,245,155,.21) 0%,
+    rgba(36,211,197,.12) 40%,
+    rgba(36,211,197,0) 100%);
+  filter:blur(14px);
+}
+.bubblesLeft::before {
+  background:linear-gradient(to right,
+    rgba(101,245,155,.21) 0%,
+    rgba(36,211,197,.12) 40%,
+    rgba(36,211,197,0) 100%);
 }
 .bubblesDragging { transition:none;cursor:grabbing; }
 /* Approved halo: a soft teal/lime glow sits BEHIND the portrait, while
@@ -147,9 +169,9 @@
   overflow:visible;
   background:#073e55;
   box-shadow:
-    0 0 0 5px rgba(186,255,8,.10),
-    0 0 22px 4px rgba(36,211,197,.25),
-    0 8px 26px rgba(0,19,35,.65);
+    0 0 0 5px rgba(186,255,8,var(--bubble-ring-alpha,.10)),
+    0 0 22px 4px rgba(36,211,197,var(--bubble-glow-alpha,.25)),
+    0 8px 26px rgba(0,19,35,var(--bubble-shadow-alpha,.65));
   touch-action:none;
 }
 .bubbles .bubble .photo {

@@ -16,6 +16,12 @@ const CHAT_EMOJIS = [
   '🎉','✨','🌊','🏄','🪁','☀️','💪','✅','🚀','💯',
 ] as const;
 
+type BubbleGlowStyle = CSSProperties & {
+  '--bubble-ring-alpha': string;
+  '--bubble-glow-alpha': string;
+  '--bubble-shadow-alpha': string;
+};
+
 function Photo({thread}: {thread:ChatThread}) {
   const [failed,setFailed] = useState<string|null>(null);
   return <span className={styles.photo}>
@@ -77,8 +83,11 @@ export function FloatingChat({area,viewerId}: {area:ChatArea;viewerId:string}) {
   const visibleUnread=threads.filter(t=>t.unread>0 && hiddenUnread[t.id]!==t.lastAt);
   const bubbleList=chatBubbles(visibleUnread);
   const switcherThreads=chatSwitcherThreads(threads,selectedId,openedIds,hiddenUnread);
-  const stackWidth=58+Math.max(0,bubbleList.length-1)*18;
-  const stackHeight=58+Math.max(0,bubbleList.length-1)*10;
+  // Show avatars in one horizontal line: no descending diagonal and no
+  // heavy overlap hiding the faces or unread counters.
+  const bubbleStep=58;
+  const stackWidth=58+Math.max(0,bubbleList.length-1)*bubbleStep;
+  const stackHeight=58;
   const extraUnreadThreads=Math.max(0,visibleUnread.length-bubbleList.length);
   const last = messages.at(-1);
   const first = messages[0];
@@ -518,7 +527,7 @@ export function FloatingChat({area,viewerId}: {area:ChatArea;viewerId:string}) {
       </>}
     </section>:null}
     {!open && bubbleList.length ? (
-      <div className={`${styles.bubbles} ${draggingBubble?styles.bubblesDragging:''}`} role="group"
+      <div className={`${styles.bubbles} ${bubbleSide.current==='left'?styles.bubblesLeft:''} ${draggingBubble?styles.bubblesDragging:''}`} role="group"
         aria-label="Conversas com mensagens não lidas. Arraste para uma lateral ou até o X para ocultar."
         style={{width:stackWidth,height:stackHeight,...(bubblePosition?{left:bubblePosition.x,top:bubblePosition.y,right:'auto',bottom:'auto'}:{})}}
         onPointerDown={onBubbleDown} onPointerMove={onBubbleMove} onPointerUp={onBubbleUp}
@@ -527,7 +536,17 @@ export function FloatingChat({area,viewerId}: {area:ChatArea;viewerId:string}) {
           const index = bubbleList.length - 1 - reversedIndex;
           return (
             <button type="button" key={t.id} className={styles.bubble}
-              style={{right:`${index*18}px`,bottom:`${index*10}px`,zIndex:10-index}}
+              data-depth={index}
+              style={{
+                ...(bubbleSide.current==='left'
+                  ? {left:`${index*bubbleStep}px`}
+                  : {right:`${index*bubbleStep}px`}),
+                bottom:0,
+                zIndex:10-index,
+                '--bubble-ring-alpha':Math.max(.02,.10-index*.02).toFixed(2),
+                '--bubble-glow-alpha':Math.max(.05,.25-index*.05).toFixed(2),
+                '--bubble-shadow-alpha':Math.max(.28,.65-index*.09).toFixed(2)
+              } as BubbleGlowStyle}
               onClick={()=>{if(suppressBubbleClick.current)return;show(t.id);}}
               title={`${t.name} · ${t.unread} mensagens não lidas · ${chatThreadTag(t)}`}
               aria-label={`Abrir conversa com ${t.name}, ${t.unread} mensagens não lidas`}>
