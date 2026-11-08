@@ -292,3 +292,8 @@
 @media (prefers-reduced-motion:reduce){
   .vento-pc-page *, .vento-pc-sidebar *{transition:none!important;animation:none!important}
 }
+
+@media (min-width:1024px) {
+  .vento-student-redesign .kite-modelo3--profile > .kite-m3-header {display:none!important}
+  .vento-student-redesign .vento-pc-profile-stats {display:grid}
+}
