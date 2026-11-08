@@ -224,4 +224,29 @@ assert.ok(secondaryCss.includes('.vento-voucher-qr svg') &&
   authCss.includes('.vento-pc-recovery-auth'),
   'Desktop system must include voucher, support and recovery layouts');
 
+
+
+// Visual refinement regression: desktop reading surfaces and chat bubbles.
+// Prevent global dark-theme text overrides from making light backgrounds unreadable.
+assert.ok(
+  secondaryCss.includes('.vento-pc-conversations-screen .vento-pc-secondary-main > .rounded-card') &&
+  secondaryCss.includes('.vento-pc-notices-screen .vento-pc-secondary-main > .rounded-card') &&
+  secondaryCss.includes('background:#f7fbff;color:#0a2b41') &&
+  secondaryCss.includes('background:#f8fcff;border-color:#badde9;color:#0c3045') &&
+  secondaryCss.includes('ol li > .bg-sand.text-ink') &&
+  secondaryCss.includes('color:#113449!important') &&
+  secondaryCss.includes('ol li > .bg-brand') &&
+  secondaryCss.includes('color:#092c3d!important'),
+  'Desktop inbox/notification cards and incoming/outgoing chat bubbles must retain readable contrast',
+);
+assert.ok(
+  secondaryCss.includes('.vento-pc-voucher-layout .vento-voucher-paper') &&
+  secondaryCss.includes('.vento-pc-policies-screen .vento-pc-secondary-main .rounded-card') &&
+  secondaryCss.includes('@media (min-width:1024px) and (max-width:1190px)') &&
+  secondaryCss.includes('@media (min-width:1024px) and (prefers-reduced-motion:reduce)') &&
+  authCss.includes('Screens 14–17: refined desktop sign-in family') &&
+  authCss.includes('@media(min-width:1024px) and (max-height:800px)'),
+  'Desktop refinement must keep the voucher and policy reading layouts, compact screens and reduced motion',
+);
+
 console.log('PASS: desktop layout and profile photo plus layered meeting-conflict protection');
