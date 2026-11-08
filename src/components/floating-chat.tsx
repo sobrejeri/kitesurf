@@ -279,13 +279,13 @@ export function FloatingChat({area,viewerId}: {area:ChatArea;viewerId:string}) {
     if(event.button!==0 || bubbleDrag.current || !bubbleList.length)return;
     const box=event.currentTarget.getBoundingClientRect();
     bubbleDrag.current={id:event.pointerId,x:event.clientX,y:event.clientY,left:box.left,top:box.top,moved:false};
-    event.currentTarget.setPointerCapture(event.pointerId);
   };
   const onBubbleMove=(event:ReactPointerEvent<HTMLDivElement>)=>{
     const drag=bubbleDrag.current;
     if(!drag || drag.id!==event.pointerId)return;
     const dx=event.clientX-drag.x,dy=event.clientY-drag.y;
     if(!drag.moved && Math.hypot(dx,dy)<7)return;
+    if(!drag.moved) event.currentTarget.setPointerCapture(event.pointerId);
     drag.moved=true;
     setDraggingBubble(true);
     const width=window.innerWidth,height=window.innerHeight;
