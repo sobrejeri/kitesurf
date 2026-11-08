@@ -1,0 +1,230 @@
+/* VentoKite student PC — screens 05–13.
+   Strictly scoped: no mobile rules and no styles outside student desktop shell. */
+.vento-pc-secondary-desktop-header{display:none}
+@media(min-width:1024px){
+  .vento-student-redesign .vento-pc-secondary-page{
+    width:100%;max-width:1530px;margin:0 auto;color:#f2fbff;
+  }
+  .vento-student-redesign .vento-pc-secondary-desktop-header{
+    position:relative;display:flex;isolation:isolate;align-items:center;overflow:hidden;
+    min-height:225px;width:100%;border:1px solid #21889b;border-radius:24px;
+    background:#003b56;box-shadow:0 16px 38px #000e1c52;
+  }
+  .vento-pc-detail-hero>img{position:absolute;inset:0;width:100%;height:100%;
+    object-fit:cover;object-position:80% 48%;z-index:-2}
+  .vento-pc-detail-hero-shade{position:absolute;inset:0;z-index:-1;
+    background:linear-gradient(90deg,#002237fa 4%,#00334ce9 37%,#004256a1 68%,#01314836 100%)}
+  .vento-pc-detail-hero-content{max-width:780px;padding:28px 35px}
+  .vento-pc-detail-eyebrow{display:flex;align-items:center;gap:10px;
+    color:#baff08;font-size:12px;font-weight:850;letter-spacing:.15em;text-transform:uppercase}
+  .vento-pc-detail-eyebrow svg{width:21px;height:21px}
+  .vento-pc-detail-hero h1{margin:10px 0 8px;color:#fff;
+    font-family:var(--font-space-grotesk),system-ui,sans-serif;font-size:clamp(31px,3.2vw,51px);
+    letter-spacing:-.04em;font-weight:900;line-height:1.05}
+  .vento-pc-detail-hero p{max-width:660px;margin:0;font-size:clamp(15px,1.15vw,18px);
+    color:#d7edf5;line-height:1.48}
+  .vento-pc-detail-hero-actions{display:flex;gap:12px;align-items:center;margin-top:19px}
+  .vento-pc-secondary-back,.vento-pc-secondary-action{
+    display:inline-flex;align-items:center;justify-content:center;gap:9px;min-height:40px;
+    border:1px solid #6ab0c0;border-radius:999px;padding:8px 16px;background:#00334bbb;
+    color:#fff!important;text-decoration:none;font-size:13px;font-weight:800;
+  }
+  .vento-pc-secondary-action{background:#baff08;border-color:#baff08;color:#0b2e3e!important}
+  .vento-pc-secondary-back:hover,.vento-pc-secondary-action:hover{filter:brightness(1.15)}
+  .vento-pc-secondary-back svg,.vento-pc-secondary-action svg{width:17px;height:17px}
+  .vento-student-redesign .vento-pc-secondary-page .vento-pc-original-hero{display:none!important}
+  .vento-student-redesign .vento-pc-secondary-main{min-width:0;margin-top:23px}
+  .vento-student-redesign .vento-pc-secondary-main>header:first-child{display:none}
+  .vento-student-redesign .vento-pc-secondary-main .rounded-card{
+    border-color:#177b90;background:linear-gradient(130deg,#064258,#023448);
+    box-shadow:0 14px 33px #00152842;border-radius:22px;
+  }
+  .vento-student-redesign .vento-pc-secondary-main :is(h2,h3){font-weight:850;letter-spacing:-.02em}
+  .vento-student-redesign .vento-pc-secondary-main .text-muted{color:#b7d6e2}
+  .vento-student-redesign .vento-pc-secondary-main .text-label{color:#d6e7ef}
+  .vento-student-redesign .vento-pc-secondary-main .text-ink{color:#fff}
+  .vento-student-redesign .vento-pc-secondary-main :is(input:not([type=checkbox]):not([type=radio]),select,textarea){
+    border-color:#268a9f;background:#002d43;color:#f7fcff;
+  }
+  .vento-student-redesign .vento-pc-secondary-main :is(input,select,textarea):focus-visible{
+    border-color:#baff08;outline:2px solid #baff08;outline-offset:2px
+  }
+  .vento-student-redesign .vento-pc-secondary-main :is(a,button,summary):focus-visible{
+    outline:2px solid #baff08;outline-offset:3px;
+  }
+  /* 05 — choose dates, hours and price in a genuine desktop workspace */
+  .vento-student-redesign .vento-pc-builder>form>ol{
+    margin:0 0 23px;padding:15px 22px;border:1px solid #188b9e;
+    border-radius:18px;background:#044055;
+  }
+  .vento-student-redesign .vento-pc-builder>form>ol li{gap:13px}
+  .vento-student-redesign .vento-pc-builder>form>ol li .lesson-step-number{
+    width:43px;height:43px;font-size:18px;
+  }
+  .vento-student-redesign .vento-pc-builder>form>ol li span:last-child{font-size:17px}
+  .vento-student-redesign .vento-pc-builder>form>div.grid{
+    grid-template-columns:minmax(0,1.6fr) minmax(320px,.78fr);gap:23px;align-items:start;
+  }
+  .vento-student-redesign .vento-pc-builder>form>div.grid>div.grid{gap:18px}
+  .vento-student-redesign .vento-pc-builder>form>div.grid .rounded-card{
+    padding:23px!important;
+  }
+  .vento-student-redesign .vento-pc-builder>form>div.grid section.border-\[\#137394\]{
+    position:sticky;top:90px;border-radius:22px;background:linear-gradient(140deg,#07465e,#002c43);
+    border-color:#22a5b7;padding:25px;
+  }
+  .vento-student-redesign .vento-pc-builder label{
+    font-size:14px;font-weight:650;color:#d8ecf3
+  }
+  .vento-student-redesign .vento-pc-builder .text-\[12px\]{font-size:13px!important}
+  .vento-student-redesign .vento-pc-builder .text-\[13px\]{font-size:14px!important}
+  .vento-student-redesign .vento-pc-builder .text-\[16px\]{font-size:17px!important}
+  .vento-student-redesign .vento-pc-builder :is(input:not([type=checkbox]),select){min-height:45px}
+  .vento-student-redesign .vento-pc-builder [role="progressbar"]{min-height:8px}
+  /* 06 — white ticket stays readable; QR size and monetary data retain meaning */
+  .vento-student-redesign .vento-pc-voucher-layout{
+    grid-template-columns:minmax(0,1.57fr) minmax(310px,.83fr);gap:22px;align-items:start;
+  }
+  .vento-student-redesign .vento-pc-voucher-layout>div{min-width:0;gap:18px}
+  .vento-student-redesign .vento-pc-voucher-layout .vento-voucher{border-radius:24px}
+  .vento-student-redesign .vento-pc-voucher-layout .vento-voucher-banner{min-height:166px}
+  .vento-student-redesign .vento-pc-voucher-layout .vento-voucher-paper{
+    padding:23px 25px;color:#082c43;
+  }
+  .vento-student-redesign .vento-pc-voucher-layout .vento-voucher-paper :is(h2,h3,dt,dd,strong){
+    letter-spacing:normal
+  }
+  .vento-student-redesign .vento-pc-voucher-layout .vento-voucher-paper >dl{gap:11px}
+  .vento-student-redesign .vento-pc-voucher-layout .vento-voucher-paper >dl>div{padding:15px 11px}
+  .vento-student-redesign .vento-pc-voucher-layout .vento-voucher-paper >dl dt{font-size:12px!important}
+  .vento-student-redesign .vento-pc-voucher-layout .vento-voucher-paper >dl dd{font-size:15px!important}
+  .vento-student-redesign .vento-pc-voucher-layout .vento-voucher-bottom{padding:22px;gap:10px}
+  .vento-student-redesign .vento-pc-voucher-layout .vento-voucher-bottom >div{padding:0 14px}
+  .vento-student-redesign .vento-pc-voucher-layout .vento-voucher-qr svg{
+    width:min(70%,240px);max-width:240px
+  }
+  .vento-student-redesign .vento-pc-voucher-layout .vento-voucher-qr-caption{font-size:12px}
+  .vento-student-redesign .vento-pc-voucher-layout .vento-voucher-subtitle{font-size:16px!important}
+  .vento-student-redesign .vento-pc-voucher-layout .vento-voucher-payment-list >div{font-size:14px}
+  .vento-student-redesign .vento-pc-voucher-layout .vento-voucher-payment-status{font-size:14px}
+  .vento-student-redesign .vento-pc-voucher-layout .vento-voucher-reminders p{font-size:13px}
+  .vento-student-redesign .vento-pc-voucher-layout .vento-voucher-paper .text-muted{
+    color:#46667c!important
+  }
+  /* 07 — instructor request and changing proposed dates */
+  .vento-student-redesign .vento-pc-request-screen .vento-pc-secondary-main>.rounded-card{
+    width:min(100%,960px);max-width:none;padding:28px;border-color:#18a1ae;
+  }
+  .vento-student-redesign .vento-pc-request-screen .vento-pc-secondary-main>.rounded-card>div:first-child strong{
+    font-size:26px;color:#fff
+  }
+  .vento-student-redesign .vento-pc-request-screen .vento-pc-secondary-main .text-\[13px\]{
+    font-size:15px!important
+  }
+  .vento-student-redesign .vento-pc-request-screen .vento-pc-secondary-main .text-\[12px\]{
+    font-size:14px!important
+  }
+  .vento-student-redesign .vento-pc-request-screen button{min-height:44px}
+  /* 08 — conversations listing */
+  .vento-student-redesign .vento-pc-conversations-screen .vento-pc-secondary-main>.rounded-card{
+    padding:22px 26px;
+  }
+  .vento-student-redesign .vento-pc-conversations-screen ul{display:grid;gap:13px}
+  .vento-student-redesign .vento-pc-conversations-screen ul>li{
+    border:1px solid #247b91;border-radius:18px;padding:17px 21px;
+    background:linear-gradient(90deg,#06455c,#02374e);transition:border-color .15s ease;
+  }
+  .vento-student-redesign .vento-pc-conversations-screen ul>li:hover{border-color:#baff08}
+  .vento-student-redesign .vento-pc-conversations-screen ul>li strong{font-size:19px!important}
+  .vento-student-redesign .vento-pc-conversations-screen ul>li span{font-size:14px!important}
+  /* 09 — booking chat, wider messages, readable text, original actions retained */
+  .vento-student-redesign .vento-pc-chat-screen .vento-pc-secondary-main>.rounded-card{
+    max-width:none;width:min(100%,1100px);margin-inline:auto;padding:30px;
+    min-height:400px;border-color:#25adba;
+  }
+  .vento-student-redesign .vento-pc-chat-screen .vento-pc-secondary-main ol{
+    display:grid;gap:16px
+  }
+  .vento-student-redesign .vento-pc-chat-screen .vento-pc-secondary-main ol li>div{
+    max-width:min(76%,670px);font-size:15px;line-height:1.5;padding:15px 19px;
+    border-radius:20px
+  }
+  .vento-student-redesign .vento-pc-chat-screen .vento-pc-secondary-main ol li>div.bg-brand{
+    color:#062a3e!important;
+  }
+  .vento-student-redesign .vento-pc-chat-screen textarea{min-height:110px}
+  .vento-student-redesign .vento-pc-chat-screen form{border-color:#286e84}
+  /* 10 — notification list */
+  .vento-student-redesign .vento-pc-notices-screen .vento-pc-secondary-main>.rounded-card{
+    max-width:1160px;padding:23px 28px;
+  }
+  .vento-student-redesign .vento-pc-notices-screen ul{display:grid;gap:12px}
+  .vento-student-redesign .vento-pc-notices-screen ul>li{
+    padding:18px 20px;border:1px solid #257b90;border-radius:17px;background:#043f56
+  }
+  .vento-student-redesign .vento-pc-notices-screen ul>li strong{font-size:17px!important}
+  .vento-student-redesign .vento-pc-notices-screen ul>li p{font-size:14px!important}
+  .vento-student-redesign .vento-pc-notices-screen ul>li time{font-size:13px!important}
+  /* 11 — central: 3x2 quick-access grid with clear destination labels */
+  .vento-student-redesign .vento-pc-central-screen .vento-pc-secondary-main>ul{
+    grid-template-columns:repeat(3,minmax(0,1fr));gap:18px
+  }
+  .vento-student-redesign .vento-pc-central-screen .vento-pc-secondary-main>ul>li>a{
+    display:flex;flex-direction:column;justify-content:space-between;min-height:200px;
+    border:1px solid #25879d;border-radius:22px;padding:24px 25px;
+    background:linear-gradient(130deg,#08475c,#003149);
+    transition:transform .15s ease,border-color .15s ease;
+  }
+  .vento-student-redesign .vento-pc-central-screen .vento-pc-secondary-main>ul>li>a:hover{
+    border-color:#baff08;transform:translateY(-3px)
+  }
+  .vento-student-redesign .vento-pc-central-screen .vento-pc-secondary-main>ul h2{font-size:23px}
+  .vento-student-redesign .vento-pc-central-screen .vento-pc-secondary-main>ul p{font-size:15px!important;line-height:1.5}
+  .vento-student-redesign .vento-pc-central-screen .vento-pc-secondary-main>ul a>span:last-child{
+    color:#baff08;font-size:14px;font-weight:800;
+  }
+  /* 12 — incidents: report + history columns */
+  .vento-student-redesign .vento-pc-incidents-screen .vento-pc-secondary-main>.grid{
+    grid-template-columns:minmax(0,1.06fr) minmax(0,.94fr);gap:22px;align-items:start
+  }
+  .vento-student-redesign .vento-pc-incidents-screen .vento-pc-secondary-main>.grid>.rounded-card{
+    min-height:340px;padding:28px
+  }
+  .vento-student-redesign .vento-pc-incidents-screen .vento-pc-secondary-main h2{font-size:24px!important}
+  .vento-student-redesign .vento-pc-incidents-screen :is(input,select,textarea){
+    width:100%;min-height:46px;font-size:14px
+  }
+  .vento-student-redesign .vento-pc-incidents-screen textarea{min-height:120px}
+  .vento-student-redesign .vento-pc-incidents-screen ul>li{padding-block:15px}
+  /* 13 — policies: readable two-column reference and comfortable paragraphs */
+  .vento-student-redesign .vento-pc-policies-screen .vento-pc-secondary-main>.grid{
+    grid-template-columns:repeat(2,minmax(0,1fr));gap:21px;align-items:start
+  }
+  .vento-student-redesign .vento-pc-policies-screen .vento-pc-secondary-main>.grid>.rounded-card{
+    padding:28px;min-height:300px
+  }
+  .vento-student-redesign .vento-pc-policies-screen .vento-pc-secondary-main h2{font-size:23px}
+  .vento-student-redesign .vento-pc-policies-screen .vento-pc-secondary-main p,
+  .vento-student-redesign .vento-pc-policies-screen .vento-pc-secondary-main li{
+    font-size:15px;line-height:1.7;
+  }
+}
+@media(min-width:1024px) and (max-width:1350px){
+  .vento-student-redesign .vento-pc-voucher-layout{
+    grid-template-columns:minmax(0,1.25fr) minmax(260px,.85fr)
+  }
+  .vento-student-redesign .vento-pc-builder>form>div.grid{
+    grid-template-columns:minmax(0,1.25fr) minmax(280px,.8fr)
+  }
+  .vento-student-redesign .vento-pc-central-screen .vento-pc-secondary-main>ul{
+    grid-template-columns:repeat(2,minmax(0,1fr))
+  }
+}
+@media(min-width:1024px) and (max-width:1150px){
+  .vento-student-redesign .vento-pc-voucher-layout,
+  .vento-student-redesign .vento-pc-builder>form>div.grid,
+  .vento-student-redesign .vento-pc-incidents-screen .vento-pc-secondary-main>.grid{
+    grid-template-columns:1fr
+  }
+  .vento-student-redesign .vento-pc-policies-screen .vento-pc-secondary-main>.grid{grid-template-columns:1fr}
+}
