@@ -205,14 +205,14 @@ for(const route of remainingRoutes){
     page.includes('vento-pc-secondary-page'),
     'Missing desktop visual layout for student route '+route);
 }
-const builder = read('src/app/aluno/(app)/reservar/page.tsx');
-const booking = read('src/app/aluno/(app)/reserva/[id]/page.tsx');
-const request = read('src/app/aluno/(app)/solicitacao/[id]/page.tsx');
-const chats = read('src/app/aluno/(app)/atendimento/[id]/page.tsx');
-assert.ok(builder.includes('<LessonBuilder') &&
-  booking.includes('<MeetingQR') &&
-  request.includes('<RequestPoller') &&
-  chats.includes('<BookingChat') &&
+const desktopBuilderPage = read('src/app/aluno/(app)/reservar/page.tsx');
+const desktopBookingPage = read('src/app/aluno/(app)/reserva/[id]/page.tsx');
+const desktopRequestPage = read('src/app/aluno/(app)/solicitacao/[id]/page.tsx');
+const desktopChatPage = read('src/app/aluno/(app)/atendimento/[id]/page.tsx');
+assert.ok(desktopBuilderPage.includes('<LessonBuilder') &&
+  desktopBookingPage.includes('<MeetingQR') &&
+  desktopRequestPage.includes('<RequestPoller') &&
+  desktopChatPage.includes('<BookingChat') &&
   authUI.includes('<ActionForm') &&
   recoveryUI.includes('<ActionForm') &&
   authUI.includes('<StudentDesktopAuthStory') &&
