@@ -174,3 +174,15 @@ assert.ok(
 );
 console.log('PASS: active chat photo row excludes duplicate historical reservations');
 
+
+assert.ok(
+  floatingCss.includes('Approved halo: a soft teal/lime glow sits BEHIND the portrait') &&
+  floatingCss.includes('0 0 0 5px rgba(186,255,8,.10)') &&
+  floatingCss.includes('0 0 22px 4px rgba(36,211,197,.25)') &&
+  floatingCss.includes('0 8px 26px rgba(0,19,35,.65)') &&
+  floatingCss.includes('.bubbles .badge {') &&
+  floatingCss.includes('background:#e6334e;') &&
+  floatingCss.includes('touch-action:none;'),
+  'Unread profile bubbles must have their approved soft shadow while preserving the red badge and touch drag',
+);
+console.log('PASS: subtle avatar bubble halo remains visible without changing unread badge or drag');
