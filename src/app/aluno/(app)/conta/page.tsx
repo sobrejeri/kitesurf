@@ -51,7 +51,7 @@ export default async function AccountPage() {
 
   return (
     <div className="kite-modelo3 kite-modelo3--profile">
-      <KiteModelo3Header />
+      <KiteModelo3Header hideKite />
       <header className="vento-pc-desktop-only vento-pc-banner vento-pc-profile-banner"
         style={{backgroundImage:"linear-gradient(90deg,#00233eea 2%,#00364d9c 47%,transparent),url('/images/kite-lesson.webp')"}}>
         <span className="vento-pc-overline">SEU ESPAÇO NO KITE</span>
