@@ -249,4 +249,32 @@ assert.ok(
   'Desktop refinement must keep the voucher and policy reading layouts, compact screens and reduced motion',
 );
 
+
+// Profile-only mobile header: use the real alpha logo at 70%, centered on the
+// uninterrupted page gradient, and do not download the decorative kite.
+const mobileProfileCss = read('src/app/aluno/(app)/profile-approved.css');
+const profileHeaderComponent = read('src/components/student/modelo3-header.tsx');
+const mobileProfilePage = read('src/app/aluno/(app)/conta/page.tsx');
+assert.ok(
+  mobileProfileCss.includes('@media (max-width:767px)') &&
+  mobileProfileCss.includes('body:has(.kite-modelo3--profile) .theme-beach.theme-mar-profundo') &&
+  mobileProfileCss.includes('.kite-modelo3--profile .kite-m3-header {') &&
+  mobileProfileCss.includes('background-image:none') &&
+  mobileProfileCss.includes('.kite-m3-header__inner {') &&
+  mobileProfileCss.includes('justify-content:center') &&
+  mobileProfileCss.includes('width:min(42.7vw,158px)') &&
+  mobileProfileCss.includes('background:transparent') &&
+  mobileProfilePage.includes('<KiteModelo3Header hideKite />') &&
+  profileHeaderComponent.includes('hideKite ? null : <img') &&
+  profileHeaderComponent.includes('src="/images/vento-kite-real.webp"'),
+  'Mobile profile must show a centered 70%-scale logo over a continuous gradient, with no kite or header rectangle',
+);
+assert.ok(
+  mobileProfilePage.includes('<ProfilePhotoPicker') &&
+  mobileProfilePage.includes('<ProfileEditor') &&
+  mobileProfilePage.includes('<KiteLevelEditor') &&
+  studentLayout.includes("import './profile-approved.css'"),
+  'Profile interactions and existing mobile component mounting must remain unchanged',
+);
+
 console.log('PASS: desktop layout and profile photo plus layered meeting-conflict protection');

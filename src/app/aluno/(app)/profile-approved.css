@@ -26,3 +26,46 @@
 @media(min-width:768px){
   .kite-modelo3.kite-modelo3--profile .kite-m3-profile-card {padding:22px;}
 }
+
+/* Approved mobile profile header — seamless gradient, no photograph or kite.
+   The rest of the profile and all desktop layouts remain unchanged. */
+@media (max-width:767px) {
+  body:has(.kite-modelo3--profile) .theme-beach.theme-mar-profundo {
+    background:
+      radial-gradient(ellipse 105% 48% at 77% 6%,
+        rgba(5,119,139,.62) 0%,rgba(0,61,89,.26) 48%,transparent 86%),
+      linear-gradient(165deg,#082d4a 0%,#002d45 42%,#001a30 100%);
+  }
+  .theme-mar-profundo .kite-modelo3--profile {
+    background:transparent;
+  }
+  .theme-mar-profundo .kite-modelo3--profile .kite-m3-header {
+    background:transparent;
+    background-image:none;
+    border:0;
+    border-radius:0;
+    box-shadow:none;
+  }
+  .theme-mar-profundo .kite-modelo3--profile .kite-m3-header__inner {
+    width:100%;
+    display:flex;
+    justify-content:center;
+    align-items:center;
+  }
+  .theme-mar-profundo .kite-modelo3--profile .kite-m3-header .kite-m3-logo {
+    display:inline-flex;
+    justify-content:center;
+    align-items:center;
+    max-width:100%;
+    background:transparent;
+    border:0;
+    box-shadow:none;
+  }
+  /* 70% of the existing min(61vw,226px) mobile logo dimensions. */
+  .theme-mar-profundo .kite-modelo3--profile .kite-m3-header .vento-official-logo {
+    width:min(42.7vw,158px);
+    max-width:100%;
+    height:auto;
+    background:transparent;
+  }
+}

@@ -20,11 +20,13 @@ export function KiteModelo3Header({
   subtitle,
   actionHref,
   actionLabel,
+  hideKite = false,
 }: {
   title?: string;
   subtitle?: string;
   actionHref?: string;
   actionLabel?: string;
+  hideKite?: boolean;
 }) {
   return (
     <header className="kite-m3-header">
@@ -44,7 +46,7 @@ export function KiteModelo3Header({
           </Link>
         ) : null}
       </div>
-      <img className="kite-m3-header__kite" src="/images/vento-kite-real.webp" alt="" aria-hidden="true" />
+      {hideKite ? null : <img className="kite-m3-header__kite" src="/images/vento-kite-real.webp" alt="" aria-hidden="true" />}
     </header>
   );
 }
