@@ -228,3 +228,206 @@
   }
   .vento-student-redesign .vento-pc-policies-screen .vento-pc-secondary-main>.grid{grid-template-columns:1fr}
 }
+
+
+/* Visual refinement 05–13: use the same editorial hierarchy as approved PC
+   screens 01–04. All changes live inside the desktop student shell. */
+@media (min-width:1024px) {
+  .vento-student-redesign .vento-pc-secondary-page {
+    --pc-detail-outline:#227e93;
+    --pc-detail-muted:#bcdbe6;
+  }
+  .vento-student-redesign .vento-pc-secondary-desktop-header {
+    min-height:clamp(205px,17vw,252px);
+    border-color:#2b91a4;
+    box-shadow:0 18px 45px rgba(0,16,34,.35),inset 0 0 0 1px rgba(255,255,255,.04);
+  }
+  .vento-student-redesign .vento-pc-detail-hero::after {
+    content:"";position:absolute;z-index:-1;inset:auto 0 0;
+    height:4px;background:linear-gradient(90deg,#baff08 0%,#13cfdd 38%,transparent 86%);
+  }
+  .vento-student-redesign .vento-pc-detail-hero--coast > img {object-position:center 55%}
+  .vento-student-redesign .vento-pc-detail-hero--lesson > img {object-position:67% 48%}
+  .vento-student-redesign .vento-pc-detail-hero-content {
+    width:min(100%,820px);
+    padding:clamp(25px,2.5vw,41px);
+  }
+  .vento-student-redesign .vento-pc-detail-eyebrow {
+    width:fit-content;min-height:30px;padding:6px 11px 6px 8px;
+    border:1px solid rgba(186,255,8,.35);border-radius:99px;
+    background:rgba(0,37,55,.65);font-size:11px;letter-spacing:.13em;
+  }
+  .vento-student-redesign .vento-pc-detail-hero h1 {
+    max-width:690px;margin:12px 0 7px;
+    font-size:clamp(30px,3vw,45px);letter-spacing:-.035em;
+  }
+  .vento-student-redesign .vento-pc-detail-hero p {
+    max-width:590px;line-height:1.55;font-size:clamp(14px,1.1vw,16px);
+  }
+  .vento-student-redesign .vento-pc-secondary-main {margin-top:22px}
+  .vento-student-redesign .vento-pc-secondary-main .rounded-card {
+    border-width:1px;border-style:solid;
+    transition:border-color .18s ease,box-shadow .18s ease;
+  }
+  .vento-student-redesign .vento-pc-secondary-main .rounded-card :is(button,a,summary) {
+    text-underline-offset:3px;
+  }
+  .vento-student-redesign .vento-pc-secondary-main .rounded-card :is(button,a,summary):focus-visible,
+  .vento-student-redesign .vento-pc-secondary-desktop-header a:focus-visible {
+    outline:3px solid #baff08;outline-offset:3px;
+  }
+
+  /* 05 · Scheduling: separate editing workspace from persistent order recap. */
+  .vento-student-redesign .vento-pc-booking-screen .vento-pc-builder>form>ol {
+    box-shadow:inset 4px 0 0 #baff08;
+  }
+  .vento-student-redesign .vento-pc-booking-screen .vento-pc-builder .rounded-card {
+    border-color:#287f96;
+  }
+  .vento-student-redesign .vento-pc-booking-screen .vento-pc-builder>form>div.grid section.border-\[\#137394\] {
+    box-shadow:0 18px 45px rgba(0,12,32,.37),inset 0 4px 0 #baff08;
+  }
+
+  /* 06 · Reservation: deliberately retain the light, printable ticket. */
+  .vento-student-redesign .vento-pc-voucher-layout .vento-voucher {
+    border:1.5px solid #23bdd0;
+    box-shadow:0 20px 48px rgba(0,11,26,.4);
+  }
+  .vento-student-redesign .vento-pc-voucher-layout .vento-voucher-paper {
+    background:#f9fcff;color:#0c3048;
+  }
+  .vento-student-redesign .vento-pc-voucher-layout .vento-voucher-paper > dl > div {
+    border:1px solid #c2e2ed;background:#eff9fd;
+  }
+  .vento-student-redesign .vento-pc-voucher-layout .vento-voucher-meeting {
+    border:1px solid #b6dbe7;background:#edf8fc;
+  }
+  .vento-student-redesign .vento-pc-voucher-layout .vento-voucher-instructor {
+    background:linear-gradient(110deg,#063a53,#084f66);
+  }
+
+  /* 07 · Offer queue: status should be readable at a glance. */
+  .vento-student-redesign .vento-pc-request-screen .vento-pc-secondary-main > .rounded-card {
+    border-left:4px solid #baff08;
+    background:linear-gradient(115deg,#0b4f65,#003149 85%);
+  }
+  .vento-student-redesign .vento-pc-request-screen .vento-pc-secondary-main .rounded-xl {
+    border-color:#3194a6;
+  }
+
+  /* 08 · Messenger inbox mirrors the light lesson list from approved screen 02. */
+  .vento-student-redesign .vento-pc-conversations-screen .vento-pc-secondary-main > .rounded-card {
+    max-width:1200px;padding:23px 25px;
+    background:#f7fbff;color:#0a2b41;border-color:#bbdee9;
+  }
+  .vento-student-redesign .vento-pc-conversations-screen .vento-pc-secondary-main ul > li {
+    background:#fff;color:#102d41;border-color:#d2e5ee;
+    box-shadow:0 6px 16px rgba(2,39,62,.055);
+  }
+  .vento-student-redesign .vento-pc-conversations-screen .vento-pc-secondary-main ul > li:hover {
+    border-color:#16a0b1;background:#effbff;
+  }
+  .vento-student-redesign .vento-pc-conversations-screen .vento-pc-secondary-main :is(.text-ink,strong) {
+    color:#092e44!important;
+  }
+  .vento-student-redesign .vento-pc-conversations-screen .vento-pc-secondary-main .text-muted {
+    color:#496a7e!important;
+  }
+  .vento-student-redesign .vento-pc-conversations-screen .vento-pc-secondary-main ul > li a {
+    min-height:40px;
+  }
+
+  /* 09 · Message alignment, accessible bubble contrast and large composer. */
+  .vento-student-redesign .vento-pc-chat-screen .vento-pc-secondary-main > .rounded-card {
+    max-width:1100px;border-color:#2c91a6;
+  }
+  .vento-student-redesign .vento-pc-chat-screen .vento-pc-secondary-main ol li > .bg-sand.text-ink {
+    background:#e9f7fe!important;color:#113449!important;
+    border-color:#b1dce8;
+  }
+  .vento-student-redesign .vento-pc-chat-screen .vento-pc-secondary-main ol li > .bg-brand {
+    background:#baff08!important;color:#092c3d!important;
+  }
+  .vento-student-redesign .vento-pc-chat-screen .vento-pc-secondary-main ol li > div {
+    overflow-wrap:anywhere;max-width:min(78%,700px);
+    box-shadow:0 4px 15px rgba(0,17,31,.16);
+  }
+  .vento-student-redesign .vento-pc-chat-screen .vento-pc-secondary-main textarea {
+    min-height:94px;resize:vertical;
+  }
+
+  /* 10 · Notification reading is a bright canvas, like My Lessons. */
+  .vento-student-redesign .vento-pc-notices-screen .vento-pc-secondary-main > .rounded-card {
+    background:#f8fcff;border-color:#badde9;color:#0c3045;
+  }
+  .vento-student-redesign .vento-pc-notices-screen .vento-pc-secondary-main ul > li {
+    background:#fff;border-color:#d0e7ee;color:#17364a;
+  }
+  .vento-student-redesign .vento-pc-notices-screen .vento-pc-secondary-main .text-ink {
+    color:#0b2d42!important;
+  }
+  .vento-student-redesign .vento-pc-notices-screen .vento-pc-secondary-main .text-muted {
+    color:#4b6a7e!important;
+  }
+  .vento-student-redesign .vento-pc-notices-screen .vento-pc-secondary-main ul > li a {
+    color:#006e89!important;
+  }
+
+  /* 11 · Hub navigation: cards are large, but not oversized in browser view. */
+  .vento-student-redesign .vento-pc-central-screen .vento-pc-secondary-main > ul > li > a {
+    min-height:180px;gap:13px;
+    box-shadow:0 14px 25px rgba(0,14,30,.22);
+  }
+  .vento-student-redesign .vento-pc-central-screen .vento-pc-secondary-main > ul > li:nth-child(3n + 2) > a {
+    background:linear-gradient(140deg,#07536a,#00364d);
+  }
+  .vento-student-redesign .vento-pc-central-screen .vento-pc-secondary-main > ul h2 {
+    font-size:clamp(18px,1.7vw,22px);
+  }
+  .vento-student-redesign .vento-pc-central-screen .vento-pc-secondary-main > ul p {
+    max-width:290px;
+  }
+
+  /* 12 · Occurrences: distinguish reporting from historical requests. */
+  .vento-student-redesign .vento-pc-incidents-screen .vento-pc-secondary-main > .grid > .rounded-card:first-child {
+    border-top:4px solid #baff08;
+  }
+  .vento-student-redesign .vento-pc-incidents-screen .vento-pc-secondary-main > .grid > .rounded-card:last-child {
+    border-top:4px solid #19c8db;
+  }
+  .vento-student-redesign .vento-pc-incidents-screen .vento-pc-secondary-main label {
+    font-size:13px;font-weight:700;
+  }
+
+  /* 13 · Rules: long-form policy content needs daylight and legible ink. */
+  .vento-student-redesign .vento-pc-policies-screen .vento-pc-secondary-main .rounded-card {
+    background:#f8fcff;border-color:#c1dfeb;color:#0d3148;
+    box-shadow:0 10px 25px rgba(0,18,33,.16);
+  }
+  .vento-student-redesign .vento-pc-policies-screen .vento-pc-secondary-main .rounded-card :is(h2,h3,.text-ink) {
+    color:#092f47!important;
+  }
+  .vento-student-redesign .vento-pc-policies-screen .vento-pc-secondary-main .rounded-card :is(.text-muted,.text-label,p,li) {
+    color:#3d6074!important;
+  }
+  .vento-student-redesign .vento-pc-policies-screen .vento-pc-secondary-main .rounded-card a {
+    color:#006e88!important;
+  }
+}
+@media (min-width:1024px) and (max-width:1190px) {
+  .vento-student-redesign .vento-pc-detail-hero-content {padding:22px 25px}
+  .vento-student-redesign .vento-pc-detail-hero h1 {font-size:32px}
+  .vento-student-redesign .vento-pc-conversations-screen .vento-pc-secondary-main > .rounded-card,
+  .vento-student-redesign .vento-pc-notices-screen .vento-pc-secondary-main > .rounded-card {padding:18px}
+  .vento-student-redesign .vento-pc-chat-screen .vento-pc-secondary-main ol li > div {
+    max-width:88%;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  @media (min-width:1024px) {
+    .vento-student-redesign .vento-pc-secondary-main .rounded-card,
+    .vento-student-redesign .vento-pc-central-screen .vento-pc-secondary-main > ul > li > a {
+      transition:none;
+    }
+  }
+}
