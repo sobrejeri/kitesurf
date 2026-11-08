@@ -7,9 +7,11 @@ import { ActionForm } from '@/components/action-form';
 import { Field, Note, inputClass } from '@/components/ui';
 import { StudentBrand } from '@/components/student/sunset';
 import { KiteModelo3Brand } from '@/components/student/modelo3-header';
+import { StudentDesktopAuthStory } from './student-desktop-story';
 
 function RecoveryFrame({ area, title, children }: { area: AppArea; title: string; children: React.ReactNode }) {
-  return <div className={`${area === 'aluno' ? 'theme-beach kite-m3-auth' : 'theme-sunset'} min-h-dvh bg-canvas px-5 py-10 text-ink`}>
+  return <div className={`${area === 'aluno' ? 'theme-beach kite-m3-auth vento-pc-auth-shell vento-pc-recovery-auth' : 'theme-sunset'} min-h-dvh bg-canvas px-5 py-10 text-ink`}>
+    {area === 'aluno'?<StudentDesktopAuthStory kind={title==='Nova senha'?'reset':'recover'}/>:null}
     <main className="mx-auto max-w-md">
       {area === 'aluno' ? <KiteModelo3Brand compact /> : <StudentBrand subtitle={APP_AREAS[area].subtitle} />}
       <h1 className="mb-5 mt-12 text-[30px] font-bold">{title}</h1>
