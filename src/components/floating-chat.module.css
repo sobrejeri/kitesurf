@@ -278,3 +278,101 @@
 @media(prefers-reduced-motion:reduce) {
   .bubbles,.threadSwitchButton .photo {transition:none;}
 }
+
+
+/* iOS Safari/PWA: an open chat lives within the *visual* viewport, not the
+   layout viewport. The keyboard can otherwise push the header off-screen.
+   Keep the message history flexible and the composer reachable above keys. */
+@media (max-width:767px) {
+  .dockOpen {
+    top:calc(var(--chat-vv-top, 0px) + max(env(safe-area-inset-top), 12px));
+    bottom:auto;
+    left:12px;
+    right:12px;
+    width:auto;
+    align-items:center;
+    gap:0;
+  }
+  .dockOpen .panel,
+  .studentDock.dockOpen .panel {
+    box-sizing:border-box;
+    width:min(420px,100%);
+    min-width:0;
+    min-height:0;
+    height:min(500px, calc(var(--chat-vv-height, 100dvh) - max(env(safe-area-inset-top), 12px) - 14px));
+    max-height:calc(var(--chat-vv-height, 100dvh) - max(env(safe-area-inset-top), 12px) - 14px);
+    margin:0;
+  }
+  .dockOpen.dockKeyboard .panel,
+  .studentDock.dockOpen.dockKeyboard .panel {
+    height:calc(var(--chat-vv-height, 100dvh) - max(env(safe-area-inset-top), 12px) - 14px);
+  }
+  .dockOpen .threadSwitcherScroll {padding-block:6px;}
+  .dockOpen .threadSwitchButton {min-height:59px;}
+  .dockOpen .threadSwitchButton .photo {width:36px;height:36px;}
+  .dockOpen .log {min-height:0;flex:1 1 auto;overscroll-behavior:contain;}
+  .dockOpen .compose {flex-shrink:0;}
+}
+/* Built-in emoji picker: a short scrollable palette above the compose line.
+   Native emoji keyboards still work; selection inserts at the text caret. */
+.emojiToggle {
+  box-sizing:border-box;
+  display:grid;
+  place-items:center;
+  flex:0 0 36px;
+  width:36px;
+  height:42px;
+  padding:0;
+  border:1px solid #287d96;
+  border-radius:50%;
+  background:#eaf8fb;
+  color:#123548;
+  font-size:23px;
+}
+.studentDock .emojiToggle {
+  background:#053e55;
+  border-color:#91bd38;
+  color:#fff;
+}
+.emojiPopover {
+  position:absolute;
+  z-index:11;
+  left:8px;
+  right:8px;
+  bottom:calc(100% + 9px);
+  display:grid;
+  grid-template-columns:repeat(7,minmax(0,1fr));
+  align-items:center;
+  gap:2px;
+  box-sizing:border-box;
+  max-height:min(188px,35dvh);
+  padding:7px;
+  overflow-y:auto;
+  overscroll-behavior:contain;
+  border:1px solid #46b9cf;
+  border-radius:17px;
+  background:#fff;
+  box-shadow:0 10px 30px #000b24a6;
+  color-scheme:light;
+}
+.studentDock .emojiPopover {
+  background:#052d43;
+  border-color:#31a1b0;
+}
+.emojiChoice {
+  display:grid;
+  place-items:center;
+  min-height:40px;
+  width:100%;
+  min-width:0;
+  padding:0;
+  border:0;
+  border-radius:8px;
+  background:transparent;
+  font-size:24px;
+  line-height:1.1;
+  touch-action:manipulation;
+}
+.emojiChoice:active {background:#0b6173;}
+.studentDock .emojiChoice {background:transparent;color:#fff;}
+.studentDock .emojiChoice:active {background:#16617a;}
