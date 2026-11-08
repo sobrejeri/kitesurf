@@ -129,4 +129,42 @@ assert.ok(voucherCss.includes('.vento-voucher-meeting .bg-brand-soft') &&
   voucherCss.includes('.vento-voucher-paper .vento-voucher-eyebrow'),
   'Mobile voucher must use readable two-column tiles and distinct reschedule/status contrast');
 
+// First desktop-only redesign batch (screens 01–04). These tests prevent
+// accidentally replacing the existing PWA/mobile layouts with the new sidebar.
+const pcCss = read('src/app/aluno/(app)/desktop-redesign.css');
+const studentLayout = read('src/app/aluno/(app)/layout.tsx');
+const desktopHome = read('src/components/student/desktop-home.tsx');
+const desktopLessons = read('src/components/student/desktop-lessons.tsx');
+const studentHomePage = read('src/app/aluno/(app)/inicio/page.tsx');
+const studentLessonsPage = read('src/app/aluno/(app)/aulas/page.tsx');
+const studentEvolution = read('src/app/aluno/(app)/evolucao/page.tsx');
+assert.ok(pcCss.includes('@media (min-width:1024px)') &&
+  pcCss.includes('.vento-pc-sidebar,.vento-pc-account-bar,.vento-pc-desktop-only{display:none}') &&
+  pcCss.includes('.vento-student-redesign .vento-pc-mobile-original{display:none}') &&
+  pcCss.includes('.vento-pc-evolution-columns{display:contents}') &&
+  studentLayout.includes("import './desktop-redesign.css'"),
+  'Desktop redesign must be scoped to >=1024px and preserve original mobile components');
+assert.ok(shell.includes("const desktopRedesign = ['/aluno/inicio','/aluno/aulas','/aluno/evolucao','/aluno/conta'].includes(pathname)") &&
+  shell.includes('vento-pc-sidebar') && shell.includes('aria-current={pathname===item.href') &&
+  shell.includes('vento-student-main') && shell.includes('vento-pc-account-bar'),
+  'Approved desktop sidebar must be route-scoped, navigable and keyboard-accessible');
+assert.ok(studentHomePage.includes('<DesktopStudentHome bookings={bookings}') &&
+  studentHomePage.includes('<HomeDashboard bookings={bookings}') &&
+  studentHomePage.includes('vento-pc-mobile-original') &&
+  desktopHome.includes('studentHomeSummary(bookings)') &&
+  desktopHome.includes('current.booking.id'),
+  'Desktop home must use real student booking data and retain untouched mobile home');
+assert.ok(studentLessonsPage.includes('<DesktopStudentLessons lessons={lessons}') &&
+  studentLessonsPage.includes('<MyLessons key={initialTab}') &&
+  desktopLessons.includes('useState<Filter>') &&
+  desktopLessons.includes('lessons.filter(') &&
+  desktopLessons.includes('lesson.evolutionHref'),
+  'Desktop lesson filters must navigate actual meetings while mobile MyLessons remains available');
+assert.ok(studentEvolution.includes('vento-pc-evolution-columns') &&
+  studentEvolution.includes('vento-pc-evolution-metrics') &&
+  studentProfile.includes('completedMeetings') &&
+  studentProfile.includes('ProfilePhotoPicker') &&
+  studentProfile.includes('ProfileEditor'),
+  'Desktop evolution and profile must retain real data and photo/edit actions');
+
 console.log('PASS: desktop layout and profile photo plus layered meeting-conflict protection');
