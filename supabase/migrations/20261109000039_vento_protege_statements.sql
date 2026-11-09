@@ -9,12 +9,13 @@ CREATE TABLE public.lesson_protection_statements (
   booking_id uuid NOT NULL REFERENCES public.bookings(id),
   meeting_id uuid NOT NULL REFERENCES public.booking_meetings(id),
   author_id uuid NOT NULL REFERENCES public.profiles(id),
+  instructor_at_statement_id uuid REFERENCES public.profiles(id),
   version integer NOT NULL CHECK (version BETWEEN 1 AND 100),
   declaration text NOT NULL CHECK (declaration IN
     ('delivered','partially_delivered','not_delivered','student_absent','weather_or_safety')),
   claimed_minutes integer NOT NULL CHECK (claimed_minutes BETWEEN 0 AND 480),
   narrative text NOT NULL CHECK (length(btrim(narrative)) BETWEEN 20 AND 2000),
-  created_at timestamptz NOT NULL DEFAULT now(),
+  created_at timestamptz NOT NULL DEFAULT clock_timestamp(),
   UNIQUE (meeting_id,author_id,version)
 );
 CREATE INDEX protection_statements_meeting_idx
@@ -24,15 +25,16 @@ CREATE INDEX protection_statements_author_idx
 ALTER TABLE public.lesson_protection_statements ENABLE ROW LEVEL SECURITY;
 REVOKE ALL ON public.lesson_protection_statements FROM PUBLIC,anon,authenticated;
 GRANT SELECT ON public.lesson_protection_statements TO authenticated;
--- Keep a former instructor's own testimony accessible to its author but do
--- not expose it to a new instructor if the reservation is reassigned.
+-- Snapshot the instructor at the time of submission. A later replacement
+-- never inherits the former pair's testimony, including student narratives.
+-- Students and Admin keep case history; the original instructor retains it.
 CREATE POLICY protection_statements_participants_read
  ON public.lesson_protection_statements FOR SELECT TO authenticated USING (
-   author_id=auth.uid() OR public.is_admin() OR EXISTS (
+   public.is_admin() OR author_id=auth.uid()
+   OR instructor_at_statement_id=auth.uid()
+   OR EXISTS (
      SELECT 1 FROM public.bookings b WHERE b.id=booking_id
-       AND (b.student_id=auth.uid()
-         OR (b.instructor_id=auth.uid()
-             AND author_id IN (b.student_id,b.instructor_id)))
+       AND b.student_id=auth.uid()
    )
  );
 -- All revisions are append-only. Even the service role cannot rewrite testimony.
@@ -53,7 +55,7 @@ BEGIN
   -- Serialize submissions for a meeting, preventing duplicate version numbers.
   SELECT * INTO m FROM public.booking_meetings WHERE id=p_meeting_id FOR UPDATE;
   IF m.id IS NULL THEN RAISE EXCEPTION 'Meeting unavailable' USING errcode='42501'; END IF;
-  SELECT * INTO b FROM public.bookings WHERE id=m.booking_id;
+  SELECT * INTO b FROM public.bookings WHERE id=m.booking_id FOR SHARE;
   IF b.id IS NULL OR b.status NOT IN ('confirmed','completed')
     OR (b.student_id<>uid AND b.instructor_id IS DISTINCT FROM uid) THEN
     RAISE EXCEPTION 'Booking unavailable' USING errcode='42501';
@@ -81,8 +83,8 @@ BEGIN
     RAISE EXCEPTION 'Statement version limit exceeded' USING errcode='22023';
   END IF;
   INSERT INTO public.lesson_protection_statements
-    (booking_id,meeting_id,author_id,version,declaration,claimed_minutes,narrative)
-  VALUES(b.id,m.id,uid,next_version,p_declaration,p_claimed_minutes,btrim(p_narrative))
+    (booking_id,meeting_id,author_id,instructor_at_statement_id,version,declaration,claimed_minutes,narrative)
+  VALUES(b.id,m.id,uid,b.instructor_id,next_version,p_declaration,p_claimed_minutes,btrim(p_narrative))
   RETURNING id INTO result_id;
   PERFORM public.write_audit('protection.statement_submitted','lesson_protection_statement',
     result_id::text,NULL,jsonb_build_object('booking_id',b.id,'meeting_id',m.id,
@@ -106,11 +108,21 @@ CREATE INDEX protection_reviews_meeting_idx
 ALTER TABLE public.lesson_protection_reviews ENABLE ROW LEVEL SECURITY;
 REVOKE ALL ON public.lesson_protection_reviews FROM PUBLIC,anon,authenticated;
 GRANT SELECT ON public.lesson_protection_reviews TO authenticated;
+-- Administrative assessments are visible to the student and to instructors
+-- who already submitted their own testimony before that assessment.
+-- A replacement does not inherit older case reviews by assignment alone.
 CREATE POLICY protection_reviews_participants_read
  ON public.lesson_protection_reviews FOR SELECT TO authenticated USING (
-   public.is_admin() OR EXISTS (
-     SELECT 1 FROM public.bookings b WHERE b.id=booking_id
-       AND (b.student_id=auth.uid() OR b.instructor_id=auth.uid())
+   public.is_admin()
+   OR EXISTS (
+     SELECT 1 FROM public.bookings b
+     WHERE b.id=booking_id AND b.student_id=auth.uid()
+   )
+   OR EXISTS (
+     SELECT 1 FROM public.lesson_protection_statements s
+     WHERE s.meeting_id=lesson_protection_reviews.meeting_id
+       AND s.author_id=auth.uid()
+       AND s.created_at<=lesson_protection_reviews.created_at
    )
  );
 CREATE TRIGGER protection_reviews_append_only
@@ -153,7 +165,7 @@ CREATE TABLE public.lesson_protection_evidence (
  mime_type text NOT NULL CHECK(mime_type IN ('image/jpeg','image/png','image/webp','application/pdf')),
  bytes integer NOT NULL CHECK(bytes BETWEEN 1 AND 5242880),
  confirmed boolean NOT NULL DEFAULT false,
- created_at timestamptz NOT NULL DEFAULT now(),
+ created_at timestamptz NOT NULL DEFAULT clock_timestamp(),
  confirmed_at timestamptz
 );
 CREATE INDEX protection_evidence_statement_idx ON public.lesson_protection_evidence(statement_id);
