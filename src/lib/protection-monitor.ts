@@ -1,7 +1,7 @@
 import {
   PROTECTION_FIRST_REMINDER_MS,
   PROTECTION_RESPONSE_WINDOW_MS,
-} from './lesson-protection-policy';
+} from './lesson-protection-policy.ts';
 
 /**
  * Read-only projection over booked meetings. A past scheduled meeting is NOT
