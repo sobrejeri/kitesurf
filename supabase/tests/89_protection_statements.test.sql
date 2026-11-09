@@ -111,7 +111,7 @@ UPDATE public.bookings SET instructor_id=:'next_instructor'::uuid
  WHERE id='00000000-0000-0000-0000-000000009039';
 SELECT set_config('request.jwt.claim.sub',:'next_instructor',false);
 SET ROLE authenticated;
-DO $ BEGIN
+DO $$ BEGIN
  ASSERT (SELECT count(*) FROM public.lesson_protection_statements
    WHERE meeting_id='00000000-0000-0000-0000-000000009040')=2,
    'New instructor must NOT see former instructor testimony';
@@ -119,7 +119,7 @@ END $;
 RESET ROLE;
 SELECT set_config('request.jwt.claim.sub',:'instructor_id',false);
 SET ROLE authenticated;
-DO $ BEGIN
+DO $$ BEGIN
  ASSERT (SELECT count(*) FROM public.lesson_protection_statements
    WHERE meeting_id='00000000-0000-0000-0000-000000009040')=1,
    'Former instructor can read own testimony but not the student statement';
@@ -133,7 +133,7 @@ END $;
 RESET ROLE;
 SELECT set_config('request.jwt.claim.sub',:'student_id',false);
 SET ROLE authenticated;
-DO $ BEGIN
+DO $$ BEGIN
  ASSERT (SELECT count(*) FROM public.lesson_protection_statements
   WHERE meeting_id='00000000-0000-0000-0000-000000009040')=3,
  'Student retains access to own booking testimony across assignment changes';
@@ -228,7 +228,7 @@ RESET ROLE;
 -- Student's private proof must not be available to the assigned instructor.
 SELECT set_config('request.jwt.claim.sub',:'instructor_id',false);
 SET ROLE authenticated;
-DO $ BEGIN
+DO $$ BEGIN
  ASSERT NOT protection_private.evidence_storage_access(current_setting('test.protection_path'),false),
    'Counterparty cannot download a private evidence file';
  ASSERT (SELECT count(*) FROM public.lesson_protection_evidence
