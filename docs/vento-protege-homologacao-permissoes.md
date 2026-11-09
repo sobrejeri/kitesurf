@@ -1,0 +1,50 @@
+# VentoKite Protege — homologação de permissões (etapa 3E)
+
+> Checklist proposto. **Não afirma que sessões reais foram testadas.**
+> Migrações 39 e 40 **não estão aplicadas** no Supabase de produção.
+> Preservar `NEXT_PUBLIC_VENTO_PROTEGE_STATEMENTS_ENABLED` desativada até
+> autorização, validação do schema, backup/restauração apropriados e RLS real.
+
+## 1. Verificação estrutural sem ler dados pessoais
+
+- [ ] Comparar `public.booking_incidents`, `public.bookings`, `public.booking_meetings` e `public.profiles` com os SQL versionados, em ambiente isolado
+- [ ] Verificar histórico de migrações: a ausência de `supabase_migrations.schema_migrations` não deve ser corrigida marcando versões como aplicadas sem comparação
+- [ ] Conferir funções e políticas `SECURITY DEFINER` / grants / search paths
+- [ ] Conferir bucket privado `vento-protection-evidence`, limites de tamanho e as políticas de INSERT/SELECT
+- [ ] Executar PostgreSQL isolado com migrações 39/40 e os testes de RLS 89/90, sem tocar no banco remoto
+- [ ] Preparar estratégia de reversão e retenção dos arquivos antes de autorizar a aplicação real
+
+## 2. Matriz de visualização esperada
+
+| Perfil | Incidente antigo sem histórico de instrutor | Incidente durante atribuição A | Incidente durante atribuição B | Provas privadas |
+|---|---|---|---|---|
+| Aluno da reserva | Pode ver | Pode ver | Pode ver | Apenas as suas |
+| Instrutor A, substituído | Somente se autor | Pode ver | Não pode ver, exceto se autor | Apenas as suas |
+| Instrutor B, substituto | Somente se autor | Não pode ver | Pode ver | Apenas as suas |
+| Admin | Pode ver | Pode ver | Pode ver | Pode ver para análise |
+| Pousada / terceiro | Não pode ver | Não pode ver | Não pode ver | Não pode ver |
+
+O aluno e o instrutor só podem registrar manifestações quando a reserva, o
+encontro e o vínculo do usuário permitirem. Uma mudança de status não apaga
+evidências e não autoriza repasse ou estorno.
+
+## 3. Passos de homologação com contas de teste
+
+1. Criar reserva e encontro de **teste** num projeto de homologação; não executar pagamentos reais
+2. Entrar como Aluno e registrar uma ocorrência; conferir data e histórico
+3. Entrar como Instrutor A e registrar relato independente
+4. Reatribuir a reserva ao Instrutor B pelo fluxo normal
+5. Testar Aluno, Instrutor A, Instrutor B, Admin e Pousada no celular e no PC
+6. Confirmar que Instrutor B não visualiza registros da fase A; Instrutor A mantém somente o histórico autorizado
+7. Criar um relato da fase B; conferir que A não passa a visualizá-lo
+8. Verificar que a decisão do Admin e o envio das provas **não** concluem aula, alteram saldo, liberam pagamento ou removem arquivos
+9. Conferir paginação por código da reserva, filtro inválido, último registro e caso já cancelado
+10. Registrar resultados e capturas, revisar divergências antes de qualquer ativação no Render
+
+## 4. Pendências operacionais
+
+- Política de retenção das evidências com base legal, prazos e guarda
+- Fluxo de remoção autorizado somente pela API do Supabase Storage, nunca `DELETE FROM storage.objects`
+- Validação do histórico do instrutor substituído no banco real, sem acessar dados de usuários indevidamente
+- Testes end-to-end autenticados em iPhone e desktop
+- Revisão da integridade de versões e de consultas por reserva
