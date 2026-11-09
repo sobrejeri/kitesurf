@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import { hasScheduleConflict, slotsOverlap } from '../src/lib/student-schedule.ts';
-import { lessonHasEvolution, lessonEvolutionHref, lessonIsPast } from '../src/lib/student-lesson-links.ts';
+import { lessonHasEvolution, lessonEvolutionHref, lessonIsPast, lessonNeedsInstructorRecord } from '../src/lib/student-lesson-links.ts';
 
 const slot = (startsAt, minutes = 120) => ({ startsAt, minutes });
 const reserved = slot('2026-11-11T11:00:00-03:00');
@@ -20,6 +20,18 @@ assert.equal(lessonHasEvolution('cancelled'), false);
 assert.equal(lessonIsPast('in_progress', '2026-11-01T10:00:00Z', 120, Date.parse('2026-11-04T10:00:00Z')), false);
 assert.equal(lessonIsPast('scheduled', '2026-11-01T10:00:00Z', 120, Date.parse('2026-11-04T10:00:00Z')), true);
 assert.equal(lessonIsPast('done', '2026-11-11T10:00:00Z', 120, Date.parse('2026-11-04T10:00:00Z')), true);
+const after = Date.parse('2026-11-09T17:17:00-03:00');
+const startedPast = '2026-11-04T11:00:00-03:00';
+assert.equal(lessonNeedsInstructorRecord('scheduled', startedPast, 60, after), true,
+  'A past scheduled meeting must show Aguardando registro in both list and voucher');
+assert.equal(lessonNeedsInstructorRecord('scheduled', '2026-11-11T11:00:00-03:00', 60, after), false,
+  'Future scheduled meetings remain Agendada');
+assert.equal(lessonNeedsInstructorRecord('scheduled', startedPast, 60, Date.parse('2026-11-04T11:30:00-03:00')), false,
+  'Do not flag as overdue until the scheduled meeting ends');
+for (const status of ['done', 'in_progress', 'cancelled']) {
+  assert.equal(lessonNeedsInstructorRecord(status, startedPast, 60, after), false,
+    status + ' is not a meeting awaiting initial record');
+}
 assert.equal(lessonEvolutionHref('booking-a', 'meeting-b'),
   '/aluno/evolucao?reserva=booking-a&encontro=meeting-b#encontro-meeting-b');
 console.log('PASS: existing/new schedule overlaps, boundary times, timezones and per-meeting evolution links');

@@ -7,7 +7,7 @@ import { requireRole } from '@/lib/auth';
 import { BOOKING_STATUS_LABELS, MEETING_STATUS_LABELS, listBookingsForStudent } from '@/lib/data';
 import { formatDateShort, formatDay, formatMinutes, formatMonthTag, formatTime } from '@/lib/format';
 import { initials } from '@/lib/people';
-import { lessonHasEvolution, lessonEvolutionHref, lessonIsPast } from '@/lib/student-lesson-links';
+import { lessonHasEvolution, lessonEvolutionHref, lessonIsPast, lessonNeedsInstructorRecord } from '@/lib/student-lesson-links';
 import { getStudentBookingInstructorAvatar } from '@/lib/student-booking-avatar';
 import { VALIDATION_WITHOUT_CHECKOUT } from '@/lib/booking-mode';
 
@@ -33,14 +33,16 @@ export default async function MyLessonsPage({searchParams}:{searchParams:Promise
       booking.booking_meetings.map((meeting) => {
         const past = lessonIsPast(meeting.status, meeting.starts_at, meeting.minutes, now);
         const awaiting = booking.status === 'awaiting_payment';
+        const needsRecord = booking.status === 'confirmed'
+          && lessonNeedsInstructorRecord(meeting.status, meeting.starts_at, meeting.minutes, now);
         return {
           bookingId: booking.id,
           meetingId: meeting.id,
           startsAt: meeting.starts_at,
           evolutionHref: lessonHasEvolution(meeting.status) ? lessonEvolutionHref(booking.id, meeting.id) : null,
           title: 'Aula particular de kitesurf',
-          statusLabel: awaiting ? (VALIDATION_WITHOUT_CHECKOUT ? 'Aguardando sua confirmação' : BOOKING_STATUS_LABELS.awaiting_payment) : meeting.status === 'done' ? 'Concluída' : past && meeting.status==='scheduled' ? 'Aguardando registro' : MEETING_STATUS_LABELS[meeting.status],
-          statusTone: awaiting || (past && meeting.status==='scheduled') ? 'warning' : meeting.status === 'done' ? 'quiet' : 'success',
+          statusLabel: awaiting ? (VALIDATION_WITHOUT_CHECKOUT ? 'Aguardando sua confirmação' : BOOKING_STATUS_LABELS.awaiting_payment) : meeting.status === 'done' ? 'Concluída' : needsRecord ? 'Aguardando registro' : MEETING_STATUS_LABELS[meeting.status],
+          statusTone: awaiting || needsRecord ? 'warning' : meeting.status === 'done' ? 'quiet' : 'success',
           day: formatDay(meeting.starts_at),
           month: formatMonthTag(meeting.starts_at),
           beach: (booking.beach?.name ?? '—'),
