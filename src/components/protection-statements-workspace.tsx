@@ -1,5 +1,5 @@
 import { ActionForm } from '@/components/action-form';
-import { Card, Note, inputClass } from '@/components/ui';
+import { Card, Note, inputClass, textareaClass } from '@/components/ui';
 import { EvidenceUpload } from '@/components/protection-evidence-upload';
 import {
   submitProtectionStatement, reviewProtectionStatement,
@@ -146,7 +146,7 @@ export async function ProtectionStatementsWorkspace({
                   Sua justificativa
                 </label>
                 <textarea id={'narrative-'+meeting.id} name="narrative" rows={4}
-                  minLength={20} maxLength={2000} required className={inputClass}
+                  minLength={20} maxLength={2000} required className={textareaClass}
                   placeholder="Descreva o que aconteceu, horários, tentativas de contato e eventuais provas."/>
               </ActionForm>
               {own?<EvidenceUpload area={area} statementId={own.id}/>:(
@@ -178,7 +178,7 @@ export async function ProtectionStatementsWorkspace({
                 Fundamentação (não movimenta dinheiro)
               </label>
               <textarea name="rationale" id={'rationale-'+meeting.id} rows={4}
-                minLength={20} maxLength={2000} required className={inputClass}/>
+                minLength={20} maxLength={2000} required className={textareaClass}/>
             </ActionForm>:null}
           </div>
         </details>;
