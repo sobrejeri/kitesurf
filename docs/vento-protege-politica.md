@@ -59,7 +59,7 @@ O PIN/QR precisa ser validado **na hora apropriada**; não se admite digitar o c
 - [x] Implementar **avaliador puro** de prazos e respostas + testes sem efeitos colaterais.
 - [ ] Aprovar textos de termos/ausência e matriz de decisões com responsável e orientação jurídica.
 - [ ] Desenhar migration **nova e versionada** (não reutilizar 38), policies RLS e ações de gravação em ambiente isolado.
-- [ ] Implementar coleta de manifestações e anexos em Aluno/Instrutor.
+- [ ] Implementar coleta estruturada de manifestações e anexos em Aluno/Instrutor (a RPC antiga de ocorrências já recebe descrição; ainda não equivale ao fluxo de manifestações de ambas as partes).
 - [ ] Implementar painel Admin, auditoria, contestação e revisão.
 - [ ] Implementar job confiável e testar sem navegação online.
 - [ ] Homologar conciliação com a Migration 38, com testes de race condition e de cobrança duplicada.
