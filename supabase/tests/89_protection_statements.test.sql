@@ -115,7 +115,7 @@ DO $$ BEGIN
  ASSERT (SELECT count(*) FROM public.lesson_protection_statements
    WHERE meeting_id='00000000-0000-0000-0000-000000009040')=2,
    'New instructor must NOT see former instructor testimony';
-END $;
+END $$;
 RESET ROLE;
 SELECT set_config('request.jwt.claim.sub',:'instructor_id',false);
 SET ROLE authenticated;
@@ -129,7 +129,7 @@ DO $$ BEGIN
     'Eu não posso apresentar uma manifestação nova após a troca.');
   RAISE EXCEPTION 'Former instructor forged a new statement';
  EXCEPTION WHEN insufficient_privilege THEN NULL; END;
-END $;
+END $$;
 RESET ROLE;
 SELECT set_config('request.jwt.claim.sub',:'student_id',false);
 SET ROLE authenticated;
@@ -137,7 +137,7 @@ DO $$ BEGIN
  ASSERT (SELECT count(*) FROM public.lesson_protection_statements
   WHERE meeting_id='00000000-0000-0000-0000-000000009040')=3,
  'Student retains access to own booking testimony across assignment changes';
-END $;
+END $$;
 RESET ROLE;
 UPDATE public.bookings SET instructor_id=:'instructor_id'::uuid
  WHERE id='00000000-0000-0000-0000-000000009039';
@@ -234,14 +234,14 @@ DO $$ BEGIN
  ASSERT (SELECT count(*) FROM public.lesson_protection_evidence
    WHERE statement_id=current_setting('test.first_statement')::uuid)=0,
    'Counterparty cannot read private evidence metadata';
-END $;
+END $$;
 RESET ROLE;
 
 -- Rate limits protect the storage budget. They count failed pending attempts,
 -- but those attempts age out of the quota after a short recovery window.
 SELECT set_config('request.jwt.claim.sub',:'student_id',false);
 SET ROLE authenticated;
-DO $ DECLARE n integer;
+DO $$ DECLARE n integer;
 BEGIN
  FOR n IN 1..4 LOOP
   PERFORM public.prepare_lesson_protection_evidence(
@@ -252,7 +252,7 @@ BEGIN
     current_setting('test.first_statement')::uuid,'proof6.jpg','image/jpeg',900);
   RAISE EXCEPTION 'No evidence upload rate limit';
  EXCEPTION WHEN SQLSTATE '55000' THEN NULL; END;
-END $;
+END $$;
 RESET ROLE;
 
 ROLLBACK;
