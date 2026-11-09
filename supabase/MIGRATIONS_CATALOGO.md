@@ -98,3 +98,7 @@ O arquivo `20261109000039_vento_protege_statements.sql` foi reforçado com:
 - Testes de segurança em PostgreSQL temporário, sem supor que a base real tenha histórico de aplicação de migrações.
 
 **Não rodar em produção antes de reconciliar as migrations 01–38, o schema e o processo de aprovação.**
+
+### Etapa 3C — consulta histórica e política de evidências ainda não ativadas
+
+A exibição de manifestações foi desacoplada do monitor de aulas `scheduled`. Nenhuma migration nova é necessária para esta melhoria de interface; o banco real continua aguardando a migração 39 autorizada. Um classificador de retenção em modo **dry-run** permite sinalizar uploads incompletos à revisão manual sem excluir arquivo ou registro. O prazo de retenção real está pendente de aprovação jurídica/operacional. A API do Storage deverá ser usada em toda remoção aprovada; nunca excluir diretamente de `storage.objects`.
