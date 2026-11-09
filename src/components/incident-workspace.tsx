@@ -5,12 +5,17 @@ import { requireRole, type AppRole } from '@/lib/auth';
 import { listBookingsForInstructor, listBookingsForStudent } from '@/lib/data';
 import { formatDateLong, formatTime } from '@/lib/format';
 import { createSupabaseServerClient } from '@/lib/supabase/server';
+import { ProtectionMonitor } from '@/components/protection-monitor';
+import { listProtectionMonitorItems } from '@/lib/protection-monitor';
 
 type Incident = {
-  id:string;booking_id:string;meeting_id:string;incident_type:string;
+  id:string;booking_id:string;meeting_id:string;reported_by:string;incident_type:string;
   minutes_done:number;status:string;description:string;
   resolution:string|null;created_at:string;
 };
+
+type AdminMeeting = { id: string; booking_id: string; starts_at: string; minutes: number; status: string };
+type AdminBooking = { id: string; code: string; status: string; is_test: boolean };
 
 const TYPES:Record<string,string>={
   weather:'Condições do vento',absence:'Ausência',equipment:'Equipamento',
@@ -25,22 +30,62 @@ export async function IncidentWorkspace({area,title}:{area:'aluno'|'instrutor'|'
   const viewer=await requireRole([role]);
   const db=await createSupabaseServerClient();
   const admin=area==='admin';
+  const nowMs=Date.now();
   const [records,bookings]=await Promise.all([
-    db.from('booking_incidents').select('id,booking_id,meeting_id,incident_type,minutes_done,status,description,resolution,created_at')
+    db.from('booking_incidents').select('id,booking_id,meeting_id,reported_by,incident_type,minutes_done,status,description,resolution,created_at')
       .order('created_at',{ascending:false}).limit(100).returns<Incident[]>(),
     admin?Promise.resolve([]):area==='aluno'?listBookingsForStudent(viewer.id):listBookingsForInstructor(viewer.id),
   ]);
   const meetings=bookings.filter(b=>b.status==='confirmed'||b.status==='completed')
-    .flatMap(b=>b.booking_meetings.map(m=>({id:m.id,bookingId:b.id,code:('code' in b && typeof b.code==='string' ? b.code : b.id.slice(0,8)),startsAt:m.starts_at,minutes:m.minutes})));
+    .flatMap(b=>b.booking_meetings.map(m=>({
+      id:m.id,bookingId:b.id,code:b.code,startsAt:m.starts_at,minutes:m.minutes,
+      bookingStatus:b.status,meetingStatus:m.status,isTest:b.is_test,
+    })));
+
+  // Admin monitoring is a bounded, read-only lookup. It also finds meetings
+  // nobody reported. No check-in, incident, notification or payout is created.
+  const adminMeetingRead=admin ? await db.from('booking_meetings')
+    .select('id,booking_id,starts_at,minutes,status')
+    .eq('status','scheduled')
+    .gte('starts_at',new Date(nowMs-45*24*60*60*1000).toISOString())
+    .lte('starts_at',new Date(nowMs).toISOString())
+    .order('starts_at',{ascending:true})
+    .limit(100).returns<AdminMeeting[]>() : null;
+  const adminBookingIds=[...new Set((adminMeetingRead?.data??[]).map(m=>m.booking_id))];
+  const adminBookingRead=admin && adminBookingIds.length ? await db.from('bookings')
+    .select('id,code,status,is_test')
+    .in('id',adminBookingIds).returns<AdminBooking[]>() : null;
+  const adminBookingMap=new Map((adminBookingRead?.data??[]).map(b=>[b.id,b] as const));
+  const protectionSource=admin
+    ? (adminMeetingRead?.data??[]).flatMap(m=>{
+        const b=adminBookingMap.get(m.booking_id);
+        if(!b)return [];
+        return [{
+          id:m.id, bookingId:b.id, bookingCode:b.code, bookingStatus:b.status,
+          meetingStatus:m.status, startsAt:m.starts_at, minutes:m.minutes, isTest:b.is_test,
+        }];
+      })
+    : meetings.map(m=>({
+        id:m.id, bookingId:m.bookingId, bookingCode:m.code, bookingStatus:m.bookingStatus,
+        meetingStatus:m.meetingStatus, startsAt:m.startsAt, minutes:m.minutes, isTest:m.isTest,
+      }));
+  const protectionItems=listProtectionMonitorItems(protectionSource,nowMs);
   return (
     <>
       <PageHeader eyebrow="Cada situação acompanhada" title={title ?? (admin?'Analisar ocorrências':'Imprevistos e ocorrências')}
-        lead="As ocorrências são registradas para análise; nenhuma decisão altera automaticamente o pagamento ou os encontros."/>
-      {records.error?<Note tone="warning">O módulo de ocorrências depende da migração 15 no Supabase.</Note>:null}
+        lead="VentoKite Protege: acompanhe encontros sem registro, apresente relatos e confira as análises. Nenhuma ação financeira é automática."/>
+      {records.error?<Note tone="warning">Não foi possível consultar as ocorrências. Tente novamente ou informe ao suporte.</Note>:null}
+      <ProtectionMonitor items={protectionItems} area={area}
+        error={Boolean(adminMeetingRead?.error || adminBookingRead?.error)}/>
       <div className="grid gap-4 lg:grid-cols-[1fr_1fr]">
         {!admin?(
-          <Card>
+          <div id="registrar-ocorrencia" className="scroll-mt-24"><Card>
             <h2 className="text-[17px] font-bold text-ink">Registrar imprevisto</h2>
+            <p className="mt-2 text-[12px] text-muted">
+              Descreva o que ocorreu e informe somente os minutos efetivamente realizados.
+              O relato não registra presença nem conclui a aula. Você também pode
+              apresentar esclarecimentos após o prazo interno de cinco dias.
+            </p>
             {meetings.length===0?<p className="mt-3 text-[13px] text-muted">Você ainda não tem encontros confirmados para relatar.</p>:(
               <ActionForm action={reportLessonIncident} submitLabel="Enviar ocorrência" className="mt-4 grid gap-3">
                 <label htmlFor="incident-meeting" className="text-[13px] font-semibold">Encontro</label>
@@ -60,10 +105,14 @@ export async function IncidentWorkspace({area,title}:{area:'aluno'|'instrutor'|'
                   required className={inputClass} placeholder="Descreva objetivamente o que aconteceu."/>
               </ActionForm>
             )}
-          </Card>
+          </Card></div>
         ):null}
         <Card>
           <h2 className="text-[17px] font-bold text-ink">{admin?'Solicitações recebidas':'Histórico de ocorrências'}</h2>
+          {admin?<Note className="mt-3">
+            Resolver uma ocorrência aqui apenas registra a justificativa administrativa.
+            Não aprova pagamento, repasse, reembolso nem créditos de horas.
+          </Note>:null}
           {(records.data??[]).length===0?<p className="mt-4 text-[13px] text-muted">Nenhuma ocorrência registrada.</p>:(
             <ul className="mt-3 divide-y divide-line">
               {(records.data??[]).map(x=>(

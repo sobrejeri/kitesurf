@@ -17,7 +17,7 @@ const NAV: readonly WorkspaceNavItem[] = [
   { label: 'Meu perfil profissional', href: '/instrutor/cadastro', icon: 'user' },
   { label: 'Dias e turnos', href: '/instrutor/disponibilidade', icon: 'clock', secondary: true },
   { label: 'Meus documentos', href: '/instrutor/documentos', icon: 'file', secondary: true },
-  { label: 'Ocorrências', href: '/instrutor/ocorrencias', icon: 'wind', secondary: true },
+  { label: 'VentoKite Protege', href: '/instrutor/ocorrencias', icon: 'shield', secondary: true },
   { label: 'Conversas', href: '/instrutor/atendimento', icon: 'chat', secondary: true },
   { label: 'Avisos', href: '/instrutor/avisos', icon: 'bell', secondary: true },
   { label: 'Regras das aulas', href: '/instrutor/politicas', icon: 'shield', secondary: true },
