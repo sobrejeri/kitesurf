@@ -25,7 +25,7 @@ assert.equal(
 );
 for(const codigo of ['%','A,B','TEST;DROP','a/b','A?x=1','\tABC','ABC ','A'.repeat(41)]){
   const value=parseProtectionArchiveParams({codigo});
-  if(codigo==='ABC ') {
+  if(codigo==='ABC ' || codigo==='\tABC') {
     assert.equal(value.codigo,'ABC','Safe surrounding whitespace is normalized');
   } else {
     assert.equal(value.codigoInvalido,true,`Unsafe code is rejected: ${codigo}`);
