@@ -67,3 +67,18 @@ O PIN/QR precisa ser validado **na hora apropriada**; não se admite digitar o c
 - [ ] Validar no iPhone/PC com contas e aulas de teste.
 
 **Não executamos SQL remoto, não abrimos ocorrências reais e não autorizamos pagamentos nesta etapa.**
+
+
+## Etapa 2 — Monitor de encontros sem registro (interface / sem DDL)
+
+- [x] Páginas existentes `/aluno/ocorrencias`, `/instrutor/ocorrencias` e `/admin/ocorrencias` reutilizadas. O fluxo de relato simples por `report_lesson_incident` e revisão textual do Admin por `review_lesson_incident` **já existia** desde a migração 15.
+- [x] Painel somente leitura lista encontros `booking.status=confirmed` e `meeting.status=scheduled` cujo término agendado já passou, sem presumir culpa, presença ou serviço prestado.
+- [x] Fases informativas: **Aguardando registro** (primeiras 24h), **Prazo de manifestação** (24h–120h) e **Análise necessária** (a partir de 120h). Os prazos são por encontro e exibidos no horário de Fortaleza.
+- [x] Área Admin busca também encontros vencidos **sem relatos** (amostra limitada aos primeiros 100 encontros dos últimos 45 dias para não carregar histórico ilimitado). Esse painel não abre ocorrência nem notifica automaticamente os envolvidos.
+- [x] Testes de fronteira e exclusão de estados `done`, `cancelled`, `in_progress`, reservas não confirmadas e datas inválidas.
+- [ ] Implementar abertura automática da ocorrência e coleta de declarações específicas, com RLS e auditoria, após uma migração futura e backup planejado.
+- [ ] Implementar job persistente de lembretes e mudança de estado no servidor, sem depender de acesso ao aplicativo.
+- [ ] Exibir identificação e versões das duas partes, anexos privados e processo formal de contestação.
+- [ ] Integrar eventual retenção ao provedor financeiro só após confirmação do suporte real do gateway e validação jurídica.
+
+**Limitação de segurança:** o painel **não** comprova que houve ausência. Um encontro pode estar sem registro e ter ocorrido. O valor **não está de fato retido** apenas porque o painel recomenda atenção, e nenhum crédito ou pagamento é alterado por essa interface.
