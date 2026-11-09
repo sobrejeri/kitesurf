@@ -1,7 +1,7 @@
 /** Stage 3B stays OFF in the deployed service until migration 39 is reviewed
  * and applied to the target Supabase. Never expose an active form first. */
 export function protectionStage3Enabled(): boolean {
-  return process.env.VENTO_PROTEGE_STATEMENTS_ENABLED === 'true';
+  return process.env.NEXT_PUBLIC_VENTO_PROTEGE_STATEMENTS_ENABLED === 'true';
 }
 
 export const PROTECTION_DECLARATIONS = {
