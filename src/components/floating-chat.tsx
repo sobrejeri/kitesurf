@@ -357,31 +357,64 @@ export function FloatingChat({area,viewerId}: {area:ChatArea;viewerId:string}) {
     }catch{setError('Não foi possível carregar as mensagens anteriores.');}
     finally{setLoadingOlder(false);}
   }
+  function requestClose(dismissId:string|null=null){
+    if(chatCloseTimer.current!==null)return;
+    // Preserve the exterior tab coordinates before the panel is removed.
+    // Remaining portraits will travel back to the original floating stack
+    // one by one using the existing FLIP/snap animation.
+    const from=new Map<string,BubblePoint>();
+    photoStrip.current?.querySelectorAll<HTMLButtonElement>('button[data-chat-id]').forEach(button=>{
+      const id=button.dataset.chatId;
+      if(!id)return;
+      const rect=button.getBoundingClientRect();
+      from.set(id,{x:rect.left+rect.width/2,y:rect.top+rect.height/2});
+    });
+    pendingSnap.current=from;
+    pendingClosedTab.current=dismissId;
+    const panel=openPanel.current?.getBoundingClientRect();
+    const selected=photoStrip.current?.querySelector<HTMLButtonElement>('button[aria-pressed="true"]')?.getBoundingClientRect();
+    const reduceMotion=window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    if(panel){
+      // The open dialog visually contracts into the active portrait.
+      const targetX=selected?selected.left+selected.width/2:panel.left+panel.width/2;
+      const targetY=selected?selected.top+selected.height/2:panel.top;
+      setClosingChat({
+        dx:targetX-(panel.left+panel.width/2),
+        dy:targetY-(panel.top+panel.height/2)
+      });
+    }
+    chatCloseTimer.current=window.setTimeout(()=>{
+      chatCloseTimer.current=null;
+      const closingId=pendingClosedTab.current;
+      pendingClosedTab.current=null;
+      if(closingId){
+        const target=threads.find(t=>t.id===closingId);
+        if(target)setHiddenUnread(previous=>({...previous,[closingId]:target.lastAt}));
+        setOpenedIds(previous=>previous.filter(id=>id!==closingId));
+      }
+      selectedRef.current=null;
+      setSelectedId(null);
+      setAttachmentsOpen(false);
+      setEmojiOpen(false);
+      setOpen(false);
+      setClosingChat(null);
+    },reduceMotion?0:470);
+  }
   function closeOutside(){
-    // A backdrop tap only collapses the window. Leave the opened session
-    // list and bubblePosition intact so avatars return to the same edge/height.
-    selectedRef.current=null;
-    setSelectedId(null);
-    setAttachmentsOpen(false);
-    setEmojiOpen(false);
-    setOpen(false);
+    // Backdrop closes visually but keeps all opened bubbles and their
+    // original left/right edge and height, ready for sequential re-entry.
+    requestClose();
   }
   function minimize(){
-    // X closes only this conversation session. Other opened/unread chats
-    // remain available, and no server-side messages are deleted or marked.
-    if(selectedId){
-      const current=threads.find(t=>t.id===selectedId);
-      if(current) setHiddenUnread(previous=>({...previous,[current.id]:current.lastAt}));
-      setOpenedIds(previous=>previous.filter(id=>id!==selectedId));
-    }
-    closeOutside();
+    // The X removes only this active conversation; the others return.
+    requestClose(selectedId);
   }
   function dismissTopConversation(id:string){
     // Only remove this local session and unread alert; never delete messages.
     const thread=threads.find(t=>t.id===id);
     if(thread) setHiddenUnread(previous=>({...previous,[id]:thread.lastAt}));
     setOpenedIds(previous=>previous.filter(threadId=>threadId!==id));
-    if(selectedId===id)closeOutside();
+    if(selectedId===id)requestClose(id);
   }
   const onTopTabDown=(event:ReactPointerEvent<HTMLButtonElement>,id:string)=>{
     if(event.button!==0 || topTabDrag.current)return;
