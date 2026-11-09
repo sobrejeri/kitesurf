@@ -152,7 +152,7 @@ SELECT upload_id,object_path FROM public.prepare_lesson_protection_evidence(
 ) \gset
 SELECT set_config('test.protection_path',:'object_path',false);
 SELECT set_config('test.protection_upload_id',:'upload_id',false);
-DO $ BEGIN
+DO $$ BEGIN
  ASSERT (SELECT count(*) FROM public.lesson_protection_evidence
   WHERE uploader_id=auth.uid() AND NOT confirmed)=1,
   'Evidence must start pending and private';
