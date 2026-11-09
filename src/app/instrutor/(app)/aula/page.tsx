@@ -16,6 +16,8 @@ import { getMeetingKiteSkills } from '@/lib/meeting-skills';
 import { listMeetingChanges } from '@/lib/meeting-changes';
 import { releaseMyBooking } from '@/app/actions/meeting-change';
 import { MeetingChangePanel } from '@/components/meeting-change-panel';
+import { listPendingBalanceRequestsForInstructor } from '@/lib/balance-requests';
+import { InstructorBalanceRequests, type PendingBalanceItem } from '@/components/instructor/balance-requests';
 import { groupInstructorLessons, resolveInstructorLessonTab, selectInstructorLesson, mayStartInstructorLesson } from '@/lib/instructor-lesson-tabs';
 import { getBookingLevelAssessments } from '@/lib/booking-level-assessments';
 
@@ -66,6 +68,22 @@ export default async function RunLessonPage({
     { id: 'concluidas' as const, title: 'Concluídas', count: groups.concluidas.length },
   ];
 
+  // Pending make-up requests the students proposed for their paid balance.
+  const balancePending = await listPendingBalanceRequestsForInstructor(viewer.id);
+  const bookingById = new Map(bookings.map((booking) => [booking.id, booking]));
+  const balanceItems: PendingBalanceItem[] = balancePending.rows.flatMap((row) => {
+    const booking = bookingById.get(row.booking_id);
+    if (!booking) return [];
+    return [{
+      id: row.id,
+      bookingId: row.booking_id,
+      code: booking.code,
+      studentName: booking.student?.full_name ?? 'Aluno',
+      proposedStartsAt: row.proposed_starts_at,
+      minutes: row.minutes,
+    }];
+  });
+
   return (
     <>
       <h1 className="text-[30px] font-bold leading-tight tracking-[-0.8px] text-ink md:text-[34px]">
@@ -79,6 +97,10 @@ export default async function RunLessonPage({
         <Link href="/instrutor/hoje" className="font-semibold text-brand underline">Meu dia</Link>
         <Link href="/instrutor/agenda" className="font-semibold text-brand underline">Agenda completa</Link>
         <Link href="/instrutor/fila" className="font-semibold text-brand underline">Fila de solicitações</Link>
+      </div>
+
+      <div className="mt-6">
+        <InstructorBalanceRequests items={balanceItems} />
       </div>
 
       <nav aria-label="Filtrar aulas por status"

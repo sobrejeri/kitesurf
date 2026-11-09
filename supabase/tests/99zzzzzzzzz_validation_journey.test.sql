@@ -11,6 +11,7 @@ DO $$
 DECLARE sid uuid:='00000000-0000-0000-0000-000000000b99'; req uuid; bid uuid; tid uuid; oid uuid; beach uuid;
  t timestamptz; plan jsonb; first_id uuid; last_id uuid; pin text; frozen public.bookings;
  message_id uuid; rate_id uuid; rerequest uuid; after_summary record; before_summary record;
+ makeup_req uuid; makeup_mid uuid;
 BEGIN
  SELECT id INTO beach FROM public.beaches WHERE slug='prea';
  FOR tid IN SELECT id FROM public.instructors WHERE status='approved' LOOP
@@ -57,9 +58,33 @@ BEGIN
  PERFORM public.record_meeting_with_skills(last_id,60,ARRAY[3],ARRAY[4]);
  PERFORM public.assess_student_kite_level(last_id,'returning');
  PERFORM pg_temp.reset();
- ASSERT (SELECT status FROM public.bookings WHERE id=bid)='completed';
+ -- Item 9: only 105 of the 120 paid minutes were recorded, so the booking keeps
+ -- a 15-minute balance instead of completing. The student schedules a make-up
+ -- with the same instructor and the paid snapshot never changes.
+ ASSERT (SELECT status FROM public.bookings WHERE id=bid)='confirmed','Under-recorded booking keeps its balance';
+ ASSERT public.booking_balance_minutes(bid)=15,'Balance equals the unrecorded paid minutes';
  ASSERT (SELECT sum(done_minutes) FROM public.booking_meetings WHERE booking_id=bid)=105;
  ASSERT EXISTS(SELECT 1 FROM public.booking_level_assessments WHERE booking_id=bid AND assessed_level='returning');
+ PERFORM pg_temp.act_as(sid);
+ makeup_req:=public.request_balance_meeting(bid,t+interval '5 days',15);
+ PERFORM pg_temp.reset();
+ ASSERT makeup_req IS NOT NULL,'Student proposes a make-up for the balance';
+ PERFORM pg_temp.act_as(tid);
+ PERFORM public.respond_balance_meeting(makeup_req,true);
+ PERFORM pg_temp.reset();
+ ASSERT (SELECT total_cents FROM public.bookings WHERE id=bid)=frozen.total_cents,'A make-up lesson adds no charge';
+ SELECT created_meeting_id INTO makeup_mid FROM public.balance_meeting_requests WHERE id=makeup_req;
+ ASSERT makeup_mid IS NOT NULL,'Accepting the make-up creates the new meeting';
+ ASSERT (SELECT status FROM public.bookings WHERE id=bid)='confirmed','Booking stays confirmed until the make-up is delivered';
+ -- Deliver the make-up inside the rollback by advancing its date like the originals.
+ UPDATE public.booking_meetings SET starts_at=now()-interval '10 minutes' WHERE id=makeup_mid;
+ PERFORM pg_temp.act_as(tid);
+ PERFORM public.start_ordered_meeting(makeup_mid,pin);
+ PERFORM public.record_meeting_with_skills(makeup_mid,15,ARRAY[5],ARRAY[6]);
+ PERFORM pg_temp.reset();
+ ASSERT (SELECT status FROM public.bookings WHERE id=bid)='completed','Booking completes once all paid minutes are delivered';
+ ASSERT (SELECT sum(done_minutes) FROM public.booking_meetings WHERE booking_id=bid)=120;
+ ASSERT public.booking_balance_minutes(bid)=0,'No balance remains after full delivery';
  PERFORM pg_temp.act_as(sid);
  rate_id:=public.rate_completed_booking(bid,5,'Isolated validation journey');
  ASSERT rate_id IS NOT NULL;

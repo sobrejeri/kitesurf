@@ -19,6 +19,9 @@ import { getStudentBookingInstructorAvatar } from '@/lib/student-booking-avatar'
 import { createSupabaseServerClient } from '@/lib/supabase/server';
 import { listMeetingChanges } from '@/lib/meeting-changes';
 import { MeetingChangePanel } from '@/components/meeting-change-panel';
+import { bookingBalanceMinutes } from '@/lib/booking-cycle';
+import { listBalanceRequests } from '@/lib/balance-requests';
+import { BalanceMeetingPanel } from '@/components/balance-meeting-panel';
 
 export const metadata: Metadata = { title: 'Sua reserva' };
 
@@ -55,6 +58,19 @@ export default async function BookingPage({ params }: { params: Promise<{ id: st
     .maybeSingle<{stars:number;comment:string}>() : null;
   const awaiting = booking.status === 'awaiting_payment';
   const balance = learningBalance([{ ...booking, status: awaiting ? 'confirmed' : booking.status }]);
+  // Paid-but-unrecorded minutes the student may reschedule as a make-up lesson.
+  const balanceMinutes = booking.status === 'confirmed' && booking.instructor_id !== null
+    ? bookingBalanceMinutes(booking) : 0;
+  const balanceRequests = balanceMinutes > 0
+    ? await listBalanceRequests(booking.id)
+    : { ready: true as const, rows: [] };
+  const cearaLocal = (ms: number) => new Intl.DateTimeFormat('sv-SE', {
+    timeZone: 'America/Fortaleza', year: 'numeric', month: '2-digit', day: '2-digit',
+    hour: '2-digit', minute: '2-digit', hourCycle: 'h23',
+  }).format(new Date(ms)).replace(' ', 'T');
+  // Earliest selectable just past the 72h floor so the picker never offers a time the RPC rejects.
+  const balanceMinStart = cearaLocal(Date.now() + 73 * 60 * 60 * 1000);
+  const balanceMaxStart = cearaLocal(Date.now() + 60 * 24 * 60 * 60 * 1000);
   const donePercent = balance.contracted ? Math.round((balance.done / balance.contracted) * 100) : 0;
   const reservedPercent = balance.contracted ? Math.round((balance.scheduled / balance.contracted) * 100) : 0;
   const instructorName = booking.instructor?.full_name ?? 'Instrutor a confirmar';
@@ -309,6 +325,14 @@ export default async function BookingPage({ params }: { params: Promise<{ id: st
               <Icon name="arrow" className="!h-4 !w-4" /> Acompanhar minha evolução
             </Link>
           </Card>
+
+          <BalanceMeetingPanel
+            bookingId={booking.id}
+            balanceMinutes={balanceMinutes}
+            requests={balanceRequests}
+            minStart={balanceMinStart}
+            maxStart={balanceMaxStart}
+          />
         </div>
 
         <div className="grid content-start gap-5">

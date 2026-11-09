@@ -2,17 +2,28 @@ import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 import { activeBookingStageMeetingIds, activeStudentBookings, bookingIsFinished, selectedStudentBooking, evolutionBookingStatus } from '../src/lib/booking-cycle.ts';
 
-function booking(id, status, starts, meetingStatuses) {
+// A meeting entry is a bare status string (one contracted hour, fully recorded
+// when done) or an object carrying its own minutes/done_minutes for balance cases.
+function booking(id, status, starts, meetings, totalHours) {
+  const booking_meetings = meetings.map((entry, index) => {
+    const spec = typeof entry === 'string' ? { status: entry } : entry;
+    const minutes = spec.minutes ?? 60;
+    return {
+      id: id + '-' + index,
+      status: spec.status,
+      starts_at: starts[index] ?? '2026-11-10T12:00:00Z',
+      minutes,
+      done_minutes: spec.status === 'done' ? (spec.done_minutes ?? minutes) : 0,
+    };
+  });
+  const contracted = meetings.filter((entry) => (typeof entry === 'string' ? entry : entry.status) !== 'cancelled');
   return {
     id,
     code: 'VNT-' + id,
     status,
     created_at: '2026-11-01T12:00:00Z',
-    booking_meetings: meetingStatuses.map((state, index) => ({
-      id: id + '-' + index,
-      status: state,
-      starts_at: starts[index] ?? '2026-11-10T12:00:00Z',
-    })),
+    total_hours: totalHours ?? contracted.length,
+    booking_meetings,
   };
 }
 const completed = booking('old', 'completed', ['2026-11-01T12:00:00Z'], ['done']);
@@ -21,10 +32,18 @@ const ongoingA = booking('A', 'confirmed',
 const ongoingB = booking('B', 'confirmed', ['2026-11-04T12:00:00Z'], ['scheduled']);
 const anotherCompleted = booking('C', 'confirmed', ['2026-11-01T12:00:00Z'], ['done']);
 const waitingPayment = booking('D', 'awaiting_payment', ['2026-11-10T12:00:00Z'], ['scheduled']);
+// Two contracted hours, 90 of 120 minutes recorded: a 30-minute paid balance remains.
+const shortRecorded = booking('S', 'confirmed', ['2026-11-02T12:00:00Z'],
+  [{ status: 'done', minutes: 120, done_minutes: 90 }], 2);
 
 assert.equal(bookingIsFinished(completed), true);
 assert.equal(bookingIsFinished(anotherCompleted), true);
 assert.equal(bookingIsFinished(ongoingA), false);
+// A confirmed booking whose meetings are all recorded but still holds a paid
+// balance is NOT finished: the student may reschedule a make-up for it.
+assert.equal(bookingIsFinished(shortRecorded), false, 'Unrecorded balance keeps the booking active');
+assert.deepEqual(activeStudentBookings([shortRecorded]).map((b) => b.id), ['S'],
+  'A booking with a balance stays in the active list');
 assert.deepEqual(
   activeStudentBookings([completed, ongoingB, ongoingA, anotherCompleted, waitingPayment]).map(b=>b.id),
   ['B','A'], // earliest remaining scheduled meeting on A is Nov 5, B on Nov 4
@@ -55,6 +74,7 @@ assert.equal(evolutionBookingStatus(ongoingA), 'Em andamento');
 assert.equal(evolutionBookingStatus(ongoingB), 'Confirmada');
 assert.equal(evolutionBookingStatus(completed), 'Concluída');
 assert.equal(evolutionBookingStatus(waitingPayment), 'Aguardando pagamento');
+assert.equal(evolutionBookingStatus(shortRecorded), 'Saldo a reagendar');
 assert.equal(evolutionBookingStatus(booking('cancel', 'cancelled', [], [])), 'Cancelada');
 console.log('PASS: compact previews open only selected bookings with correct statuses');
 
