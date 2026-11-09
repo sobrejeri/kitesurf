@@ -666,7 +666,7 @@ export function FloatingChat({area,viewerId}: {area:ChatArea;viewerId:string}) {
       const reduced=window.matchMedia('(prefers-reduced-motion: reduce)').matches;
       for(const avatar of arrivals){
         avatar.node.style.transition=reduced?'none':
-          `transform 390ms cubic-bezier(.2,.75,.2,1) ${avatar.depth*45}ms`;
+          `transform 490ms cubic-bezier(.16,.84,.18,1) ${avatar.depth*95}ms`;
         avatar.node.style.transform='translate3d(0,0,0)';
       }
       bubbleSnapTimer.current=window.setTimeout(()=>{
@@ -677,9 +677,9 @@ export function FloatingChat({area,viewerId}: {area:ChatArea;viewerId:string}) {
         }
         bubbleGroup.current?.style.removeProperty('transition');
         bubbleSnapTimer.current=null;
-      },reduced?0:790);
+      },reduced?0:1150);
     });
-  },[bubblePosition,draggingBubble]);
+  },[bubblePosition,draggingBubble,open]);
 
   useEffect(()=>()=>{cancelTrailFrame();cancelSnap();},[]);
 
@@ -700,12 +700,79 @@ export function FloatingChat({area,viewerId}: {area:ChatArea;viewerId:string}) {
     return ()=>window.removeEventListener('resize',reposition);
   },[stackWidth,stackHeight]);
 
+  // Trace begins at the TOP of the selected portrait, loops around its
+  // ring, connects to the chat border and draws its entire perimeter.
+  // Recalculate if the iPhone keyboard changes the visible viewport.
+  useLayoutEffect(()=>{
+    if(!open || !selectedId || closingChat){
+      setBorderTrace(previous=>previous?null:previous);
+      return;
+    }
+    const panel=openPanel.current;
+    const nav=photoStrip.current;
+    const track=outlineTrack.current;
+    if(!panel || !nav || !track)return;
+    let frame:number|null=null;
+    const recalc=()=>{
+      const tab=nav.querySelector<HTMLButtonElement>('button[aria-pressed="true"]');
+      if(!tab)return;
+      const view=track.getBoundingClientRect();
+      const avatar=tab.getBoundingClientRect();
+      const rect=panel.getBoundingClientRect();
+      if(!view.width || !view.height || !rect.width || !rect.height)return;
+      const cx=avatar.left+avatar.width/2-view.left;
+      const cy=avatar.top+avatar.height/2-view.top;
+      const r=avatar.width/2+3;
+      const left=rect.left-view.left+1,top=rect.top-view.top+1;
+      const right=rect.right-view.left-1,bottom=rect.bottom-view.top-1;
+      const corner=Math.min(21,rect.width/6,rect.height/6);
+      const path=[
+        `M ${cx} ${cy-r}`,
+        `A ${r} ${r} 0 0 1 ${cx+r} ${cy}`,
+        `A ${r} ${r} 0 0 1 ${cx} ${cy+r}`,
+        `A ${r} ${r} 0 0 1 ${cx-r} ${cy}`,
+        `A ${r} ${r} 0 0 1 ${cx} ${cy-r}`,
+        `L ${left+corner} ${top}`,
+        `H ${right-corner}`,
+        `Q ${right} ${top} ${right} ${top+corner}`,
+        `V ${bottom-corner}`,
+        `Q ${right} ${bottom} ${right-corner} ${bottom}`,
+        `H ${left+corner}`,
+        `Q ${left} ${bottom} ${left} ${bottom-corner}`,
+        `V ${top+corner}`,
+        `Q ${left} ${top} ${left+corner} ${top}`
+      ].join(' ');
+      setBorderTrace(previous=>previous && previous.path===path &&
+        previous.width===view.width && previous.height===view.height
+        ? previous : {width:view.width,height:view.height,path});
+    };
+    const schedule=()=>{
+      if(frame!==null)window.cancelAnimationFrame(frame);
+      frame=window.requestAnimationFrame(()=>{frame=null;recalc();});
+    };
+    recalc();
+    const observer=typeof ResizeObserver==='undefined'?null:new ResizeObserver(schedule);
+    observer?.observe(panel);
+    observer?.observe(nav);
+    window.addEventListener('resize',schedule);
+    return ()=>{
+      if(frame!==null)window.cancelAnimationFrame(frame);
+      observer?.disconnect();
+      window.removeEventListener('resize',schedule);
+    };
+  },[open,selectedId,closingChat,stableTabKeys,visibleViewport?.top,visibleViewport?.height]);
+
+  // The closing transition does not clear opened sessions. Their photo
+  // positions are sampled before the window contracts and are animated back
+  // to the original edge/height after the dock unmounts.
+  useEffect(()=>()=>{if(chatCloseTimer.current!==null)window.clearTimeout(chatCloseTimer.current);},[]);
+
   if (!mounted) return null;
   const draggedTopThread=draggedTopTab?threads.find(t=>t.id===draggedTopTab.id):null;
   const unread=threads.reduce((sum,t)=>sum+t.unread,0);
   return createPortal(<>
     {open ? <button type="button" className={styles.scrim} onClick={closeOutside} aria-label="Recolher bate-papo e restaurar bolinhas" /> : null}
-    <aside
+    <aside ref={openDock}
       className={`${styles.dock} ${area === 'aluno' ? styles.studentDock : ''} ${open?styles.dockOpen:''} ${open&&visibleViewport?.keyboard?styles.dockKeyboard:''}`}
       style={open&&visibleViewport ? ({
         '--chat-vv-top':`${visibleViewport.top}px`,
@@ -714,10 +781,10 @@ export function FloatingChat({area,viewerId}: {area:ChatArea;viewerId:string}) {
       aria-label="Chat flutuante Vento">
     <span className={styles.sr} aria-live="polite">{unread?`${unread} mensagens não lidas no chat.`:''}</span>
     {open && switcherThreads.length ? (
-      <nav className={styles.floatingThreadTabs} aria-label="Conversas novas ou abertas">
+      <nav ref={photoStrip} className={styles.floatingThreadTabs} aria-label="Conversas novas ou abertas">
         {switcherThreads.map(t => {
           const selected = selectedId === t.id;
-          return <button type="button" key={t.id}
+          return <button type="button" key={t.id} data-chat-id={t.id}
             className={`${styles.floatingThreadTab} ${draggedTopTab?.id===t.id?styles.floatingThreadTabDragging:''}`}
             aria-label={`Abrir conversa com ${t.name}, reserva ${t.code}. Arraste até o X para fechar somente esta conversa.`}
             aria-pressed={selected}
@@ -736,7 +803,23 @@ export function FloatingChat({area,viewerId}: {area:ChatArea;viewerId:string}) {
         })}
       </nav>
     ) : null}
-    {open ? <section className={`${styles.panel} ${selectedId?styles.panelSelected:''}`} role="dialog" aria-modal="false"
+    {open && selectedId && !closingChat ? (
+      <svg ref={outlineTrack} className={styles.borderTraceOverlay}
+        viewBox={borderTrace?`0 0 ${borderTrace.width} ${borderTrace.height}`:'0 0 1 1'}
+        preserveAspectRatio="none" aria-hidden="true">
+        {borderTrace ? (
+          <path key={selectedId} className={styles.borderTracePath}
+            pathLength={1000} d={borderTrace.path}/>
+        ) : null}
+      </svg>
+    ) : null}
+    {open ? <section ref={openPanel}
+      className={`${styles.panel} ${selectedId?styles.panelSelected:''} ${closingChat?styles.panelSucking:''}`}
+      style={closingChat ? ({
+        '--chat-suck-x':`${closingChat.dx}px`,
+        '--chat-suck-y':`${closingChat.dy}px`
+      } as CSSProperties) : undefined}
+      role="dialog" aria-modal="false"
       aria-label={thread?`Conversa com ${thread.name}`:'Minhas conversas'}
       onKeyDown={event=>{if(event.key==='Escape')closeOutside();}}>
       <header className={styles.head}>
