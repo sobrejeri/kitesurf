@@ -364,6 +364,9 @@ export function FloatingChat({area,viewerId}: {area:ChatArea;viewerId:string}) {
       for(const t of threads) if(t.unread>0) next[t.id]=t.lastAt;
       return next;
     });
+    // Dragging onto the trash X dismisses both unread notifications and
+    // the locally opened chat-session bubbles; the message history is safe.
+    setOpenedIds([]);
     setDraggingBubble(false);setTrashHot(false);setBubblePosition(null);
   },[threads]);
 
