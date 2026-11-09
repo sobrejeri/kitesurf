@@ -61,7 +61,7 @@ export function FloatingChat({area,viewerId}: {area:ChatArea;viewerId:string}) {
   const bubbleGroup=useRef<HTMLDivElement|null>(null);
   const bubbleTrailFrame=useRef<number|null>(null);
   const bubbleSnapFrame=useRef<number|null>(null);
-  const bubbleSnapTimer=useRef<ReturnType<typeof setTimeout>|null>(null);
+  const bubbleSnapTimer=useRef<number|null>(null);
   const pendingSnap=useRef<Map<string,BubblePoint>|null>(null);
   const suppressBubbleClick = useRef(false);
   const bubbleSide = useRef<'left'|'right'>('right');
