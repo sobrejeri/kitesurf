@@ -655,11 +655,15 @@ export function FloatingChat({area,viewerId}: {area:ChatArea;viewerId:string}) {
         {switcherThreads.map(t => {
           const selected = selectedId === t.id;
           return <button type="button" key={t.id}
-            className={styles.floatingThreadTab}
-            aria-label={`Abrir conversa com ${t.name}, reserva ${t.code}`}
+            className={`${styles.floatingThreadTab} ${draggedTopTab?.id===t.id?styles.floatingThreadTabDragging:''}`}
+            aria-label={`Abrir conversa com ${t.name}, reserva ${t.code}. Arraste até o X para fechar somente esta conversa.`}
             aria-pressed={selected}
             title={chatThreadTag(t)}
-            onClick={()=>show(t.id)}>
+            onPointerDown={event=>onTopTabDown(event,t.id)}
+            onPointerMove={onTopTabMove}
+            onPointerUp={onTopTabUp}
+            onPointerCancel={onTopTabCancel}
+            onClick={()=>{if(suppressTopTabClick.current===t.id)return;show(t.id);}}>
             <Photo thread={t}/>
             {selected ? <span className={styles.activeTabMarker} aria-hidden="true"/> : null}
             {!selected && t.unread>0 && hiddenUnread[t.id]!==t.lastAt
@@ -669,7 +673,7 @@ export function FloatingChat({area,viewerId}: {area:ChatArea;viewerId:string}) {
         })}
       </nav>
     ) : null}
-    {open ? <section className={styles.panel} role="dialog" aria-modal="false"
+    {open ? <section className={`${styles.panel} ${selectedId?styles.panelSelected:''}`} role="dialog" aria-modal="false"
       aria-label={thread?`Conversa com ${thread.name}`:'Minhas conversas'}
       onKeyDown={event=>{if(event.key==='Escape')closeOutside();}}>
       <header className={styles.head}>
@@ -784,10 +788,19 @@ export function FloatingChat({area,viewerId}: {area:ChatArea;viewerId:string}) {
       </div>
     ) : null}
   </aside>
-  {draggingBubble ? (
+  {draggedTopTab ? (
+    <div className={styles.floatingTabDragGhost}
+      style={{left:draggedTopTab.x,top:draggedTopTab.y}}
+      aria-hidden="true">
+      {draggedTopThread ? <Photo thread={draggedTopThread}/> : null}
+    </div>
+  ) : null}
+  {draggingBubble || draggedTopTab ? (
     <div className={`${styles.trashTarget} ${trashHot?styles.trashTargetHot:''} ${area==='aluno'?styles.trashStudent:''}`}
-      role="status" aria-label="Solte aqui para fechar todas as bolinhas de conversa">
-      <Icon name="close" /><span>Solte para fechar todas</span>
+      role="status"
+      aria-label={draggedTopTab?'Solte para fechar somente esta conversa':'Solte aqui para fechar todas as bolinhas de conversa'}>
+      <Icon name="close" />
+      <span>{draggedTopTab?'Solte para fechar esta conversa':'Solte para fechar todas'}</span>
     </div>
   ) : null}
   </>,document.body);
