@@ -55,7 +55,7 @@ assert.ok(
   floatingChat.includes('onPointerDown={onBubbleDown}') &&
   floatingChat.includes('onPointerMove={onBubbleMove}') &&
   floatingChat.includes('onPointerUp={onBubbleUp}') &&
-  floatingChat.includes("if(!drag.moved) event.currentTarget.setPointerCapture(event.pointerId)") &&
+  floatingChat.includes("event.currentTarget.setPointerCapture(event.pointerId)") &&
   floatingChat.includes("bubbleSide.current=side") &&
   floatingChat.includes("setBubblePosition({") &&
   floatingCss.includes('.bubbles {') && floatingCss.includes('touch-action:none') &&
@@ -236,7 +236,7 @@ assert.ok(
   floatingChat.includes('const reposition=()=>{') &&
   floatingChat.includes('if(bubbleDrag.current)return;') &&
   floatingChat.includes('reposition();') &&
-  floatingCss.includes('.bubbles:not(.bubblesLeft) .bubble[data-depth]:not([data-depth="0"]) .badge') &&
+  floatingCss.includes('.bubbles:not(.bubblesLeft) .bubble .badge') &&
   floatingCss.includes('left:-8px;') &&
   floatingCss.includes('transition:left .22s ease,right .22s ease,box-shadow .22s ease;') &&
   floatingCss.includes('.bubbles,.bubbles .bubble,.threadSwitchButton .photo {transition:none;}'),
@@ -297,3 +297,69 @@ assert.ok(
   'Chat must show external left-to-right selection tabs, a 70% backdrop and return avatars to the same position after outside close',
 );
 console.log('PASS: external chat tabs, active ring, 70% background and avatar restoration');
+
+
+// S-shaped and circular drags follow the same sampled *curved* route at a
+// 29px arc-distance delay, not an X-only rigid group translation.
+const {seedBubbleTrail,pointBehindBubbleTrail,appendBubbleTrail} =
+  await import('../src/lib/chat-bubble-motion.ts');
+assert.deepEqual(
+  seedBubbleTrail({x:200,y:120},2,'right'),[
+    {x:142,y:120},{x:171,y:120},{x:200,y:120}
+  ],
+  'Right-anchored stack must pre-seed its follower path toward the left',
+);
+assert.deepEqual(
+  seedBubbleTrail({x:30,y:120},2,'left'),[
+    {x:88,y:120},{x:59,y:120},{x:30,y:120}
+  ],
+  'Left-anchored stack must pre-seed its follower path toward the right',
+);
+const sCurve=[
+  {x:30,y:150},{x:60,y:140},{x:90,y:110},
+  {x:120,y:140},{x:150,y:180},{x:180,y:140}
+];
+const sFollower=pointBehindBubbleTrail(sCurve,29);
+assert.ok(sFollower.x<180 && sFollower.y>140,
+  'Second bubble must follow the last rising bend rather than move horizontally');
+const circle=[
+  {x:200,y:120},{x:230,y:130},{x:250,y:160},
+  {x:240,y:190},{x:210,y:210},{x:180,y:195},{x:165,y:165}
+];
+const follower=pointBehindBubbleTrail(circle,55);
+assert.ok(follower.x>165 && follower.y>165,
+  'An older bubble must be located on the earlier part of a circular path');
+const last=circle.at(-1);
+assert.deepEqual(pointBehindBubbleTrail(circle,0),last);
+const path=seedBubbleTrail({x:50,y:40},2,'left');
+const initialLength=path.length;
+appendBubbleTrail(path,{x:50,y:40}); // duplicate coordinates do not grow forever
+assert.equal(path.length,initialLength);
+appendBubbleTrail(path,{x:52,y:42});
+assert.equal(path.length,initialLength+1);
+for(let i=0;i<100;i++)appendBubbleTrail(path,{x:55+i,y:60},30);
+assert.ok(path.length<=30,'Drag route history must have a bounded size');
+
+assert.ok(
+  floatingChat.includes('const animateBubbleTrail=()=>{') &&
+  floatingChat.includes('appendBubbleTrail(drag.path,target)') &&
+  floatingChat.includes('pointBehindBubbleTrail(drag.path,i*bubbleStep)') &&
+  floatingChat.includes('Math.max(.16,.43-i*.055)') &&
+  floatingChat.includes("window.requestAnimationFrame(animateBubbleTrail)") &&
+  floatingChat.includes("avatar.node.style.transform=") &&
+  floatingChat.includes("const pendingSnap=useRef<Map<string,BubblePoint>|null>(null)") &&
+  floatingChat.includes("useLayoutEffect(()=>{") &&
+  floatingChat.includes("const previousLocations=pendingSnap.current") &&
+  floatingChat.includes('avatar.node.style.transition=reduced?') &&
+  floatingChat.includes("bubbleSide.current=side") &&
+  floatingChat.includes('onPointerCancel={onBubbleCancel}') &&
+  floatingChat.includes('ref={bubbleGroup}') &&
+  floatingChat.includes('ref={node=>{if(node)bubbleNodes.current.set(t.id,node);else bubbleNodes.current.delete(t.id);}}') &&
+  floatingCss.includes('.bubblesDragging .bubble {transition:none!important;will-change:transform;}') &&
+  floatingCss.includes('.bubblesDragging::before {opacity:0;}') &&
+  floatingCss.includes('.bubbles:not(.bubblesLeft) .bubble .badge {') &&
+  floatingCss.includes('.bubblesLeft .bubble .badge {') &&
+  !floatingCss.includes('.bubble[data-depth]:not([data-depth="0"]) .badge'),
+  'Trail animation must follow curved gestures with stagger and ensure EVERY right-edge counter is on the exposed left',
+);
+console.log('PASS: curved S/circle trailing motion, eased followers and mirrored unread counters');
