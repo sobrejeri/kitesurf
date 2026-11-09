@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useLayoutEffect, useRef, useState, type CSSProperties, type PointerEvent as ReactPointerEvent } from 'react';
 import { createPortal } from 'react-dom';
-import { chatBookingId, chatSessionBubbles, chatSelectableThreads, mergeChatMessages, chatWasRead, presenceLabel, chatThreadTag, type ChatRead, type ChatArea, type ChatMessage, type ChatThread } from '@/lib/chat-dock';
+import { chatBookingId, chatSessionBubbles, chatStableTabs, mergeChatMessages, chatWasRead, presenceLabel, chatThreadTag, type ChatRead, type ChatArea, type ChatMessage, type ChatThread } from '@/lib/chat-dock';
 import {CHAT_FILE_TYPES,MAX_CHAT_FILE} from '@/lib/chat-files';
 import { initials } from '@/lib/people';
 import { Icon } from './icon';
@@ -70,9 +70,18 @@ export function FloatingChat({area,viewerId}: {area:ChatArea;viewerId:string}) {
   const [emojiOpen,setEmojiOpen] = useState(false);
   const [visibleViewport,setVisibleViewport] = useState<{top:number;height:number;keyboard:boolean}|null>(null);
   const [selectedId,setSelectedId] = useState<string|null>(null);
+  const [closingChat,setClosingChat] = useState<{dx:number;dy:number}|null>(null);
+  const [borderTrace,setBorderTrace] = useState<{width:number;height:number;path:string}|null>(null);
+  const chatCloseTimer=useRef<number|null>(null);
+  const pendingClosedTab=useRef<string|null>(null);
+  const openDock=useRef<HTMLElement|null>(null);
+  const openPanel=useRef<HTMLElement|null>(null);
+  const photoStrip=useRef<HTMLElement|null>(null);
+  const outlineTrack=useRef<SVGSVGElement|null>(null);
   // Never show the full booking history as a row of repeated contact photos.
   // Only sessions the user opened, or new unread conversations, get a tab.
   const [openedIds,setOpenedIds] = useState<string[]>([]);
+  const [tabSequence,setTabSequence] = useState<string[]>([]);
   // Drag one top-edge portrait to X to close just that conversation.
   const [draggedTopTab,setDraggedTopTab] = useState<{id:string;x:number;y:number}|null>(null);
   const topTabDrag=useRef<{id:string;pointerId:number;x:number;y:number;moved:boolean}|null>(null);
@@ -107,7 +116,8 @@ export function FloatingChat({area,viewerId}: {area:ChatArea;viewerId:string}) {
   const selectedRef = useRef<string|null>(null);
   const endpoint = `/${area}/chat-live`;
   const bubbleList=chatSessionBubbles(threads,openedIds,hiddenUnread);
-  const switcherThreads=chatSelectableThreads(threads,selectedId,openedIds,hiddenUnread);
+  const switcherThreads=chatStableTabs(threads,selectedId,openedIds,hiddenUnread,tabSequence);
+  const stableTabKeys=switcherThreads.map(t=>t.id).join('|');
   // Latest unread conversation (index zero) is always the topmost avatar.
   // Each older conversation remains half-visible behind it, extending
   // inward from the chosen screen edge (right -> left, left -> right).
@@ -123,7 +133,7 @@ export function FloatingChat({area,viewerId}: {area:ChatArea;viewerId:string}) {
 
   const refreshInbox = useCallback(async (signal?:AbortSignal) => {
     const response = await fetch(endpoint,{cache:'no-store',signal});
-    const clear = () => {setThreads([]);setMessages([]);setDrafts({});setDetail(null);setOpen(false);setSelectedId(null);setOpenedIds([]);setHiddenUnread({});setLocationDraft(null);selectedRef.current=null;};
+    const clear = () => {setThreads([]);setMessages([]);setDrafts({});setDetail(null);setOpen(false);setSelectedId(null);setOpenedIds([]);setTabSequence([]);setHiddenUnread({});setLocationDraft(null);selectedRef.current=null;};
     if (response.status===401 || response.status===403 || response.redirected) {
       clear();throw new Error('Entre novamente para abrir as conversas.');
     }
@@ -133,6 +143,21 @@ export function FloatingChat({area,viewerId}: {area:ChatArea;viewerId:string}) {
     setFeaturesReady(data.featuresReady);if(!visibilityBusy.current)setShowOnline(data.showOnline);
     setThreads(data.threads);setInboxError('');
   },[endpoint,viewerId]);
+
+  // Append freshly received conversations at the RIGHT edge once; changing
+  // which portrait is selected must never reorder existing tabs.
+  useEffect(()=>{
+    const active=chatSessionBubbles(threads,openedIds,hiddenUnread).map(t=>t.id);
+    if(selectedId && threads.some(t=>t.id===selectedId) && !active.includes(selectedId))
+      active.push(selectedId);
+    setTabSequence(previous=>{
+      const eligible=new Set(active);
+      const next=previous.filter(id=>eligible.has(id));
+      for(const id of active)if(!next.includes(id))next.push(id);
+      return next.length===previous.length && next.every((id,i)=>id===previous[i])
+        ? previous : next;
+    });
+  },[threads,openedIds,hiddenUnread,selectedId]);
 
   useEffect(()=>{
     setMounted(true);
@@ -152,7 +177,12 @@ export function FloatingChat({area,viewerId}: {area:ChatArea;viewerId:string}) {
   },[refreshInbox]);
 
   const show = useCallback((id:string) => {
-    // A conversation enters the photo switcher only once it was opened.
+    // Selection changes only the conversation and its highlight, NEVER
+    // the horizontal position of any already opened photograph.
+    if(chatCloseTimer.current!==null){window.clearTimeout(chatCloseTimer.current);chatCloseTimer.current=null;}
+    pendingClosedTab.current=null;
+    setClosingChat(null);
+    setTabSequence(previous=>previous.includes(id)?previous:[...previous,id]);
     setOpenedIds(previous=>previous.includes(id)?previous:[...previous,id]);
     selectedRef.current=id;
     if (selectedId!==id) {
