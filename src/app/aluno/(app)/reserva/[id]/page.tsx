@@ -22,6 +22,7 @@ import { MeetingChangePanel } from '@/components/meeting-change-panel';
 import { bookingBalanceMinutes } from '@/lib/booking-cycle';
 import { listBalanceRequests } from '@/lib/balance-requests';
 import { BalanceMeetingPanel } from '@/components/balance-meeting-panel';
+import { lessonNeedsInstructorRecord } from '@/lib/student-lesson-links';
 
 export const metadata: Metadata = { title: 'Sua reserva' };
 
@@ -74,6 +75,9 @@ export default async function BookingPage({ params }: { params: Promise<{ id: st
   const donePercent = balance.contracted ? Math.round((balance.done / balance.contracted) * 100) : 0;
   const reservedPercent = balance.contracted ? Math.round((balance.scheduled / balance.contracted) * 100) : 0;
   const instructorName = booking.instructor?.full_name ?? 'Instrutor a confirmar';
+  const now = Date.now();
+  const hasOverdueUnrecordedMeeting = booking.status === 'confirmed'
+    && booking.booking_meetings.some(m => lessonNeedsInstructorRecord(m.status, m.starts_at, m.minutes, now));
   const pendingMeetings=booking.booking_meetings.filter(m=>m.status==='scheduled');
   const nextMeeting=pendingMeetings[0];
   const avatarUrl = booking.instructor_id
@@ -213,6 +217,12 @@ export default async function BookingPage({ params }: { params: Promise<{ id: st
               </div>
             ) : null}
             <h3 className="vento-voucher-section-title mt-6 text-[16px]">Encontros</h3>
+            {hasOverdueUnrecordedMeeting ? (
+              <Note tone="warning" className="mt-3">
+                Há encontro(s) com horário passado ainda aguardando registro do instrutor.
+                A reserva continua confirmada; as horas só entram como realizadas após o registro da aula.
+              </Note>
+            ) : null}
             <ul className="mt-3 grid gap-2">
               {booking.booking_meetings.map((meeting) => (
                 <li key={meeting.id} className="vento-voucher-meeting rounded-search border border-line px-4 py-3 text-[12px]">
@@ -221,7 +231,12 @@ export default async function BookingPage({ params }: { params: Promise<{ id: st
                       <strong className="vento-voucher-meeting-date block font-semibold">{formatDateLong(meeting.starts_at)} · {formatTime(meeting.starts_at)}</strong>
                       <span className="text-muted">{formatMinutes(meeting.minutes)}{meeting.status === 'done' ? ` · ${formatMinutes(meeting.done_minutes)} realizados` : ''}</span>
                     </span>
-                    <Badge tone={meeting.status === 'done' ? 'quiet' : 'brand'}>{MEETING_STATUS_LABELS[meeting.status]}</Badge>
+                    <Badge tone={meeting.status === 'done' ? 'quiet'
+                      : booking.status === 'confirmed' && lessonNeedsInstructorRecord(meeting.status, meeting.starts_at, meeting.minutes, now)
+                        ? 'warning' : 'brand'}>
+                      {booking.status === 'confirmed' && lessonNeedsInstructorRecord(meeting.status, meeting.starts_at, meeting.minutes, now)
+                        ? 'Aguardando registro' : MEETING_STATUS_LABELS[meeting.status]}
+                    </Badge>
                   </div>
                   {booking.status==='confirmed' && booking.instructor_id!==null && meeting.status==='scheduled' ? (
                     <MeetingChangePanel
