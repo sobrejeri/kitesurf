@@ -147,11 +147,13 @@ SET ROLE authenticated;
 SELECT upload_id,object_path FROM public.prepare_lesson_protection_evidence(
  :'first_statement'::uuid,'foto.jpg','image/jpeg',900
 ) \gset;
-DO $$ BEGIN
+SELECT set_config('test.protection_path',:'object_path',false);
+SELECT set_config('test.protection_upload_id',:'upload_id',false);
+DO $ BEGIN
  ASSERT (SELECT count(*) FROM public.lesson_protection_evidence
   WHERE uploader_id=auth.uid() AND NOT confirmed)=1,
   'Evidence must start pending and private';
- ASSERT public.protection_evidence_storage_access(:'object_path',true),
+ ASSERT public.protection_evidence_storage_access(current_setting('test.protection_path'),true),
   'Only prepared owner path may be used for upload';
 END $$;
 RESET ROLE;
@@ -163,8 +165,8 @@ SET ROLE authenticated;
 SELECT public.confirm_lesson_protection_evidence(:'upload_id'::uuid);
 DO $$ BEGIN
  ASSERT (SELECT confirmed FROM public.lesson_protection_evidence
-   WHERE id=:'upload_id'::uuid), 'Upload must be confirmed';
- ASSERT NOT public.protection_evidence_storage_access(:'object_path',true),
+   WHERE id=current_setting('test.protection_upload_id')::uuid), 'Upload must be confirmed';
+ ASSERT NOT public.protection_evidence_storage_access(current_setting('test.protection_path'),true),
    'Confirmed objects may not be overwritten';
 END $$;
 RESET ROLE;
