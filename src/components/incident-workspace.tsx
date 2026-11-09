@@ -72,10 +72,6 @@ export async function IncidentWorkspace({area,title}:{area:'aluno'|'instrutor'|'
         meetingStatus:m.meetingStatus, startsAt:m.startsAt, minutes:m.minutes, isTest:m.isTest,
       }));
   const protectionItems=listProtectionMonitorItems(protectionSource,nowMs);
-  const protectionRoles=Object.fromEntries(protectionSource.map(m=>{
-    const b=admin?adminBookingMap.get(m.bookingId):bookings.find(x=>x.id===m.bookingId);
-    return [m.id,{studentId:b?.student_id??'',instructorId:b?.instructor_id??null}];
-  }));
   const reportSummaries=summarizeVisibleProtectionReports(records.data??[],viewer.id);
   // The history query is limited to recent entries. Codes are fetched solely
   // for records visible under existing RLS; no extra incident is exposed.
@@ -96,7 +92,9 @@ export async function IncidentWorkspace({area,title}:{area:'aluno'|'instrutor'|'
       <ProtectionMonitor items={protectionItems} area={area} reports={reportSummaries}
         error={Boolean(adminMeetingRead?.error || adminBookingRead?.error || records.error)}/>
       <ProtectionStatementsWorkspace area={area} viewerId={viewer.id}
-        items={protectionItems} roles={protectionRoles}/>
+        items={protectionItems} legacyIncidents={(records.data??[]).map(x=>({
+          meetingId:x.meeting_id,bookingId:x.booking_id,createdAt:x.created_at,
+        }))}/>
       <div className="grid gap-4 lg:grid-cols-[1fr_1fr]">
         {!admin?(
           <div id="registrar-ocorrencia" className="scroll-mt-24"><Card>

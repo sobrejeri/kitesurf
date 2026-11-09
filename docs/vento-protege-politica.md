@@ -125,3 +125,18 @@ financeira, abertura automática de incidente, liberação de repasse ou reembol
 - [ ] Verificar em ambiente de homologação real se as permissões de Storage e funções PostgREST correspondem ao esperado; o stub SQL não emula todo o serviço Supabase.
 
 **Ponto de controle:** a migração 39 ainda não foi aplicada no ambiente real, e a flag de ativação permanece desligada. Estes ajustes são alterações no arquivo versionado e testes temporários de CI, sem repasses financeiros.
+
+## Etapa 3C — histórico independente e retenção conservadora (código, não ativado)
+
+- [x] A interface de manifestações 3B consulta casos recentes a partir das manifestações e ocorrências que o usuário **já consegue ler sob RLS**, independentemente do monitor de aulas `scheduled` e reservas `confirmed`. Isso preserva a visualização de casos após status `done`, `completed` ou `cancelled`.
+- [x] Distinção visual entre **acompanhamento** (prazo de aula sem registro) e **histórico** (caso com registro anterior); não cria ocorrência nem altera status ou repasse ao abrir.
+- [x] Formulário só aparece para o aluno da reserva ou instrutor atualmente designado, após o término previsto e em reserva `confirmed/completed`. O servidor e a RPC mantêm a autorização final.
+- [x] Instrutor substituído pode ver suas próprias manifestações ainda visíveis por RLS, mesmo sem acesso ao booking atual; nomes, datas e outras informações protegidas não são inferidas.
+- [x] Limitação explícita: a descoberta usa os **100 relatos estruturados mais recentes visíveis**, os **100 incidentes legados mais recentes** (consulta de origem) e os encontros monitorados. Exibe no máximo 120 casos nesta consulta. Não encontrar caso nessa página não significa ausência no banco; busca/paginação de histórico completa permanece pendente.
+- [x] Classificador puro e testes para **revisão manual** de upload não confirmado; nenhuma ação automática de exclusão foi implementada.
+- [ ] Aprovar formalmente prazo de retenção com orientação jurídica e regras aplicáveis a incidentes de segurança, disputa e dados pessoais. O valor de 30 dias usado em exemplos de teste **não é política aprovada**.
+- [ ] Construir processo administrativo separado com auditoria, dupla verificação e base legal para eventual expurgo. Jamais remover de `storage.objects` por SQL: só via API oficial de Storage. Metadata persistente exige política de tratamento e rastreio específicos.
+- [ ] Implementar paginação/busca de casos antigos por número da reserva e homologação com papéis reais antes de considerar histórico completo.
+- [ ] Revalidar Storage, RLS e versão da migração 39 em homologação autorizada antes de ligar `NEXT_PUBLIC_VENTO_PROTEGE_STATEMENTS_ENABLED`.
+
+O código continua **desligado em produção** e nenhuma migração remota, pagamento, estorno, check-in ou exclusão de evidência foi executada nesta etapa.
