@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useLayoutEffect, useRef, useState, type CSSProperties, type PointerEvent as ReactPointerEvent } from 'react';
 import { createPortal } from 'react-dom';
-import { chatBookingId, chatSessionBubbles, chatSwitcherThreads, mergeChatMessages, chatWasRead, presenceLabel, chatThreadTag, type ChatRead, type ChatArea, type ChatMessage, type ChatThread } from '@/lib/chat-dock';
+import { chatBookingId, chatSessionBubbles, chatSelectableThreads, mergeChatMessages, chatWasRead, presenceLabel, chatThreadTag, type ChatRead, type ChatArea, type ChatMessage, type ChatThread } from '@/lib/chat-dock';
 import {CHAT_FILE_TYPES,MAX_CHAT_FILE} from '@/lib/chat-files';
 import { initials } from '@/lib/people';
 import { Icon } from './icon';
@@ -73,6 +73,10 @@ export function FloatingChat({area,viewerId}: {area:ChatArea;viewerId:string}) {
   // Never show the full booking history as a row of repeated contact photos.
   // Only sessions the user opened, or new unread conversations, get a tab.
   const [openedIds,setOpenedIds] = useState<string[]>([]);
+  // Drag one top-edge portrait to X to close just that conversation.
+  const [draggedTopTab,setDraggedTopTab] = useState<{id:string;x:number;y:number}|null>(null);
+  const topTabDrag=useRef<{id:string;pointerId:number;x:number;y:number;moved:boolean}|null>(null);
+  const suppressTopTabClick=useRef<string|null>(null);
   const [detail,setDetail] = useState<ChatThread|null>(null);
   const [messages,setMessages] = useState<ChatMessage[]>([]);
   const [hasOlder,setHasOlder] = useState(false);
@@ -103,7 +107,7 @@ export function FloatingChat({area,viewerId}: {area:ChatArea;viewerId:string}) {
   const selectedRef = useRef<string|null>(null);
   const endpoint = `/${area}/chat-live`;
   const bubbleList=chatSessionBubbles(threads,openedIds,hiddenUnread);
-  const switcherThreads=chatSwitcherThreads(threads,selectedId,openedIds,hiddenUnread);
+  const switcherThreads=chatSelectableThreads(threads,selectedId,openedIds,hiddenUnread);
   // Latest unread conversation (index zero) is always the topmost avatar.
   // Each older conversation remains half-visible behind it, extending
   // inward from the chosen screen edge (right -> left, left -> right).
@@ -342,6 +346,56 @@ export function FloatingChat({area,viewerId}: {area:ChatArea;viewerId:string}) {
     }
     closeOutside();
   }
+  function dismissTopConversation(id:string){
+    // Only remove this local session and unread alert; never delete messages.
+    const thread=threads.find(t=>t.id===id);
+    if(thread) setHiddenUnread(previous=>({...previous,[id]:thread.lastAt}));
+    setOpenedIds(previous=>previous.filter(threadId=>threadId!==id));
+    if(selectedId===id)closeOutside();
+  }
+  const onTopTabDown=(event:ReactPointerEvent<HTMLButtonElement>,id:string)=>{
+    if(event.button!==0 || topTabDrag.current)return;
+    topTabDrag.current={id,pointerId:event.pointerId,x:event.clientX,y:event.clientY,moved:false};
+  };
+  const onTopTabMove=(event:ReactPointerEvent<HTMLButtonElement>)=>{
+    const drag=topTabDrag.current;
+    if(!drag || drag.pointerId!==event.pointerId)return;
+    if(!drag.moved && Math.hypot(event.clientX-drag.x,event.clientY-drag.y)<9)return;
+    if(!drag.moved){
+      drag.moved=true;
+      event.currentTarget.setPointerCapture(event.pointerId);
+      suppressTopTabClick.current=drag.id;
+    }
+    if(event.cancelable)event.preventDefault();
+    setDraggedTopTab({id:drag.id,x:event.clientX,y:event.clientY});
+    const targetY=window.innerHeight-(area==='aluno'?128:110);
+    setTrashHot(Math.abs(event.clientX-window.innerWidth/2)<73 &&
+      Math.abs(event.clientY-targetY)<73);
+  };
+  const onTopTabUp=(event:ReactPointerEvent<HTMLButtonElement>)=>{
+    const drag=topTabDrag.current;
+    if(!drag || drag.pointerId!==event.pointerId)return;
+    topTabDrag.current=null;
+    if(event.currentTarget.hasPointerCapture(event.pointerId))
+      event.currentTarget.releasePointerCapture(event.pointerId);
+    setDraggedTopTab(null);
+    setTrashHot(false);
+    if(!drag.moved)return;
+    suppressTopTabClick.current=drag.id;
+    window.setTimeout(()=>{
+      if(suppressTopTabClick.current===drag.id)suppressTopTabClick.current=null;
+    },180);
+    const targetY=window.innerHeight-(area==='aluno'?128:110);
+    if(Math.abs(event.clientX-window.innerWidth/2)<73 &&
+       Math.abs(event.clientY-targetY)<73) dismissTopConversation(drag.id);
+    // Otherwise, the photo returns to its previous top-edge position.
+  };
+  const onTopTabCancel=()=>{
+    topTabDrag.current=null;
+    setDraggedTopTab(null);
+    setTrashHot(false);
+  };
+
   async function visibility(visible:boolean){
     if(visibilityBusy.current)return;visibilityBusy.current=true;setShowOnline(visible);
     try{const response=await fetch(endpoint,{method:'POST',headers:{'Content-Type':'application/json','x-vento-chat':'1'},body:JSON.stringify({type:'visibility',visible})});
@@ -584,6 +638,7 @@ export function FloatingChat({area,viewerId}: {area:ChatArea;viewerId:string}) {
   },[stackWidth,stackHeight]);
 
   if (!mounted) return null;
+  const draggedTopThread=draggedTopTab?threads.find(t=>t.id===draggedTopTab.id):null;
   const unread=threads.reduce((sum,t)=>sum+t.unread,0);
   return createPortal(<>
     {open ? <button type="button" className={styles.scrim} onClick={closeOutside} aria-label="Recolher bate-papo e restaurar bolinhas" /> : null}
