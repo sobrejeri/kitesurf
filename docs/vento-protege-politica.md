@@ -97,3 +97,17 @@ restrita por RLS. O aplicativo só afirma quando **encontra** um relato; nunca c
 a outra parte ficou em silêncio porque não encontrou registro. A fase 3A não é
 um sistema formal de duas manifestações e não executa SQL remoto, alteração
 financeira, abertura automática de incidente, liberação de repasse ou reembolso.
+
+## Etapa 3B — manifestações estruturadas e provas (código preparado, NÃO ativado)
+
+- [x] Migração **39 proposta** com declarações por encontro/autor, versões append-only e funções de autorização no servidor.
+- [x] Avaliações administrativas **somente descritivas**, versionadas e auditadas; não criam estorno, crédito, liberação ou check-in.
+- [x] Provas com bucket privado, tipagem restrita (JPEG/PNG/WebP/PDF), limite de 5 MB, no máximo seis por declaração; leitura de arquivos restrita ao autor da prova e Admin.
+- [x] Interface de linha do tempo Aluno/Instrutor/Admin e envio de arquivo, **inteiramente protegidos** por `VENTO_PROTEGE_STATEMENTS_ENABLED`. Esta flag fica `false` por padrão.
+- [x] Testes da lógica no Node e validações SQL em PostgreSQL temporário; sem executar SQL remoto.
+- [ ] Auditar migration 39 e políticas de Storage com schema Supabase real em ambiente de homologação; decidir procedimento de recuperação e obter autorização explícita para alteração.
+- [ ] Aplicar migração autorizada, verificar RLS/Storage e habilitar flag somente depois; validar com contas reais e capturas iPhone/desktop.
+- [ ] Integração posterior de notificações 24h/120h e mecanismos financeiros conforme gateway, contrato e direitos.
+- [ ] Definir política de retenção, limpeza de arquivos pendentes e resposta a evidências sensíveis.
+
+**Atenção:** isto é implementação versionada **desligada**, não funcionalidade publicada para clientes. As telas anteriores de ocorrências permanecem em funcionamento. A análise Admin não executa dinheiro, o prazo interno de cinco dias não elimina direitos legais e silêncio nunca autoriza repasse.
