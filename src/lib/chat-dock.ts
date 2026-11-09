@@ -32,6 +32,22 @@ export function chatBubbles(threads: readonly ChatThread[]) {
     .sort((a,b) => b.lastAt.localeCompare(a.lastAt))
     .slice(0,5);
 }
+/** Floating conversation avatars remain available after closing by tapping
+ * outside, even if viewing the chat marked its messages read. X removes the
+ * opened session, while fresh unread messages can create a new avatar. */
+export function chatSessionBubbles(
+  threads: readonly ChatThread[],
+  openedIds: readonly string[],
+  hiddenUnread: Readonly<Record<string,string>> = {},
+): ChatThread[] {
+  const opened = new Set(openedIds);
+  return [...threads]
+    .filter(t => opened.has(t.id) ||
+      (t.unread > 0 && hiddenUnread[t.id] !== t.lastAt))
+    .sort((a,b) => b.lastAt.localeCompare(a.lastAt))
+    .slice(0,5);
+}
+
 /** Small photo row inside an open chat: only newly received messages or
  * chats opened by this user during the current session belong here.
  * Multiple bookings with one person share ONE portrait, with priority for

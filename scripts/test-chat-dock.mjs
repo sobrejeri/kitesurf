@@ -49,8 +49,7 @@ const floatingCss=readFileSync(new URL('../src/components/floating-chat.module.c
 const lineIcons=readFileSync(new URL('../src/components/icon.tsx',import.meta.url),'utf8');
 assert.ok(
   !floatingChat.includes('ref={launcher}') &&
-  floatingChat.includes("const visibleUnread=threads.filter(t=>t.unread>0 && hiddenUnread[t.id]!==t.lastAt)") &&
-  floatingChat.includes('const bubbleList=chatBubbles(visibleUnread)') &&
+  floatingChat.includes('const bubbleList=chatSessionBubbles(threads,openedIds,hiddenUnread)') &&
   floatingChat.includes('const extraUnreadThreads=') &&
   floatingChat.includes('onClick={()=>{if(suppressBubbleClick.current)return;show(t.id);}}') &&
   floatingChat.includes('onPointerDown={onBubbleDown}') &&
@@ -76,13 +75,13 @@ assert.ok(
   'Dismiss all must preserve unread messages for reappearance on a new message, while X closes one chat',
 );
 assert.ok(
-  floatingChat.includes('aria-label="Alternar entre conversas recentes ou abertas"') &&
-  floatingChat.includes('className={styles.threadSwitchButton}') &&
+  floatingChat.includes('aria-label="Conversas novas ou abertas"') &&
+  floatingChat.includes('className={styles.floatingThreadTab}') &&
   floatingChat.includes('aria-pressed={selected}') &&
-  floatingChat.includes('onClick={() => show(t.id)}') &&
+  floatingChat.includes('onClick={()=>show(t.id)}') &&
   floatingChat.includes("url.pathname.replace(/\\/$/, '') ===") &&
-  floatingCss.includes('.threadSwitcherScroll {') &&
-  floatingCss.includes('.threadSwitchButton[aria-pressed="true"]') &&
+  floatingCss.includes('.floatingThreadTabs') &&
+  floatingCss.includes('.floatingThreadTab[aria-pressed="true"]') &&
   floatingCss.includes('.studentDock .badge,.studentDock .count { background:#e6334e;color:#fff; }'),
   'Open chat must offer horizontal thumbnail switching, menu access and red unread counters',
 );
@@ -166,7 +165,7 @@ assert.ok(
   floatingChat.includes('const [openedIds,setOpenedIds] = useState<string[]>([])') &&
   floatingChat.includes('setOpenedIds(previous=>previous.includes(id)?previous:[...previous,id])') &&
   floatingChat.includes('const switcherThreads=chatSwitcherThreads(threads,selectedId,openedIds,hiddenUnread)') &&
-  floatingChat.includes('selectedId && switcherThreads.length > 1 ? (') &&
+  floatingChat.includes('open && switcherThreads.length ? (') &&
   floatingChat.includes('switcherThreads.map(t => {') &&
   !floatingChat.includes('threads.map(t => {') &&
   floatingChat.includes("setOpenedIds([])"),
@@ -245,3 +244,56 @@ assert.ok(
 );
 console.log('PASS: 50% overlapping unread portraits reorder with newest message in front');
 
+
+
+// New Messenger-style overlay: selected and recent avatars float outside
+// the TOP border from left to right, not inside the message list.
+const {chatSessionBubbles}=await import('../src/lib/chat-dock.ts');
+const demoChats=[
+  {id:'one',peerId:'one',lastAt:'2026-11-08T21:00:00Z',unread:0},
+  {id:'new',peerId:'new',lastAt:'2026-11-08T21:14:00Z',unread:3},
+  {id:'old',peerId:'old',lastAt:'2026-11-07T18:00:00Z',unread:0},
+];
+assert.deepEqual(
+  chatSessionBubbles(demoChats,['one']).map(t=>t.id),['new','one'],
+  'An opened conversation should remain available after backdrop close even if read',
+);
+assert.deepEqual(
+  chatSessionBubbles(demoChats,[]).map(t=>t.id),['new'],
+  'A chat closed via X should stop appearing unless a new unread message arrives',
+);
+assert.deepEqual(
+  chatSessionBubbles(demoChats,[],{'new':'2026-11-08T21:14:00Z'}).map(t=>t.id),[],
+  'Closing a current unread bubble should not reappear until a newer unread message',
+);
+assert.deepEqual(
+  chatSessionBubbles(demoChats.map(t=>t.id==='new'?{...t,lastAt:'2026-11-08T21:18:00Z'}:t),
+    [],{'new':'2026-11-08T21:14:00Z'}).map(t=>t.id),['new'],
+  'New unread messages must reappear even if earlier notifications were closed',
+);
+assert.ok(
+  floatingChat.includes('function closeOutside(){') &&
+  floatingChat.includes('function minimize(){') &&
+  floatingChat.includes('setOpenedIds(previous=>previous.filter(id=>id!==selectedId))') &&
+  floatingChat.includes('setOpenedIds([]);\n    setDraggingBubble(false);setTrashHot(false);setBubblePosition(null);') &&
+  floatingChat.includes('onClick={closeOutside}') &&
+  floatingChat.includes('aria-label="Recolher bate-papo e restaurar bolinhas"') &&
+  floatingChat.includes('onClick={minimize}') &&
+  floatingChat.includes('onKeyDown={event=>{if(event.key===\u0027Escape\u0027)closeOutside();}}') &&
+  floatingChat.includes('const bubbleList=chatSessionBubbles(threads,openedIds,hiddenUnread)') &&
+  floatingChat.includes('style={{width:stackWidth,height:stackHeight,...(bubblePosition?') &&
+  floatingChat.includes('open && switcherThreads.length ? (') &&
+  floatingChat.includes('className={styles.floatingThreadTabs}') &&
+  floatingChat.includes('className={styles.floatingThreadTab}') &&
+  floatingChat.includes('className={styles.activeTabMarker}') &&
+  floatingChat.includes('onClick={()=>show(t.id)}') &&
+  floatingCss.includes('background:rgba(0,13,27,.70);') &&
+  floatingCss.includes('top:-54px;') &&
+  floatingCss.includes('justify-content:flex-start;') &&
+  floatingCss.includes('.floatingThreadTab[aria-pressed="true"]') &&
+  floatingCss.includes('.activeTabMarker {') &&
+  floatingCss.includes('padding:7px 10px 8px;') &&
+  floatingCss.includes('.dockOpen.dockKeyboard .panel'),
+  'Chat must show external left-to-right selection tabs, a 70% backdrop and return avatars to the same position after outside close',
+);
+console.log('PASS: external chat tabs, active ring, 70% background and avatar restoration');
