@@ -1,5 +1,6 @@
 import { Badge, Card, Note } from '@/components/ui';
 import type { ProtectionMonitorItem, ProtectionMonitorPhase } from '@/lib/protection-monitor';
+import type { ProtectionReportSummary } from '@/lib/protection-report-summary';
 
 const PHASES: Record<ProtectionMonitorPhase, { label: string; message: string }> = {
   awaiting_record: {
@@ -21,10 +22,11 @@ const localTime = new Intl.DateTimeFormat('pt-BR', {
 });
 
 export function ProtectionMonitor({
-  items, area, error = false,
+  items, area, reports = {}, error = false,
 }: {
   items: readonly ProtectionMonitorItem[];
   area: 'aluno' | 'instrutor' | 'admin';
+  reports?: Readonly<Record<string, ProtectionReportSummary>>;
   error?: boolean;
 }) {
   const admin = area === 'admin';
@@ -55,6 +57,7 @@ export function ProtectionMonitor({
         <ul className="mt-4 grid gap-3">
           {items.slice(0, 12).map((item) => {
             const phase = PHASES[item.phase];
+            const report = reports[item.id];
             return (
               <li key={item.id} className="rounded-xl border border-line bg-surface px-4 py-3">
                 <div className="flex flex-wrap items-center justify-between gap-2">
@@ -68,6 +71,16 @@ export function ProtectionMonitor({
                   {item.isTest ? ' · Aula de teste' : ''}
                 </p>
                 <p className="mt-2 text-[12px] text-ink">{phase.message}</p>
+                {report?.visibleReports ? (
+                  <p className="mt-2 text-[12px] font-medium text-brand">
+                    {admin
+                      ? `${report.visibleReports} relato(s) encontrado(s) no histórico consultado`
+                      : report.hasViewerReport
+                        ? 'Seu relato já aparece no histórico consultado'
+                        : 'Existe relato disponível no histórico consultado'}
+                    {report.hasOpenOrReviewingReport ? ' · Análise pendente' : ''}
+                  </p>
+                ) : null}
                 <p className="mt-2 text-[11px] text-muted">
                   Fim da janela interna: {localTime.format(new Date(item.responseDeadlineMs))}
                 </p>
@@ -83,6 +96,13 @@ export function ProtectionMonitor({
         </p>
       ) : null}
 
+      {admin && items.length ? (
+        <a href="#historico-ocorrencias"
+          className="mt-4 inline-flex min-h-10 items-center text-[13px] font-semibold text-brand underline">
+          Conferir os relatos disponíveis
+        </a>
+      ) : null}
+
       {!admin && items.length ? (
         <a href="#registrar-ocorrencia"
           className="mt-4 inline-flex min-h-10 items-center text-[13px] font-semibold text-brand underline">
@@ -94,7 +114,7 @@ export function ProtectionMonitor({
         Um horário vencido não prova ausência nem aula realizada. O QR/PIN não pode ser usado
         retroativamente para simular presença. Este painel apenas informa prazos: notificações
         automáticas, retenção de pagamento e decisões financeiras ainda não estão ativadas.
-        A janela de cinco dias não limita direitos legais de reclamação.
+        A ausência de relato nesta lista limitada não significa ausência de resposta. A janela de cinco dias não limita direitos legais de reclamação.
       </Note>
     </Card>
   );
