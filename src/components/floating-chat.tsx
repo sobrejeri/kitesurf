@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useRef, useState, type CSSProperties, type PointerEvent as ReactPointerEvent } from 'react';
 import { createPortal } from 'react-dom';
-import { chatBookingId, chatBubbles, chatSessionBubbles, chatSwitcherThreads, mergeChatMessages, chatWasRead, presenceLabel, chatThreadTag, type ChatRead, type ChatArea, type ChatMessage, type ChatThread } from '@/lib/chat-dock';
+import { chatBookingId, chatSessionBubbles, chatSwitcherThreads, mergeChatMessages, chatWasRead, presenceLabel, chatThreadTag, type ChatRead, type ChatArea, type ChatMessage, type ChatThread } from '@/lib/chat-dock';
 import {CHAT_FILE_TYPES,MAX_CHAT_FILE} from '@/lib/chat-files';
 import { initials } from '@/lib/people';
 import { Icon } from './icon';
@@ -80,7 +80,6 @@ export function FloatingChat({area,viewerId}: {area:ChatArea;viewerId:string}) {
   const marking = useRef(false);
   const selectedRef = useRef<string|null>(null);
   const endpoint = `/${area}/chat-live`;
-  const visibleUnread=threads.filter(t=>t.unread>0 && hiddenUnread[t.id]!==t.lastAt);
   const bubbleList=chatSessionBubbles(threads,openedIds,hiddenUnread);
   const switcherThreads=chatSwitcherThreads(threads,selectedId,openedIds,hiddenUnread);
   // Latest unread conversation (index zero) is always the topmost avatar.
