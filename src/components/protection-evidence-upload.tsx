@@ -18,6 +18,7 @@ export function EvidenceUpload({area,statementId}:{
       setMessage('O arquivo deve ter no máximo 5 MB.');return;
     }
     setBusy(true);setMessage('');
+    const form=event.currentTarget;
     try{
       const body=new FormData();
       body.set('statementId',statementId);body.set('file',file);
@@ -28,7 +29,7 @@ export function EvidenceUpload({area,statementId}:{
       if(!res.ok||!data.ok)throw new Error(data.error??'O envio não foi concluído.');
       setMessage('Prova anexada em armazenamento privado.');
       setFile(null);
-      (event.currentTarget as HTMLFormElement | null)?.reset();
+      form.reset();
       router.refresh();
     }catch(e){setMessage(e instanceof Error?e.message:'Erro ao enviar prova.');}
     finally{setBusy(false);}
