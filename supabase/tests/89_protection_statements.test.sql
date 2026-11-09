@@ -55,11 +55,11 @@ SET ROLE authenticated;
 SELECT public.submit_lesson_protection_statement(
  '00000000-0000-0000-0000-000000009040','not_delivered',0,
  'A aula não aconteceu e não houve registro de presença nesse dia.'
-) AS first_statement \gset;
+) AS first_statement \gset
 SELECT public.submit_lesson_protection_statement(
  '00000000-0000-0000-0000-000000009040','weather_or_safety',0,
  'O vento apresentou risco e por isso o encontro ficou sem realização.'
-) AS revised_statement \gset;
+) AS revised_statement \gset
 DO $$ BEGIN
  ASSERT (SELECT count(*) FROM public.lesson_protection_statements
  WHERE meeting_id='00000000-0000-0000-0000-000000009040')=2,
@@ -146,7 +146,7 @@ SELECT set_config('request.jwt.claim.sub',:'student_id',false);
 SET ROLE authenticated;
 SELECT upload_id,object_path FROM public.prepare_lesson_protection_evidence(
  :'first_statement'::uuid,'foto.jpg','image/jpeg',900
-) \gset;
+) \gset
 SELECT set_config('test.protection_path',:'object_path',false);
 SELECT set_config('test.protection_upload_id',:'upload_id',false);
 DO $ BEGIN
