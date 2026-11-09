@@ -82,3 +82,18 @@ O PIN/QR precisa ser validado **na hora apropriada**; não se admite digitar o c
 - [ ] Integrar eventual retenção ao provedor financeiro só após confirmação do suporte real do gateway e validação jurídica.
 
 **Limitação de segurança:** o painel **não** comprova que houve ausência. Um encontro pode estar sem registro e ter ocorrido. O valor **não está de fato retido** apenas porque o painel recomenda atenção, e nenhum crédito ou pagamento é alterado por essa interface.
+
+## Etapa 3A — acompanhamento contextual de relatos (sem alteração do schema)
+
+- [x] Relacionar, no monitor, os relatos **já visíveis por RLS** a cada encontro vencido; aluno/instrutor podem identificar o próprio relato no histórico consultado.
+- [x] Mostrar código da reserva no histórico de ocorrências e facilitar o acesso do Admin aos relatos disponíveis.
+- [x] Testar agrupamento sem permitir que IDs maliciosos afetem objetos JS.
+- [ ] Registrar uma manifestação bilateral estruturada **por participante**, com versão, horários, réplica e contestação persistentes.
+- [ ] Receber anexos/evidências privados, com regras de acesso e retenção, mediante migração versionada futura.
+- [ ] Configurar notificação por job persistente e fila auditável de decisões fundamentadas.
+
+**Limite essencial:** a consulta de incidentes é limitada aos 100 registros recentes e pode ser
+restrita por RLS. O aplicativo só afirma quando **encontra** um relato; nunca conclui que
+a outra parte ficou em silêncio porque não encontrou registro. A fase 3A não é
+um sistema formal de duas manifestações e não executa SQL remoto, alteração
+financeira, abertura automática de incidente, liberação de repasse ou reembolso.
