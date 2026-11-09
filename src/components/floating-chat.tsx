@@ -83,9 +83,10 @@ export function FloatingChat({area,viewerId}: {area:ChatArea;viewerId:string}) {
   const visibleUnread=threads.filter(t=>t.unread>0 && hiddenUnread[t.id]!==t.lastAt);
   const bubbleList=chatBubbles(visibleUnread);
   const switcherThreads=chatSwitcherThreads(threads,selectedId,openedIds,hiddenUnread);
-  // Show avatars in one horizontal line: no descending diagonal and no
-  // heavy overlap hiding the faces or unread counters.
-  const bubbleStep=58;
+  // Latest unread conversation (index zero) is always the topmost avatar.
+  // Each older conversation remains half-visible behind it, extending
+  // inward from the chosen screen edge (right -> left, left -> right).
+  const bubbleStep=29;
   const stackWidth=58+Math.max(0,bubbleList.length-1)*bubbleStep;
   const stackHeight=58;
   const extraUnreadThreads=Math.max(0,visibleUnread.length-bubbleList.length);
@@ -406,17 +407,20 @@ export function FloatingChat({area,viewerId}: {area:ChatArea;viewerId:string}) {
     });
   };
   useEffect(()=>{
-    const onResize=()=>{
+    const reposition=()=>{
+      // When a new message changes the stack width, keep its leading avatar
+      // snapped to the SAME edge and vertical position without drifting.
+      if(bubbleDrag.current)return;
       setBubblePosition(previous=>{
         if(!previous)return null;
-        return {
-          x:bubbleSide.current==='left'?12:Math.max(12,window.innerWidth-stackWidth-12),
-          y:Math.max(65,Math.min(window.innerHeight-stackHeight-95,previous.y))
-        };
+        const x=bubbleSide.current==='left'?12:Math.max(12,window.innerWidth-stackWidth-12);
+        const y=Math.max(65,Math.min(window.innerHeight-stackHeight-95,previous.y));
+        return previous.x===x&&previous.y===y?previous:{x,y};
       });
     };
-    window.addEventListener('resize',onResize);
-    return ()=>window.removeEventListener('resize',onResize);
+    reposition();
+    window.addEventListener('resize',reposition);
+    return ()=>window.removeEventListener('resize',reposition);
   },[stackWidth,stackHeight]);
 
   if (!mounted) return null;
