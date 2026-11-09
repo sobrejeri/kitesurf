@@ -85,7 +85,7 @@ export async function ProtectionCaseArchive({
 
   if (codeSearch) {
     const result = await db.from('bookings').select('id')
-      .ilike('code',params.codigo).limit(10).returns<{id: string}[]>();
+      .eq('code',params.codigo).limit(10).returns<{id: string}[]>();
     searchError=Boolean(result.error);
     bookingIds=(result.data??[]).map(b=>b.id);
   }
