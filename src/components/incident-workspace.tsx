@@ -7,6 +7,7 @@ import { formatDateLong, formatTime } from '@/lib/format';
 import { createSupabaseServerClient } from '@/lib/supabase/server';
 import { ProtectionMonitor } from '@/components/protection-monitor';
 import { listProtectionMonitorItems } from '@/lib/protection-monitor';
+import { summarizeVisibleProtectionReports } from '@/lib/protection-report-summary';
 
 type Incident = {
   id:string;booking_id:string;meeting_id:string;reported_by:string;incident_type:string;
@@ -70,13 +71,25 @@ export async function IncidentWorkspace({area,title}:{area:'aluno'|'instrutor'|'
         meetingStatus:m.meetingStatus, startsAt:m.startsAt, minutes:m.minutes, isTest:m.isTest,
       }));
   const protectionItems=listProtectionMonitorItems(protectionSource,nowMs);
+  const reportSummaries=summarizeVisibleProtectionReports(records.data??[],viewer.id);
+  // The history query is limited to recent entries. Codes are fetched solely
+  // for records visible under existing RLS; no extra incident is exposed.
+  const incidentBookingIds=admin?[...new Set((records.data??[]).map(x=>x.booking_id))]:[];
+  const incidentBookingRead=admin&&incidentBookingIds.length
+    ? await db.from('bookings').select('id,code').in('id',incidentBookingIds)
+      .returns<Array<{id:string;code:string}>>()
+    : null;
+  const bookingCodes=new Map<string,string>([
+    ...bookings.map(b=>[b.id,b.code] as const),
+    ...(incidentBookingRead?.data??[]).map(b=>[b.id,b.code] as const),
+  ]);
   return (
     <>
       <PageHeader eyebrow="Cada situação acompanhada" title={title ?? (admin?'Analisar ocorrências':'Imprevistos e ocorrências')}
         lead="VentoKite Protege: acompanhe encontros sem registro, apresente relatos e confira as análises. Nenhuma ação financeira é automática."/>
       {records.error?<Note tone="warning">Não foi possível consultar as ocorrências. Tente novamente ou informe ao suporte.</Note>:null}
-      <ProtectionMonitor items={protectionItems} area={area}
-        error={Boolean(adminMeetingRead?.error || adminBookingRead?.error)}/>
+      <ProtectionMonitor items={protectionItems} area={area} reports={reportSummaries}
+        error={Boolean(adminMeetingRead?.error || adminBookingRead?.error || records.error)}/>
       <div className="grid gap-4 lg:grid-cols-[1fr_1fr]">
         {!admin?(
           <div id="registrar-ocorrencia" className="scroll-mt-24"><Card>
@@ -107,7 +120,7 @@ export async function IncidentWorkspace({area,title}:{area:'aluno'|'instrutor'|'
             )}
           </Card></div>
         ):null}
-        <Card>
+        <div id="historico-ocorrencias" className="scroll-mt-24"><Card>
           <h2 className="text-[17px] font-bold text-ink">{admin?'Solicitações recebidas':'Histórico de ocorrências'}</h2>
           {admin?<Note className="mt-3">
             Resolver uma ocorrência aqui apenas registra a justificativa administrativa.
@@ -121,6 +134,10 @@ export async function IncidentWorkspace({area,title}:{area:'aluno'|'instrutor'|'
                     <strong className="text-[13px] text-ink">{TYPES[x.incident_type]??x.incident_type}</strong>
                     <span className="text-[12px] font-semibold text-brand">{STATUSES[x.status]??x.status}</span>
                   </div>
+                  <p className="mt-1 text-[12px] font-medium text-muted">
+                    Reserva {bookingCodes.get(x.booking_id)??'sem código disponível'}
+                    {' · '}{admin?'Relato de participante':x.reported_by===viewer.id?'Relato enviado por você':'Relato de outro participante'}
+                  </p>
                   <p className="mt-1 break-words text-[13px] text-muted">{x.description}</p>
                   <p className="mt-2 text-[11px] text-label">Minutos informados: {x.minutes_done} · {new Intl.DateTimeFormat('pt-BR',{timeZone:'America/Fortaleza',dateStyle:'short'}).format(new Date(x.created_at))}</p>
                   {x.resolution?<p className="mt-2 rounded-xl bg-brand-soft p-3 text-[12px] text-ink">Resposta da administração: {x.resolution}</p>:null}
@@ -143,7 +160,7 @@ export async function IncidentWorkspace({area,title}:{area:'aluno'|'instrutor'|'
               ))}
             </ul>
           )}
-        </Card>
+        </Card></div>
       </div>
     </>
   );
