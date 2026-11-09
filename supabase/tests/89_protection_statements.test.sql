@@ -197,45 +197,45 @@ UPDATE public.bookings SET instructor_id=:'next_instructor'::uuid
  WHERE id='00000000-0000-0000-0000-000000009039';
 SELECT set_config('request.jwt.claim.sub',:'next_instructor',false);
 SET ROLE authenticated;
-DO $ BEGIN
+DO $$ BEGIN
  ASSERT (SELECT count(*) FROM public.lesson_protection_reviews
    WHERE meeting_id='00000000-0000-0000-0000-000000009040')=0,
    'Replacement instructor must not inherit previous Admin assessment';
-END $;
+END $$;
 SELECT public.submit_lesson_protection_statement(
  '00000000-0000-0000-0000-000000009040','not_delivered',0,
  'Depois da troca de instrutor, registro apenas a minha versão atual.'
 );
-DO $ BEGIN
+DO $$ BEGIN
  ASSERT (SELECT count(*) FROM public.lesson_protection_reviews
    WHERE meeting_id='00000000-0000-0000-0000-000000009040')=0,
    'A later statement must not reveal older administrative reviews';
  ASSERT (SELECT count(*) FROM public.lesson_protection_statements
    WHERE meeting_id='00000000-0000-0000-0000-000000009040')=1,
    'Replacement may read their own statement, not previous statements';
-END $;
+END $$;
 RESET ROLE;
 SELECT set_config('request.jwt.claim.sub',:'instructor_id',false);
 SET ROLE authenticated;
-DO $ BEGIN
+DO $$ BEGIN
  ASSERT (SELECT count(*) FROM public.lesson_protection_reviews
    WHERE meeting_id='00000000-0000-0000-0000-000000009040')=1,
    'Original instructor who submitted a statement retains review history';
  ASSERT (SELECT count(*) FROM public.lesson_protection_statements
    WHERE meeting_id='00000000-0000-0000-0000-000000009040')=3,
    'Original instructor does not see replacement testimony';
-END $;
+END $$;
 RESET ROLE;
 SELECT set_config('request.jwt.claim.sub',:'student_id',false);
 SET ROLE authenticated;
-DO $ BEGIN
+DO $$ BEGIN
  ASSERT (SELECT count(*) FROM public.lesson_protection_reviews
    WHERE meeting_id='00000000-0000-0000-0000-000000009040')=1,
    'Student retains full review history';
  ASSERT (SELECT count(*) FROM public.lesson_protection_statements
    WHERE meeting_id='00000000-0000-0000-0000-000000009040')=4,
    'Student retains statements across both assignments';
-END $;
+END $$;
 RESET ROLE;
 UPDATE public.bookings SET instructor_id=:'instructor_id'::uuid
  WHERE id='00000000-0000-0000-0000-000000009039';
