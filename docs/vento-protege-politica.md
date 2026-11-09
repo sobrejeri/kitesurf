@@ -111,3 +111,17 @@ financeira, abertura automática de incidente, liberação de repasse ou reembol
 - [ ] Definir política de retenção, limpeza de arquivos pendentes e resposta a evidências sensíveis.
 
 **Atenção:** isto é implementação versionada **desligada**, não funcionalidade publicada para clientes. As telas anteriores de ocorrências permanecem em funcionamento. A análise Admin não executa dinheiro, o prazo interno de cinco dias não elimina direitos legais e silêncio nunca autoriza repasse.
+
+## Etapa 3B — revisão de privacidade anterior à ativação (09/11/2026)
+
+- [x] Políticas de depoimentos refinadas para impedir que a troca de instrutor revele sua declaração anterior ao novo profissional. O autor original mantém acesso ao próprio registro; o aluno mantém histórico da própria reserva e o Admin pode auditar.
+- [x] Leitura de arquivos de prova somente após confirmação do upload; arquivos pendentes permanecem sem download, mesmo que haja metadados.
+- [x] Acesso ao bucket mediado por função em `protection_private`, schema não exposto à Data API, com permissões explícitas e `search_path=''`.
+- [x] Preparação de arquivos serializada por encontro, prevenindo a corrida de envios simultâneos. Limites: 6 por declaração, 20 por encontro/autor, 5 tentativas em 10 minutos. Preparações não confirmadas deixam de contar no limite de 6/20 após 30 minutos, mas continuam sendo auditáveis.
+- [x] Confirmação de upload repetido não falha quando já foi validado, mesmo após 15 minutos.
+- [ ] Limpeza de arquivos órfãos/pendentes deve usar **API do Storage**, não exclusão direta de `storage.objects`.
+- [ ] Política de retenção e privacidade das provas deve ser validada antes da ativação real.
+- [ ] Resolver histórico de casos cujo encontro mudou para `done` ou `cancelled`; o monitor atual é apenas de horários vencidos sem registro.
+- [ ] Verificar em ambiente de homologação real se as permissões de Storage e funções PostgREST correspondem ao esperado; o stub SQL não emula todo o serviço Supabase.
+
+**Ponto de controle:** a migração 39 ainda não foi aplicada no ambiente real, e a flag de ativação permanece desligada. Estes ajustes são alterações no arquivo versionado e testes temporários de CI, sem repasses financeiros.
