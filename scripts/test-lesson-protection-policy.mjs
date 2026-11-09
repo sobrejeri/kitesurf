@@ -27,6 +27,8 @@ assert.equal(phase({ nowMs: end + DAY }).notifyMissingParties, true);
 assert.equal(phase({ nowMs: end + 5 * DAY - 1 }).phase, 'awaiting_statements');
 assert.equal(phase({ nowMs: end + 5 * DAY }).phase, 'admin_review');
 assert.equal(phase({ nowMs: end + 5 * DAY }).requiresAdminReview, true);
+assert.equal(phase({ nowMs: end + 5 * DAY, studentStatement: 'not_delivered', instructorStatement: 'delivered' }).phase,
+  'admin_review', 'Conflicting claims enter Admin review on day six');
 assert.equal(phase({ nowMs: end + 5 * DAY }).notifyMissingParties, false);
 assert.equal(phase({ nowMs: end + DAY, verifiedCheckIn: true }).phase, 'presence_documented',
   'Check-in only confirms presence, not full minutes delivered');
