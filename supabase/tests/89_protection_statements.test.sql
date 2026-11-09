@@ -47,7 +47,10 @@ DO $$ BEGIN
 END $$;
 
 -- Pick the actual student and instructor on the cloned fixture.
-SELECT student_id AS student_id, instructor_id AS instructor_id
+SELECT student_id AS student_id, instructor_id AS instructor_id,
+  CASE WHEN student_id='00000000-0000-0000-0000-0000000000b1'::uuid
+       THEN '00000000-0000-0000-0000-0000000000b2'::uuid
+       ELSE '00000000-0000-0000-0000-0000000000b1'::uuid END AS other_student_id
 FROM public.bookings WHERE code='VNT-PROTEGE-CI' \gset
 
 SELECT set_config('request.jwt.claim.sub',:'student_id',false);
@@ -108,7 +111,7 @@ DO $$ BEGIN
 END $$;
 RESET ROLE;
 
-SELECT set_config('request.jwt.claim.sub','00000000-0000-0000-0000-0000000000b2',false);
+SELECT set_config('request.jwt.claim.sub',:'other_student_id',false);
 SET ROLE authenticated;
 DO $$ BEGIN
  ASSERT (SELECT count(*) FROM public.lesson_protection_statements
