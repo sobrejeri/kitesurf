@@ -220,7 +220,7 @@ CREATE SCHEMA IF NOT EXISTS protection_private;
 REVOKE ALL ON SCHEMA protection_private FROM PUBLIC,anon,authenticated;
 GRANT USAGE ON SCHEMA protection_private TO authenticated;
 CREATE FUNCTION protection_private.evidence_storage_access(p_path text,p_for_upload boolean)
-RETURNS boolean LANGUAGE sql STABLE SECURITY DEFINER SET search_path='' AS $
+RETURNS boolean LANGUAGE sql STABLE SECURITY DEFINER SET search_path='' AS $$
  SELECT EXISTS(SELECT 1 FROM public.lesson_protection_evidence e
    WHERE e.object_path=p_path
    AND (CASE WHEN p_for_upload
@@ -228,7 +228,7 @@ RETURNS boolean LANGUAGE sql STABLE SECURITY DEFINER SET search_path='' AS $
         AND e.created_at>now()-interval '15 minutes'
       ELSE e.confirmed AND (e.uploader_id=auth.uid() OR public.is_admin())
      END));
-$;
+$$;
 
 INSERT INTO storage.buckets(id,name,public,file_size_limit,allowed_mime_types)
 VALUES ('vento-protection-evidence','vento-protection-evidence',false,5242880,
