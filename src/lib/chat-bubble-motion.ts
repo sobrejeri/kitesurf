@@ -20,10 +20,11 @@ export function seedBubbleTrail(
  * rather than merely moving the whole stack as one rigid block. */
 export function pointBehindBubbleTrail(path:readonly BubblePoint[],behind:number):BubblePoint {
   if(!path.length)return {x:0,y:0};
-  if(behind<=0)return path[path.length-1]!;
+  if(behind<=0)return path[path.length-1] ?? {x:0,y:0};
   let remaining=behind;
   for(let index=path.length-1;index>0;index--){
-    const tail=path[index]!,previous=path[index-1]!;
+    const tail=path[index],previous=path[index-1];
+    if(!tail || !previous)continue;
     const length=Math.hypot(tail.x-previous.x,tail.y-previous.y);
     if(length<.01)continue;
     if(remaining<=length){
@@ -35,7 +36,7 @@ export function pointBehindBubbleTrail(path:readonly BubblePoint[],behind:number
     }
     remaining-=length;
   }
-  return path[0]!;
+  return path[0] ?? {x:0,y:0};
 }
 
 /** Avoid storing unbounded pointer trails during a long dragging session. */
