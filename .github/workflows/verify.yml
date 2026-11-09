@@ -53,6 +53,8 @@ jobs:
         run: node --experimental-strip-types scripts/test-instructor-lesson-tabs.mjs
       - name: Test inline card detail layouts
         run: node scripts/test-inline-detail-layout.mjs
+      - name: Test VentoKite Protege five-day incident policy
+        run: node --experimental-strip-types scripts/test-lesson-protection-policy.mjs
       - name: Check PostgREST relationship ambiguity
         run: node scripts/verify-postgrest-relationships.mjs
       - run: pnpm build
