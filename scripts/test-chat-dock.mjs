@@ -68,7 +68,7 @@ assert.ok(
   floatingChat.includes('dismissAllBubbles();return;') &&
   floatingChat.includes("styles.trashTarget") &&
   floatingChat.includes("styles.trashTargetHot") &&
-  floatingChat.includes('aria-label="Solte aqui para fechar todas as bolinhas de conversa"') &&
+  floatingChat.includes("'Solte aqui para fechar todas as bolinhas de conversa'") &&
   floatingChat.includes('setHiddenUnread(previous=>({...previous,[current.id]:current.lastAt}))') &&
   floatingChat.includes('aria-label="Fechar conversa"') &&
   lineIcons.includes('close: <path'),
@@ -76,7 +76,7 @@ assert.ok(
 );
 assert.ok(
   floatingChat.includes('aria-label="Conversas novas ou abertas"') &&
-  floatingChat.includes('className={styles.floatingThreadTab}') &&
+  floatingChat.includes('draggedTopTab?.id===t.id?styles.floatingThreadTabDragging') &&
   floatingChat.includes('aria-pressed={selected}') &&
   floatingChat.includes('onClick={()=>show(t.id)}') &&
   floatingChat.includes("url.pathname.replace(/\\/$/, '') ===") &&
@@ -164,7 +164,7 @@ assert.deepEqual(
 assert.ok(
   floatingChat.includes('const [openedIds,setOpenedIds] = useState<string[]>([])') &&
   floatingChat.includes('setOpenedIds(previous=>previous.includes(id)?previous:[...previous,id])') &&
-  floatingChat.includes('const switcherThreads=chatSwitcherThreads(threads,selectedId,openedIds,hiddenUnread)') &&
+  floatingChat.includes('const switcherThreads=chatSelectableThreads(threads,selectedId,openedIds,hiddenUnread)') &&
   floatingChat.includes('open && switcherThreads.length ? (') &&
   floatingChat.includes('switcherThreads.map(t => {') &&
   !floatingChat.includes('threads.map(t => {') &&
@@ -284,7 +284,7 @@ assert.ok(
   floatingChat.includes('style={{width:stackWidth,height:stackHeight,...(bubblePosition?') &&
   floatingChat.includes('open && switcherThreads.length ? (') &&
   floatingChat.includes('className={styles.floatingThreadTabs}') &&
-  floatingChat.includes('className={styles.floatingThreadTab}') &&
+  floatingChat.includes('draggedTopTab?.id===t.id?styles.floatingThreadTabDragging') &&
   floatingChat.includes('className={styles.activeTabMarker}') &&
   floatingChat.includes('onClick={()=>show(t.id)}') &&
   floatingCss.includes('background:rgba(0,13,27,.70);') &&
@@ -363,3 +363,61 @@ assert.ok(
   'Trail animation must follow curved gestures with stagger and ensure EVERY right-edge counter is on the exposed left',
 );
 console.log('PASS: curved S/circle trailing motion, eased followers and mirrored unread counters');
+
+
+// Real chat header tabs: only unread or explicitly opened reservations, but
+// distinct unread bookings remain independently selectable even when the
+// sender has the same profile photo and peer ID.
+const {chatSelectableThreads}=await import('../src/lib/chat-dock.ts');
+const samePeer=[
+  {id:'lesson-a',code:'VNT-01',peerId:'denilson',name:'Denilson',unread:2,lastAt:'2026-11-08T21:30:00Z'},
+  {id:'lesson-b',code:'VNT-02',peerId:'denilson',name:'Denilson',unread:1,lastAt:'2026-11-08T21:38:00Z'},
+  {id:'old-lesson',code:'VNT-03',peerId:'denilson',name:'Denilson',unread:0,lastAt:'2026-11-01T10:00:00Z'},
+  {id:'lesson-c',code:'VNT-04',peerId:'lucia',name:'Lucia',unread:4,lastAt:'2026-11-08T21:40:00Z'},
+];
+assert.deepEqual(
+  chatSelectableThreads(samePeer,'lesson-a',['lesson-a']).map(t=>t.id),
+  ['lesson-a','lesson-c','lesson-b'],
+  'Selected reservation stays first, other unread reservations are switchable, historical read items stay hidden',
+);
+assert.deepEqual(
+  chatSelectableThreads(samePeer,'lesson-a',['lesson-a'],{'lesson-c':'2026-11-08T21:40:00Z'}).map(t=>t.id),
+  ['lesson-a','lesson-b'],
+  'Individually discarded top portrait must not return before a new unread message',
+);
+assert.deepEqual(
+  chatSelectableThreads(samePeer,null,[],{
+    'lesson-a':'2026-11-08T21:30:00Z',
+    'lesson-b':'2026-11-08T21:38:00Z',
+    'lesson-c':'2026-11-08T21:40:00Z',
+  }),
+  [],
+  'After selected chat is dismissed, remaining conversation bubbles reflect only undismissed active sessions',
+);
+assert.ok(
+  floatingChat.includes('selectedId?styles.panelSelected') &&
+  floatingCss.includes('.dockOpen .panelSelected,') &&
+  floatingCss.includes('.studentDock.dockOpen .panelSelected') &&
+  floatingCss.includes('border:2px solid #baff08') &&
+  floatingChat.includes('onPointerDown={event=>onTopTabDown(event,t.id)}') &&
+  floatingChat.includes('onPointerMove={onTopTabMove}') &&
+  floatingChat.includes('onPointerUp={onTopTabUp}') &&
+  floatingChat.includes('onPointerCancel={onTopTabCancel}') &&
+  floatingChat.includes('function dismissTopConversation(id:string)') &&
+  floatingChat.includes('setOpenedIds(previous=>previous.filter(threadId=>threadId!==id))') &&
+  floatingChat.includes('if(selectedId===id)closeOutside()') &&
+  floatingChat.includes('aria-label={draggedTopTab?') &&
+  floatingChat.includes("draggedTopTab?'Solte para fechar esta conversa':") &&
+  floatingChat.includes('draggedTopThread ? <Photo thread={draggedTopThread}/> : null') &&
+  floatingCss.includes('.floatingTabDragGhost {') &&
+  floatingCss.includes('.floatingThreadTabDragging {'),
+  'The selected chat gets a lime outline, nonselected photos dismiss one by one, and dragging the selected photo closes only its chat',
+);
+assert.ok(
+  floatingChat.includes('setBubblePosition({') &&
+  floatingChat.includes('function closeOutside(){') &&
+  floatingChat.includes('if(selectedId===id)closeOutside()') &&
+  !floatingChat.includes('function dismissTopConversation(id:string){\\n    setOpenedIds([])'),
+  'Dragging the selected chat to the X must restore the other bubbles to their previous side and height',
+);
+console.log('PASS: selected chat outline, all active tabs, independent photo dragging and restoring remaining bubbles');

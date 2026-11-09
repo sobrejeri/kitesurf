@@ -519,3 +519,50 @@
 @media(prefers-reduced-motion:reduce) {
   .floatingThreadTab {transition:none;}
 }
+
+
+/* The open conversation and its selected avatar share the same lime outline.
+   This is visible on the entire chat window, not only on the round photo. */
+.dockOpen .panelSelected,
+.studentDock.dockOpen .panelSelected {
+  border:2px solid #baff08;
+  box-shadow:
+    0 0 0 2px rgba(186,255,8,.22),
+    0 0 26px rgba(146,255,24,.24),
+    0 18px 65px rgba(0,12,32,.78);
+}
+/* Photo tabs along the outside upper rim remain independently draggable.
+   The dragged portrait is rendered in a separate portal-level layer so
+   overflow from the horizontal tab rail cannot crop it. */
+.floatingThreadTab {
+  touch-action:none;
+  -webkit-user-select:none;
+  user-select:none;
+}
+.floatingThreadTabDragging {
+  opacity:.35;
+}
+.floatingTabDragGhost {
+  position:fixed;
+  z-index:275;
+  display:grid;
+  place-items:center;
+  width:52px;
+  height:52px;
+  padding:0;
+  transform:translate3d(-50%,-50%,0);
+  pointer-events:none;
+  border:3px solid #baff08;
+  border-radius:50%;
+  background:#003349;
+  box-shadow:0 0 0 5px rgba(186,255,8,.15),0 0 26px rgba(36,211,197,.42);
+}
+.floatingTabDragGhost .photo {
+  width:100%;
+  height:100%;
+  border-radius:50%;
+  overflow:hidden;
+}
+@media(prefers-reduced-motion:reduce) {
+  .floatingThreadTabDragging,.floatingTabDragGhost {transition:none;}
+}
