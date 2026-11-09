@@ -48,6 +48,23 @@ export function chatSessionBubbles(
     .slice(0,5);
 }
 
+/** Open chat's top-edge portraits represent actual active conversations,
+ * not old reservations. Keep the selected reservation first, followed by each
+ * other newly unread or user-opened session, even for the same participant:
+ * otherwise multiple real messages from one instructor become inaccessible.
+ * Distinguish those sessions through their reservation code in the UI. */
+export function chatSelectableThreads(
+  threads:readonly ChatThread[],
+  selectedId:string|null,
+  openedIds:readonly string[],
+  hiddenUnread:Readonly<Record<string,string>>={},
+):ChatThread[] {
+  const relevant=chatSessionBubbles(threads,openedIds,hiddenUnread);
+  const selected=selectedId?threads.find(t=>t.id===selectedId):undefined;
+  const ordered=selected?[selected,...relevant.filter(t=>t.id!==selected.id)]:relevant;
+  return ordered.slice(0,6);
+}
+
 /** Small photo row inside an open chat: only newly received messages or
  * chats opened by this user during the current session belong here.
  * Multiple bookings with one person share ONE portrait, with priority for
