@@ -55,7 +55,7 @@
 /* Approved compact floating-chat design. Keep other-area chat dimensions intact. */
 .scrim {
   position:fixed;inset:0;z-index:249;display:block;width:100%;height:100%;
-  padding:0;border:0;border-radius:0;background:rgba(0,13,27,.40);
+  padding:0;border:0;border-radius:0;background:rgba(0,13,27,.70);
   cursor:default;
 }
 .studentDock { z-index:250; }
@@ -414,3 +414,99 @@
 .emojiChoice:active {background:#0b6173;}
 .studentDock .emojiChoice {background:transparent;color:#fff;}
 .studentDock .emojiChoice:active {background:#16617a;}
+
+
+/* Messenger-style floating conversation selector: avatars sit ON TOP of the
+   window's outside upper rim, from the LEFT toward the RIGHT. They do not
+   consume space inside the message panel. The focused chat has a strong
+   lime ring and a small underline; other active sessions retain their photos. */
+.dockOpen .floatingThreadTabs {
+  position:absolute;
+  z-index:4;
+  top:-54px;
+  left:0;
+  right:0;
+  display:flex;
+  align-items:center;
+  justify-content:flex-start;
+  gap:9px;
+  height:63px;
+  padding:7px 10px 8px;
+  box-sizing:border-box;
+  overflow-x:auto;
+  overflow-y:hidden;
+  overscroll-behavior-x:contain;
+  scrollbar-width:none;
+  pointer-events:auto;
+}
+.dockOpen .floatingThreadTabs::-webkit-scrollbar {display:none;}
+.floatingThreadTab {
+  position:relative;
+  flex:0 0 46px;
+  box-sizing:border-box;
+  display:grid;
+  place-items:center;
+  width:46px;
+  height:46px;
+  padding:0;
+  border:0;
+  border-radius:50%;
+  background:#04354d;
+  color:#efffff;
+  box-shadow:0 5px 16px rgba(0,15,29,.52);
+  transition:transform .18s ease,box-shadow .18s ease;
+}
+.floatingThreadTab .photo {
+  width:43px;
+  height:43px;
+  border:2px solid #72aab9;
+  border-radius:50%;
+  overflow:hidden;
+}
+.floatingThreadTab[aria-pressed="true"] {
+  transform:translateY(-2px);
+  box-shadow:0 0 0 3px #baff08,0 0 20px #baff0870,0 7px 20px #001321a0;
+}
+.floatingThreadTab[aria-pressed="true"] .photo {border-color:#d9ff7c;}
+.activeTabMarker {
+  position:absolute;
+  left:50%;
+  bottom:-6px;
+  width:20px;
+  height:4px;
+  transform:translateX(-50%);
+  background:#baff08;
+  border-radius:99px;
+  box-shadow:0 0 12px #baff08;
+}
+.floatingThreadTab .badge {
+  position:absolute;
+  top:-6px;
+  right:-7px;
+  z-index:2;
+  background:#e6334e;
+  color:white;
+  border:2px solid #fff;
+}
+/* Keep enough top room for the outside tabs in the keyboard's reduced iOS
+   visual viewport. The composer remains accessible above the keyboard. */
+@media (min-width:768px) {
+  .dockOpen .panel {max-height:calc(100dvh - 112px);}
+}
+@media (max-width:767px) {
+  .dockOpen {
+    top:calc(var(--chat-vv-top,0px) + max(env(safe-area-inset-top), 12px) + 60px);
+  }
+  .dockOpen .panel,
+  .studentDock.dockOpen .panel {
+    height:min(500px,calc(var(--chat-vv-height,100dvh) - max(env(safe-area-inset-top),12px) - 76px));
+    max-height:calc(var(--chat-vv-height,100dvh) - max(env(safe-area-inset-top),12px) - 76px);
+  }
+  .dockOpen.dockKeyboard .panel,
+  .studentDock.dockOpen.dockKeyboard .panel {
+    height:calc(var(--chat-vv-height,100dvh) - max(env(safe-area-inset-top),12px) - 76px);
+  }
+}
+@media(prefers-reduced-motion:reduce) {
+  .floatingThreadTab {transition:none;}
+}
