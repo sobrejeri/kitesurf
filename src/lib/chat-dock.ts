@@ -65,6 +65,31 @@ export function chatSelectableThreads(
   return ordered.slice(0,6);
 }
 
+/** Keep each open-chat portrait at the same physical tab position even
+ * when selection changes or another participant sends a newer message.
+ * New active sessions append on the right; selection alone never sorts. */
+export function chatStableTabs(
+  threads:readonly ChatThread[],
+  selectedId:string|null,
+  openedIds:readonly string[],
+  hiddenUnread:Readonly<Record<string,string>>,
+  order:readonly string[],
+):ChatThread[] {
+  const eligible=chatSessionBubbles(threads,openedIds,hiddenUnread);
+  const active=selectedId?threads.find(t=>t.id===selectedId):undefined;
+  const remaining=active && !eligible.some(t=>t.id===active.id)
+    ? [...eligible,active] : eligible;
+  const position=new Map(order.map((id,index)=>[id,index]));
+  return remaining.sort((a,b)=>{
+    const aPosition=position.get(a.id);
+    const bPosition=position.get(b.id);
+    if(aPosition!==undefined && bPosition!==undefined)return aPosition-bPosition;
+    if(aPosition!==undefined)return -1;
+    if(bPosition!==undefined)return 1;
+    return b.lastAt.localeCompare(a.lastAt);
+  }).slice(0,6);
+}
+
 /** Small photo row inside an open chat: only newly received messages or
  * chats opened by this user during the current session belong here.
  * Multiple bookings with one person share ONE portrait, with priority for
