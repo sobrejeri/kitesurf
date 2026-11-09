@@ -477,7 +477,7 @@ assert.ok(
   floatingChat.includes('closingChat?styles.panelSucking') &&
   floatingCss.includes('@keyframes vento-chat-suction') &&
   floatingCss.includes('scale(.07)') &&
-  floatingCss.includes('transform 490ms cubic-bezier') &&
+  floatingChat.includes('transform 490ms cubic-bezier') &&
   floatingCss.includes('@media(prefers-reduced-motion:reduce)'),
   'Closing must visibly suck the window into the selected avatar and send the rest back in a staggered chain',
 );
