@@ -1,6 +1,6 @@
 'use client';
 
-import { useCallback, useEffect, useRef, useState, type CSSProperties, type PointerEvent as ReactPointerEvent } from 'react';
+import { useCallback, useEffect, useLayoutEffect, useRef, useState, type CSSProperties, type PointerEvent as ReactPointerEvent } from 'react';
 import { createPortal } from 'react-dom';
 import { chatBookingId, chatSessionBubbles, chatSwitcherThreads, mergeChatMessages, chatWasRead, presenceLabel, chatThreadTag, type ChatRead, type ChatArea, type ChatMessage, type ChatThread } from '@/lib/chat-dock';
 import {CHAT_FILE_TYPES,MAX_CHAT_FILE} from '@/lib/chat-files';
@@ -8,6 +8,7 @@ import { initials } from '@/lib/people';
 import { Icon } from './icon';
 import {ChatMessageExtras} from './chat-message-extras';
 import styles from './floating-chat.module.css';
+import {appendBubbleTrail,pointBehindBubbleTrail,seedBubbleTrail,type BubblePoint} from '@/lib/chat-bubble-motion';
 
 const CHAT_EMOJIS = [
   '😀','😄','😁','😂','🤣','😊','🥰','😍','😘','😎',
@@ -21,6 +22,21 @@ type BubbleGlowStyle = CSSProperties & {
   '--bubble-glow-alpha': string;
   '--bubble-shadow-alpha': string;
 };
+
+type TrailAvatar = {
+  id:string;
+  node:HTMLButtonElement;
+  origin:BubblePoint;
+  position:BubblePoint;
+};
+type TrailDrag = {
+  id:number;x:number;y:number;left:number;top:number;moved:boolean;
+  leader:BubblePoint;
+  pointer:BubblePoint;
+  path:BubblePoint[];
+  nodes:TrailAvatar[];
+};
+const clampBubble=(v:number,min:number,max:number)=>Math.min(Math.max(v,min),Math.max(min,max));
 
 function Photo({thread}: {thread:ChatThread}) {
   const [failed,setFailed] = useState<string|null>(null);
@@ -40,7 +56,13 @@ export function FloatingChat({area,viewerId}: {area:ChatArea;viewerId:string}) {
   const [bubblePosition,setBubblePosition] = useState<{x:number;y:number}|null>(null);
   const [draggingBubble,setDraggingBubble] = useState(false);
   const [trashHot,setTrashHot] = useState(false);
-  const bubbleDrag = useRef<{id:number;x:number;y:number;left:number;top:number;moved:boolean}|null>(null);
+  const bubbleDrag = useRef<TrailDrag|null>(null);
+  const bubbleNodes=useRef(new Map<string,HTMLButtonElement>());
+  const bubbleGroup=useRef<HTMLDivElement|null>(null);
+  const bubbleTrailFrame=useRef<number|null>(null);
+  const bubbleSnapFrame=useRef<number|null>(null);
+  const bubbleSnapTimer=useRef<number|null>(null);
+  const pendingSnap=useRef<Map<string,BubblePoint>|null>(null);
   const suppressBubbleClick = useRef(false);
   const bubbleSide = useRef<'left'|'right'>('right');
   const [open,setOpen] = useState(false);
@@ -370,52 +392,180 @@ export function FloatingChat({area,viewerId}: {area:ChatArea;viewerId:string}) {
     setDraggingBubble(false);setTrashHot(false);setBubblePosition(null);
   },[threads]);
 
+  // Bubble movement follows the exact sampled finger route (including S
+  // curves and circles), with each subsequent avatar travelling 29px farther
+  // behind the leader plus a softer easing delay. Use DOM transforms in RAF
+  // rather than rerendering React for every pointer event on iOS.
+  const cancelTrailFrame=()=>{
+    if(bubbleTrailFrame.current!==null){
+      window.cancelAnimationFrame(bubbleTrailFrame.current);
+      bubbleTrailFrame.current=null;
+    }
+  };
+  const animateBubbleTrail=()=>{
+    const drag=bubbleDrag.current;
+    if(!drag || !drag.moved){bubbleTrailFrame.current=null;return;}
+    const target={
+      x:clampBubble(drag.leader.x+drag.pointer.x-drag.x,29,window.innerWidth-29),
+      y:clampBubble(drag.leader.y+drag.pointer.y-drag.y,85,window.innerHeight-115)
+    };
+    appendBubbleTrail(drag.path,target);
+    for(let i=0;i<drag.nodes.length;i++){
+      const avatar=drag.nodes[i];
+      if(!avatar)continue;
+      const desired=pointBehindBubbleTrail(drag.path,i*bubbleStep);
+      const strength=i===0?1:Math.max(.16,.43-i*.055);
+      avatar.position={
+        x:avatar.position.x+(desired.x-avatar.position.x)*strength,
+        y:avatar.position.y+(desired.y-avatar.position.y)*strength
+      };
+      const dx=avatar.position.x-avatar.origin.x;
+      const dy=avatar.position.y-avatar.origin.y;
+      avatar.node.style.transform=`translate3d(${dx}px,${dy}px,0)`;
+    }
+    bubbleTrailFrame.current=window.requestAnimationFrame(animateBubbleTrail);
+  };
+  const cancelSnap=()=>{
+    if(bubbleSnapFrame.current!==null){window.cancelAnimationFrame(bubbleSnapFrame.current);bubbleSnapFrame.current=null;}
+    if(bubbleSnapTimer.current!==null){window.clearTimeout(bubbleSnapTimer.current);bubbleSnapTimer.current=null;}
+    bubbleGroup.current?.style.removeProperty('transition');
+    for(const node of bubbleNodes.current.values()){
+      node.style.removeProperty('transform');
+      node.style.removeProperty('transition');
+      node.style.removeProperty('will-change');
+    }
+    pendingSnap.current=null;
+  };
   const onBubbleDown=(event:ReactPointerEvent<HTMLDivElement>)=>{
     if(event.button!==0 || bubbleDrag.current || !bubbleList.length)return;
+    cancelSnap();
     const box=event.currentTarget.getBoundingClientRect();
-    bubbleDrag.current={id:event.pointerId,x:event.clientX,y:event.clientY,left:box.left,top:box.top,moved:false};
+    const nodes:TrailAvatar[]=[];
+    for(const thread of bubbleList){
+      const node=bubbleNodes.current.get(thread.id);
+      if(!node)return;
+      const rect=node.getBoundingClientRect();
+      const center={x:rect.left+rect.width/2,y:rect.top+rect.height/2};
+      nodes.push({id:thread.id,node,origin:center,position:center});
+    }
+    const front=nodes[0];
+    if(!front)return;
+    const leader=front.origin;
+    bubbleDrag.current={
+      id:event.pointerId,x:event.clientX,y:event.clientY,
+      left:box.left,top:box.top,moved:false,leader,
+      pointer:{x:event.clientX,y:event.clientY},
+      path:seedBubbleTrail(leader,Math.max(0,nodes.length-1),bubbleSide.current,bubbleStep),
+      nodes
+    };
   };
   const onBubbleMove=(event:ReactPointerEvent<HTMLDivElement>)=>{
     const drag=bubbleDrag.current;
     if(!drag || drag.id!==event.pointerId)return;
     const dx=event.clientX-drag.x,dy=event.clientY-drag.y;
     if(!drag.moved && Math.hypot(dx,dy)<7)return;
-    if(!drag.moved) event.currentTarget.setPointerCapture(event.pointerId);
-    drag.moved=true;
-    setDraggingBubble(true);
+    if(!drag.moved){
+      event.currentTarget.setPointerCapture(event.pointerId);
+      drag.nodes.forEach(avatar=>{
+        avatar.node.style.transition='none';
+        avatar.node.style.willChange='transform';
+      });
+      drag.moved=true;
+      suppressBubbleClick.current=true;
+      setDraggingBubble(true);
+      bubbleTrailFrame.current=window.requestAnimationFrame(animateBubbleTrail);
+    }
+    drag.pointer={x:event.clientX,y:event.clientY};
     const width=window.innerWidth,height=window.innerHeight;
-    setBubblePosition({
-      x:Math.max(8,Math.min(width-stackWidth-8,drag.left+dx)),
-      y:Math.max(65,Math.min(height-stackHeight-30,drag.top+dy))
-    });
     const targetY=height-(area==='aluno'?128:110);
-    setTrashHot(Math.abs(event.clientX-width/2)<73 && Math.abs(event.clientY-targetY)<73);
+    setTrashHot(previous=>{
+      const hot=Math.abs(event.clientX-width/2)<73 && Math.abs(event.clientY-targetY)<73;
+      return previous===hot?previous:hot;
+    });
   };
   const onBubbleUp=(event:ReactPointerEvent<HTMLDivElement>)=>{
     const drag=bubbleDrag.current;
     if(!drag || drag.id!==event.pointerId)return;
     bubbleDrag.current=null;
+    cancelTrailFrame();
     if(event.currentTarget.hasPointerCapture(event.pointerId))
       event.currentTarget.releasePointerCapture(event.pointerId);
     setDraggingBubble(false);
     setTrashHot(false);
     if(!drag.moved)return;
     suppressBubbleClick.current=true;
-    window.setTimeout(()=>{suppressBubbleClick.current=false;},100);
+    window.setTimeout(()=>{suppressBubbleClick.current=false;},160);
     const width=window.innerWidth,height=window.innerHeight;
     const targetY=height-(area==='aluno'?128:110);
     if(Math.abs(event.clientX-width/2)<73 && Math.abs(event.clientY-targetY)<73){
+      cancelSnap();
       dismissAllBubbles();return;
     }
-    const dx=event.clientX-drag.x,dy=event.clientY-drag.y;
-    const x=Math.max(8,Math.min(width-stackWidth-8,drag.left+dx));
-    const side=x+stackWidth/2<width/2?'left':'right';
+
+    // FLIP: preserve each avatar's last curved-trail screen location, change
+    // the stack's side/position, and animate avatars into their new 50%-overlap
+    // positions one after another instead of teleporting as a rigid group.
+    pendingSnap.current=new Map(drag.nodes.map(avatar=>{
+      const rect=avatar.node.getBoundingClientRect();
+      return [avatar.id,{x:rect.left+rect.width/2,y:rect.top+rect.height/2}];
+    }));
+    bubbleGroup.current?.style.setProperty('transition','none');
+    drag.nodes.forEach(avatar=>avatar.node.style.transition='none');
+    const leaderX=clampBubble(drag.leader.x+event.clientX-drag.x,29,width-29);
+    const leaderY=clampBubble(drag.leader.y+event.clientY-drag.y,85,height-115);
+    const side=leaderX<width/2?'left':'right';
     bubbleSide.current=side;
     setBubblePosition({
       x:side==='left'?12:Math.max(12,width-stackWidth-12),
-      y:Math.max(65,Math.min(height-stackHeight-95,drag.top+dy))
+      y:clampBubble(leaderY-29,65,height-stackHeight-95)
     });
   };
+  const onBubbleCancel=()=>{
+    bubbleDrag.current=null;
+    cancelTrailFrame();
+    cancelSnap();
+    setDraggingBubble(false);
+    setTrashHot(false);
+  };
+
+  useLayoutEffect(()=>{
+    const previousLocations=pendingSnap.current;
+    if(!previousLocations || draggingBubble)return;
+    pendingSnap.current=null;
+    const arrivals:{node:HTMLButtonElement;depth:number}[]=[];
+    for(const [id,point] of previousLocations){
+      const node=bubbleNodes.current.get(id);
+      if(!node)continue;
+      node.style.transition='none';
+      node.style.transform='none';
+      const rect=node.getBoundingClientRect();
+      node.style.transform=`translate3d(${point.x-rect.left-rect.width/2}px,${point.y-rect.top-rect.height/2}px,0)`;
+      const depth=Number(node.dataset.depth??0);
+      arrivals.push({node,depth});
+    }
+    // Wait one frame so WebKit paints the old position before moving home.
+    bubbleSnapFrame.current=window.requestAnimationFrame(()=>{
+      bubbleSnapFrame.current=null;
+      const reduced=window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+      for(const avatar of arrivals){
+        avatar.node.style.transition=reduced?'none':
+          `transform 390ms cubic-bezier(.2,.75,.2,1) ${avatar.depth*45}ms`;
+        avatar.node.style.transform='translate3d(0,0,0)';
+      }
+      bubbleSnapTimer.current=window.setTimeout(()=>{
+        for(const avatar of arrivals){
+          avatar.node.style.removeProperty('transform');
+          avatar.node.style.removeProperty('transition');
+          avatar.node.style.removeProperty('will-change');
+        }
+        bubbleGroup.current?.style.removeProperty('transition');
+        bubbleSnapTimer.current=null;
+      },reduced?0:790);
+    });
+  },[bubblePosition,draggingBubble]);
+
+  useEffect(()=>()=>{cancelTrailFrame();cancelSnap();},[]);
+
   useEffect(()=>{
     const reposition=()=>{
       // When a new message changes the stack width, keep its leading avatar
@@ -540,15 +690,16 @@ export function FloatingChat({area,viewerId}: {area:ChatArea;viewerId:string}) {
       </>}
     </section>:null}
     {!open && bubbleList.length ? (
-      <div className={`${styles.bubbles} ${bubbleSide.current==='left'?styles.bubblesLeft:''} ${draggingBubble?styles.bubblesDragging:''}`} role="group"
+      <div ref={bubbleGroup} className={`${styles.bubbles} ${bubbleSide.current==='left'?styles.bubblesLeft:''} ${draggingBubble?styles.bubblesDragging:''}`} role="group"
         aria-label="Conversas com mensagens não lidas. Arraste para uma lateral ou até o X para ocultar."
         style={{width:stackWidth,height:stackHeight,...(bubblePosition?{left:bubblePosition.x,top:bubblePosition.y,right:'auto',bottom:'auto'}:{})}}
         onPointerDown={onBubbleDown} onPointerMove={onBubbleMove} onPointerUp={onBubbleUp}
-        onPointerCancel={()=>{bubbleDrag.current=null;setDraggingBubble(false);setTrashHot(false);setBubblePosition(null);}}>
+        onPointerCancel={onBubbleCancel}>
         {[...bubbleList].reverse().map((t, reversedIndex) => {
           const index = bubbleList.length - 1 - reversedIndex;
           return (
             <button type="button" key={t.id} className={styles.bubble}
+              ref={node=>{if(node)bubbleNodes.current.set(t.id,node);else bubbleNodes.current.delete(t.id);}}
               data-depth={index}
               style={{
                 ...(bubbleSide.current==='left'
