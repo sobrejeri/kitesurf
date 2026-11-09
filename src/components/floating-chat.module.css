@@ -473,7 +473,7 @@
   overflow:hidden;
 }
 .floatingThreadTab[aria-pressed="true"] {
-  transform:translateY(-2px);
+  /* Selection may transfer its glow, but photographs stay at the SAME x/y. */
   box-shadow:0 0 0 3px #baff08,0 0 20px #baff0870,0 7px 20px #001321a0;
 }
 .floatingThreadTab[aria-pressed="true"] .photo {border-color:#d9ff7c;}
@@ -565,4 +565,56 @@
 }
 @media(prefers-reduced-motion:reduce) {
   .floatingThreadTabDragging,.floatingTabDragGhost {transition:none;}
+}
+
+
+/* The selected portrait remains fixed. A bright stroke starts at its TOP,
+   follows the circular avatar, then walks clockwise around the entire
+   window edge. The border never forces the tab row to reorder or move. */
+.dockOpen .borderTraceOverlay {
+  position:absolute;
+  z-index:3;
+  top:-58px;
+  left:0;
+  width:100%;
+  height:calc(100% + 58px);
+  overflow:visible;
+  pointer-events:none;
+}
+.borderTracePath {
+  fill:none;
+  stroke:#bdff06;
+  stroke-width:3.5;
+  stroke-linecap:round;
+  stroke-linejoin:round;
+  stroke-dasharray:1000;
+  stroke-dashoffset:1000;
+  filter:drop-shadow(0 0 5px rgba(186,255,8,.85));
+  animation:vento-border-trace 1150ms cubic-bezier(.21,.73,.19,1) forwards;
+}
+@keyframes vento-border-trace {
+  0% {stroke-dashoffset:1000;opacity:.75;}
+  13% {opacity:1;}
+  100% {stroke-dashoffset:0;opacity:1;}
+}
+/* Shrink the entire opened message window into the selected portrait on
+   backdrop/X close. Only after this contraction do the other tabs fly back
+   to their old floating position in a visible staggered chain. */
+.dockOpen .panelSucking {
+  transform-origin:center center;
+  pointer-events:none;
+  will-change:transform,opacity;
+  animation:vento-chat-suction 470ms cubic-bezier(.27,.58,.58,1) forwards;
+}
+@keyframes vento-chat-suction {
+  0% {transform:translate3d(0,0,0) scale(1);opacity:1;}
+  22% {transform:translate3d(0,-6px,0) scale(.96);opacity:1;}
+  100% {
+    transform:translate3d(var(--chat-suck-x,0px),var(--chat-suck-y,0px),0) scale(.07);
+    opacity:0;
+  }
+}
+@media(prefers-reduced-motion:reduce){
+  .borderTracePath {animation:none;stroke-dashoffset:0;}
+  .dockOpen .panelSucking {animation:none;opacity:0;}
 }

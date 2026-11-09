@@ -69,7 +69,7 @@ assert.ok(
   floatingChat.includes("styles.trashTarget") &&
   floatingChat.includes("styles.trashTargetHot") &&
   floatingChat.includes("'Solte aqui para fechar todas as bolinhas de conversa'") &&
-  floatingChat.includes('setHiddenUnread(previous=>({...previous,[current.id]:current.lastAt}))') &&
+  floatingChat.includes('setHiddenUnread(previous=>({...previous,[closingId]:target.lastAt}))') &&
   floatingChat.includes('aria-label="Fechar conversa"') &&
   lineIcons.includes('close: <path'),
   'Dismiss all must preserve unread messages for reappearance on a new message, while X closes one chat',
@@ -164,7 +164,7 @@ assert.deepEqual(
 assert.ok(
   floatingChat.includes('const [openedIds,setOpenedIds] = useState<string[]>([])') &&
   floatingChat.includes('setOpenedIds(previous=>previous.includes(id)?previous:[...previous,id])') &&
-  floatingChat.includes('const switcherThreads=chatSelectableThreads(threads,selectedId,openedIds,hiddenUnread)') &&
+  floatingChat.includes('const switcherThreads=chatStableTabs(threads,selectedId,openedIds,hiddenUnread,tabSequence)') &&
   floatingChat.includes('open && switcherThreads.length ? (') &&
   floatingChat.includes('switcherThreads.map(t => {') &&
   !floatingChat.includes('threads.map(t => {') &&
@@ -274,7 +274,7 @@ assert.deepEqual(
 assert.ok(
   floatingChat.includes('function closeOutside(){') &&
   floatingChat.includes('function minimize(){') &&
-  floatingChat.includes('setOpenedIds(previous=>previous.filter(id=>id!==selectedId))') &&
+  floatingChat.includes('setOpenedIds(previous=>previous.filter(id=>id!==closingId))') &&
   floatingChat.includes('setOpenedIds([]);\n    setDraggingBubble(false);setTrashHot(false);setBubblePosition(null);') &&
   floatingChat.includes('onClick={closeOutside}') &&
   floatingChat.includes('aria-label="Recolher bate-papo e restaurar bolinhas"') &&
@@ -405,7 +405,7 @@ assert.ok(
   floatingChat.includes('onPointerCancel={onTopTabCancel}') &&
   floatingChat.includes('function dismissTopConversation(id:string)') &&
   floatingChat.includes('setOpenedIds(previous=>previous.filter(threadId=>threadId!==id))') &&
-  floatingChat.includes('if(selectedId===id)closeOutside()') &&
+  floatingChat.includes('if(selectedId===id)requestClose(id)') &&
   floatingChat.includes('aria-label={draggedTopTab?') &&
   floatingChat.includes("draggedTopTab?'Solte para fechar esta conversa':") &&
   floatingChat.includes('draggedTopThread ? <Photo thread={draggedTopThread}/> : null') &&
@@ -416,8 +416,69 @@ assert.ok(
 assert.ok(
   floatingChat.includes('setBubblePosition({') &&
   floatingChat.includes('function closeOutside(){') &&
-  floatingChat.includes('if(selectedId===id)closeOutside()') &&
+  floatingChat.includes('if(selectedId===id)requestClose(id)') &&
   !floatingChat.includes('function dismissTopConversation(id:string){\\n    setOpenedIds([])'),
   'Dragging the selected chat to the X must restore the other bubbles to their previous side and height',
 );
 console.log('PASS: selected chat outline, all active tabs, independent photo dragging and restoring remaining bubbles');
+
+
+// A selected portrait never jumps to the first tab, even if a newer message
+// arrives during a different open chat. New sessions append at the right edge.
+const {chatStableTabs}=await import('../src/lib/chat-dock.ts');
+const pinned=[
+  {id:'first',code:'A',peerId:'p-a',name:'A',lastAt:'2026-11-08T21:01:00Z',unread:1},
+  {id:'second',code:'B',peerId:'p-b',name:'B',lastAt:'2026-11-08T21:02:00Z',unread:1},
+  {id:'third',code:'C',peerId:'p-c',name:'C',lastAt:'2026-11-08T21:03:00Z',unread:1},
+];
+const pinnedOrder=['first','second','third'];
+assert.deepEqual(chatStableTabs(pinned,'first',pinnedOrder,{},pinnedOrder).map(t=>t.id),pinnedOrder);
+assert.deepEqual(chatStableTabs(pinned,'second',pinnedOrder,{},pinnedOrder).map(t=>t.id),pinnedOrder);
+assert.deepEqual(chatStableTabs(pinned.map(t=>t.id==='third'
+  ? {...t,lastAt:'2026-11-08T23:45:00Z'}:t),
+  'third',pinnedOrder,{},pinnedOrder).map(t=>t.id),pinnedOrder,
+  'Newest message must NOT reorder portraits while the chat is open');
+assert.deepEqual(chatStableTabs([
+  ...pinned,{id:'fourth',code:'D',peerId:'p-d',name:'D',
+    lastAt:'2026-11-08T23:46:00Z',unread:2}
+],'second',pinnedOrder,{},pinnedOrder).map(t=>t.id),[...pinnedOrder,'fourth']);
+assert.ok(
+  floatingChat.includes('const [tabSequence,setTabSequence] = useState<string[]>([])') &&
+  floatingChat.includes('setTabSequence(previous=>previous.includes(id)?previous:[...previous,id])') &&
+  floatingChat.includes('const switcherThreads=chatStableTabs(threads,selectedId,openedIds,hiddenUnread,tabSequence)') &&
+  floatingChat.includes('data-chat-id={t.id}') &&
+  floatingChat.includes('photoStrip.current?.querySelectorAll<HTMLButtonElement>') &&
+  floatingChat.includes('pendingClosedTab.current=dismissId'),
+  'Open chat portrait order and close-session animation must retain stable photo identities',
+);
+assert.ok(
+  floatingChat.includes('className={styles.borderTraceOverlay}') &&
+  floatingChat.includes('className={styles.borderTracePath}') &&
+  floatingChat.includes('pathLength={1000}') &&
+  floatingChat.includes('M \u0024{cx} \u0024{cy-r}') &&
+  floatingChat.includes('A \u0024{r} \u0024{r} 0 0 1') &&
+  floatingCss.includes('@keyframes vento-border-trace') &&
+  floatingCss.includes('stroke-dasharray:1000;') &&
+  floatingCss.includes('stroke-dashoffset:1000;') &&
+  floatingCss.includes('animation:vento-border-trace 1150ms') &&
+  !floatingCss.includes('transform:translateY(-2px);'),
+  'Lime selection border should start above the selected portrait and draw around the panel without shifting photos',
+);
+assert.ok(
+  floatingChat.includes('function requestClose(dismissId:string|null=null)') &&
+  floatingChat.includes('const targetX=selected?selected.left+selected.width/2') &&
+  floatingChat.includes('pendingSnap.current=from;') &&
+  floatingChat.includes('requestClose(selectedId)') &&
+  floatingChat.includes('if(selectedId===id)requestClose(id)') &&
+  floatingChat.includes('chatCloseTimer.current=window.setTimeout') &&
+  floatingChat.includes('avatar.depth*95') &&
+  floatingChat.includes('},[bubblePosition,draggingBubble,open]);') &&
+  floatingChat.includes('selectedId?styles.panelSelected') &&
+  floatingChat.includes('closingChat?styles.panelSucking') &&
+  floatingCss.includes('@keyframes vento-chat-suction') &&
+  floatingCss.includes('scale(.07)') &&
+  floatingChat.includes('transform 490ms cubic-bezier') &&
+  floatingCss.includes('@media(prefers-reduced-motion:reduce)'),
+  'Closing must visibly suck the window into the selected avatar and send the rest back in a staggered chain',
+);
+console.log('PASS: stable photo selection, traced green border and chat suction with staggered avatar returns');

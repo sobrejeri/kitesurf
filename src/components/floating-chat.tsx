@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useLayoutEffect, useRef, useState, type CSSProperties, type PointerEvent as ReactPointerEvent } from 'react';
 import { createPortal } from 'react-dom';
-import { chatBookingId, chatSessionBubbles, chatSelectableThreads, mergeChatMessages, chatWasRead, presenceLabel, chatThreadTag, type ChatRead, type ChatArea, type ChatMessage, type ChatThread } from '@/lib/chat-dock';
+import { chatBookingId, chatSessionBubbles, chatStableTabs, mergeChatMessages, chatWasRead, presenceLabel, chatThreadTag, type ChatRead, type ChatArea, type ChatMessage, type ChatThread } from '@/lib/chat-dock';
 import {CHAT_FILE_TYPES,MAX_CHAT_FILE} from '@/lib/chat-files';
 import { initials } from '@/lib/people';
 import { Icon } from './icon';
@@ -70,9 +70,18 @@ export function FloatingChat({area,viewerId}: {area:ChatArea;viewerId:string}) {
   const [emojiOpen,setEmojiOpen] = useState(false);
   const [visibleViewport,setVisibleViewport] = useState<{top:number;height:number;keyboard:boolean}|null>(null);
   const [selectedId,setSelectedId] = useState<string|null>(null);
+  const [closingChat,setClosingChat] = useState<{dx:number;dy:number}|null>(null);
+  const [borderTrace,setBorderTrace] = useState<{width:number;height:number;path:string}|null>(null);
+  const chatCloseTimer=useRef<number|null>(null);
+  const pendingClosedTab=useRef<string|null>(null);
+  const openDock=useRef<HTMLElement|null>(null);
+  const openPanel=useRef<HTMLElement|null>(null);
+  const photoStrip=useRef<HTMLElement|null>(null);
+  const outlineTrack=useRef<SVGSVGElement|null>(null);
   // Never show the full booking history as a row of repeated contact photos.
   // Only sessions the user opened, or new unread conversations, get a tab.
   const [openedIds,setOpenedIds] = useState<string[]>([]);
+  const [tabSequence,setTabSequence] = useState<string[]>([]);
   // Drag one top-edge portrait to X to close just that conversation.
   const [draggedTopTab,setDraggedTopTab] = useState<{id:string;x:number;y:number}|null>(null);
   const topTabDrag=useRef<{id:string;pointerId:number;x:number;y:number;moved:boolean}|null>(null);
@@ -107,7 +116,8 @@ export function FloatingChat({area,viewerId}: {area:ChatArea;viewerId:string}) {
   const selectedRef = useRef<string|null>(null);
   const endpoint = `/${area}/chat-live`;
   const bubbleList=chatSessionBubbles(threads,openedIds,hiddenUnread);
-  const switcherThreads=chatSelectableThreads(threads,selectedId,openedIds,hiddenUnread);
+  const switcherThreads=chatStableTabs(threads,selectedId,openedIds,hiddenUnread,tabSequence);
+  const stableTabKeys=switcherThreads.map(t=>t.id).join('|');
   // Latest unread conversation (index zero) is always the topmost avatar.
   // Each older conversation remains half-visible behind it, extending
   // inward from the chosen screen edge (right -> left, left -> right).
@@ -123,7 +133,7 @@ export function FloatingChat({area,viewerId}: {area:ChatArea;viewerId:string}) {
 
   const refreshInbox = useCallback(async (signal?:AbortSignal) => {
     const response = await fetch(endpoint,{cache:'no-store',signal});
-    const clear = () => {setThreads([]);setMessages([]);setDrafts({});setDetail(null);setOpen(false);setSelectedId(null);setOpenedIds([]);setHiddenUnread({});setLocationDraft(null);selectedRef.current=null;};
+    const clear = () => {setThreads([]);setMessages([]);setDrafts({});setDetail(null);setOpen(false);setSelectedId(null);setOpenedIds([]);setTabSequence([]);setHiddenUnread({});setLocationDraft(null);selectedRef.current=null;};
     if (response.status===401 || response.status===403 || response.redirected) {
       clear();throw new Error('Entre novamente para abrir as conversas.');
     }
@@ -133,6 +143,21 @@ export function FloatingChat({area,viewerId}: {area:ChatArea;viewerId:string}) {
     setFeaturesReady(data.featuresReady);if(!visibilityBusy.current)setShowOnline(data.showOnline);
     setThreads(data.threads);setInboxError('');
   },[endpoint,viewerId]);
+
+  // Append freshly received conversations at the RIGHT edge once; changing
+  // which portrait is selected must never reorder existing tabs.
+  useEffect(()=>{
+    const active=chatSessionBubbles(threads,openedIds,hiddenUnread).map(t=>t.id);
+    if(selectedId && threads.some(t=>t.id===selectedId) && !active.includes(selectedId))
+      active.push(selectedId);
+    setTabSequence(previous=>{
+      const eligible=new Set(active);
+      const next=previous.filter(id=>eligible.has(id));
+      for(const id of active)if(!next.includes(id))next.push(id);
+      return next.length===previous.length && next.every((id,i)=>id===previous[i])
+        ? previous : next;
+    });
+  },[threads,openedIds,hiddenUnread,selectedId]);
 
   useEffect(()=>{
     setMounted(true);
@@ -152,7 +177,12 @@ export function FloatingChat({area,viewerId}: {area:ChatArea;viewerId:string}) {
   },[refreshInbox]);
 
   const show = useCallback((id:string) => {
-    // A conversation enters the photo switcher only once it was opened.
+    // Selection changes only the conversation and its highlight, NEVER
+    // the horizontal position of any already opened photograph.
+    if(chatCloseTimer.current!==null){window.clearTimeout(chatCloseTimer.current);chatCloseTimer.current=null;}
+    pendingClosedTab.current=null;
+    setClosingChat(null);
+    setTabSequence(previous=>previous.includes(id)?previous:[...previous,id]);
     setOpenedIds(previous=>previous.includes(id)?previous:[...previous,id]);
     selectedRef.current=id;
     if (selectedId!==id) {
@@ -327,31 +357,64 @@ export function FloatingChat({area,viewerId}: {area:ChatArea;viewerId:string}) {
     }catch{setError('Não foi possível carregar as mensagens anteriores.');}
     finally{setLoadingOlder(false);}
   }
+  function requestClose(dismissId:string|null=null){
+    if(chatCloseTimer.current!==null)return;
+    // Preserve the exterior tab coordinates before the panel is removed.
+    // Remaining portraits will travel back to the original floating stack
+    // one by one using the existing FLIP/snap animation.
+    const from=new Map<string,BubblePoint>();
+    photoStrip.current?.querySelectorAll<HTMLButtonElement>('button[data-chat-id]').forEach(button=>{
+      const id=button.dataset.chatId;
+      if(!id)return;
+      const rect=button.getBoundingClientRect();
+      from.set(id,{x:rect.left+rect.width/2,y:rect.top+rect.height/2});
+    });
+    pendingSnap.current=from;
+    pendingClosedTab.current=dismissId;
+    const panel=openPanel.current?.getBoundingClientRect();
+    const selected=photoStrip.current?.querySelector<HTMLButtonElement>('button[aria-pressed="true"]')?.getBoundingClientRect();
+    const reduceMotion=window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    if(panel){
+      // The open dialog visually contracts into the active portrait.
+      const targetX=selected?selected.left+selected.width/2:panel.left+panel.width/2;
+      const targetY=selected?selected.top+selected.height/2:panel.top;
+      setClosingChat({
+        dx:targetX-(panel.left+panel.width/2),
+        dy:targetY-(panel.top+panel.height/2)
+      });
+    }
+    chatCloseTimer.current=window.setTimeout(()=>{
+      chatCloseTimer.current=null;
+      const closingId=pendingClosedTab.current;
+      pendingClosedTab.current=null;
+      if(closingId){
+        const target=threads.find(t=>t.id===closingId);
+        if(target)setHiddenUnread(previous=>({...previous,[closingId]:target.lastAt}));
+        setOpenedIds(previous=>previous.filter(id=>id!==closingId));
+      }
+      selectedRef.current=null;
+      setSelectedId(null);
+      setAttachmentsOpen(false);
+      setEmojiOpen(false);
+      setOpen(false);
+      setClosingChat(null);
+    },reduceMotion?0:470);
+  }
   function closeOutside(){
-    // A backdrop tap only collapses the window. Leave the opened session
-    // list and bubblePosition intact so avatars return to the same edge/height.
-    selectedRef.current=null;
-    setSelectedId(null);
-    setAttachmentsOpen(false);
-    setEmojiOpen(false);
-    setOpen(false);
+    // Backdrop closes visually but keeps all opened bubbles and their
+    // original left/right edge and height, ready for sequential re-entry.
+    requestClose();
   }
   function minimize(){
-    // X closes only this conversation session. Other opened/unread chats
-    // remain available, and no server-side messages are deleted or marked.
-    if(selectedId){
-      const current=threads.find(t=>t.id===selectedId);
-      if(current) setHiddenUnread(previous=>({...previous,[current.id]:current.lastAt}));
-      setOpenedIds(previous=>previous.filter(id=>id!==selectedId));
-    }
-    closeOutside();
+    // The X removes only this active conversation; the others return.
+    requestClose(selectedId);
   }
   function dismissTopConversation(id:string){
     // Only remove this local session and unread alert; never delete messages.
     const thread=threads.find(t=>t.id===id);
     if(thread) setHiddenUnread(previous=>({...previous,[id]:thread.lastAt}));
     setOpenedIds(previous=>previous.filter(threadId=>threadId!==id));
-    if(selectedId===id)closeOutside();
+    if(selectedId===id)requestClose(id);
   }
   const onTopTabDown=(event:ReactPointerEvent<HTMLButtonElement>,id:string)=>{
     if(event.button!==0 || topTabDrag.current)return;
@@ -603,7 +666,7 @@ export function FloatingChat({area,viewerId}: {area:ChatArea;viewerId:string}) {
       const reduced=window.matchMedia('(prefers-reduced-motion: reduce)').matches;
       for(const avatar of arrivals){
         avatar.node.style.transition=reduced?'none':
-          `transform 390ms cubic-bezier(.2,.75,.2,1) ${avatar.depth*45}ms`;
+          `transform 490ms cubic-bezier(.16,.84,.18,1) ${avatar.depth*95}ms`;
         avatar.node.style.transform='translate3d(0,0,0)';
       }
       bubbleSnapTimer.current=window.setTimeout(()=>{
@@ -614,9 +677,9 @@ export function FloatingChat({area,viewerId}: {area:ChatArea;viewerId:string}) {
         }
         bubbleGroup.current?.style.removeProperty('transition');
         bubbleSnapTimer.current=null;
-      },reduced?0:790);
+      },reduced?0:1150);
     });
-  },[bubblePosition,draggingBubble]);
+  },[bubblePosition,draggingBubble,open]);
 
   useEffect(()=>()=>{cancelTrailFrame();cancelSnap();},[]);
 
@@ -637,12 +700,79 @@ export function FloatingChat({area,viewerId}: {area:ChatArea;viewerId:string}) {
     return ()=>window.removeEventListener('resize',reposition);
   },[stackWidth,stackHeight]);
 
+  // Trace begins at the TOP of the selected portrait, loops around its
+  // ring, connects to the chat border and draws its entire perimeter.
+  // Recalculate if the iPhone keyboard changes the visible viewport.
+  useLayoutEffect(()=>{
+    if(!open || !selectedId || closingChat){
+      setBorderTrace(previous=>previous?null:previous);
+      return;
+    }
+    const panel=openPanel.current;
+    const nav=photoStrip.current;
+    const track=outlineTrack.current;
+    if(!panel || !nav || !track)return;
+    let frame:number|null=null;
+    const recalc=()=>{
+      const tab=nav.querySelector<HTMLButtonElement>('button[aria-pressed="true"]');
+      if(!tab)return;
+      const view=track.getBoundingClientRect();
+      const avatar=tab.getBoundingClientRect();
+      const rect=panel.getBoundingClientRect();
+      if(!view.width || !view.height || !rect.width || !rect.height)return;
+      const cx=avatar.left+avatar.width/2-view.left;
+      const cy=avatar.top+avatar.height/2-view.top;
+      const r=avatar.width/2+3;
+      const left=rect.left-view.left+1,top=rect.top-view.top+1;
+      const right=rect.right-view.left-1,bottom=rect.bottom-view.top-1;
+      const corner=Math.min(21,rect.width/6,rect.height/6);
+      const path=[
+        `M ${cx} ${cy-r}`,
+        `A ${r} ${r} 0 0 1 ${cx+r} ${cy}`,
+        `A ${r} ${r} 0 0 1 ${cx} ${cy+r}`,
+        `A ${r} ${r} 0 0 1 ${cx-r} ${cy}`,
+        `A ${r} ${r} 0 0 1 ${cx} ${cy-r}`,
+        `L ${left+corner} ${top}`,
+        `H ${right-corner}`,
+        `Q ${right} ${top} ${right} ${top+corner}`,
+        `V ${bottom-corner}`,
+        `Q ${right} ${bottom} ${right-corner} ${bottom}`,
+        `H ${left+corner}`,
+        `Q ${left} ${bottom} ${left} ${bottom-corner}`,
+        `V ${top+corner}`,
+        `Q ${left} ${top} ${left+corner} ${top}`
+      ].join(' ');
+      setBorderTrace(previous=>previous && previous.path===path &&
+        previous.width===view.width && previous.height===view.height
+        ? previous : {width:view.width,height:view.height,path});
+    };
+    const schedule=()=>{
+      if(frame!==null)window.cancelAnimationFrame(frame);
+      frame=window.requestAnimationFrame(()=>{frame=null;recalc();});
+    };
+    recalc();
+    const observer=typeof ResizeObserver==='undefined'?null:new ResizeObserver(schedule);
+    observer?.observe(panel);
+    observer?.observe(nav);
+    window.addEventListener('resize',schedule);
+    return ()=>{
+      if(frame!==null)window.cancelAnimationFrame(frame);
+      observer?.disconnect();
+      window.removeEventListener('resize',schedule);
+    };
+  },[open,selectedId,closingChat,stableTabKeys,visibleViewport?.top,visibleViewport?.height]);
+
+  // The closing transition does not clear opened sessions. Their photo
+  // positions are sampled before the window contracts and are animated back
+  // to the original edge/height after the dock unmounts.
+  useEffect(()=>()=>{if(chatCloseTimer.current!==null)window.clearTimeout(chatCloseTimer.current);},[]);
+
   if (!mounted) return null;
   const draggedTopThread=draggedTopTab?threads.find(t=>t.id===draggedTopTab.id):null;
   const unread=threads.reduce((sum,t)=>sum+t.unread,0);
   return createPortal(<>
     {open ? <button type="button" className={styles.scrim} onClick={closeOutside} aria-label="Recolher bate-papo e restaurar bolinhas" /> : null}
-    <aside
+    <aside ref={openDock}
       className={`${styles.dock} ${area === 'aluno' ? styles.studentDock : ''} ${open?styles.dockOpen:''} ${open&&visibleViewport?.keyboard?styles.dockKeyboard:''}`}
       style={open&&visibleViewport ? ({
         '--chat-vv-top':`${visibleViewport.top}px`,
@@ -651,10 +781,10 @@ export function FloatingChat({area,viewerId}: {area:ChatArea;viewerId:string}) {
       aria-label="Chat flutuante Vento">
     <span className={styles.sr} aria-live="polite">{unread?`${unread} mensagens não lidas no chat.`:''}</span>
     {open && switcherThreads.length ? (
-      <nav className={styles.floatingThreadTabs} aria-label="Conversas novas ou abertas">
+      <nav ref={photoStrip} className={styles.floatingThreadTabs} aria-label="Conversas novas ou abertas">
         {switcherThreads.map(t => {
           const selected = selectedId === t.id;
-          return <button type="button" key={t.id}
+          return <button type="button" key={t.id} data-chat-id={t.id}
             className={`${styles.floatingThreadTab} ${draggedTopTab?.id===t.id?styles.floatingThreadTabDragging:''}`}
             aria-label={`Abrir conversa com ${t.name}, reserva ${t.code}. Arraste até o X para fechar somente esta conversa.`}
             aria-pressed={selected}
@@ -673,7 +803,23 @@ export function FloatingChat({area,viewerId}: {area:ChatArea;viewerId:string}) {
         })}
       </nav>
     ) : null}
-    {open ? <section className={`${styles.panel} ${selectedId?styles.panelSelected:''}`} role="dialog" aria-modal="false"
+    {open && selectedId && !closingChat ? (
+      <svg ref={outlineTrack} className={styles.borderTraceOverlay}
+        viewBox={borderTrace?`0 0 ${borderTrace.width} ${borderTrace.height}`:'0 0 1 1'}
+        preserveAspectRatio="none" aria-hidden="true">
+        {borderTrace ? (
+          <path key={selectedId} className={styles.borderTracePath}
+            pathLength={1000} d={borderTrace.path}/>
+        ) : null}
+      </svg>
+    ) : null}
+    {open ? <section ref={openPanel}
+      className={`${styles.panel} ${selectedId?styles.panelSelected:''} ${closingChat?styles.panelSucking:''}`}
+      style={closingChat ? ({
+        '--chat-suck-x':`${closingChat.dx}px`,
+        '--chat-suck-y':`${closingChat.dy}px`
+      } as CSSProperties) : undefined}
+      role="dialog" aria-modal="false"
       aria-label={thread?`Conversa com ${thread.name}`:'Minhas conversas'}
       onKeyDown={event=>{if(event.key==='Escape')closeOutside();}}>
       <header className={styles.head}>
