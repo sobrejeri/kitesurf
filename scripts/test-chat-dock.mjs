@@ -191,7 +191,7 @@ console.log('PASS: subtle avatar bubble halo remains visible without changing un
 // The avatars should form a single side-by-side row instead of a descending
 // staircase. Depth is expressed only in fading shadows, never dimming photos.
 assert.ok(
-  floatingChat.includes('const bubbleStep=58;') &&
+  floatingChat.includes('const bubbleStep=29;') &&
   floatingChat.includes('const stackWidth=58+Math.max(0,bubbleList.length-1)*bubbleStep;') &&
   floatingChat.includes('const stackHeight=58;') &&
   floatingChat.includes("bubbleSide.current==='left'?styles.bubblesLeft:''") &&
@@ -211,3 +211,37 @@ assert.ok(
   'Unread avatars must sit in one horizontal row, with progressively softer halo and unchanged badges and drag gestures',
 );
 console.log('PASS: horizontally aligned avatar notifications with fading background glow');
+
+// Half-width overlap on both sides; newer unread messages must always take
+// the top z-index and reposition the row without changing its edge anchoring.
+const chatNewestFirst = [
+  {id:'earlier',peerId:'student-a',lastAt:'2026-11-08T13:00:00Z',unread:1},
+  {id:'latest',peerId:'student-b',lastAt:'2026-11-08T14:00:00Z',unread:1},
+  {id:'middle',peerId:'student-c',lastAt:'2026-11-08T13:30:00Z',unread:2},
+];
+assert.deepEqual(chatBubbles(chatNewestFirst).map(t=>t.id),['latest','middle','earlier']);
+const withReply = chatNewestFirst.map(t=>t.id==='earlier'
+  ? {...t,lastAt:'2026-11-08T15:00:00Z'}:t);
+assert.deepEqual(chatBubbles(withReply).map(t=>t.id),['earlier','latest','middle'],
+  'The most recent message must move its avatar to the front regardless of previous order');
+assert.ok(
+  floatingChat.includes('const bubbleStep=29;') &&
+  floatingChat.includes('const stackWidth=58+Math.max(0,bubbleList.length-1)*bubbleStep;') &&
+  floatingChat.includes('const stackHeight=58;') &&
+  floatingChat.includes("bubbleSide.current==='left'") &&
+  floatingChat.includes('left:\`\${index*bubbleStep}px\`') &&
+  floatingChat.includes('right:\`\${index*bubbleStep}px\`') &&
+  floatingChat.includes('zIndex:10-index') &&
+  floatingChat.includes('[...bubbleList].reverse().map') &&
+  floatingChat.includes('const index = bubbleList.length - 1 - reversedIndex;') &&
+  floatingChat.includes('const reposition=()=>{') &&
+  floatingChat.includes('if(bubbleDrag.current)return;') &&
+  floatingChat.includes('reposition();') &&
+  floatingCss.includes('.bubbles:not(.bubblesLeft) .bubble[data-depth]:not([data-depth="0"]) .badge') &&
+  floatingCss.includes('left:-8px;') &&
+  floatingCss.includes('transition:left .22s ease,right .22s ease,box-shadow .22s ease;') &&
+  floatingCss.includes('.bubbles,.bubbles .bubble,.threadSwitchButton .photo {transition:none;}'),
+  'Bubbles must be 50%-overlapped, sorted by recency, mirrored on the left/right, with visible badges and reduced-motion support',
+);
+console.log('PASS: 50% overlapping unread portraits reorder with newest message in front');
+

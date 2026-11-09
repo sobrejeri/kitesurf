@@ -172,6 +172,9 @@
     0 0 0 5px rgba(186,255,8,var(--bubble-ring-alpha,.10)),
     0 0 22px 4px rgba(36,211,197,var(--bubble-glow-alpha,.25)),
     0 8px 26px rgba(0,19,35,var(--bubble-shadow-alpha,.65));
+  /* Newest message moves to the foreground while older portraits slide
+     horizontally; the soft halo fades from front to back. */
+  transition:left .22s ease,right .22s ease,box-shadow .22s ease;
   touch-action:none;
 }
 .bubbles .bubble .photo {
@@ -194,6 +197,14 @@
   font-size:11px;
   box-shadow:0 2px 7px #0004;
 }
+/* At the right edge, older portraits show their LEFT half. Put their red
+   unread counters on that exposed half instead of hiding them underneath
+   the newest avatar. The left-edge arrangement remains mirrored. */
+.bubbles:not(.bubblesLeft) .bubble[data-depth]:not([data-depth="0"]) .badge {
+  left:-8px;
+  right:auto;
+}
+
 .moreUnread {
   position:absolute;
   z-index:20;
@@ -303,7 +314,7 @@
   .studentDock .panel {height:min(66dvh,500px);}
 }
 @media(prefers-reduced-motion:reduce) {
-  .bubbles,.threadSwitchButton .photo {transition:none;}
+  .bubbles,.bubbles .bubble,.threadSwitchButton .photo {transition:none;}
 }
 
 
