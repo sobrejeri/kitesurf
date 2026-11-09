@@ -103,7 +103,7 @@ financeira, abertura automática de incidente, liberação de repasse ou reembol
 - [x] Migração **39 proposta** com declarações por encontro/autor, versões append-only e funções de autorização no servidor.
 - [x] Avaliações administrativas **somente descritivas**, versionadas e auditadas; não criam estorno, crédito, liberação ou check-in.
 - [x] Provas com bucket privado, tipagem restrita (JPEG/PNG/WebP/PDF), limite de 5 MB, no máximo seis por declaração; leitura de arquivos restrita ao autor da prova e Admin.
-- [x] Interface de linha do tempo Aluno/Instrutor/Admin e envio de arquivo, **inteiramente protegidos** por `VENTO_PROTEGE_STATEMENTS_ENABLED`. Esta flag fica `false` por padrão.
+- [x] Interface de linha do tempo Aluno/Instrutor/Admin e envio de arquivo, **inteiramente protegidos** por `NEXT_PUBLIC_VENTO_PROTEGE_STATEMENTS_ENABLED`. Esta flag fica `false` por padrão.
 - [x] Testes da lógica no Node e validações SQL em PostgreSQL temporário; sem executar SQL remoto.
 - [ ] Auditar migration 39 e políticas de Storage com schema Supabase real em ambiente de homologação; decidir procedimento de recuperação e obter autorização explícita para alteração.
 - [ ] Aplicar migração autorizada, verificar RLS/Storage e habilitar flag somente depois; validar com contas reais e capturas iPhone/desktop.
