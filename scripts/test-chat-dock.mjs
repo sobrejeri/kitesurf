@@ -407,7 +407,7 @@ assert.ok(
   floatingChat.includes('setOpenedIds(previous=>previous.filter(threadId=>threadId!==id))') &&
   floatingChat.includes('if(selectedId===id)closeOutside()') &&
   floatingChat.includes('aria-label={draggedTopTab?') &&
-  floatingChat.includes('draggedTopTab?\\x27Solte para fechar esta conversa\\x27:') &&
+  floatingChat.includes("draggedTopTab?'Solte para fechar esta conversa':") &&
   floatingChat.includes('draggedTopThread ? <Photo thread={draggedTopThread}/> : null') &&
   floatingCss.includes('.floatingTabDragGhost {') &&
   floatingCss.includes('.floatingThreadTabDragging {'),
