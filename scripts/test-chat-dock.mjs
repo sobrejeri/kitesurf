@@ -69,7 +69,7 @@ assert.ok(
   floatingChat.includes("styles.trashTarget") &&
   floatingChat.includes("styles.trashTargetHot") &&
   floatingChat.includes("'Solte aqui para fechar todas as bolinhas de conversa'") &&
-  floatingChat.includes('setHiddenUnread(previous=>({...previous,[current.id]:current.lastAt}))') &&
+  floatingChat.includes('setHiddenUnread(previous=>({...previous,[closingId]:target.lastAt}))') &&
   floatingChat.includes('aria-label="Fechar conversa"') &&
   lineIcons.includes('close: <path'),
   'Dismiss all must preserve unread messages for reappearance on a new message, while X closes one chat',
