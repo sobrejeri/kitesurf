@@ -8,6 +8,7 @@ import { createSupabaseServerClient } from '@/lib/supabase/server';
 import { ProtectionMonitor } from '@/components/protection-monitor';
 import { listProtectionMonitorItems } from '@/lib/protection-monitor';
 import { summarizeVisibleProtectionReports } from '@/lib/protection-report-summary';
+import { ProtectionStatementsWorkspace } from '@/components/protection-statements-workspace';
 
 type Incident = {
   id:string;booking_id:string;meeting_id:string;reported_by:string;incident_type:string;
@@ -16,7 +17,7 @@ type Incident = {
 };
 
 type AdminMeeting = { id: string; booking_id: string; starts_at: string; minutes: number; status: string };
-type AdminBooking = { id: string; code: string; status: string; is_test: boolean };
+type AdminBooking = { id: string; code: string; status: string; is_test: boolean; student_id: string; instructor_id: string | null };
 
 const TYPES:Record<string,string>={
   weather:'Condições do vento',absence:'Ausência',equipment:'Equipamento',
@@ -54,7 +55,7 @@ export async function IncidentWorkspace({area,title}:{area:'aluno'|'instrutor'|'
     .limit(100).returns<AdminMeeting[]>() : null;
   const adminBookingIds=[...new Set((adminMeetingRead?.data??[]).map(m=>m.booking_id))];
   const adminBookingRead=admin && adminBookingIds.length ? await db.from('bookings')
-    .select('id,code,status,is_test')
+    .select('id,code,status,is_test,student_id,instructor_id')
     .in('id',adminBookingIds).returns<AdminBooking[]>() : null;
   const adminBookingMap=new Map((adminBookingRead?.data??[]).map(b=>[b.id,b] as const));
   const protectionSource=admin
@@ -71,6 +72,10 @@ export async function IncidentWorkspace({area,title}:{area:'aluno'|'instrutor'|'
         meetingStatus:m.meetingStatus, startsAt:m.startsAt, minutes:m.minutes, isTest:m.isTest,
       }));
   const protectionItems=listProtectionMonitorItems(protectionSource,nowMs);
+  const protectionRoles=Object.fromEntries(protectionSource.map(m=>{
+    const b=admin?adminBookingMap.get(m.bookingId):bookings.find(x=>x.id===m.bookingId);
+    return [m.id,{studentId:b?.student_id??'',instructorId:b?.instructor_id??null}];
+  }));
   const reportSummaries=summarizeVisibleProtectionReports(records.data??[],viewer.id);
   // The history query is limited to recent entries. Codes are fetched solely
   // for records visible under existing RLS; no extra incident is exposed.
@@ -90,6 +95,8 @@ export async function IncidentWorkspace({area,title}:{area:'aluno'|'instrutor'|'
       {records.error?<Note tone="warning">Não foi possível consultar as ocorrências. Tente novamente ou informe ao suporte.</Note>:null}
       <ProtectionMonitor items={protectionItems} area={area} reports={reportSummaries}
         error={Boolean(adminMeetingRead?.error || adminBookingRead?.error || records.error)}/>
+      <ProtectionStatementsWorkspace area={area} viewerId={viewer.id}
+        items={protectionItems} roles={protectionRoles}/>
       <div className="grid gap-4 lg:grid-cols-[1fr_1fr]">
         {!admin?(
           <div id="registrar-ocorrencia" className="scroll-mt-24"><Card>

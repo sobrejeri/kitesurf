@@ -78,3 +78,12 @@
 - [ ] Documentar como sincronizar a produção sem perder dados; executar apenas após validação.
 
 **Status geral desta identificação: nomes catalogados; migrações da produção ainda não conciliadas.**
+
+## 39 — VentoKite Protege (PREPARADA, NÃO APLICADA)
+
+- Arquivo no GitHub: `20261109000039_vento_protege_statements.sql`.
+- Tabelas propostas: `lesson_protection_statements` (relatos versionados e imutáveis), `lesson_protection_reviews` (avaliação registrada por Admin) e `lesson_protection_evidence` (metadados privados).
+- Bucket novo proposto `vento-protection-evidence` (privado, 5 MB, imagens/PDF).
+- Funções propostas: `submit_lesson_protection_statement`, `review_lesson_protection_case`, `prepare_lesson_protection_evidence`, `confirm_lesson_protection_evidence`.
+- **A migração 39 NÃO está aplicada no Supabase real.** O código depende de `NEXT_PUBLIC_VENTO_PROTEGE_STATEMENTS_ENABLED=true`, flag que deverá permanecer desativada até reconciliação, testes de RLS e autorização de schema.
+- Não modifica migração 38 nem altera dinheiro/presença/minutos.
