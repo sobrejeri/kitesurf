@@ -68,7 +68,7 @@ assert.ok(
   floatingChat.includes('dismissAllBubbles();return;') &&
   floatingChat.includes("styles.trashTarget") &&
   floatingChat.includes("styles.trashTargetHot") &&
-  floatingChat.includes('aria-label="Solte aqui para fechar todas as bolinhas de conversa"') &&
+  floatingChat.includes("'Solte aqui para fechar todas as bolinhas de conversa'") &&
   floatingChat.includes('setHiddenUnread(previous=>({...previous,[current.id]:current.lastAt}))') &&
   floatingChat.includes('aria-label="Fechar conversa"') &&
   lineIcons.includes('close: <path'),
