@@ -69,8 +69,8 @@ export function assessLessonProtection(input: ProtectionInput): ProtectionAssess
 
   let phase: ProtectionPhase;
   if (!hasEnded) phase = 'not_due';
-  else if (conflict) phase = 'conflicting_statements';
   else if (nowMs >= deadline) phase = 'admin_review';
+  else if (conflict) phase = 'conflicting_statements';
   else if (bothReplied) phase = 'matching_statements';
   else if (verifiedCheckIn) phase = 'presence_documented';
   else phase = 'awaiting_statements';
