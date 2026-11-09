@@ -101,7 +101,7 @@ CREATE TABLE public.lesson_protection_reviews (
     ('request_more_evidence','disputed','suggest_reschedule',
      'refund_eligibility_review','no_financial_action')),
   rationale text NOT NULL CHECK(length(btrim(rationale)) BETWEEN 20 AND 2000),
-  created_at timestamptz NOT NULL DEFAULT now()
+  created_at timestamptz NOT NULL DEFAULT clock_timestamp()
 );
 CREATE INDEX protection_reviews_meeting_idx
  ON public.lesson_protection_reviews(meeting_id,created_at DESC);
