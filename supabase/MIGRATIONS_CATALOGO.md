@@ -87,3 +87,14 @@
 - Funções propostas: `submit_lesson_protection_statement`, `review_lesson_protection_case`, `prepare_lesson_protection_evidence`, `confirm_lesson_protection_evidence`.
 - **A migração 39 NÃO está aplicada no Supabase real.** O código depende de `NEXT_PUBLIC_VENTO_PROTEGE_STATEMENTS_ENABLED=true`, flag que deverá permanecer desativada até reconciliação, testes de RLS e autorização de schema.
 - Não modifica migração 38 nem altera dinheiro/presença/minutos.
+
+### Auditoria de segurança proposta para 39 (ainda não aplicada)
+
+O arquivo `20261109000039_vento_protege_statements.sql` foi reforçado com:
+- Policy de leitura que protege as declarações do instrutor anterior após a mudança de atribuição.
+- Helper de acesso Storage no schema privado `protection_private` com somente `USAGE`/EXECUTE para `authenticated`.
+- Leitura de arquivo confirmada (sem baixar evidência em upload pendente).
+- Limites serializados por encontro e janela de recuperação de tentativas falhas.
+- Testes de segurança em PostgreSQL temporário, sem supor que a base real tenha histórico de aplicação de migrações.
+
+**Não rodar em produção antes de reconciliar as migrations 01–38, o schema e o processo de aprovação.**

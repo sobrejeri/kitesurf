@@ -24,11 +24,15 @@ CREATE INDEX protection_statements_author_idx
 ALTER TABLE public.lesson_protection_statements ENABLE ROW LEVEL SECURITY;
 REVOKE ALL ON public.lesson_protection_statements FROM PUBLIC,anon,authenticated;
 GRANT SELECT ON public.lesson_protection_statements TO authenticated;
+-- Keep a former instructor's own testimony accessible to its author but do
+-- not expose it to a new instructor if the reservation is reassigned.
 CREATE POLICY protection_statements_participants_read
  ON public.lesson_protection_statements FOR SELECT TO authenticated USING (
-   public.is_admin() OR EXISTS (
+   author_id=auth.uid() OR public.is_admin() OR EXISTS (
      SELECT 1 FROM public.bookings b WHERE b.id=booking_id
-       AND (b.student_id=auth.uid() OR b.instructor_id=auth.uid())
+       AND (b.student_id=auth.uid()
+         OR (b.instructor_id=auth.uid()
+             AND author_id IN (b.student_id,b.instructor_id)))
    )
  );
 -- All revisions are append-only. Even the service role cannot rewrite testimony.
@@ -178,6 +182,9 @@ BEGIN
  IF s.id IS NULL OR s.author_id<>uid THEN
    RAISE EXCEPTION 'Statement unavailable' USING errcode='42501';
  END IF;
+ -- Lock the meeting before checking quotas. This serializes simultaneous
+ -- uploads even when they refer to different versions by the same author.
+ PERFORM 1 FROM public.booking_meetings WHERE id=s.meeting_id FOR UPDATE;
  IF p_filename IS NULL OR length(btrim(p_filename)) NOT BETWEEN 1 AND 180
    OR p_bytes IS NULL OR p_bytes NOT BETWEEN 1 AND 5242880 THEN
    RAISE EXCEPTION 'Invalid evidence file' USING errcode='22023';
@@ -188,9 +195,18 @@ BEGIN
  IF v_ext IS NULL THEN
    RAISE EXCEPTION 'Unsupported evidence format' USING errcode='22023';
  END IF;
+ -- Recent pending uploads count towards the quota. Old failed attempts
+ -- cannot permanently prevent the participant from presenting evidence.
  IF (SELECT COUNT(*) FROM public.lesson_protection_evidence
-     WHERE statement_id=s.id)>=6 THEN
+     WHERE statement_id=s.id AND (confirmed OR created_at>now()-interval '30 minutes'))>=6
+   OR (SELECT COUNT(*) FROM public.lesson_protection_evidence
+     WHERE meeting_id=s.meeting_id AND uploader_id=uid
+       AND (confirmed OR created_at>now()-interval '30 minutes'))>=20 THEN
    RAISE EXCEPTION 'Evidence limit reached' USING errcode='22023';
+ END IF;
+ IF (SELECT COUNT(*) FROM public.lesson_protection_evidence
+     WHERE uploader_id=uid AND created_at>now()-interval '10 minutes')>=5 THEN
+   RAISE EXCEPTION 'Too many evidence uploads' USING errcode='55000';
  END IF;
  v_path:=s.booking_id::text||'/'||uid::text||'/'||v_id::text||'.'||v_ext;
  INSERT INTO public.lesson_protection_evidence
@@ -199,15 +215,19 @@ BEGIN
  RETURN QUERY SELECT v_id,v_path;
 END $$;
 
-CREATE FUNCTION public.protection_evidence_storage_access(p_path text,p_for_upload boolean)
+-- Internal RLS helper: not a publicly exposed PostgREST RPC.
+CREATE SCHEMA IF NOT EXISTS protection_private;
+REVOKE ALL ON SCHEMA protection_private FROM PUBLIC,anon,authenticated;
+GRANT USAGE ON SCHEMA protection_private TO authenticated;
+CREATE FUNCTION protection_private.evidence_storage_access(p_path text,p_for_upload boolean)
 RETURNS boolean LANGUAGE sql STABLE SECURITY DEFINER SET search_path='' AS $$
  SELECT EXISTS(SELECT 1 FROM public.lesson_protection_evidence e
    WHERE e.object_path=p_path
-   AND (NOT p_for_upload OR
-       (e.uploader_id=auth.uid() AND NOT e.confirmed
-        AND e.created_at>now()-interval '15 minutes'))
-   AND (CASE WHEN p_for_upload THEN e.uploader_id=auth.uid()
-             ELSE (e.uploader_id=auth.uid() OR public.is_admin()) END));
+   AND (CASE WHEN p_for_upload
+      THEN e.uploader_id=auth.uid() AND NOT e.confirmed
+        AND e.created_at>now()-interval '15 minutes'
+      ELSE e.confirmed AND (e.uploader_id=auth.uid() OR public.is_admin())
+     END));
 $$;
 
 INSERT INTO storage.buckets(id,name,public,file_size_limit,allowed_mime_types)
@@ -216,10 +236,10 @@ VALUES ('vento-protection-evidence','vento-protection-evidence',false,5242880,
 ON CONFLICT (id) DO NOTHING;
 CREATE POLICY protection_evidence_insert ON storage.objects FOR INSERT TO authenticated
  WITH CHECK(bucket_id='vento-protection-evidence'
-   AND public.protection_evidence_storage_access(name,true));
+   AND protection_private.evidence_storage_access(name,true));
 CREATE POLICY protection_evidence_read ON storage.objects FOR SELECT TO authenticated
  USING(bucket_id='vento-protection-evidence'
-   AND public.protection_evidence_storage_access(name,false));
+   AND protection_private.evidence_storage_access(name,false));
 
 CREATE FUNCTION public.confirm_lesson_protection_evidence(p_upload_id uuid)
 RETURNS void LANGUAGE plpgsql SECURITY DEFINER SET search_path='' AS $$
@@ -228,10 +248,14 @@ DECLARE uid uuid:=public.require_role(ARRAY['student','instructor']::public.app_
 BEGIN
  SELECT * INTO e FROM public.lesson_protection_evidence
  WHERE id=p_upload_id AND uploader_id=uid FOR UPDATE;
- IF e.id IS NULL OR e.created_at<now()-interval '15 minutes' THEN
+ IF e.id IS NULL THEN
    RAISE EXCEPTION 'Evidence upload unavailable' USING errcode='42501';
  END IF;
+ -- Retrying an already confirmed upload is safe even after the upload window.
  IF e.confirmed THEN RETURN; END IF;
+ IF e.created_at<now()-interval '15 minutes' THEN
+   RAISE EXCEPTION 'Evidence upload unavailable' USING errcode='42501';
+ END IF;
  IF NOT EXISTS(SELECT 1 FROM storage.objects
      WHERE bucket_id='vento-protection-evidence' AND name=e.object_path) THEN
    RAISE EXCEPTION 'Evidence file not received' USING errcode='P0002';
@@ -246,15 +270,17 @@ REVOKE ALL ON FUNCTION
  public.submit_lesson_protection_statement(uuid,text,integer,text),
  public.review_lesson_protection_case(uuid,text,text),
  public.prepare_lesson_protection_evidence(uuid,text,text,integer),
- public.confirm_lesson_protection_evidence(uuid),
- public.protection_evidence_storage_access(text,boolean)
+ public.confirm_lesson_protection_evidence(uuid)
+ FROM PUBLIC,anon,authenticated;
+REVOKE ALL ON FUNCTION protection_private.evidence_storage_access(text,boolean)
  FROM PUBLIC,anon,authenticated;
 GRANT EXECUTE ON FUNCTION
  public.submit_lesson_protection_statement(uuid,text,integer,text),
  public.review_lesson_protection_case(uuid,text,text),
  public.prepare_lesson_protection_evidence(uuid,text,text,integer),
- public.confirm_lesson_protection_evidence(uuid),
- public.protection_evidence_storage_access(text,boolean)
+ public.confirm_lesson_protection_evidence(uuid)
+ TO authenticated;
+GRANT EXECUTE ON FUNCTION protection_private.evidence_storage_access(text,boolean)
  TO authenticated;
 NOTIFY pgrst,'reload schema';
 COMMIT;

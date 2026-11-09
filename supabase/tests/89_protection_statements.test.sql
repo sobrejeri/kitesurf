@@ -40,10 +40,16 @@ DO $$ BEGIN
  ASSERT (SELECT NOT has_table_privilege('authenticated',
    'public.lesson_protection_statements','INSERT')),
    'Participants must not insert evidence or statements directly';
- ASSERT (SELECT NOT public.protection_evidence_storage_access('fake/file.pdf',true)),
+ ASSERT (SELECT NOT protection_private.evidence_storage_access('fake/file.pdf',true)),
    'Arbitrary Storage paths must be rejected';
- ASSERT (SELECT NOT public.protection_evidence_storage_access('fake/file.pdf',false)),
+ ASSERT (SELECT NOT protection_private.evidence_storage_access('fake/file.pdf',false)),
    'Arbitrary Storage paths must not be visible';
+ ASSERT to_regprocedure('public.protection_evidence_storage_access(text,boolean)') IS NULL,
+   'Storage helper must not be exposed as a public API function';
+ ASSERT has_schema_privilege('authenticated','protection_private','USAGE'),
+   'Authenticated users need helper schema usage for Storage policy';
+ ASSERT NOT has_schema_privilege('anon','protection_private','USAGE'),
+   'Anonymous users must not use private Storage helper';
 END $$;
 
 -- Pick the actual student and instructor on the cloned fixture.
@@ -95,6 +101,46 @@ DO $$ BEGIN
  'Assigned instructor can create a separate declaration';
 END $$;
 RESET ROLE;
+
+-- Assignment changes must not leak the former instructor's testimony.
+SELECT CASE WHEN :'instructor_id'::uuid='00000000-0000-0000-0000-0000000000a1'::uuid
+  THEN '00000000-0000-0000-0000-0000000000a2'::uuid
+  ELSE '00000000-0000-0000-0000-0000000000a1'::uuid
+  END AS next_instructor \gset
+UPDATE public.bookings SET instructor_id=:'next_instructor'::uuid
+ WHERE id='00000000-0000-0000-0000-000000009039';
+SELECT set_config('request.jwt.claim.sub',:'next_instructor',false);
+SET ROLE authenticated;
+DO $$ BEGIN
+ ASSERT (SELECT count(*) FROM public.lesson_protection_statements
+   WHERE meeting_id='00000000-0000-0000-0000-000000009040')=2,
+   'New instructor must NOT see former instructor testimony';
+END $$;
+RESET ROLE;
+SELECT set_config('request.jwt.claim.sub',:'instructor_id',false);
+SET ROLE authenticated;
+DO $$ BEGIN
+ ASSERT (SELECT count(*) FROM public.lesson_protection_statements
+   WHERE meeting_id='00000000-0000-0000-0000-000000009040')=1,
+   'Former instructor can read own testimony but not the student statement';
+ BEGIN
+  PERFORM public.submit_lesson_protection_statement(
+    '00000000-0000-0000-0000-000000009040','delivered',60,
+    'Eu não posso apresentar uma manifestação nova após a troca.');
+  RAISE EXCEPTION 'Former instructor forged a new statement';
+ EXCEPTION WHEN insufficient_privilege THEN NULL; END;
+END $$;
+RESET ROLE;
+SELECT set_config('request.jwt.claim.sub',:'student_id',false);
+SET ROLE authenticated;
+DO $$ BEGIN
+ ASSERT (SELECT count(*) FROM public.lesson_protection_statements
+  WHERE meeting_id='00000000-0000-0000-0000-000000009040')=3,
+ 'Student retains access to own booking testimony across assignment changes';
+END $$;
+RESET ROLE;
+UPDATE public.bookings SET instructor_id=:'instructor_id'::uuid
+ WHERE id='00000000-0000-0000-0000-000000009039';
 
 SELECT set_config('request.jwt.claim.sub','00000000-0000-0000-0000-0000000000c1',false);
 SET ROLE authenticated;
@@ -152,12 +198,15 @@ SELECT upload_id,object_path FROM public.prepare_lesson_protection_evidence(
 ) \gset
 SELECT set_config('test.protection_path',:'object_path',false);
 SELECT set_config('test.protection_upload_id',:'upload_id',false);
+SELECT set_config('test.first_statement',:'first_statement',false);
 DO $$ BEGIN
  ASSERT (SELECT count(*) FROM public.lesson_protection_evidence
   WHERE uploader_id=auth.uid() AND NOT confirmed)=1,
   'Evidence must start pending and private';
- ASSERT public.protection_evidence_storage_access(current_setting('test.protection_path'),true),
+ ASSERT protection_private.evidence_storage_access(current_setting('test.protection_path'),true),
   'Only prepared owner path may be used for upload';
+ ASSERT NOT protection_private.evidence_storage_access(current_setting('test.protection_path'),false),
+  'Unconfirmed evidence must not be readable';
 END $$;
 RESET ROLE;
 
@@ -169,8 +218,40 @@ SELECT public.confirm_lesson_protection_evidence(:'upload_id'::uuid);
 DO $$ BEGIN
  ASSERT (SELECT confirmed FROM public.lesson_protection_evidence
    WHERE id=current_setting('test.protection_upload_id')::uuid), 'Upload must be confirmed';
- ASSERT NOT public.protection_evidence_storage_access(current_setting('test.protection_path'),true),
+ ASSERT NOT protection_private.evidence_storage_access(current_setting('test.protection_path'),true),
    'Confirmed objects may not be overwritten';
+ ASSERT protection_private.evidence_storage_access(current_setting('test.protection_path'),false),
+   'Confirmed file is visible to its owner';
+END $$;
+RESET ROLE;
+
+-- Student's private proof must not be available to the assigned instructor.
+SELECT set_config('request.jwt.claim.sub',:'instructor_id',false);
+SET ROLE authenticated;
+DO $$ BEGIN
+ ASSERT NOT protection_private.evidence_storage_access(current_setting('test.protection_path'),false),
+   'Counterparty cannot download a private evidence file';
+ ASSERT (SELECT count(*) FROM public.lesson_protection_evidence
+   WHERE statement_id=current_setting('test.first_statement')::uuid)=0,
+   'Counterparty cannot read private evidence metadata';
+END $$;
+RESET ROLE;
+
+-- Rate limits protect the storage budget. They count failed pending attempts,
+-- but those attempts age out of the quota after a short recovery window.
+SELECT set_config('request.jwt.claim.sub',:'student_id',false);
+SET ROLE authenticated;
+DO $$ DECLARE n integer;
+BEGIN
+ FOR n IN 1..4 LOOP
+  PERFORM public.prepare_lesson_protection_evidence(
+    current_setting('test.first_statement')::uuid,'proof.jpg','image/jpeg',900);
+ END LOOP;
+ BEGIN
+  PERFORM public.prepare_lesson_protection_evidence(
+    current_setting('test.first_statement')::uuid,'proof6.jpg','image/jpeg',900);
+  RAISE EXCEPTION 'No evidence upload rate limit';
+ EXCEPTION WHEN SQLSTATE '55000' THEN NULL; END;
 END $$;
 RESET ROLE;
 

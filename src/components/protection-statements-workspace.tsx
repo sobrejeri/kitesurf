@@ -49,7 +49,7 @@ export async function ProtectionStatementsWorkspace({
       .limit(100).returns<ProtectionReview[]>(),
     db.from('lesson_protection_evidence')
       .select('id,statement_id,uploader_id,object_path,original_name,mime_type,bytes,confirmed')
-      .eq('confirmed',true).order('created_at',{ascending:false})
+      .in('meeting_id',ids).eq('confirmed',true).order('created_at',{ascending:false})
       .limit(100).returns<ProtectionEvidence[]>(),
   ]);
   const statements=statementsResult.data??[];
