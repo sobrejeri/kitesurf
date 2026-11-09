@@ -106,3 +106,20 @@ A exibição de manifestações foi desacoplada do monitor de aulas `scheduled`.
 ### Etapa 3D — histórico paginado sem nova migração
 
 A consulta a `booking_incidents` agora tem paginação de 20 itens por vez e filtro por código de reserva com autorização RLS. Após aprovação e aplicação separada da migration 39, `lesson_protection_statements` poderá usar navegação semelhante. **Nenhuma migração adicional, SQL remoto ou ativação da flag ocorreu nesta etapa.**
+
+
+## 40 — Incidentes: congelamento do instrutor na abertura (PREPARADA, NÃO APLICADA)
+
+- Arquivo versionado: `20261109000040_protection_incident_participant_snapshot.sql`.
+- Protege a tabela **já existente** `booking_incidents` contra leitura retroativa pelo instrutor substituto. Novos relatos terão o campo `instructor_at_report_id`, preenchido em trigger pelo banco no instante do registro.
+- **Dados anteriores à aplicação permanecem com `instructor_at_report_id IS NULL`.** Nunca preencher automaticamente com o instrutor atual: isso inventaria participação histórica e poderia vazar dados privados. Esses relatos ficam visíveis ao autor, aluno da reserva e Admin até revisão apropriada.
+- Aluno e Admin continuam enxergando o histórico; cada instrutor acessa somente ocorrências escritas durante sua própria atribuição ou diretamente por ele.
+- O trigger impede reescrever autor, reserva, encontro ou instrutor histórico, sem impedir avaliação administrativa de status.
+- A revisão **também ajustou o arquivo da migração 39 ainda não aplicada**: declarações congelam `instructor_at_statement_id`; avaliações administrativas só são visíveis a instrutores que já tinham registrado sua versão no momento daquela avaliação.
+- Testes de autorização em `90_incident_assignment_privacy.test.sql` e expansão do teste 89 são executados somente no PostgreSQL efêmero do CI.
+
+### Bloqueio obrigatório de aplicação
+
+A consulta ao banco real em 09/11/2026 retornou `supabase_migrations.schema_migrations = NULL` apesar de existirem as tabelas 01–38. Logo **não executar sequencialmente as migrations antigas** para tentar instalar 39/40. O banco real continua sem `lesson_protection_statements` e sem o bucket `vento-protection-evidence`.
+
+O procedimento correto é: homologação isolada, comparação de schema, política de recuperação acordada, aprovação explícita da implantação e validação de RLS com contas reais. Migração 39 deve ser validada antes da 40; nenhuma das duas executa pagamento, presença ou saldo.
