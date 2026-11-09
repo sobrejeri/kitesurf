@@ -102,3 +102,7 @@ O arquivo `20261109000039_vento_protege_statements.sql` foi reforçado com:
 ### Etapa 3C — consulta histórica e política de evidências ainda não ativadas
 
 A exibição de manifestações foi desacoplada do monitor de aulas `scheduled`. Nenhuma migration nova é necessária para esta melhoria de interface; o banco real continua aguardando a migração 39 autorizada. Um classificador de retenção em modo **dry-run** permite sinalizar uploads incompletos à revisão manual sem excluir arquivo ou registro. O prazo de retenção real está pendente de aprovação jurídica/operacional. A API do Storage deverá ser usada em toda remoção aprovada; nunca excluir diretamente de `storage.objects`.
+
+### Etapa 3D — histórico paginado sem nova migração
+
+A consulta a `booking_incidents` agora tem paginação de 20 itens por vez e filtro por código de reserva com autorização RLS. Após aprovação e aplicação separada da migration 39, `lesson_protection_statements` poderá usar navegação semelhante. **Nenhuma migração adicional, SQL remoto ou ativação da flag ocorreu nesta etapa.**

@@ -9,6 +9,8 @@ import { ProtectionMonitor } from '@/components/protection-monitor';
 import { listProtectionMonitorItems } from '@/lib/protection-monitor';
 import { summarizeVisibleProtectionReports } from '@/lib/protection-report-summary';
 import { ProtectionStatementsWorkspace } from '@/components/protection-statements-workspace';
+import { ProtectionCaseArchive } from '@/components/protection-case-archive';
+import { parseProtectionArchiveParams } from '@/lib/protection-archive-pagination';
 
 type Incident = {
   id:string;booking_id:string;meeting_id:string;reported_by:string;incident_type:string;
@@ -27,7 +29,10 @@ const STATUSES:Record<string,string>={
   open:'Aberta',reviewing:'Em análise',resolved:'Resolvida',rejected:'Não procedente',
 };
 
-export async function IncidentWorkspace({area,title}:{area:'aluno'|'instrutor'|'admin';title?:string}) {
+export async function IncidentWorkspace({area,title,searchParams}:{
+  area:'aluno'|'instrutor'|'admin'; title?:string;
+  searchParams?:Readonly<Record<string,string|string[]|undefined>>;
+}) {
   const role:AppRole=area==='aluno'?'student':area==='instrutor'?'instructor':'admin';
   const viewer=await requireRole([role]);
   const db=await createSupabaseServerClient();
@@ -91,6 +96,8 @@ export async function IncidentWorkspace({area,title}:{area:'aluno'|'instrutor'|'
       {records.error?<Note tone="warning">Não foi possível consultar as ocorrências. Tente novamente ou informe ao suporte.</Note>:null}
       <ProtectionMonitor items={protectionItems} area={area} reports={reportSummaries}
         error={Boolean(adminMeetingRead?.error || adminBookingRead?.error || records.error)}/>
+      <ProtectionCaseArchive area={area} viewerId={viewer.id}
+        params={parseProtectionArchiveParams(searchParams??{})}/>
       <ProtectionStatementsWorkspace area={area} viewerId={viewer.id}
         items={protectionItems} legacyIncidents={(records.data??[]).map(x=>({
           meetingId:x.meeting_id,bookingId:x.booking_id,createdAt:x.created_at,

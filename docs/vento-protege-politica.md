@@ -140,3 +140,17 @@ financeira, abertura automática de incidente, liberação de repasse ou reembol
 - [ ] Revalidar Storage, RLS e versão da migração 39 em homologação autorizada antes de ligar `NEXT_PUBLIC_VENTO_PROTEGE_STATEMENTS_ENABLED`.
 
 O código continua **desligado em produção** e nenhuma migração remota, pagamento, estorno, check-in ou exclusão de evidência foi executada nesta etapa.
+
+## Etapa 3D — pesquisa por reserva e paginação por fonte (09/11/2026)
+
+- [x] Componente `ProtectionCaseArchive` integrado às três áreas de Ocorrências; consulta **ocorrências legadas** paginadas mesmo sem a migração 39, mantendo o monitor de horários vencidos independente.
+- [x] Busca por **código exato da reserva** com validação estrita de 3–40 caracteres alfanuméricos, hífen ou sublinhado. A busca ocorre pela tabela `bookings` com RLS e aplica o ID retornado como filtro nas consultas seguintes. Código sem permissão e código inexistente recebem a mesma mensagem, sem revelar registros de terceiros.
+- [x] Paginação independente de 20 registros por página em ocorrências legadas e manifestações 3B (quando habilitadas), ordenação estável por `created_at DESC, id DESC` e navegação com parâmetros preservados.
+- [x] O relatório legado já permite a análise administrativa de registros antigos. O histórico de manifestações é carregado apenas quando `NEXT_PUBLIC_VENTO_PROTEGE_STATEMENTS_ENABLED` estiver ativado após migração e validação.
+- [x] O arquivo de testes checa validação dos filtros, navegação independente, limites de páginas e rejeição de parâmetros duplicados/maliciosos.
+- [ ] Validar as telas com sessões reais no iPhone e desktop e revisar paginação de volumes grandes. Limite operacional: páginas 1–1000 (até 20.000 registros por fonte); paginação por cursor pode substituir `offset` em escala.
+- [ ] **Instrutor substituído:** por privacidade, a busca por código exige ainda acesso RLS à reserva; manifestações próprias podem aparecer na listagem geral sob RLS. Um canal administrativo específico deverá suportar consultas históricas desse perfil sem liberar informações da reserva atual.
+- [ ] A consulta de provas assinadas no arquivo limita visualização a até 40 links por página, sob autorização de Storage; existência de arquivos extras não pode ser negada com base nessa lista.
+- [ ] Política formal de retenção das provas e limpeza revisada continua pendente; nenhum arquivo é apagado por esta etapa.
+
+**Escopo de segurança:** sem aplicação de SQL em produção, sem alteração financeira, presença, checkout ou PIN. Código 3B permanece desativado por padrão.
