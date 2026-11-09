@@ -411,7 +411,8 @@ export function FloatingChat({area,viewerId}: {area:ChatArea;viewerId:string}) {
     };
     appendBubbleTrail(drag.path,target);
     for(let i=0;i<drag.nodes.length;i++){
-      const avatar=drag.nodes[i]!;
+      const avatar=drag.nodes[i];
+      if(!avatar)continue;
       const desired=pointBehindBubbleTrail(drag.path,i*bubbleStep);
       const strength=i===0?1:Math.max(.16,.43-i*.055);
       avatar.position={
@@ -447,7 +448,9 @@ export function FloatingChat({area,viewerId}: {area:ChatArea;viewerId:string}) {
       const center={x:rect.left+rect.width/2,y:rect.top+rect.height/2};
       nodes.push({id:thread.id,node,origin:center,position:center});
     }
-    const leader=nodes[0]!.origin;
+    const front=nodes[0];
+    if(!front)return;
+    const leader=front.origin;
     bubbleDrag.current={
       id:event.pointerId,x:event.clientX,y:event.clientY,
       left:box.left,top:box.top,moved:false,leader,
