@@ -16,7 +16,7 @@ const NAV: readonly WorkspaceNavItem[] = [
   { label: 'Regras da operação', href: '/admin/regras', icon: 'sliders' },
   { label: 'Pousadas afiliadas', href: '/admin/afiliados', icon: 'home', secondary: true },
   { label: 'Transporte de apoio', href: '/admin/transporte', icon: 'car', secondary: true },
-  { label: 'Analisar ocorrências', href: '/admin/ocorrencias', icon: 'wind', secondary: true },
+  { label: 'VentoKite Protege', href: '/admin/ocorrencias', icon: 'shield', secondary: true },
   { label: 'Validar documentos', href: '/admin/documentos', icon: 'file', secondary: true },
   { label: 'Pontos de encontro', href: '/admin/pontos', icon: 'pin', secondary: true },
   { label: 'Políticas comerciais', href: '/admin/politicas', icon: 'shield', secondary: true },
