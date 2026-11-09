@@ -275,6 +275,7 @@ assert.ok(
   floatingChat.includes('function closeOutside(){') &&
   floatingChat.includes('function minimize(){') &&
   floatingChat.includes('setOpenedIds(previous=>previous.filter(id=>id!==selectedId))') &&
+  floatingChat.includes('setOpenedIds([]);\n    setDraggingBubble(false);setTrashHot(false);setBubblePosition(null);') &&
   floatingChat.includes('onClick={closeOutside}') &&
   floatingChat.includes('aria-label="Recolher bate-papo e restaurar bolinhas"') &&
   floatingChat.includes('onClick={minimize}') &&
