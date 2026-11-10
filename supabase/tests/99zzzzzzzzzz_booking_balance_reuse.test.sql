@@ -63,8 +63,10 @@ BEGIN
   SELECT total_cents INTO v_total FROM public.bookings WHERE id=v_bid;
   ASSERT (SELECT status FROM public.bookings WHERE id=v_bid)='confirmed',
     'A short record must not complete the booking';
+  PERFORM pg_temp.act_as(v_student);
   ASSERT public.booking_balance_minutes(v_bid)=30,
     'Balance is contracted minus recorded (120-90)';
+  PERFORM pg_temp.reset();
 
   -- Ownership: a resource existing is not permission to touch it.
   IF v_other_student IS NOT NULL THEN
@@ -132,8 +134,10 @@ BEGIN
     'A sub-hour make-up keeps its exact minutes';
   ASSERT (SELECT total_cents FROM public.bookings WHERE id=v_bid)=v_total,
     'The frozen snapshot is unchanged — no new charge';
+  PERFORM pg_temp.act_as(v_student);
   ASSERT public.booking_balance_minutes(v_bid)=0,
     'The scheduled make-up consumes the balance';
+  PERFORM pg_temp.reset();
   ASSERT (SELECT status FROM public.bookings WHERE id=v_bid)='confirmed',
     'The booking waits for the make-up to be delivered';
 
@@ -153,7 +157,9 @@ BEGIN
   -- B. The student may close a leftover balance instead of rescheduling.
   -- =====================================================================
   v_bid:=pg_temp.short_booking(v_admin,v_instructor,v_student,v_beach,2,90);
+  PERFORM pg_temp.act_as(v_student);
   ASSERT public.booking_balance_minutes(v_bid)=30,'Second booking keeps its balance';
+  PERFORM pg_temp.reset();
   -- Only the owner closes it.
   PERFORM pg_temp.act_as(v_instructor);
   BEGIN
@@ -180,8 +186,10 @@ BEGIN
     'The request lapses';
   ASSERT (SELECT status FROM public.bookings WHERE id=v_bid)='confirmed',
     'The booking is not cancelled by a missed make-up';
+  PERFORM pg_temp.act_as(v_student);
   ASSERT public.booking_balance_minutes(v_bid)=30,
     'The paid balance stays available after expiry';
+  PERFORM pg_temp.reset();
   ASSERT EXISTS(SELECT 1 FROM public.app_notifications
     WHERE recipient_id=v_student AND title='Pedido de reposição expirado'),
     'The student is told the request lapsed';
