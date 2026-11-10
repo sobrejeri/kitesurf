@@ -1,18 +1,18 @@
 # VentoKite Protege — homologação de permissões (etapa 3E)
 
 > Checklist proposto. **Não afirma que sessões reais foram testadas.**
-> Migrações 39 e 40 **não estão aplicadas** no Supabase de produção.
+> Migrações 39 e 40 **foram aplicadas** ao Supabase de produção em 09/11/2026, mas os fluxos 3B **seguem desativados** até homologação autenticada.
 > Preservar `NEXT_PUBLIC_VENTO_PROTEGE_STATEMENTS_ENABLED` desativada até
-> autorização, validação do schema, backup/restauração apropriados e RLS real.
+> testes autenticados, validação de Storage, política de retenção e aprovação da ativação.
 
 ## 1. Verificação estrutural sem ler dados pessoais
 
 - [ ] Comparar `public.booking_incidents`, `public.bookings`, `public.booking_meetings` e `public.profiles` com os SQL versionados, em ambiente isolado
 - [ ] Verificar histórico de migrações: a ausência de `supabase_migrations.schema_migrations` não deve ser corrigida marcando versões como aplicadas sem comparação
-- [ ] Conferir funções e políticas `SECURITY DEFINER` / grants / search paths
-- [ ] Conferir bucket privado `vento-protection-evidence`, limites de tamanho e as políticas de INSERT/SELECT
-- [ ] Executar PostgreSQL isolado com migrações 39/40 e os testes de RLS 89/90, sem tocar no banco remoto
-- [ ] Preparar estratégia de reversão e retenção dos arquivos antes de autorizar a aplicação real
+- [x] Conferir funções e políticas `SECURITY DEFINER` / grants / search paths criados pelas migrations 39/40 no catálogo do banco
+- [x] Conferir existência do bucket privado `vento-protection-evidence`, limite de 5 MB e RLS declarada na base
+- [x] Executar PostgreSQL isolado com migrações 39/40 e os testes de RLS 89/90 (CI aprovado antes da instalação)
+- [ ] Concluir plano operacional de reversão, retenção e restauração para futuras atualizações. As migrations 39/40 já foram aplicadas sem mudanças em pagamentos
 
 ## 2. Matriz de visualização esperada
 
