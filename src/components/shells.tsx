@@ -120,7 +120,7 @@ function LogoMark() {
 
 const STUDENT_TABS: readonly TabItem[] = [
   { label: 'Explorar', href: '/aluno/inicio', icon: 'search', match: ['/aluno/reservar'] },
-  { label: 'Minhas aulas', href: '/aluno/aulas', icon: 'book', match: ['/aluno/reserva', '/aluno/atendimento', '/aluno/ocorrencias'] },
+  { label: 'Minhas aulas', href: '/aluno/aulas', icon: 'book', match: ['/aluno/reserva', '/aluno/solicitacao', '/aluno/atendimento', '/aluno/ocorrencias'] },
   { label: 'Evolução', href: '/aluno/evolucao', icon: 'chart' },
   { label: 'Perfil', href: '/aluno/conta', icon: 'user', match: ['/aluno/central', '/aluno/avisos', '/aluno/politicas'] },
 ];
@@ -134,6 +134,7 @@ const STUDENT_SUBPAGES = [
   '/aluno/politicas',
   '/aluno/atendimento',
   '/aluno/ocorrencias',
+  '/aluno/solicitacao',
 ];
 
 const STUDENT_MENU: readonly SheetLink[] = [
@@ -174,7 +175,7 @@ export function StudentShell({
   ].includes(pathname) || /^\/aluno\/(?:reserva|solicitacao|atendimento)\/[^/]+$/.test(pathname);
   const desktopLinks: readonly { href: string; label: string; icon: IconName; match?: readonly string[] }[] = [
     {href:'/aluno/inicio',label:'Início',icon:'home'},
-    {href:'/aluno/aulas',label:'Minhas aulas',icon:'calendar',match:['/aluno/reserva']},
+    {href:'/aluno/aulas',label:'Minhas aulas',icon:'calendar',match:['/aluno/reserva','/aluno/solicitacao']},
     {href:'/aluno/evolucao',label:'Evolução',icon:'chart'},
     {href:'/aluno/conta',label:'Perfil',icon:'user'},
     {href:'/aluno/atendimento',label:'Atendimento',icon:'chat'},
