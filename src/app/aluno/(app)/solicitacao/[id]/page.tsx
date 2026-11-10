@@ -49,7 +49,7 @@ export default async function InstructorRequestPage({ params }: { params: Promis
       ? suggestion as Suggestion : null;
   const accepted = request.status === 'accepted' && Boolean(request.booking_id);
   return (
-    <div className="vento-pc-secondary-page vento-pc-request-screen">
+    <div className="vento-pc-secondary-page vento-pc-request-screen vento-mobile-appbar-clearance">
       <DesktopPageHeader eyebrow="SUA SOLICITAÇÃO" title="Busca de instrutor" lead="Acompanhe a oferta, os retornos e as sugestões de horários." icon="users" backHref="/aluno/aulas" variant="coast"/>
       <div className="vento-pc-secondary-main">
       <PageHeader eyebrow="Sua solicitação" title={accepted ? 'Instrutor encontrado!' : 'Procurando seu instrutor'}

@@ -12,7 +12,7 @@ export default async function ConversationsPage() {
   const bookings = await listBookingsForStudent(viewer.id);
   const conversations = bookings.filter(b => b.status === 'confirmed' || b.status === 'completed');
   return (
-    <div className="vento-pc-secondary-page vento-pc-conversations-screen">
+    <div className="vento-pc-secondary-page vento-pc-conversations-screen vento-mobile-appbar-clearance">
       <DesktopPageHeader eyebrow="ATENDIMENTO" title="Minhas conversas" lead="Fale com os instrutores das suas reservas confirmadas." icon="chat" backHref="/aluno/aulas" variant="lesson"/>
       <div className="vento-pc-secondary-main">
       <PageHeader eyebrow="Atendimento" title="Minhas conversas" lead="Fale diretamente com seu instrutor após a confirmação da aula."/>
