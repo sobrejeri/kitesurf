@@ -103,6 +103,6 @@ Durante a continuação da homologação, identificada falha real em `public.boo
 - `bookings` tem RLS que oculta a reserva para a Pousada, mas a RPC `SECURITY DEFINER` retornava número de minutos sem verificar o `auth.uid()`.
 - Teste reproduzido via `BEGIN READ ONLY` e `SET LOCAL ROLE authenticated` no Supabase real: Pousada via RLS viu 0 reservas, mas a RPC deu um saldo não nulo.
 - Correção versionada na migration 42: restringir consulta ao aluno, instrutor atribuído ou Admin, sem alterar a fórmula ou a reserva. Teste de regressão no PostgreSQL isolado para seis papéis.
-- Registrar resultado do teste pós-migração e SHA/deploy assim que confirmado; não confundir com homologação do Storage ou troca real de instrutor.
+- **Migration 42 aplicada ao Supabase real** (versão `20261110012944`). Testes pós-aplicação via transações `READ ONLY` simulando claims: aluno titular, instrutor atribuído e Admin obtêm resultado; Pousada e usuário não participante não obtêm o saldo. O predicado de autorização foi conferido na função real; contagens preservadas: 5 reservas, 6 encontros, 0 pedidos de saldo, 0 ocorrências e 0 manifestações. A trava 41 do Protege permanece em vigor. A aplicação não equivale à homologação do Storage ou à troca real de instrutor.
 
 **Pagamentos:** não foram alterados. O valor da reserva, split, faturas e repasses não entram nessa função.
