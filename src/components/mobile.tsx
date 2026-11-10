@@ -8,6 +8,7 @@ import { createPortal } from 'react-dom';
 import { Icon, type IconName } from './icon';
 import { StudentProfileAvatar } from './student/profile-avatar';
 import { isActive } from '@/lib/navigation-state';
+import { modalFocusDestination } from '@/lib/modal-focus';
 export { isActive } from '@/lib/navigation-state';
 
 /**
@@ -230,20 +231,17 @@ function MoreSheet({
           'a[href], button:not([disabled]), input:not([disabled]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])',
         ),
       ).filter(element => element.getClientRects().length > 0);
-      const first = focusable[0];
-      const last = focusable[focusable.length - 1];
-      if (!first || !last) {
+      const currentIndex = focusable.indexOf(document.activeElement as HTMLElement);
+      const destination = modalFocusDestination(
+        event.shiftKey ? 'backward' : 'forward',
+        currentIndex,
+        focusable.length,
+        document.activeElement === panel.current,
+      );
+      if (destination !== null) {
         event.preventDefault();
-        panel.current.focus();
-        return;
-      }
-      const focused = document.activeElement;
-      if (event.shiftKey && (focused === first || focused === panel.current)) {
-        event.preventDefault();
-        last.focus();
-      } else if (!event.shiftKey && (focused === last || !panel.current.contains(focused))) {
-        event.preventDefault();
-        first.focus();
+        if (destination === -1) panel.current.focus();
+        else focusable[destination]?.focus();
       }
     };
     const previous = document.body.style.overflow;
