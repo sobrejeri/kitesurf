@@ -1,6 +1,7 @@
 import Link from 'next/link';
 
 import { Icon, type IconName } from './icon';
+import { progressBarShares } from '@/lib/progress-bar';
 
 /**
  * Vento UI kit. One component per pattern in the design system: button, card,
@@ -234,17 +235,28 @@ export function Avatar({
 }
 
 /** Done and reserved shares as percentages, both supplied by the caller. */
-export function ProgressBar({ donePercent, reservedPercent = 0 }: { donePercent: number; reservedPercent?: number }) {
+export function ProgressBar({
+  donePercent,
+  reservedPercent = 0,
+  label = 'Progresso',
+}: {
+  donePercent: number;
+  reservedPercent?: number;
+  label?: string;
+}) {
+  const { done, reserved } = progressBarShares(donePercent, reservedPercent);
   return (
     <div
       className="flex h-[7px] overflow-hidden rounded-full bg-track"
       role="progressbar"
+      aria-label={label}
       aria-valuemin={0}
       aria-valuemax={100}
-      aria-valuenow={donePercent}
+      aria-valuenow={Math.round(done)}
+      aria-valuetext={`${Math.round(done)}% concluído, ${Math.round(reserved)}% reservado`}
     >
-      <span className="bg-brand-bar" style={{ width: `${donePercent}%` }} />
-      <span className="bg-brand-reserved" style={{ width: `${reservedPercent}%` }} />
+      <span className="bg-brand-bar" style={{ width: `${done}%` }} />
+      <span className="bg-brand-reserved" style={{ width: `${reserved}%` }} />
     </div>
   );
 }
@@ -283,10 +295,10 @@ export function Field({
 
 // 16px text on phones: below that, iOS Safari zooms the page on focus.
 export const inputClass =
-  'h-12 w-full rounded-input border border-line-input bg-surface px-3.5 text-base font-medium text-ink-strong focus:border-brand-focus focus:shadow-focus focus:outline-none md:h-11 md:text-[13px]';
+  'h-12 w-full rounded-input border border-line-input bg-surface px-3.5 text-base font-medium text-ink-strong focus:border-brand-focus focus:shadow-focus focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-focus md:h-11 md:text-[13px]';
 
 export const textareaClass =
-  'min-h-24 w-full rounded-input border border-line-input bg-surface px-3.5 py-3 text-base text-ink-strong focus:border-brand-focus focus:shadow-focus focus:outline-none md:text-[13px]';
+  'min-h-24 w-full rounded-input border border-line-input bg-surface px-3.5 py-3 text-base text-ink-strong focus:border-brand-focus focus:shadow-focus focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-focus md:text-[13px]';
 
 export function EmptyState({ children, action }: { children: React.ReactNode; action?: React.ReactNode }) {
   return (
