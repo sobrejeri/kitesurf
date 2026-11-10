@@ -68,3 +68,16 @@ Testes realizados via SQL com `BEGIN`, troca controlada para o papel `authentica
 **Trava adicional 41:** a interface não é uma barreira suficiente contra chamadas diretas à API. Migração 41 preparada para revogar as quatro RPCs de escrita enquanto a homologação final estiver pendente. Após a 41, o teste funcional de escrita deverá ocorrer em ambiente autorizado e controlado, com liberação temporária planejada para testes e ativação somente depois da revisão.
 
 **Ambiente:** Render possui apenas o serviço principal, com previews desativadas. Não criar ambiente adicional com potencial custo sem autorização específica. Nenhuma operação financeira foi executada nestes testes.
+
+## 6. Backend bloqueado após a homologação transacional inicial
+
+A migration 41 foi **aplicada em produção** via ferramenta oficial Supabase com `success:true` e versão de histórico `20261110003527` (`vento_protege_41_backend_release_gate`).
+
+Resultado do teste pós-aplicação diretamente no Supabase:
+- [x] `authenticated` sem `EXECUTE` nas quatro funções de manifestação, análise, preparação e confirmação de prova
+- [x] `anon` sem `EXECUTE` na submissão
+- [x] `authenticated` mantém `SELECT` de histórico conforme RLS, mas não pode inserir declarações diretamente
+- [x] 5 reservas, 6 encontros e 0 registros novos de casos e anexos, sem pagamentos
+- [x] Avisos do Supabase de `SECURITY DEFINER` acessíveis a `authenticated` caíram de 91 para 87 (os quatro endpoints 3B recém-bloqueados)
+
+**O teste real da URL assinada e envio de mídia ainda não ocorreu.** A abertura das RPCs depende de migration separada com `GRANT EXECUTE`, além de uma liberação do front-end por flag no Render. Não ativar a interface isoladamente.
