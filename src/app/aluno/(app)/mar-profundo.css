@@ -684,3 +684,11 @@ body:has(.theme-mar-profundo) { background: #001a30; color: #f6fbff; }
     color: #fff;
   }
 }
+
+/* Phones: secondary pages that open with a plain text header (no photo
+   StudentHero) start below the floating app bar — 64px (h-16) plus the
+   iPhone safe area, with breathing room — instead of under its logo and
+   back button. The bar is md:hidden, so desktop layouts are unchanged. */
+@media (max-width: 767.98px) {
+  .vento-mobile-appbar-clearance { padding-top: calc(env(safe-area-inset-top) + 76px); }
+}

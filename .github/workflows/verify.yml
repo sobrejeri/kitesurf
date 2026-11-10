@@ -43,6 +43,8 @@ jobs:
         run: node --experimental-strip-types scripts/test-student-swipe-reliability.mjs
       - name: Test safe student deep-link back navigation
         run: node --experimental-strip-types scripts/test-student-safe-back.mjs
+      - name: Verify student subpages clear the floating phone app bar
+        run: node scripts/test-student-subpage-header-clearance.mjs
       - name: Test student multi-booking and history separation
         run: node --experimental-strip-types scripts/test-booking-cycle.mjs
       - name: Verify Vento student desktop layout and booking overlap protection
