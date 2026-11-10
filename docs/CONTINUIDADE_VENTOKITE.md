@@ -85,3 +85,11 @@ O projeto possui um **avaliador independente preparado, não necessariamente con
 - SQL real, somente leitura, confirmou quatro funções `notify_booking_message`, `notify_confirmed_booking`, `notify_lesson_incident`, `notify_offer_transition` como SECURITY DEFINER, retorno trigger, vínculo em pg_trigger e EXECUTE para PUBLIC/anon/authenticated. As funções de cotação e `is_admin` não foram alteradas.
 - PR #138 adiciona migration 43 **somente versionada** com guardas e teste SQL 93 para revogar EXECUTE dos quatro triggers internos. CI run `42862944435` estava em andamento; Claude QA run `42862944437` **skipped**. Verificar CI no HEAD antes de merge; se falhar, corrigir e reexecutar. NÃO aplicar migration 43 em produção sem validação de dependências e E2E autenticado; migrations 39–42 e trava 41 preservadas.
 - Próximas ações: conferir CI/QA #138; revisar impacto em triggers/notificações e baseline isolado; integrar apenas após aprovação; verificar Render SHA live; depois priorizar RLS/Storage e E2E por perfil. Não marcar 18 frentes como homologadas, não ativar checkout ou Protege 3B.
+
+
+## Handoff — 10/11/2026 15h BRT, CI migration 43
+
+- Render `dep-dbpl1ku417fc7398jdtg` **live** no SHA `e2c1d91d542ccb6adf4d242462c4a04742957ddd` (#137).
+- Supabase kitesurf `qadkqjfmmnxvovyyhqxw` mantém ledger **39–42**, sem aplicação da 43; Protege 3B fechado e checkout real desligado.
+- PR #138: CI `42863046721` falhou exclusivamente no teste SQL 93 por ambiguidade entre variável PL/pgSQL `oid` e coluna `oid`. Corrigido renomeando a variável para `target_fn` (commit `42331e78d25867580e3dac73999aba15721d1d44`). Conferir novo CI do HEAD antes de merge; Claude QA anterior SKIPPED, nunca presumir revisão.
+- A migration 43 continua apenas versionada, não executar em produção antes de avaliação de dependências e E2E autenticado. Continuar RLS/Storage por papel sem modificar dados reais. Issue #105 e #115 atualizadas. **0/18 frentes integralmente homologadas.**
