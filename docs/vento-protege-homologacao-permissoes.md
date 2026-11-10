@@ -96,3 +96,13 @@ O Admin possui a tela `/admin/protege-homologacao` (atalho em **Mais opções �
 **Não é homologação completa:** testes SQL transacionais (rollback) e a leitura do Admin não comprovam experiência de um aluno/instrutor autenticado, nem as políticas HTTP do Storage. O painel não deve testar envio nem liberar a flag 3B sozinho. Os testes de rejeição do `anon` e acessos cruzados continuam necessários.
 
 **Próximo critério de aceite:** executar sessão real com dois instrutores e ao menos um aluno, gravar apenas dados fictícios em ambiente autorizado e conferir via navegador/Storage a proteção de evidências. Registrar evidência de iPhone e PC e manter as RPCs 3B fechadas até a decisão formal de release.
+
+## 8. Segurança transversal: privacidade do saldo de minutos da reserva (P0)
+
+Durante a continuação da homologação, identificada falha real em `public.booking_balance_minutes(uuid)`:
+- `bookings` tem RLS que oculta a reserva para a Pousada, mas a RPC `SECURITY DEFINER` retornava número de minutos sem verificar o `auth.uid()`.
+- Teste reproduzido via `BEGIN READ ONLY` e `SET LOCAL ROLE authenticated` no Supabase real: Pousada via RLS viu 0 reservas, mas a RPC deu um saldo não nulo.
+- Correção versionada na migration 42: restringir consulta ao aluno, instrutor atribuído ou Admin, sem alterar a fórmula ou a reserva. Teste de regressão no PostgreSQL isolado para seis papéis.
+- **Migration 42 aplicada ao Supabase real** (versão `20261110012944`). Testes pós-aplicação via transações `READ ONLY` simulando claims: aluno titular, instrutor atribuído e Admin obtêm resultado; Pousada e usuário não participante não obtêm o saldo. O predicado de autorização foi conferido na função real; contagens preservadas: 5 reservas, 6 encontros, 0 pedidos de saldo, 0 ocorrências e 0 manifestações. A trava 41 do Protege permanece em vigor. A aplicação não equivale à homologação do Storage ou à troca real de instrutor.
+
+**Pagamentos:** não foram alterados. O valor da reserva, split, faturas e repasses não entram nessa função.
