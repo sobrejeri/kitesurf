@@ -54,3 +54,13 @@ O projeto possui um **avaliador independente preparado, não necessariamente con
 `docs/CLAUDE_CODE_QA_AUTOMATICO.md`, `.claude/agents/vento-qa-reviewer.md` e `.github/workflows/claude-qa-review.yml`.
 
 **Antes de integrar cada PR:** verifique se o job Claude QA está habilitado pela variável `VENTO_CLAUDE_QA_ENABLED=true` e pela conexão Anthropic. Se estiver operacional, aguarde o parecer e resolva P0/P1 via PR QA separada antes de merge/deploy. Se estiver desativado/skipped, registre `Claude QA: não executado (aguardando conexão)` na issue #105 e prossiga somente com os testes realmente executados. Nunca declare a revisão independente concluída porque o arquivo de workflow existe. O Claude não deve fazer merge ou deploy e não altera banco nem checkout.
+
+
+## Verificação operacional — 10/11/2026, 08h16 BRT
+
+- **Fonte consultada nesta execução:** plano L0–L5, esta continuidade, auditoria L0, documento Claude QA, issue #105, Render e ledger de migrations do Supabase do VentoKite.
+- **Render:** deploy `dep-dbpf7fm417fc739kku7g` em `live`, commit `64281e26b8d4b5d940cebc31e60626d987185952` (PR #129), concluído `2026-11-10T10:38:57Z`. Não confundir com homologação visual ou E2E.
+- **Migrations reais:** `20261110001348` (39), `20261110001427` (40), `20261110003527` (41), `20261110012944` (42). Não aplicar 01–38 em lote; manter a trava 41 e checkout desativado.
+- **Claude QA:** workflow e documentação preparados, porém documento de configuração declara integração ainda NÃO ATIVA. Não presumir review independente, nem gastar créditos para ativar.
+- **Pendência P0:** homologação autenticada e negativa de autorização de Storage/Protege, acesso cruzado de papéis, e cenário de troca com segundo instrutor de teste autorizado. Esses E2E não foram executados nesta verificação. Próxima correção de código segura deve partir de defeito reproduzível, com teste de regressão, PR e CI antes de merge.
+- **Estado desta verificação:** apenas auditoria de estado e handoff documental; nenhum teste funcional novo, alteração de produção, migration ou PR de código homologado. O total permanece **0/18 frentes integralmente homologadas**.
