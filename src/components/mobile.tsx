@@ -7,6 +7,9 @@ import { createPortal } from 'react-dom';
 
 import { Icon, type IconName } from './icon';
 import { StudentProfileAvatar } from './student/profile-avatar';
+import { isActive } from '@/lib/navigation-state';
+import { modalFocusDestination } from '@/lib/modal-focus';
+export { isActive } from '@/lib/navigation-state';
 
 /**
  * Phone chrome: a compact header, a tab bar and a "Mais" sheet. Shown below
@@ -25,10 +28,6 @@ export interface SheetLink {
   label: string;
   href: string;
   icon: IconName;
-}
-
-export function isActive(pathname: string, item: { href: string; match?: readonly string[] }): boolean {
-  return [item.href, ...(item.match ?? [])].some((route) => pathname === route || pathname.startsWith(`${route}/`));
 }
 
 export function MobileHeader({
@@ -77,9 +76,9 @@ export function TabBar({
   const [openAt, setOpenAt] = useState<string | null>(null);
   const open = openAt === pathname;
   const closeSheet = useCallback(() => setOpenAt(null), []);
-  const moreActive = more ? !items.some((item) => isActive(pathname, item)) : false;
   const mid = Math.ceil(items.length / 2);
   const centerActive = Boolean(center && isActive(pathname, center));
+  const moreActive = Boolean(more) && !centerActive && !items.some(item => isActive(pathname, item));
 
   const renderItem = (item: TabItem) => {
     // When Agendar is open, do not highlight Explorar through its match route.
@@ -221,7 +220,29 @@ function MoreSheet({
     opener.current = document.activeElement;
     panel.current?.focus();
     const onKey = (event: KeyboardEvent) => {
-      if (event.key === 'Escape') onClose();
+      if (event.key === 'Escape') {
+        event.preventDefault();
+        onClose();
+        return;
+      }
+      if (event.key !== 'Tab' || !panel.current) return;
+      const focusable = Array.from(
+        panel.current.querySelectorAll<HTMLElement>(
+          'a[href], button:not([disabled]), input:not([disabled]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])',
+        ),
+      ).filter(element => element.getClientRects().length > 0);
+      const currentIndex = focusable.indexOf(document.activeElement as HTMLElement);
+      const destination = modalFocusDestination(
+        event.shiftKey ? 'backward' : 'forward',
+        currentIndex,
+        focusable.length,
+        document.activeElement === panel.current,
+      );
+      if (destination !== null) {
+        event.preventDefault();
+        if (destination === -1) panel.current.focus();
+        else focusable[destination]?.focus();
+      }
     };
     const previous = document.body.style.overflow;
     document.body.style.overflow = 'hidden';

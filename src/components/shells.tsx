@@ -172,9 +172,9 @@ export function StudentShell({
     '/aluno/reservar','/aluno/atendimento','/aluno/avisos',
     '/aluno/central','/aluno/ocorrencias','/aluno/politicas',
   ].includes(pathname) || /^\/aluno\/(?:reserva|solicitacao|atendimento)\/[^/]+$/.test(pathname);
-  const desktopLinks: readonly { href: string; label: string; icon: IconName }[] = [
+  const desktopLinks: readonly { href: string; label: string; icon: IconName; match?: readonly string[] }[] = [
     {href:'/aluno/inicio',label:'Início',icon:'home'},
-    {href:'/aluno/aulas',label:'Minhas aulas',icon:'calendar'},
+    {href:'/aluno/aulas',label:'Minhas aulas',icon:'calendar',match:['/aluno/reserva']},
     {href:'/aluno/evolucao',label:'Evolução',icon:'chart'},
     {href:'/aluno/conta',label:'Perfil',icon:'user'},
     {href:'/aluno/atendimento',label:'Atendimento',icon:'chat'},
@@ -199,13 +199,14 @@ export function StudentShell({
         <aside className="vento-pc-sidebar" aria-label="Menu lateral do aluno">
           <Link className="vento-pc-sidebar-logo" href="/aluno/inicio" aria-label="VentoKite — Início"><OfficialLogo /></Link>
           <nav className="vento-pc-side-nav" aria-label="Páginas do aluno">
-            {desktopLinks.map((item,index)=>(
-              <Link key={item.href} href={item.href}
-                aria-current={pathname===item.href?'page':undefined}
-                className={`vento-pc-side-link ${pathname===item.href?'is-active':''} ${index===6?'with-divider':''}`}>
+            {desktopLinks.map((item,index)=>{
+              const active = isActive(pathname,item);
+              return <Link key={item.href} href={item.href}
+                aria-current={active?'page':undefined}
+                className={`vento-pc-side-link ${active?'is-active':''} ${index===6?'with-divider':''}`}>
                 <Icon name={item.icon} /> <span>{item.label}</span>
-              </Link>
-            ))}
+              </Link>;
+            })}
             <Link className="vento-pc-side-link" href="/laboratorio-kite.html"><Icon name="kite" /><span>Laboratório 3D</span></Link>
           </nav>
           {signedIn ? (
