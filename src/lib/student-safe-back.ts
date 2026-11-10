@@ -8,7 +8,8 @@ export function studentSafeBackHref(pathname: string): string {
   }
   if (pathname === '/aluno/reserva' || pathname.startsWith('/aluno/reserva/') ||
       pathname === '/aluno/atendimento' || pathname.startsWith('/aluno/atendimento/') ||
-      pathname === '/aluno/ocorrencias' || pathname.startsWith('/aluno/ocorrencias/')) {
+      pathname === '/aluno/ocorrencias' || pathname.startsWith('/aluno/ocorrencias/') ||
+      pathname === '/aluno/solicitacao' || pathname.startsWith('/aluno/solicitacao/')) {
     return '/aluno/aulas';
   }
   return '/aluno/conta';
