@@ -14,6 +14,7 @@ import { areaFromPath } from '@/lib/app-areas';
 import { AREAS } from '@/lib/areas';
 
 import { Avatar } from './ui';
+import { studentSafeBackHref } from '@/lib/student-safe-back';
 
 /**
  * Page frames for the four areas of the prototype.
@@ -125,17 +126,6 @@ const STUDENT_TABS: readonly TabItem[] = [
 ];
 
 /** Pages reached from inside another tab: they get a back arrow on phones. */
-/** A direct URL or installed PWA may have no safe browser history entry.
- * Resolve the back affordance to a known student route, never an external page.
- */
-export function studentSafeBackHref(pathname: string): string {
-  if (pathname === '/aluno/reservar' || pathname.startsWith('/aluno/reservar/')) return '/aluno/inicio';
-  if (pathname === '/aluno/reserva' || pathname.startsWith('/aluno/reserva/') ||
-      pathname === '/aluno/atendimento' || pathname.startsWith('/aluno/atendimento/') ||
-      pathname === '/aluno/ocorrencias' || pathname.startsWith('/aluno/ocorrencias/')) return '/aluno/aulas';
-  return '/aluno/conta';
-}
-
 const STUDENT_SUBPAGES = [
   '/aluno/reservar',
   '/aluno/reserva',
