@@ -102,3 +102,11 @@ O projeto possui um **avaliador independente preparado, não necessariamente con
 - Render último `live` confirmado nesta execução: `e2c1d91d542ccb6adf4d242462c4a04742957ddd` (`dep-dbpl1ku417fc7398jdtg`). Conferir publicação do SHA `6a4fd40e`.
 - Storage consultado somente leitura: seis buckets privados com limites MIME/tamanho; policies `storage.objects` para `authenticated` vinculam proprietário, reserva ou admin. Não equivalem a E2E autenticado. Revisar helpers de Storage e testar acesso cruzado com contas fictícias autorizadas, sem modificar reservas.
 - Issue mestre #105 comentário `6776984591` registra resultados e próxima prioridade. **0/18 frentes homologadas**.
+
+
+## Handoff L0 — 10/11/2026, 17h15 BRT
+
+- Render `srv-dbifnnks728c73f50arg`: deploy `dep-dbpmtv03tm7c73denlk0` **live** em 19:26 UTC, SHA `6229a7f9a73e34b836b17d6dff7eef81bf976542`. Confirma publicação do merge #138 e handoff anterior; não equivale à aplicação SQL da 43.
+- Supabase **kitesurf** `qadkqjfmmnxvovyyhqxw`: ledger oficial **39–42 apenas**. Migration 43 versionada e **não aplicada**. Protege 3B permanece fechado; checkout real desativado.
+- Consulta SQL somente leitura confirmou quatro funções `SECURITY INVOKER` sem `search_path`: `bookings_snapshot_frozen`, `touch_updated_at`, `reject_change`, `reject_test_payment`. Corpos usam apenas recursos built-in/trigger. PR **#139** prepara migration 44 com guardas e `search_path=pg_catalog`; **nenhuma SQL aplicada ao banco**. CI e Claude QA devem ser verificados no HEAD da PR antes de qualquer merge; não declarar aprovação sem evidência. Migration 44 não deve ser aplicada em produção antes da avaliação isolada e de dependências.
+- Próxima execução: verificar CI/Claude QA #139; corrigir falhas; integrar somente após sucesso e revisão independente quando ativa; conferir SHA live. Priorizar testes negativos de Storage/RLS com sessões fictícias autorizadas; ausência de E2E real impede homologação. Não executar 01–38, 43 ou 44 automaticamente. **0/18 frentes integralmente homologadas**.
