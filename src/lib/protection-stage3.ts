@@ -1,5 +1,7 @@
-/** Stage 3B stays OFF in the deployed service until migration 39 is reviewed
- * and applied to the target Supabase. Never expose an active form first. */
+/** Stage 3B UI is deliberately OFF until real-user and Storage end-to-end QA.
+ * Migration 41 also revokes mutation RPC grants at the database boundary.
+ * Enabling this build-time UI flag alone NEVER unlocks database writes:
+ * a separate reviewed release migration must first restore the RPC grants. */
 export function protectionStage3Enabled(): boolean {
   return process.env.NEXT_PUBLIC_VENTO_PROTEGE_STATEMENTS_ENABLED === 'true';
 }
