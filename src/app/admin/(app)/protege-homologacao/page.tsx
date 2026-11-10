@@ -60,7 +60,7 @@ export default async function ProtectionQaPage() {
 
   const queries = [statementQuery, reviewQuery, proofQuery, incidentQuery];
   const entries: CountCheck[] = queries.map((q, i) => ({
-    label: checks[i].name,
+    label: checks[i]?.name ?? 'Consulta',
     count: q.error ? null : q.count,
     error: Boolean(q.error),
   }));
