@@ -70,3 +70,11 @@ Os shells **Instrutor/Admin/Pousada** exigem uma sessão da role apropriada; o s
 - [x] Os campos `inputClass` e `textareaClass` usavam `focus:outline-none`, podendo suprimir o foco de teclado. Agora exibem contorno de 2px com a cor de foco da identidade atual. Mantidos texto de 16px no iPhone (evita zoom automático) e tamanho compacto no desktop.
 - [x] Teste `scripts/test-l0-shared-control-accessibility.mjs` cobre valores negativos, acima de 100, NaN, infinito, acessibilidade do `progressbar`, foco dos campos e tamanhos tipográficos.
 - [ ] Conferir o contorno de foco e a barra visualmente em Safari/PWA iPhone e navegador desktop; revisão completa de formulários e cores continua aberta. Não declarar L0 homologado por testes de código.
+
+## L0 — quatro áreas: menu ativo e status em cards compactos
+
+- [x] No `WorkspaceShell` de Admin e Instrutor, o menu lateral e o título/breadcrumb do topo usavam `pathname.startsWith(item.href)`, o que podia marcar rotas irmãs como se fossem páginas filhas, por exemplo `/instrutor/aulas` confundido com `/instrutor/aula`. Agora usam `isActive`, que exige rota exata ou descendente com barra. A lógica já era utilizada pelo Aluno e Pousada.
+- [x] Badges de status compartilhadas deixaram de forçar `whitespace-nowrap`. Um status longo pode quebrar linha, centralizado e limitado à largura do card. Preservadas cores, tamanhos de fonte e desenho dos badges curtos.
+- [x] Botões padronizados permanecem com os tamanhos de toque atuais no mobile; nenhum redesenho dos componentes aprovados.
+- [x] Teste `scripts/test-l0-workspace-controls.mjs` incluído no CI para as quatro áreas, cobrindo prefixos colidentes, detalhes de reserva, estado ARIA do menu, wrap de badges e medidas dos botões.
+- [ ] Testar a legibilidade dos status e a navegação do Admin, Instrutor e Pousada em telas reais com login próprio; não equivale a homologação E2E nem a captura visual antes/depois.

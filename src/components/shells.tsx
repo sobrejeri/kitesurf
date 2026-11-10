@@ -389,7 +389,7 @@ export function WorkspaceShell({
 }) {
   const sunset = theme === 'sunset';
   const pathname = usePathname();
-  const current = nav.find((item) => pathname.startsWith(item.href));
+  const current = nav.find((item) => isActive(pathname, item));
   const alertsHref = nav.find((item) => item.href.endsWith('/avisos'))?.href;
   const unread = person.unreadCount ?? 0;
   const workspaceTitle = workspace.charAt(0) + workspace.slice(1).toLowerCase();
@@ -405,7 +405,7 @@ export function WorkspaceShell({
         <p className="px-8 pb-2 text-[9px] font-[550] uppercase tracking-[1px] text-faint">{workspace}</p>
         <nav aria-label={workspace} className="flex flex-col gap-1 overflow-y-auto px-5">
           {nav.filter((item) => !item.secondary).map((item) => {
-            const active = pathname.startsWith(item.href);
+            const active = isActive(pathname, item);
             return (
               <Link
                 key={item.href}
