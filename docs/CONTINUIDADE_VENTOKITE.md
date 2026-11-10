@@ -54,3 +54,12 @@ O projeto possui um **avaliador independente preparado, não necessariamente con
 `docs/CLAUDE_CODE_QA_AUTOMATICO.md`, `.claude/agents/vento-qa-reviewer.md` e `.github/workflows/claude-qa-review.yml`.
 
 **Antes de integrar cada PR:** verifique se o job Claude QA está habilitado pela variável `VENTO_CLAUDE_QA_ENABLED=true` e pela conexão Anthropic. Se estiver operacional, aguarde o parecer e resolva P0/P1 via PR QA separada antes de merge/deploy. Se estiver desativado/skipped, registre `Claude QA: não executado (aguardando conexão)` na issue #105 e prossiga somente com os testes realmente executados. Nunca declare a revisão independente concluída porque o arquivo de workflow existe. O Claude não deve fazer merge ou deploy e não altera banco nem checkout.
+
+## Handoff operacional — 10/11/2026, lote L0 (QA)
+
+- PRs QA #134, #131 e #133 integradas na branch de produção, commits `0da632a`, `b522d50`, `db9efb9` (nesta ordem). CI das branches de origem passou; **CI do SHA final e deploy live ainda não confirmados** no momento do registro. Último Render `live` observado: `64281e26`; deploy do SHA `db9efb9` estava `queued`.
+- PR #132 retargetada para produção e marcada pronta, mas `mergeable=false`: reconciliar conflitos da navegação de `/aluno/solicitacao/[id]` com #131; testar e integrar só após CI válido.
+- Claude Code QA automático permanece sem evidência de ativação operacional. As PRs acima são correções independentes feitas manualmente pelo Claude, não aprovação automática do job.
+- Supabase `qadkqjfmmnxvovyyhqxw`: ledger real somente migrations 39–42; preservar 41 e Protege 3B OFF. Checkout e dinheiro real desativados; nenhuma alteração de banco nesta execução.
+- Próxima execução: conferir CI e Render live do SHA final; resolver #132; seguir P0 de autorização/Storage HTTP e E2E autenticado ou P1 independente se bloqueado. Não marcar homologação: **0/18 frentes completas**.
+- Evidência central: comentário `6768259812` na issue #105.
