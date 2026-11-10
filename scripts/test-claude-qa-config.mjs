@@ -41,7 +41,7 @@ for (const term of [
   'scripts/test-db.sh', 'SECURITY DEFINER',
   'qa/claude-pr-', 'não o agente que desenvolveu',
   'não faça reset', 'Nunca rode GitHub merges',
-  'não confunda revisão estática',
+  'análise estática não é E2E',
 ]) {
   assert.ok(agent.toLowerCase().includes(term.toLowerCase()),
     `Reviewer must explicitly cover: ${term}`);
