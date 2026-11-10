@@ -43,3 +43,22 @@ Os shells **Instrutor/Admin/Pousada** exigem uma sessão da role apropriada; o s
 - [x] **CTA central e botão `Mais`:** estado visual mutuamente exclusivo quando a barra inferior tiver ambos; evita dois itens selecionados simultaneamente.
 - [x] Teste `scripts/test-l0-mobile-navigation.mjs` cobre rota principal e filha, tab do detalhe da reserva, exclusão de prefixos colidentes, rotação de foco e invariantes de acessibilidade do modal.
 - [ ] **Não equivale a teste real:** conferir no iPhone com teclado/VoiceOver, Android/TalkBack e desktop com leitor de tela; validar swipe em Safari/PWA e capturas antes/depois. Preservadas as cores, imagens, logo, fontes e botões aprovados.
+
+## L0 — robustez do swipe entre as cinco telas
+
+### Causas de falhas encontradas no código
+
+- [x] O gesto horizontal que terminava **sem destino válido** (nas bordas de Explorar/Perfil ou ao inverter a direção) podia deixar `data-dragging` e o estado da prévia ativos. O encerramento agora limpa esses estados.
+- [x] Se uma rota demorava muito ou falhava offline depois do swipe, a tela antiga podia ficar deslocada e a tabbar ainda mostrar a rota anterior. Foi acrescentada uma reversão temporizada, sem alterar dados nem forçar reload.
+- [x] As prévias HTML armazenadas podiam ficar ultrapassadas e continuar sendo exibidas após o TTL. Agora qualquer renderização verifica a expiração; erros de rede mantêm apenas uma prévia inerte, e requisições canceladas não apagam marcadores de requisições novas.
+- [x] Elementos interativos (`<a>`, `<button>`, `<summary>` e controles ARIA) não iniciam mais swipe por engano; continua possível deslizar em áreas neutras da tela.
+- [x] **Endurecimento de prévias:** a prévia HTML é de exibição apenas, mas injetar HTML bruto poderia incorporar atributos de evento ou imagens externas. O código agora remove scripts, formulários, mídia ativa, SVG, custom elements, atributos de evento e recursos externos; permite imagens locais estáticas do app e do otimizador Next. URLs assinadas privadas não são reutilizadas na prévia.
+- [x] Novos testes puros de limites/direções, velocidade do gesto, validade da prévia, sanitização de URLs e invariantes do pager no CI.
+
+### Critérios ainda abertos
+
+- [ ] Validar manualmente no iPhone Safari/PWA o gesto de cinco abas, estado de aba ativa, recarga por URL, inversão do dedo, gesto na borda e rede lenta/offline, incluindo o retorno após timeout.
+- [ ] Comparar a aparência da prévia de transição antes/depois em telas com foto e conteúdo do Aluno (estilos inline e imagens externas são omitidos deliberadamente na **prévia inerte**, não na tela final).
+- [ ] Exercitar carrosséis internos, campos e botões para confirmar que não disparam troca de aba; testar também leitor de tela e redução de movimento.
+- [ ] Continuar inventário e refinamento visual de fontes, tons de azul, botões, espaçamentos e fotos no PC/mobile. **Sem homologação completa por testes somente estáticos.**
+
