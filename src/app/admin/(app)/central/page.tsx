@@ -15,6 +15,7 @@ const OPTIONS: readonly { label: string; href: string; icon: IconName; tone: Ton
   { label: 'Transporte de apoio', href: '/admin/transporte', icon: 'car', tone: 'blue' },
   { label: 'Regras da operação', href: '/admin/regras', icon: 'sliders', tone: 'purple' },
   { label: 'Analisar ocorrências', href: '/admin/ocorrencias', icon: 'wind', tone: 'orange' },
+  { label: 'Homologação Protege', href: '/admin/protege-homologacao', icon: 'shield', tone: 'orange' },
   { label: 'Documentos', href: '/admin/documentos', icon: 'file', tone: 'blue' },
   { label: 'Políticas comerciais', href: '/admin/politicas', icon: 'shield', tone: 'orange' },
   { label: 'Atendimento', href: '/admin/atendimento', icon: 'chat', tone: 'purple' },
