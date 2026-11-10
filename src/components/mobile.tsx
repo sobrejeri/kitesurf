@@ -45,7 +45,8 @@ export function MobileHeader({
     <header
       className={`pt-safe sticky top-0 z-30 border-b border-line/80 bg-chrome/90 backdrop-blur-xl ${breakpoint === 'md' ? 'md:hidden' : 'lg:hidden'}`}
     >
-      <div className="flex h-14 items-center gap-3 px-4">
+      {/* Content-sized: the two-line brand (logo + area label) is ~70px tall. */}
+      <div className="flex min-h-14 items-center gap-3 px-4 py-1">
         {leading}
         {title ? <p className="min-w-0 flex-1 truncate text-[16px] font-semibold tracking-[-0.3px]">{title}</p> : <span className="flex-1" />}
         {trailing}
