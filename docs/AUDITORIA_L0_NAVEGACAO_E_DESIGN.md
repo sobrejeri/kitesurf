@@ -62,3 +62,11 @@ Os shells **Instrutor/Admin/Pousada** exigem uma sessão da role apropriada; o s
 - [ ] Exercitar carrosséis internos, campos e botões para confirmar que não disparam troca de aba; testar também leitor de tela e redução de movimento.
 - [ ] Continuar inventário e refinamento visual de fontes, tons de azul, botões, espaçamentos e fotos no PC/mobile. **Sem homologação completa por testes somente estáticos.**
 
+
+## L0 — controles compartilhados: progresso e foco (10/11/2026)
+
+- [x] O componente compartilhado `ProgressBar` não normalizava a soma de horas concluídas e reservadas, permitindo que larguras extrapolassem 100%, fossem negativas ou não finitas. O helper puro `progressBarShares` agora limita cada faixa a 0–100% e o total à largura do card, **sem alterar cálculo de horas ou dados de reserva**.
+- [x] A barra de progresso ganha nome acessível e leitura diferenciada de percentual concluído e reservado; o visual normal de percentuais válidos permanece igual.
+- [x] Os campos `inputClass` e `textareaClass` usavam `focus:outline-none`, podendo suprimir o foco de teclado. Agora exibem contorno de 2px com a cor de foco da identidade atual. Mantidos texto de 16px no iPhone (evita zoom automático) e tamanho compacto no desktop.
+- [x] Teste `scripts/test-l0-shared-control-accessibility.mjs` cobre valores negativos, acima de 100, NaN, infinito, acessibilidade do `progressbar`, foco dos campos e tamanhos tipográficos.
+- [ ] Conferir o contorno de foco e a barra visualmente em Safari/PWA iPhone e navegador desktop; revisão completa de formulários e cores continua aberta. Não declarar L0 homologado por testes de código.
