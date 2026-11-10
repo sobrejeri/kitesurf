@@ -1,3 +1,14 @@
+## 41 — VentoKite Protege: bloqueio das funções de escrita antes da homologação
+
+**Arquivo:** `20261110000041_vento_protege_block_mutation_rpcs.sql`.
+**Objetivo:** a flag visual `NEXT_PUBLIC_VENTO_PROTEGE_STATEMENTS_ENABLED` não impede chamadas diretas à API. Enquanto os testes autenticados no app e Storage não estiverem aprovados, revogar `EXECUTE` de `authenticated` em quatro RPCs: envio de manifestação, avaliação Admin, preparação e confirmação de evidência. Não revoga leitura de histórico sob RLS e não altera reservas, aulas, pagamentos ou arquivos existentes.
+
+A migração inclui verificação de que não há uploads não confirmados antes de bloquear confirmação. Reverter a trava futuramente exige uma **nova migração**, com `GRANT EXECUTE` autorizados depois da homologação, e só então ativar o flag da interface no Render. Os testes do CI concedem EXECUTE **apenas dentro da própria transação ROLLBACK**, sem abrir o banco real.
+
+**Ordem:** 39 (aplicada) → 40 (aplicada) → 41 (gate de backend, verificar histórico real de aplicação). Migrações 01–38 continuam sem baseline no Supabase.
+
+---
+
 ## Registro da aplicação em produção — 09/11/2026 (horário de Fortaleza)
 
 As migrations **39 e 40 foram aplicadas com sucesso** no Supabase do projeto kitesurf (`qadkqjfmmnxvovyyhqxw`), após aprovação expressa, verificação de compatibilidade e testes SQL isolados. O histórico formal criado pelo Supabase associa os scripts a estas versões:
