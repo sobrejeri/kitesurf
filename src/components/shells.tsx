@@ -125,6 +125,17 @@ const STUDENT_TABS: readonly TabItem[] = [
 ];
 
 /** Pages reached from inside another tab: they get a back arrow on phones. */
+/** A direct URL or installed PWA may have no safe browser history entry.
+ * Resolve the back affordance to a known student route, never an external page.
+ */
+export function studentSafeBackHref(pathname: string): string {
+  if (pathname === '/aluno/reservar' || pathname.startsWith('/aluno/reservar/')) return '/aluno/inicio';
+  if (pathname === '/aluno/reserva' || pathname.startsWith('/aluno/reserva/') ||
+      pathname === '/aluno/atendimento' || pathname.startsWith('/aluno/atendimento/') ||
+      pathname === '/aluno/ocorrencias' || pathname.startsWith('/aluno/ocorrencias/')) return '/aluno/aulas';
+  return '/aluno/conta';
+}
+
 const STUDENT_SUBPAGES = [
   '/aluno/reservar',
   '/aluno/reserva',
@@ -280,9 +291,9 @@ export function StudentShell({
               <Icon name="back" />
             </Link>
           ) : subpage ? (
-            <button type="button" onClick={() => history.back()} aria-label="Voltar" className="press pointer-events-auto -ml-2 grid h-10 w-10 place-items-center rounded-full text-white">
+            <Link href={studentSafeBackHref(pathname)} aria-label="Voltar para uma área do aluno" className="press pointer-events-auto -ml-2 grid h-10 w-10 place-items-center rounded-full text-white">
               <Icon name="back" />
-            </button>
+            </Link>
           ) : null}
           {showCompactBrand ? <span className="pointer-events-auto min-w-0 flex-1 pl-2"><KiteModelo3Brand compact /></span> : <span className="flex-1" />}
           {hideTopMenu ? null : (
