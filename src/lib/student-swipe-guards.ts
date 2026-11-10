@@ -14,10 +14,10 @@ export function nextStudentSwipeRoute(
   return routes[currentIndex + direction] ?? null;
 }
 
-export function isFreshSwipePreview(
-  preview: { fetchedAt: number } | undefined,
+export function isFreshSwipePreview<T extends { fetchedAt: number }>(
+  preview: T | undefined,
   now = Date.now(),
-): boolean {
+): preview is T {
   return Boolean(preview && now >= preview.fetchedAt &&
     now - preview.fetchedAt < SWIPE_PREVIEW_TTL_MS);
 }
