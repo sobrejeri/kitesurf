@@ -368,7 +368,7 @@ assert.ok(studentNavigationCss.includes('Interactive student pager: neighboring 
   studentNavigationCss.includes('touch-action:pan-y'),
   'Swipe preview must stay clipped inside one mobile viewport with vertical scroll available');
 assert.ok(
-  pager.includes("touch.clientX <= 28 || touch.clientX >= window.innerWidth - 28") &&
+  pager.includes("shouldBlockEdgeTouchStart(touch.clientX, window.innerWidth, isStandalone())") &&
   pager.includes("page.addEventListener('touchstart', onStart, { passive: false })") &&
   pager.includes("page.addEventListener('touchmove', onMove, { passive: false })") &&
   pager.includes("router.replace(destination, { scroll: true })") &&

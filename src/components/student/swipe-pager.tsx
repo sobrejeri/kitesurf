@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation';
 import {
   isFreshSwipePreview,
   nextStudentSwipeRoute,
+  shouldBlockEdgeTouchStart,
   shouldCommitStudentSwipe,
   SWIPE_ROUTE_STALL_MS,
 } from '@/lib/student-swipe-guards';
@@ -126,6 +127,9 @@ export function StudentSwipePager({
     };
 
     const isMobile = () => window.innerWidth < 768;
+    // Home-screen app (iOS sets navigator.standalone; others the display mode).
+    const isStandalone = () => window.matchMedia('(display-mode: standalone)').matches ||
+      (navigator as Navigator & { standalone?: boolean }).standalone === true;
 
     const ignoreTarget = (target: EventTarget | null) => {
       if (!(target instanceof Element) || !page.contains(target) ||
@@ -217,8 +221,10 @@ export function StudentSwipePager({
           ignoreTarget(event.target)) return;
       const touch = event.touches.item(0);
       if (!touch) return;
-      // Prevent the iPhone's native history preview on true edge-origin swipes.
-      if (touch.clientX <= 28 || touch.clientX >= window.innerWidth - 28)
+      // Prevent the iPhone's native history preview on true edge-origin swipes
+      // in a Safari tab only; the installed PWA has no such gesture and a
+      // cancelled touchstart would also cancel vertical scrolling.
+      if (shouldBlockEdgeTouchStart(touch.clientX, window.innerWidth, isStandalone()))
         event.preventDefault();
       gesture = { x: touch.clientX, y: touch.clientY, at: Date.now(),
         dx: 0, axis: 'unknown', direction: 0, nextRoute: null };

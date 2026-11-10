@@ -22,6 +22,25 @@ export function isFreshSwipePreview<T extends { fetchedAt: number }>(
     now - preview.fetchedAt < SWIPE_PREVIEW_TTL_MS);
 }
 
+/** Width of the edge strips where a Safari tab starts its history swipe. */
+export const SWIPE_EDGE_GUARD_PX = 28;
+
+/**
+ * Cancelling a touchstart cancels that touch's scrolling too, so it is only
+ * worth doing where Safari would otherwise start its edge history gesture:
+ * in a browser tab, within the outer strips. An installed PWA (standalone)
+ * has no such gesture, so blocking there only breaks vertical scrolling.
+ */
+export function shouldBlockEdgeTouchStart(
+  clientX: number,
+  viewportWidthPx: number,
+  standalone: boolean,
+): boolean {
+  if (standalone || !Number.isFinite(clientX) ||
+    !Number.isFinite(viewportWidthPx) || viewportWidthPx <= 0) return false;
+  return clientX <= SWIPE_EDGE_GUARD_PX || clientX >= viewportWidthPx - SWIPE_EDGE_GUARD_PX;
+}
+
 export function shouldCommitStudentSwipe(
   distancePx: number,
   elapsedMs: number,
