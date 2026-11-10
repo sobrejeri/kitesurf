@@ -75,9 +75,9 @@ export function TabBar({
   const [openAt, setOpenAt] = useState<string | null>(null);
   const open = openAt === pathname;
   const closeSheet = useCallback(() => setOpenAt(null), []);
-  const moreActive = more ? !center || !isActive(pathname, center) ? !items.some(item => isActive(pathname, item)) : false : false;
   const mid = Math.ceil(items.length / 2);
   const centerActive = Boolean(center && isActive(pathname, center));
+  const moreActive = Boolean(more) && !centerActive && !items.some(item => isActive(pathname, item));
 
   const renderItem = (item: TabItem) => {
     // When Agendar is open, do not highlight Explorar through its match route.
