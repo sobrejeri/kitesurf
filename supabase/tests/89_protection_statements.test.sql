@@ -2,6 +2,15 @@
 \set ON_ERROR_STOP on
 BEGIN;
 
+-- CI alone temporarily enables the write RPCs inside a ROLLBACK transaction.
+-- Production stays closed after migration 41; this grant never persists.
+GRANT EXECUTE ON FUNCTION
+  public.submit_lesson_protection_statement(uuid,text,integer,text),
+  public.review_lesson_protection_case(uuid,text,text),
+  public.prepare_lesson_protection_evidence(uuid,text,text,integer),
+  public.confirm_lesson_protection_evidence(uuid)
+TO authenticated;
+
 -- A cloned confirmed booking avoids touching the production-like lesson flows.
 -- This migration is not installed on the real Supabase by this test.
 WITH seed AS (
