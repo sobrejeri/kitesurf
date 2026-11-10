@@ -48,3 +48,36 @@ evidências e não autoriza repasse ou estorno.
 - Validação do histórico do instrutor substituído no banco real, sem acessar dados de usuários indevidamente
 - Testes end-to-end autenticados em iPhone e desktop
 - Revisão da integridade de versões e de consultas por reserva
+
+## 5. Homologação transacional no Supabase real — 09/11/2026
+
+Testes realizados via SQL com `BEGIN`, troca controlada para o papel `authenticated` e `ROLLBACK` ao final. Foi usada uma das reservas **já marcadas como teste**, sem alterar presença, status, pagamento ou quem é responsável pela reserva.
+
+**Cenários aprovados:**
+- Aluno autorizado enviou um depoimento temporário e pôde consultá-lo.
+- Instrutor autorizado consultou a declaração do aluno, enviou depoimento próprio e abriu ocorrência temporária; os campos de snapshot do instrutor foram conferidos.
+- Pousada não conseguiu consultar depoimentos, análises administrativas, dados do anexo ou ocorrência, nem submeter um relato pela RPC.
+- Admin conseguiu registrar uma avaliação temporária; o instrutor não conseguiu usar a RPC administrativa.
+- Minutos inconsistentes com a declaração foram rejeitados.
+- Metadata de prova não confirmada foi invisível para contrapartes; confirmação foi rejeitada sem o objeto físico no Storage.
+- O estado da reserva permaneceu `confirmed` e o encontro `scheduled` durante o teste.
+- Foi executado `ROLLBACK`. A conferência posterior mostrou **5 reservas, 6 encontros, 0 ocorrências, 0 depoimentos, 0 revisões, 0 anexos, 0 objetos no novo bucket e 27 logs de auditoria**, sem alterações persistentes.
+
+**Não testado:** upload e download reais de mídia através do Storage HTTP, geração/uso de URL assinada com sessão real, UI no iPhone e PC, e substituição entre dois instrutores cadastrados no Supabase de produção (há somente 1 perfil de instrutor). A troca de instrutor passou nos testes SQL isolados do CI, mas **isso não equivale à homologação com usuários reais**.
+
+**Trava adicional 41:** a interface não é uma barreira suficiente contra chamadas diretas à API. Migração 41 preparada para revogar as quatro RPCs de escrita enquanto a homologação final estiver pendente. Após a 41, o teste funcional de escrita deverá ocorrer em ambiente autorizado e controlado, com liberação temporária planejada para testes e ativação somente depois da revisão.
+
+**Ambiente:** Render possui apenas o serviço principal, com previews desativadas. Não criar ambiente adicional com potencial custo sem autorização específica. Nenhuma operação financeira foi executada nestes testes.
+
+## 6. Backend bloqueado após a homologação transacional inicial
+
+A migration 41 foi **aplicada em produção** via ferramenta oficial Supabase com `success:true` e versão de histórico `20261110003527` (`vento_protege_41_backend_release_gate`).
+
+Resultado do teste pós-aplicação diretamente no Supabase:
+- [x] `authenticated` sem `EXECUTE` nas quatro funções de manifestação, análise, preparação e confirmação de prova
+- [x] `anon` sem `EXECUTE` na submissão
+- [x] `authenticated` mantém `SELECT` de histórico conforme RLS, mas não pode inserir declarações diretamente
+- [x] 5 reservas, 6 encontros e 0 registros novos de casos e anexos, sem pagamentos
+- [x] Avisos do Supabase de `SECURITY DEFINER` acessíveis a `authenticated` caíram de 91 para 87 (os quatro endpoints 3B recém-bloqueados)
+
+**O teste real da URL assinada e envio de mídia ainda não ocorreu.** A abertura das RPCs depende de migration separada com `GRANT EXECUTE`, além de uma liberação do front-end por flag no Render. Não ativar a interface isoladamente.
