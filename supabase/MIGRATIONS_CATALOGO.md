@@ -1,6 +1,6 @@
 ## 42 — Proteção do saldo de minutos por titularidade (P0)
 
-Arquivo versionado: `20261110000042_booking_balance_minutes_authorization.sql`.
+Arquivo versionado: `20261110000042_booking_balance_minutes_authorization.sql`. **Aplicada com sucesso ao Supabase de produção** via `apply_migration`: versão `20261110012944` / `security_42_booking_balance_minutes_authorization` (hora de Fortaleza: 09/11/2026). Consulta posterior confirmou que o predicado de titularidade está na definição real.
 
 **Origem da correção:** consulta SQL read-only no Supabase real demonstrou que uma conta Pousada, sem acesso à reserva na tabela `bookings`, conseguia obter o saldo de minutos através da função `public.booking_balance_minutes(uuid)`, marcada `SECURITY DEFINER` e com `EXECUTE` para `authenticated` (IDOR).
 
