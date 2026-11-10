@@ -93,3 +93,12 @@ O projeto possui um **avaliador independente preparado, não necessariamente con
 - Supabase kitesurf `qadkqjfmmnxvovyyhqxw` mantém ledger **39–42**, sem aplicação da 43; Protege 3B fechado e checkout real desligado.
 - PR #138: CI `42863046721` falhou exclusivamente no teste SQL 93 por ambiguidade entre variável PL/pgSQL `oid` e coluna `oid`. Corrigido renomeando a variável para `target_fn` (commit `42331e78d25867580e3dac73999aba15721d1d44`). Conferir novo CI do HEAD antes de merge; Claude QA anterior SKIPPED, nunca presumir revisão.
 - A migration 43 continua apenas versionada, não executar em produção antes de avaliação de dependências e E2E autenticado. Continuar RLS/Storage por papel sem modificar dados reais. Issue #105 e #115 atualizadas. **0/18 frentes integralmente homologadas.**
+
+
+## Handoff L0 — 10/11/2026, 16h BRT
+
+- PR #138 integrada (squash `6a4fd40e637867166f1cf4a25fd2c8c2295ed6a4`), CI `42873566829` success no HEAD `13929938aec6234da45c8b0e76d24cb837b678fe`; Claude QA `42873566449` skipped, **sem revisão independente**.
+- Migration 43 somente versionada, **não aplicada**. Supabase kitesurf `qadkqjfmmnxvovyyhqxw` permanece com ledger 39–42. Não executar DDL sem reconciliação e validação; Protege 3B fechado e checkout desligado.
+- Render último `live` confirmado nesta execução: `e2c1d91d542ccb6adf4d242462c4a04742957ddd` (`dep-dbpl1ku417fc7398jdtg`). Conferir publicação do SHA `6a4fd40e`.
+- Storage consultado somente leitura: seis buckets privados com limites MIME/tamanho; policies `storage.objects` para `authenticated` vinculam proprietário, reserva ou admin. Não equivalem a E2E autenticado. Revisar helpers de Storage e testar acesso cruzado com contas fictícias autorizadas, sem modificar reservas.
+- Issue mestre #105 comentário `6776984591` registra resultados e próxima prioridade. **0/18 frentes homologadas**.
