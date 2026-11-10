@@ -1,3 +1,17 @@
+## 42 — Proteção do saldo de minutos por titularidade (P0)
+
+Arquivo versionado: `20261110000042_booking_balance_minutes_authorization.sql`.
+
+**Origem da correção:** consulta SQL read-only no Supabase real demonstrou que uma conta Pousada, sem acesso à reserva na tabela `bookings`, conseguia obter o saldo de minutos através da função `public.booking_balance_minutes(uuid)`, marcada `SECURITY DEFINER` e com `EXECUTE` para `authenticated` (IDOR).
+
+A correção **preserva a fórmula, o retorno INTEGER e a assinatura**; adiciona filtro obrigatório de autorização ao SELECT: `student_id=auth.uid()`, `instructor_id=auth.uid()` ou `public.is_admin()`. Para reservas sem acesso, retorna `NULL`, sem revelar a existência ou o saldo. A função não concede acesso a Pousada, aluno de outra reserva ou instrutor não atribuído. `anon` segue sem EXECUTE.
+
+Teste automatizado `supabase/tests/92_booking_balance_minutes_authorization.test.sql`: aluno titular, instrutor atribuído e Admin autorizados; Pousada, outro aluno e outro instrutor negados. Testes em banco isolado sem alteração de dados.
+
+**Importante:** o esquema histórico da migração 38 segue presente na produção, mas não conciliado na árvore de migrações; esta é uma migration **aditiva de correção de acesso**, não reexecuta nem altera a 38. O cálculo de minutos e os dados financeiros de reservas permanecem intocados.
+
+---
+
 ## 41 — VentoKite Protege: bloqueio das funções de escrita antes da homologação
 
 **Arquivo:** `20261110000041_vento_protege_block_mutation_rpcs.sql`. **Aplicada no Supabase real com sucesso**, versão registrada `20261110003527` / `vento_protege_41_backend_release_gate` (09/11/2026 em Fortaleza).
