@@ -266,7 +266,12 @@ export function StudentSwipePager({
     const onEnd = (event: TouchEvent) => {
       const g = gesture;
       gesture = null;
-      if (!g || g.axis !== 'horizontal' || !g.nextRoute || !isMobile()) {
+      if (!g) {
+        // Another touch may end while a committed route change is pending.
+        if (!changingRoute) reset();
+        return;
+      }
+      if (g.axis !== 'horizontal' || !g.nextRoute || !isMobile()) {
         reset();
         return;
       }
