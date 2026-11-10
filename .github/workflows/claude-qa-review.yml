@@ -7,7 +7,6 @@ name: VentoKite - Claude independent QA
 on:
   pull_request:
     types: [opened, synchronize, reopened, ready_for_review]
-  workflow_dispatch:
 
 permissions:
   contents: read
@@ -30,6 +29,7 @@ jobs:
       contents: write
       pull-requests: write
       issues: write
+      actions: read
       id-token: write
     steps:
       - uses: actions/checkout@v4
@@ -66,5 +66,8 @@ jobs:
             charge money, or claim E2E verification without devices and
             valid test sessions. Add independent feedback to the
             original PR. If blocked, document exactly what is missing.
+          additional_permissions: |
+            actions: read
           claude_args: |
             --max-turns 12
+            --allowedTools "Read,Grep,Glob,Edit,Write,Bash(pnpm:*),Bash(node:*),Bash(bash scripts/test-db.sh:*),Bash(git:*),Bash(gh pr:*),Bash(gh issue:*),Bash(gh run:*)"
