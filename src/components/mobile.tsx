@@ -7,6 +7,8 @@ import { createPortal } from 'react-dom';
 
 import { Icon, type IconName } from './icon';
 import { StudentProfileAvatar } from './student/profile-avatar';
+import { isActive } from '@/lib/navigation-state';
+export { isActive } from '@/lib/navigation-state';
 
 /**
  * Phone chrome: a compact header, a tab bar and a "Mais" sheet. Shown below
@@ -25,10 +27,6 @@ export interface SheetLink {
   label: string;
   href: string;
   icon: IconName;
-}
-
-export function isActive(pathname: string, item: { href: string; match?: readonly string[] }): boolean {
-  return [item.href, ...(item.match ?? [])].some((route) => pathname === route || pathname.startsWith(`${route}/`));
 }
 
 export function MobileHeader({
@@ -221,7 +219,32 @@ function MoreSheet({
     opener.current = document.activeElement;
     panel.current?.focus();
     const onKey = (event: KeyboardEvent) => {
-      if (event.key === 'Escape') onClose();
+      if (event.key === 'Escape') {
+        event.preventDefault();
+        onClose();
+        return;
+      }
+      if (event.key !== 'Tab' || !panel.current) return;
+      const focusable = Array.from(
+        panel.current.querySelectorAll<HTMLElement>(
+          'a[href], button:not([disabled]), input:not([disabled]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])',
+        ),
+      ).filter(element => element.getClientRects().length > 0);
+      const first = focusable[0];
+      const last = focusable[focusable.length - 1];
+      if (!first || !last) {
+        event.preventDefault();
+        panel.current.focus();
+        return;
+      }
+      const focused = document.activeElement;
+      if (event.shiftKey && (focused === first || focused === panel.current)) {
+        event.preventDefault();
+        last.focus();
+      } else if (!event.shiftKey && (focused === last || !panel.current.contains(focused))) {
+        event.preventDefault();
+        first.focus();
+      }
     };
     const previous = document.body.style.overflow;
     document.body.style.overflow = 'hidden';
