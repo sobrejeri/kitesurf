@@ -29,6 +29,8 @@ jobs:
         run: node --experimental-strip-types scripts/test-booking-progress.mjs
       - name: Diagnose Admin demo multi-meeting schedule conflicts
         run: node --experimental-strip-types scripts/test-admin-demo-schedule.mjs
+      - name: Verify opt-in Claude QA reviewer safety and config
+        run: node scripts/test-claude-qa-config.mjs
       - name: Verify workspace navigation and responsive status labels
         run: node --experimental-strip-types scripts/test-l0-workspace-controls.mjs
       - name: Verify accessible shared fields and bounded progress meters
