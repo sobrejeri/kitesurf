@@ -14,6 +14,7 @@ import { areaFromPath } from '@/lib/app-areas';
 import { AREAS } from '@/lib/areas';
 
 import { Avatar } from './ui';
+import { studentSafeBackHref } from '@/lib/student-safe-back';
 
 /**
  * Page frames for the four areas of the prototype.
@@ -280,9 +281,9 @@ export function StudentShell({
               <Icon name="back" />
             </Link>
           ) : subpage ? (
-            <button type="button" onClick={() => history.back()} aria-label="Voltar" className="press pointer-events-auto -ml-2 grid h-10 w-10 place-items-center rounded-full text-white">
+            <Link href={studentSafeBackHref(pathname)} aria-label="Voltar para uma área do aluno" className="press pointer-events-auto -ml-2 grid h-10 w-10 place-items-center rounded-full text-white">
               <Icon name="back" />
-            </button>
+            </Link>
           ) : null}
           {showCompactBrand ? <span className="pointer-events-auto min-w-0 flex-1 pl-2"><KiteModelo3Brand compact /></span> : <span className="flex-1" />}
           {hideTopMenu ? null : (
