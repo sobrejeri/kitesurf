@@ -43,6 +43,8 @@ jobs:
         run: node --experimental-strip-types scripts/test-student-swipe-reliability.mjs
       - name: Verify edge-started scrolling in the installed student PWA
         run: node --experimental-strip-types scripts/test-student-swipe-edge-scroll.mjs
+      - name: Verify request page navigation on phone and PC
+        run: node --experimental-strip-types scripts/test-student-request-navigation.mjs
       - name: Test safe student deep-link back navigation
         run: node --experimental-strip-types scripts/test-student-safe-back.mjs
       - name: Verify student subpages clear the floating phone app bar
