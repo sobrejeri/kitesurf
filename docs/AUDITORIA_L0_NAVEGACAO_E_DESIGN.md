@@ -35,3 +35,11 @@ Os shells **Instrutor/Admin/Pousada** exigem uma sessão da role apropriada; o s
 - [ ] Preservar `VALIDATION_WITHOUT_CHECKOUT`, as migrations 39–42 aplicadas e a trava 41 de VentoKite Protege durante as correções.
 
 **Estado da frente #100:** em andamento; alteração de navegação corrigida em código e testada automaticamente, mas a homologação completa do design permanece pendente.
+
+## Revisão adicional do menu mobile e navegação desktop
+
+- [x] **Atividade de rota no menu lateral do Aluno:** para detalhes `/aluno/reserva/[id]`, manter `Minhas aulas` destacado; detalhes filhos permanecem selecionados. O roteador agora usa correspondência de caminho completo ou descendente, sem falsos positivos de prefixo como `/aluno/reserva` versus `/aluno/reservar`.
+- [x] **Modal `Mais` no celular:** ciclo de foco pelo teclado corrigido para manter Tab/Shift+Tab dentro da janela, permitindo Escape e retorno do foco ao botão original. Aplica-se aos menus das quatro áreas que usam `MoreSheet`.
+- [x] **CTA central e botão `Mais`:** estado visual mutuamente exclusivo quando a barra inferior tiver ambos; evita dois itens selecionados simultaneamente.
+- [x] Teste `scripts/test-l0-mobile-navigation.mjs` cobre rota principal e filha, tab do detalhe da reserva, exclusão de prefixos colidentes, rotação de foco e invariantes de acessibilidade do modal.
+- [ ] **Não equivale a teste real:** conferir no iPhone com teclado/VoiceOver, Android/TalkBack e desktop com leitor de tela; validar swipe em Safari/PWA e capturas antes/depois. Preservadas as cores, imagens, logo, fontes e botões aprovados.
