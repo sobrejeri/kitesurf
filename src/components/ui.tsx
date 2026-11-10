@@ -108,7 +108,7 @@ export function Badge({ children, tone = 'success' }: { children: React.ReactNod
     danger: 'bg-danger-soft text-danger',
   };
   return (
-    <span className={`inline-flex items-center gap-1 whitespace-nowrap rounded-full px-2.5 py-1 text-[11px] font-medium ${tones[tone]}`}>
+    <span className={`inline-flex min-w-0 max-w-full items-center justify-center gap-1 break-words rounded-full px-2.5 py-1 text-center text-[11px] leading-snug font-medium ${tones[tone]}`}>
       {children}
     </span>
   );
