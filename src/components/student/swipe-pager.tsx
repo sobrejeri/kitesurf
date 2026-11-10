@@ -2,6 +2,13 @@
 
 import { useEffect, useLayoutEffect, useRef } from 'react';
 import { useRouter } from 'next/navigation';
+import {
+  isFreshSwipePreview,
+  nextStudentSwipeRoute,
+  shouldCommitStudentSwipe,
+  SWIPE_ROUTE_STALL_MS,
+} from '@/lib/student-swipe-guards';
+import { sanitizeStudentSwipePreview } from '@/lib/student-swipe-preview';
 
 /** Keep this order synchronized with the five items in StudentShell's footer. */
 export const STUDENT_SWIPE_ROUTES = [
@@ -14,7 +21,10 @@ export const STUDENT_SWIPE_ROUTES = [
 
 const PAGE_NAMES = ['Explorar', 'Minhas aulas', 'Agendar', 'Evolução', 'Perfil'] as const;
 const IGNORE_SWIPE = [
-  'input', 'textarea', 'select', '[role="dialog"]', '[role="tablist"]',
+  'a', 'button', 'summary', 'input', 'textarea', 'select',
+  '[role="button"]', '[role="link"]', '[role="switch"]', '[role="checkbox"]',
+  '[role="combobox"]', '[role="spinbutton"]',
+  '[role="dialog"]', '[role="tablist"]',
   '[role="slider"]', '[contenteditable="true"]', '[data-student-swipe-ignore]',
   '[data-carousel]', '.overflow-x-auto', '.overflow-x-scroll', '.snap-x',
 ].join(',');
@@ -27,7 +37,6 @@ type Gesture = {
 };
 
 type CachedPage = { html: string; fetchedAt: number };
-const PREVIEW_CACHE_MS = 45_000;
 const EASE = 'cubic-bezier(.22,.75,.18,1)';
 
 /**
@@ -57,6 +66,14 @@ export function StudentSwipePager({
   const shownRoute = useRef<string | null>(null);
   const index = (STUDENT_SWIPE_ROUTES as readonly string[]).indexOf(pathname);
   const active = signedIn && index >= 0;
+
+  // Never retain private HTML previews after leaving an authenticated session.
+  useEffect(() => {
+    if (!signedIn) {
+      cache.current.clear();
+      inFlight.current.clear();
+    }
+  }, [signedIn]);
 
   // The route can finish loading while a preview is still at x=0. Clear the
   // outgoing transform before paint so the real destination is full-width.
@@ -88,11 +105,14 @@ export function StudentSwipePager({
     const controller = new AbortController();
     let gesture: Gesture | null = null;
     let settleTimer: number | null = null;
+    let routeWatchdog: number | null = null;
     let changingRoute = false;
 
     const reset = () => {
       if (settleTimer !== null) window.clearTimeout(settleTimer);
+      if (routeWatchdog !== null) window.clearTimeout(routeWatchdog);
       settleTimer = null;
+      routeWatchdog = null;
       gesture = null;
       changingRoute = false;
       page.style.transition = 'none';
@@ -127,11 +147,12 @@ export function StudentSwipePager({
         shownRoute.current = route;
         incoming.replaceChildren();
         const saved = cache.current.get(route);
-        if (saved) {
-          // The fetched HTML originates only from our authenticated origin.
+        if (isFreshSwipePreview(saved)) {
+          // Only sanitized, recent and same-origin imagery reaches this inert preview.
           // Embedded script/style/iframe nodes are stripped before caching.
           incoming.innerHTML = saved.html;
         } else {
+          cache.current.delete(route);
           const holder = document.createElement('div');
           holder.className = 'vento-student-swipe-loading';
           const label = document.createElement('strong');
@@ -149,7 +170,7 @@ export function StudentSwipePager({
 
     const fetchPreview = (route: string) => {
       const cached = cache.current.get(route);
-      if (cached && Date.now() - cached.fetchedAt < PREVIEW_CACHE_MS) return;
+      if (isFreshSwipePreview(cached)) return;
       if (inFlight.current.has(route)) return;
       const task = (async () => {
         try {
@@ -164,21 +185,24 @@ export function StudentSwipePager({
           const documentText = await response.text();
           const doc = new DOMParser().parseFromString(documentText, 'text/html');
           const main = doc.querySelector('main.vento-student-main');
-          if (!main) return;
-          main.querySelectorAll('script,style,iframe,object,embed,link,meta,template').forEach(node => node.remove());
-          cache.current.set(route, { html: main.innerHTML, fetchedAt: Date.now() });
+          if (!main || controller.signal.aborted) return;
+          const safeHtml = sanitizeStudentSwipePreview(main, window.location.origin);
+          if (controller.signal.aborted) return;
+          cache.current.set(route, { html: safeHtml, fetchedAt: Date.now() });
           // Replace the loading shell mid-gesture with the real neighbor visual.
           if (shownRoute.current === route && incoming.style.visibility === 'visible') {
-            incoming.innerHTML = main.innerHTML;
+            incoming.innerHTML = safeHtml;
           }
         } catch {
           // A poor connection simply shows a non-interactive loading preview.
           // The authoritative page is still loaded by Next.js after release.
-        } finally {
-          inFlight.current.delete(route);
         }
       })();
       inFlight.current.set(route, task);
+      void task.finally(() => {
+        // A previous aborted request must not erase a newer request's marker.
+        if (inFlight.current.get(route) === task) inFlight.current.delete(route);
+      });
     };
 
     // Warm only the immediately adjacent pages, not all five heavy dashboards.
@@ -187,8 +211,9 @@ export function StudentSwipePager({
     }
 
     const onStart = (event: TouchEvent) => {
-      gesture = null;
-      if (changingRoute || !isMobile() || event.touches.length !== 1 ||
+      if (changingRoute) return;
+      reset();
+      if (!isMobile() || event.touches.length !== 1 ||
           ignoreTarget(event.target)) return;
       const touch = event.touches.item(0);
       if (!touch) return;
@@ -217,12 +242,13 @@ export function StudentSwipePager({
       // Cancel browser sideways pan but never the established vertical scroll.
       if (event.cancelable) event.preventDefault();
       const direction = dx < 0 ? 1 : -1;
-      const route = STUDENT_SWIPE_ROUTES[index + direction] ?? null;
+      const route = nextStudentSwipeRoute(STUDENT_SWIPE_ROUTES, index, direction);
       // Hard boundaries: no right-swipe from Explorar or left-swipe from Perfil.
       if (!route) {
-        g.dx = 0; g.nextRoute = null;
+        g.dx = 0; g.direction = 0; g.nextRoute = null;
         page.style.transform = '';
         incoming.style.visibility = 'hidden';
+        frame.removeAttribute('data-dragging');
         return;
       }
       if (direction !== g.direction) renderPreview(route, direction);
@@ -234,18 +260,25 @@ export function StudentSwipePager({
       page.style.transform = `translate3d(${g.dx}px,0,0)`;
       incoming.style.transform = `translate3d(${offset + g.dx}px,0,0)`;
       frame.setAttribute('data-dragging', 'true');
-      if (!cache.current.has(route)) fetchPreview(route);
+      if (!isFreshSwipePreview(cache.current.get(route))) fetchPreview(route);
     };
 
     const onEnd = (event: TouchEvent) => {
       const g = gesture;
       gesture = null;
-      if (!g || g.axis !== 'horizontal' || !g.nextRoute || !isMobile()) return;
+      if (!g) {
+        // Another touch may end while a committed route change is pending.
+        if (!changingRoute) reset();
+        return;
+      }
+      if (g.axis !== 'horizontal' || !g.nextRoute || !isMobile()) {
+        reset();
+        return;
+      }
       if (event.cancelable) event.preventDefault();
       const distance = Math.abs(g.dx);
       const elapsed = Math.max(1, Date.now() - g.at);
-      const commit = distance > frame.clientWidth * .25 ||
-        (distance > 48 && distance / elapsed > .6);
+      const commit = shouldCommitStudentSwipe(distance, elapsed, frame.clientWidth);
       const ms = window.matchMedia('(prefers-reduced-motion: reduce)').matches ? 0 : 240;
       page.style.transition = `transform ${ms}ms ${EASE}`;
       incoming.style.transition = `transform ${ms}ms ${EASE}`;
@@ -258,6 +291,9 @@ export function StudentSwipePager({
           // Reuse the same persistent shell and footer. The full Next route
           // renders after the finger-following visual preview has docked.
           router.replace(destination, { scroll: true });
+          // On failed/offline navigation, do not leave the old page translated
+          // off-screen and its bottom tab showing a different destination.
+          routeWatchdog = window.setTimeout(reset, SWIPE_ROUTE_STALL_MS);
         }, ms);
       } else {
         page.style.transform = 'translate3d(0,0,0)';
@@ -273,6 +309,7 @@ export function StudentSwipePager({
     page.addEventListener('touchcancel', reset);
     return () => {
       controller.abort();
+      inFlight.current.clear();
       reset();
       page.removeEventListener('touchstart', onStart);
       page.removeEventListener('touchmove', onMove);

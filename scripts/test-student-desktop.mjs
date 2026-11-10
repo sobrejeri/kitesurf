@@ -305,6 +305,8 @@ assert.ok(
 // The visible content must follow the finger. Adjacent authenticated page
 // snapshots are only inert visuals; route navigation stays server-authorized.
 const pager = read('src/components/student/swipe-pager.tsx');
+const swipeGuards = read('src/lib/student-swipe-guards.ts');
+const swipePreview = read('src/lib/student-swipe-preview.ts');
 const phoneTabs = [
   '/aluno/inicio', '/aluno/aulas', '/aluno/reservar',
   '/aluno/evolucao', '/aluno/conta',
@@ -324,7 +326,8 @@ assert.ok(
   pager.includes("const isMobile = () => window.innerWidth < 768") &&
   pager.includes('if (!route) {') &&
   pager.includes("const direction = dx < 0 ? 1 : -1") &&
-  pager.includes("STUDENT_SWIPE_ROUTES[index + direction] ?? null"),
+  pager.includes("nextStudentSwipeRoute(STUDENT_SWIPE_ROUTES, index, direction)") &&
+  swipeGuards.includes('routes[currentIndex + direction] ?? null'),
   'Only exact student mobile tabs may swipe; Explorar right and Perfil left are hard stops',
 );
 assert.ok(
@@ -347,7 +350,9 @@ assert.ok(
   pager.includes("credentials: 'same-origin'") &&
   pager.includes("response.headers.get('content-type')?.includes('text/html')") &&
   pager.includes("doc.querySelector('main.vento-student-main')") &&
-  pager.includes("main.querySelectorAll('script,style,iframe,object,embed,link,meta,template')") &&
+  pager.includes("sanitizeStudentSwipePreview(main, window.location.origin)") &&
+  swipePreview.includes('main.querySelectorAll(DROP_ELEMENTS)') &&
+  swipePreview.includes("element.removeAttribute(attr.name)") &&
   pager.includes("ref={preview} inert aria-hidden=\x22true\x22") &&
   !pager.includes('<TabBar') &&
   !pager.includes('<FloatingChat') &&
