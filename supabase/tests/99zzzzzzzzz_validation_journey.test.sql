@@ -62,7 +62,9 @@ BEGIN
  -- a 15-minute balance instead of completing. The student schedules a make-up
  -- with the same instructor and the paid snapshot never changes.
  ASSERT (SELECT status FROM public.bookings WHERE id=bid)='confirmed','Under-recorded booking keeps its balance';
+ PERFORM pg_temp.act_as(sid);
  ASSERT public.booking_balance_minutes(bid)=15,'Balance equals the unrecorded paid minutes';
+ PERFORM pg_temp.reset();
  ASSERT (SELECT sum(done_minutes) FROM public.booking_meetings WHERE booking_id=bid)=105;
  ASSERT EXISTS(SELECT 1 FROM public.booking_level_assessments WHERE booking_id=bid AND assessed_level='returning');
  PERFORM pg_temp.act_as(sid);
@@ -84,7 +86,9 @@ BEGIN
  PERFORM pg_temp.reset();
  ASSERT (SELECT status FROM public.bookings WHERE id=bid)='completed','Booking completes once all paid minutes are delivered';
  ASSERT (SELECT sum(done_minutes) FROM public.booking_meetings WHERE booking_id=bid)=120;
+ PERFORM pg_temp.act_as(sid);
  ASSERT public.booking_balance_minutes(bid)=0,'No balance remains after full delivery';
+ PERFORM pg_temp.reset();
  PERFORM pg_temp.act_as(sid);
  rate_id:=public.rate_completed_booking(bid,5,'Isolated validation journey');
  ASSERT rate_id IS NOT NULL;
