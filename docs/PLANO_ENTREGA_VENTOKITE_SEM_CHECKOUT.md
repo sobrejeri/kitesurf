@@ -113,3 +113,13 @@
 ## Continuidade entre conversas
 
 O agente **não consegue abrir um chat novo ou continuar trabalhando indefinidamente sem uma nova execução**. A retomada pode acontecer por um comando único: ver `docs/CONTINUIDADE_VENTOKITE.md`. Nunca confiar no último resumo isolado: primeiro consultar #105, arquivos do repositório, últimas PRs, CI, migrations e status real do Render/Supabase. Retomar pela primeira tarefa P0 que estiver realmente pendente, sem repetir migrações já aplicadas.
+
+
+## Avaliador paralelo: Claude Code QA (configuração opcional)
+
+- Instruções: `docs/CLAUDE_CODE_QA_AUTOMATICO.md`; agente: `.claude/agents/vento-qa-reviewer.md`; workflow: `.github/workflows/claude-qa-review.yml`.
+- **Responsabilidades independentes:** ChatGPT desenvolve e publica PRs; Claude revisa os diffs, testes, bugs e qualidade visual com rigor, registra P0/P1/P2 e pode criar uma PR de correção `qa/claude-pr-*` **somente contra a PR auditada**, sem merge ou deploy.
+- **Ativação depende de autenticação e opt-in:** instalação da Claude GitHub App, secret `CLAUDE_CODE_OAUTH_TOKEN`, variável `VENTO_CLAUDE_QA_ENABLED=true`. Configuração inicialmente desativada, sem executar créditos pagos.
+- Se **QA habilitado**, uma PR só pode seguir para merge após CI + parecer Claude, correções necessárias incorporadas e nova verificação de testes. Status do revisor não pode ser inferido da mera presença do workflow; é preciso job real e comentário de revisão no PR.
+- Se **QA não habilitado**, manter CI obrigatório, revisão própria e transparência sobre ausência de segundo avaliador; não bloquear indefinidamente o desenvolvimento nem fingir aprovação do Claude.
+- Qualquer PR de QA deve ser revisada separadamente, não pode tocar checkout real, banco de produção, pagamentos, migrations já aplicadas, eliminar autenticação ou colocar segredos no Git.
