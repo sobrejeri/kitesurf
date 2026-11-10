@@ -1,3 +1,20 @@
+## Registro da aplicação em produção — 09/11/2026 (horário de Fortaleza)
+
+As migrations **39 e 40 foram aplicadas com sucesso** no Supabase do projeto kitesurf (`qadkqjfmmnxvovyyhqxw`), após aprovação expressa, verificação de compatibilidade e testes SQL isolados. O histórico formal criado pelo Supabase associa os scripts a estas versões:
+
+| Arquivo versionado no GitHub | Versão real no Supabase | Nome registrado |
+|---|---|---|
+| `20261109000039_vento_protege_statements.sql` | `20261110001348` | `vento_protege_39_statements_evidence` |
+| `20261109000040_protection_incident_participant_snapshot.sql` | `20261110001427` | `vento_protege_40_incident_instructor_snapshot` |
+
+**Validações após aplicação:** `lesson_protection_statements`, `lesson_protection_reviews` e `lesson_protection_evidence` criadas com RLS; bucket `vento-protection-evidence` privado e limitado a 5 MB; RPCs novas presentes; trigger de snapshot `capture_protection_incident_participant` ativo; SELECT de `booking_incidents` restrito a Admin, aluno, autor e instrutor historicamente atribuído. Permissão `anon` de SELECT em depoimentos e EXECUTE da RPC de submissão: negada. `authenticated` não pode inserir depoimentos diretamente.
+
+**Preservação dos dados:** antes e depois: **5 reservas, 6 encontros, 0 ocorrências**. As tabelas financeiras e operações de pagamentos não foram alteradas. Formulários 3B permanecem **desativados por padrão** até testes autenticados de ponta a ponta e ativação explícita da flag.
+
+**Atenção — histórico antigo não foi reconciliado:** o histórico formal do Supabase agora contém **somente essas duas entradas**, não os scripts 01–38 (objetos antigos já existem). Não rodar `supabase db push`, `db reset`, migrations 01–38 ou propostas conflitantes de 38 sem comparar o esquema e estabelecer o baseline. Os cabeçalhos "PREPARED ONLY" mantidos nos arquivos SQL são comentários históricos do momento de preparação, não representam o estado atual.
+
+---
+
 # VentoKite — Catálogo de migrações e identificação do SQL
 
 > Criado em 09/11/2026 para a tarefa de auditoria [#88](https://github.com/sobrejeri/kitesurf/issues/88).
@@ -79,16 +96,16 @@
 
 **Status geral desta identificação: nomes catalogados; migrações da produção ainda não conciliadas.**
 
-## 39 — VentoKite Protege (PREPARADA, NÃO APLICADA)
+## 39 — VentoKite Protege (APLICADA EM PRODUÇÃO)
 
 - Arquivo no GitHub: `20261109000039_vento_protege_statements.sql`.
 - Tabelas propostas: `lesson_protection_statements` (relatos versionados e imutáveis), `lesson_protection_reviews` (avaliação registrada por Admin) e `lesson_protection_evidence` (metadados privados).
 - Bucket novo proposto `vento-protection-evidence` (privado, 5 MB, imagens/PDF).
 - Funções propostas: `submit_lesson_protection_statement`, `review_lesson_protection_case`, `prepare_lesson_protection_evidence`, `confirm_lesson_protection_evidence`.
-- **A migração 39 NÃO está aplicada no Supabase real.** O código depende de `NEXT_PUBLIC_VENTO_PROTEGE_STATEMENTS_ENABLED=true`, flag que deverá permanecer desativada até reconciliação, testes de RLS e autorização de schema.
+- **A migração 39 foi aplicada em 09/11/2026.** A interface ainda depende de `NEXT_PUBLIC_VENTO_PROTEGE_STATEMENTS_ENABLED=true`, flag que deverá permanecer desativada até reconciliação, testes de RLS e autorização de schema.
 - Não modifica migração 38 nem altera dinheiro/presença/minutos.
 
-### Auditoria de segurança proposta para 39 (ainda não aplicada)
+### Auditoria de segurança incorporada à 39
 
 O arquivo `20261109000039_vento_protege_statements.sql` foi reforçado com:
 - Policy de leitura que protege as declarações do instrutor anterior após a mudança de atribuição.
@@ -97,18 +114,18 @@ O arquivo `20261109000039_vento_protege_statements.sql` foi reforçado com:
 - Limites serializados por encontro e janela de recuperação de tentativas falhas.
 - Testes de segurança em PostgreSQL temporário, sem supor que a base real tenha histórico de aplicação de migrações.
 
-**Não rodar em produção antes de reconciliar as migrations 01–38, o schema e o processo de aprovação.**
+**A 39 já foi aplicada e não deve ser reexecutada.** Antes de novas migrations, conciliar as versões 01–38.
 
 ### Etapa 3C — consulta histórica e política de evidências ainda não ativadas
 
-A exibição de manifestações foi desacoplada do monitor de aulas `scheduled`. Nenhuma migration nova é necessária para esta melhoria de interface; o banco real continua aguardando a migração 39 autorizada. Um classificador de retenção em modo **dry-run** permite sinalizar uploads incompletos à revisão manual sem excluir arquivo ou registro. O prazo de retenção real está pendente de aprovação jurídica/operacional. A API do Storage deverá ser usada em toda remoção aprovada; nunca excluir diretamente de `storage.objects`.
+A exibição de manifestações foi desacoplada do monitor de aulas `scheduled`. Nenhuma migration nova é necessária para esta melhoria de interface; a UI ainda aguarda homologação e ativação após a migração 39. Um classificador de retenção em modo **dry-run** permite sinalizar uploads incompletos à revisão manual sem excluir arquivo ou registro. O prazo de retenção real está pendente de aprovação jurídica/operacional. A API do Storage deverá ser usada em toda remoção aprovada; nunca excluir diretamente de `storage.objects`.
 
 ### Etapa 3D — histórico paginado sem nova migração
 
-A consulta a `booking_incidents` agora tem paginação de 20 itens por vez e filtro por código de reserva com autorização RLS. Após aprovação e aplicação separada da migration 39, `lesson_protection_statements` poderá usar navegação semelhante. **Nenhuma migração adicional, SQL remoto ou ativação da flag ocorreu nesta etapa.**
+A consulta a `booking_incidents` agora tem paginação de 20 itens por vez e filtro por código de reserva com autorização RLS. Com a migration 39 instalada, `lesson_protection_statements` poderá usar navegação semelhante quando a flag 3B for ativada após homologação. **Esta etapa 3D não aplicou SQL; posteriormente as migrations 39/40 foram aplicadas separadamente em 09/11/2026. A flag segue desligada.**
 
 
-## 40 — Incidentes: congelamento do instrutor na abertura (PREPARADA, NÃO APLICADA)
+## 40 — Incidentes: congelamento do instrutor na abertura (APLICADA EM PRODUÇÃO)
 
 - Arquivo versionado: `20261109000040_protection_incident_participant_snapshot.sql`.
 - Protege a tabela **já existente** `booking_incidents` contra leitura retroativa pelo instrutor substituto. Novos relatos terão o campo `instructor_at_report_id`, preenchido em trigger pelo banco no instante do registro.
@@ -120,6 +137,6 @@ A consulta a `booking_incidents` agora tem paginação de 20 itens por vez e fil
 
 ### Bloqueio obrigatório de aplicação
 
-A consulta ao banco real em 09/11/2026 retornou `supabase_migrations.schema_migrations = NULL` apesar de existirem as tabelas 01–38. Logo **não executar sequencialmente as migrations antigas** para tentar instalar 39/40. O banco real continua sem `lesson_protection_statements` e sem o bucket `vento-protection-evidence`.
+Na auditoria inicial de 09/11/2026, `supabase_migrations.schema_migrations` estava ausente apesar de existirem as tabelas antigas. Depois, as migrations 39/40 foram aplicadas por ferramentas oficiais e passaram a constar no histórico formal. **Não executar sequencialmente as migrations antigas 01–38**, que continuam sem baseline. As novas tabelas e o bucket privado já existem.
 
-O procedimento correto é: homologação isolada, comparação de schema, política de recuperação acordada, aprovação explícita da implantação e validação de RLS com contas reais. Migração 39 deve ser validada antes da 40; nenhuma das duas executa pagamento, presença ou saldo.
+O procedimento correto é: homologação isolada, comparação de schema, política de recuperação acordada, aprovação explícita da implantação e validação de RLS com contas reais. Migração 39 foi aplicada e validada antes da 40; nenhuma delas executou pagamento, presença ou saldo.
