@@ -43,7 +43,7 @@ assert.match(mobile, /event\.key === 'Escape'/,
   'Escape must still close the sheet');
 assert.match(mobile, /!centerActive && !items\.some/,
   'More tab must not appear active when central action is selected');
-assert.match(shells, /match:\['\/aluno\/reserva'\]/,
+assert.match(shells, /label:'Minhas aulas',icon:'calendar',match:\\['\\/aluno\\/reserva'[,\\]]/,
   'Desktop Minhas aulas must own deep-linked booking details');
 assert.match(shells, /const active = isActive\(pathname,item\)/,
   'Desktop sidebar must use the same route matcher as the phone');
