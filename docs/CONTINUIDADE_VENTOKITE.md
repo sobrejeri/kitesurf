@@ -54,3 +54,11 @@ O projeto possui um **avaliador independente preparado, não necessariamente con
 `docs/CLAUDE_CODE_QA_AUTOMATICO.md`, `.claude/agents/vento-qa-reviewer.md` e `.github/workflows/claude-qa-review.yml`.
 
 **Antes de integrar cada PR:** verifique se o job Claude QA está habilitado pela variável `VENTO_CLAUDE_QA_ENABLED=true` e pela conexão Anthropic. Se estiver operacional, aguarde o parecer e resolva P0/P1 via PR QA separada antes de merge/deploy. Se estiver desativado/skipped, registre `Claude QA: não executado (aguardando conexão)` na issue #105 e prossiga somente com os testes realmente executados. Nunca declare a revisão independente concluída porque o arquivo de workflow existe. O Claude não deve fazer merge ou deploy e não altera banco nem checkout.
+
+## Handoff verificado — 10/11/2026, lote L0 (PR #136)
+
+- Render `srv-dbifnnks728c73f50arg`: último deploy consultado `dep-dbphgnjfr9ks73cud790` **live**, SHA `db9efb992fb6acc1f81e0d014d3fbf8aa81085f3`. Não declarar PR #136 publicada antes de novo deploy live.
+- Supabase **kitesurf** `qadkqjfmmnxvovyyhqxw`: migrations 39, 40, 41 e 42 registradas; Protege 3B permanece fechado; nenhuma SQL aplicada nesta execução.
+- PR #132 conflitada: correção funcional reimplementada sobre HEAD atual na PR #136 (`fix/l0-request-navigation-rebased-20261110`). Inclui rota de solicitação, seta Voltar e seleção correta de Minhas aulas mobile/PC, teste de regressão e job CI. PR #135 e #130 de documentação abertas.
+- Workflow Claude independente para PR #136 retornou **SKIPPED**; não houve revisão independente. CI de desenvolvimento não confirmado na primeira consulta; **não houve merge nem deploy** da PR #136 nesta execução.
+- Próxima execução: consultar CI da PR #136, corrigir eventuais falhas, integrar somente se aprovado, conferir novo SHA live, reconciliar PR #132 e documentações #135/#130; em seguida avançar em RLS/Storage por perfil e E2E autorizado. Sem checkout, sem tocar dados reais, sem migrations 01–38. 0/18 frentes homologadas integralmente.
