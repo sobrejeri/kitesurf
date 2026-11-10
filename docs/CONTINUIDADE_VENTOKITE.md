@@ -62,3 +62,10 @@ O projeto possui um **avaliador independente preparado, não necessariamente con
 - PR #132 conflitada: correção funcional reimplementada sobre HEAD atual na PR #136 (`fix/l0-request-navigation-rebased-20261110`). Inclui rota de solicitação, seta Voltar e seleção correta de Minhas aulas mobile/PC, teste de regressão e job CI. PR #135 e #130 de documentação abertas.
 - Workflow Claude independente para PR #136 retornou **SKIPPED**; não houve revisão independente. CI de desenvolvimento não confirmado na primeira consulta; **não houve merge nem deploy** da PR #136 nesta execução.
 - Próxima execução: consultar CI da PR #136, corrigir eventuais falhas, integrar somente se aprovado, conferir novo SHA live, reconciliar PR #132 e documentações #135/#130; em seguida avançar em RLS/Storage por perfil e E2E autorizado. Sem checkout, sem tocar dados reais, sem migrations 01–38. 0/18 frentes homologadas integralmente.
+
+## Handoff — 10/11/2026 12h (BRT), PR #136
+
+- CI do commit `ee7a6bbe` falhou em `scripts/test-l0-mobile-navigation.mjs`, por regex de teste com barras escapadas indevidamente; typecheck, lint e verificações anteriores passaram. Log: https://github.com/sobrejeri/kitesurf/actions/runs/42832552074.
+- Corrigida a asserção de teste na branch `fix/l0-request-navigation-rebased-20261110` pelo commit `e5acb702`; sem mudança de comportamento de produção nesta correção. Aguardar CI do HEAD mais recente desta PR, verificar o job Claude (antes SKIPPED), somente integrar se CI passar, depois confirmar SHA live no Render.
+- Último Render verificado `db9efb992fb6acc1f81e0d014d3fbf8aa81085f3` (`live`). Supabase kitesurf confirma migrations 39–42. Nenhum SQL executado, Protege 3B fechado, checkout desativado. 0/18 homologadas integralmente.
+- Após #136: reconciliar #132 e PRs de documentação, avançar testes de RLS/Storage por perfil sem tocar dados reais. Não declarar E2E autenticado sem evidência.
