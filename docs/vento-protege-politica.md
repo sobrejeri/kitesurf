@@ -1,3 +1,5 @@
+> **Estado da implantação — 09/11/2026:** migrations 39 (Supabase versão `20261110001348`) e 40 (versão `20261110001427`) **aplicadas com sucesso** ao banco de produção. Tabelas, RLS, RPCs, bucket privado e trigger validados após aplicação. Os registros existentes permaneceram preservados (5 reservas, 6 encontros, 0 incidentes). **O painel de manifestações 3B continua desativado por padrão**, aguardando homologação autenticada no app. Pagamentos, repasses, checkout e saldo não foram alterados. A reconciliação das migrações antigas 01–38 e a política de retenção ainda estão pendentes. Notas abaixo descrevendo "não aplicada" são histórico das etapas anteriores, não o estado atual.
+
 # VentoKite Protege — política de encontro sem comprovação
 
 **Status:** especificação e simulador de prazos **em desenvolvimento**, sem autorização para repasse ou estorno automáticos. Issue [#109](https://github.com/sobrejeri/kitesurf/issues/109). Atualizado em 09/11/2026.
