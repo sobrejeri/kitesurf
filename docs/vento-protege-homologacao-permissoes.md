@@ -81,3 +81,18 @@ Resultado do teste pós-aplicação diretamente no Supabase:
 - [x] Avisos do Supabase de `SECURITY DEFINER` acessíveis a `authenticated` caíram de 91 para 87 (os quatro endpoints 3B recém-bloqueados)
 
 **O teste real da URL assinada e envio de mídia ainda não ocorreu.** A abertura das RPCs depende de migration separada com `GRANT EXECUTE`, além de uma liberação do front-end por flag no Render. Não ativar a interface isoladamente.
+
+## 7. Etapa 3G — console de homologação somente leitura
+
+O Admin possui a tela `/admin/protege-homologacao` (atalho em **Mais opções → Homologação Protege**). O painel:
+
+- exige uma sessão autenticada do papel `admin`;
+- consulta **somente contagens**, em tabelas protegidas por RLS, sem identidade nem conteúdo dos relatos;
+- indica se as quatro fontes de histórico estão acessíveis, separando erro de consulta de resultado zero;
+- mostra contagens de Aluno, Instrutor, Pousada e reservas de teste **visíveis naquela sessão**;
+- mantém pendentes a validação cruzada de papéis, a geração de links assinados, upload/download HTTP e a troca entre dois instrutores;
+- informa o bloqueio do backend da migration 41 e não fornece ação para liberar dinheiro, alterar reserva ou modificar SQL.
+
+**Não é homologação completa:** testes SQL transacionais (rollback) e a leitura do Admin não comprovam experiência de um aluno/instrutor autenticado, nem as políticas HTTP do Storage. O painel não deve testar envio nem liberar a flag 3B sozinho. Os testes de rejeição do `anon` e acessos cruzados continuam necessários.
+
+**Próximo critério de aceite:** executar sessão real com dois instrutores e ao menos um aluno, gravar apenas dados fictícios em ambiente autorizado e conferir via navegador/Storage a proteção de evidências. Registrar evidência de iPhone e PC e manter as RPCs 3B fechadas até a decisão formal de release.
