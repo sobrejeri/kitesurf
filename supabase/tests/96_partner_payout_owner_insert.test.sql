@@ -60,7 +60,7 @@ BEGIN
     RAISE EXCEPTION 'Foreign payout UPDATE unexpectedly changed % rows', affected;
   END IF;
 
-  -- The owner still sees their unchanged payout after the negative tests.
+  -- DELETE must also be denied to a different authenticated user.\n  DELETE FROM public.partner_payout_details WHERE id = owner_uid;\n  GET DIAGNOSTICS affected = ROW_COUNT;\n  IF affected <> 0 THEN\n    RAISE EXCEPTION 'Foreign payout DELETE unexpectedly removed % rows', affected;\n  END IF;\n\n  -- The owner still sees their unchanged payout after the negative tests.
   PERFORM set_config('request.jwt.claim.sub', owner_uid::text, true);
   IF NOT EXISTS (
     SELECT 1 FROM public.partner_payout_details
