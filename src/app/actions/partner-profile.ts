@@ -124,6 +124,11 @@ export async function uploadPartnerAvatar(_previous:ActionState,form:FormData):P
     const bytes=new Uint8Array(await file.arrayBuffer());
     if(!validImage(bytes,mime))return {error:'O arquivo não é uma imagem válida.'};
     const db=await createSupabaseServerClient();
+    // Match the signed-upload path: do not store orphan files for accounts
+    // without a partner record (the RPC would reject them only after upload).
+    const {data:partner,error:partnerError}=await db.from('partners')
+      .select('id').eq('owner_id',viewer.id).maybeSingle();
+    if(partnerError||!partner)return {error:'Complete seu cadastro de afiliado antes de adicionar uma foto.'};
     const path=viewer.id+'/avatar.'+AVATAR_MIMES[mime];
     const upload=await db.storage.from(AVATAR_BUCKET).upload(path,bytes,{
       contentType:mime,upsert:true,cacheControl:'60',
