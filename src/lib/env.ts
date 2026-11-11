@@ -11,7 +11,13 @@ const anonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
 
 export const supabaseConfig = url && anonKey ? { url, anonKey } : null;
 
-export const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL ?? 'http://localhost:3000';
+// Render does not guarantee NEXT_PUBLIC_SITE_URL is set. In a production build,
+// never send account confirmation or recovery links to localhost when it is absent.
+// An explicit URL still takes precedence for preview/staging deployments.
+export const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL ||
+  (process.env.NODE_ENV === 'production'
+    ? 'https://vento-kitesurf.onrender.com'
+    : 'http://localhost:3000');
 
 /**
  * Absolute address on the public site, for redirects from route handlers.
