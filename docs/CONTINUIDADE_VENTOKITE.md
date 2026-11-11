@@ -211,3 +211,11 @@ O projeto possui um **avaliador independente preparado, não necessariamente con
 - Render último SHA LIVE confirmado antes do merge: `5143ce3152ad125aaad11e3c94da770f87cb8215`, deploy `dep-dbq1f1u7bikc738eu060`. Supabase correto `qadkqjfmmnxvovyyhqxw`: ledger 39–42 somente; 43–46 versionadas, não aplicadas. Policy INSERT remota ainda contém `p.owner_id = p.id`, e authenticated só possui SELECT na tabela; não declarar cadastro de payout corrigido em produção.
 - Nova PR de testes de menor privilégio: branch `test/l0-partner-payout-grant-boundaries-20261111`, reforça teste SQL 96 para negar INSERT/UPDATE/DELETE a anon e DELETE a authenticated. Exigir CI do HEAD e Claude QA antes de merge.
 - Próximo ciclo: verificar CI da PR de testes, merge apenas se SUCCESS; confirmar Render LIVE. Reconciliar dependências 43–46 e aplicar individualmente apenas quando seguro, com rollback/plano de recuperação e evidências, nunca 01–38 em lote. E2E autenticado quatro papéis, Storage HTTP e segundo instrutor permanecem BLOQUEADOS. Protege 3B e checkout OFF; 0/18 frentes integralmente homologadas.
+
+
+## Handoff L0 — 11/11/2026 07h20 BRT
+
+- PR #151 integrada após CI run `42993627252` com job de banco **success**; squash `9db88a06dcf84e4d7fcd8687da00e60af29f4ff0`. Claude QA segue documentado como não ativo; **não houve parecer independente comprovado**. Confirmar deploy `live` do SHA #151 no Render (o último live verificado antes da integração era `444ab82b`, #150).
+- Nova PR #152 (branch `test/l0-partner-payout-two-owners-20261111`, commit `032502275d6ba0604a7107f6d9d6996bbea8a41f`) adiciona regressão SQL 96 com duas pousadas legítimas e negativa de leitura/alteração cruzada; **CI pendente**, não integrar sem sucesso.
+- Supabase correto `qadkqjfmmnxvovyyhqxw` consultado somente leitura: ledger contém apenas migrations 39–42. Migrations 43–46 **não aplicadas**; conciliar ordem e dependências antes de qualquer DDL remoto. Protege 3B bloqueado e checkout OFF. Nenhum dado real alterado.
+- Retomar: CI e Claude QA #152, corrigir se necessário, merge só com CI aprovado, confirmar Render SHA live; avançar reconciliação SQL 43–46 e testes Storage HTTP autenticados quando houver sessões. 0/18 frentes integralmente homologadas.
