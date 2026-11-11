@@ -15,7 +15,7 @@ const ACTIONS: Readonly<Record<string, { label: string; icon: IconName }>> = {
   'meeting.recorded': { label: 'Aula registrada', icon: 'check' },
   'price.published': { label: 'Novo preço publicado', icon: 'sliders' },
   'instructor.status_changed': { label: 'Situação de instrutor alterada', icon: 'users' },
-  'partner.status_changed': { label: 'Situação de pousada alterada', icon: 'home' },
+  'partner.status_changed': { label: 'Situação de afiliado alterada', icon: 'link' },
   'beach.created': { label: 'Praia cadastrada', icon: 'pin' },
   'beach.updated': { label: 'Praia alterada', icon: 'pin' },
   'profile.promoted_admin': { label: 'Administrador promovido', icon: 'shield' },

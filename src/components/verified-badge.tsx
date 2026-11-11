@@ -16,7 +16,7 @@ export function VerifiedVentoBadge({
   const dimensions = size === 'sm' ? 'h-[19px] w-[19px]' : size === 'lg'
     ? 'h-[25px] w-[25px]' : 'h-[22px] w-[22px]';
   const ariaLabel = kind === 'partner'
-    ? 'Pousada verificada pelo Vento'
+    ? 'Afiliado verificado pelo VentoKite'
     : 'Instrutor verificado pelo Vento';
 
   return (

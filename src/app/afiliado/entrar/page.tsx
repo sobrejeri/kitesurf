@@ -6,5 +6,5 @@ export const metadata: Metadata = { title: 'Entrar' };
 
 export default async function LoginPage({ searchParams }: { searchParams: Promise<{ next?: string; confirmado?: string; erro?: string }> }) {
   const { next, confirmado, erro } = await searchParams;
-  return <AreaLogin area="pousada" next={next} confirmed={Boolean(confirmado)} wrongAccount={erro === 'conta'} />;
+  return <AreaLogin area="afiliado" next={next} confirmed={Boolean(confirmado)} wrongAccount={erro === 'conta'} />;
 }

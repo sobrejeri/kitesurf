@@ -1,11 +1,11 @@
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 
-// Admin, Instructor and Pousada phone headers show the official logo with the
+// Admin, Instructor and Afiliado phone headers show the official logo with the
 // area label under it (StudentBrand). Reproduced at 390px: that brand is about
 // 70px tall, but the header row was fixed at h-14 (56px) and centred, so the
 // logo started 7px above the top of the screen (clipped, or under the status
-// bar in the PWA) and the "ADMIN" / "INSTRUTOR" / "POUSADA" label sat on the
+// bar in the PWA) and the "ADMIN" / "INSTRUTOR" / "AFILIADO" label sat on the
 // header's bottom border.
 const css = readFileSync('src/app/globals.css', 'utf8');
 const sunset = readFileSync('src/components/student/sunset.tsx', 'utf8');
@@ -27,8 +27,10 @@ assert.ok(brandHeight > 56, `Brand height (${brandHeight.toFixed(1)}px) exceeds 
 // The brand really is the leading content of the affected headers.
 assert.match(shells, /<MobileHeader\s+breakpoint="lg"\s+leading=\{<StudentBrand subtitle=\{brandSubtitle\} \/>\}/,
   'Admin/Instructor sunset header uses StudentBrand');
-assert.match(shells, /<MobileHeader\s+leading=\{<StudentBrand subtitle="Pousada" \/>\}/,
-  'Pousada header uses StudentBrand');
+// The affiliate app (formerly Pousada) now uses the same workspace shell.
+const affiliateLayout = readFileSync('src/app/afiliado/(app)/layout.tsx', 'utf8');
+assert.match(affiliateLayout, /<WorkspaceShell[\s\S]*brandSubtitle="Afiliado"/,
+  'Affiliate header uses the workspace StudentBrand header');
 
 // So the header row must grow with its content instead of a fixed 56px box,
 // keeping 56px as the minimum for the compact (logo mark + title) variant.

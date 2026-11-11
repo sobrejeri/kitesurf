@@ -20,6 +20,15 @@ const nextConfig = {
       bodySizeLimit: '9mb',
     },
   },
+  // The Pousada app became the Afiliado app. Old links, bookmarks and
+  // installed shortcuts keep working; temporary (307) so the move stays
+  // reversible without browsers caching it forever.
+  async redirects() {
+    return [
+      { source: '/pousada', destination: '/afiliado/inicio', permanent: false },
+      { source: '/pousada/:path*', destination: '/afiliado/:path*', permanent: false },
+    ];
+  },
   async headers() {
     return [
       {

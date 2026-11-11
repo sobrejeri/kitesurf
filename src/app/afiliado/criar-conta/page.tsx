@@ -5,5 +5,5 @@ import { AreaSignup } from '@/components/auth/area-auth';
 export const metadata: Metadata = { title: 'Criar conta' };
 
 export default function SignupPage() {
-  return <AreaSignup area="pousada" />;
+  return <AreaSignup area="afiliado" />;
 }

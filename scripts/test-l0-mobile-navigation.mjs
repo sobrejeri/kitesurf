@@ -13,8 +13,8 @@ assert.equal(isActive('/aluno/reservar', lessons), false,
 assert.equal(isActive('/aluno/atendimento', lessons), false);
 assert.equal(isActive('/aluno/conta/', { href: '/aluno/conta' }), true);
 assert.equal(isActive('/aluno/contato', { href: '/aluno/conta' }), false);
-assert.equal(isActive('/pousada/perfil', { href: '/pousada/inicio' }), false);
-assert.equal(isActive('/pousada/perfil', { href: '/pousada/perfil' }), true);
+assert.equal(isActive('/afiliado/perfil', { href: '/afiliado/inicio' }), false);
+assert.equal(isActive('/afiliado/perfil', { href: '/afiliado/perfil' }), true);
 assert.equal(isActive('/admin/reservas/42', { href: '/admin/reservas' }), true);
 
 assert.equal(modalFocusDestination('backward', -1, 3, true), 2,

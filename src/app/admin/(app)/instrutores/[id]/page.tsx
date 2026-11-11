@@ -185,7 +185,7 @@ export default async function InstructorDetailPage({ params }: { params: Promise
               </ActionForm>
             )}
             <p className="mt-3 text-[11px] text-muted">
-              Alterações não recalculam contratos existentes. A comissão de pousadas,
+              Alterações não recalculam contratos existentes. A comissão de afiliados,
               quando houver, sai somente da parte da plataforma.
             </p>
           </Panel>

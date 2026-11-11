@@ -124,7 +124,7 @@ export default async function ProtectionQaPage() {
       <div className="mt-4 flex flex-wrap gap-2 text-[12px] text-muted">
         <span>Instrutores visíveis: <strong className="text-ink">{instructors ?? '—'}</strong></span>
         <span>· Alunos visíveis: <strong className="text-ink">{students ?? '—'}</strong></span>
-        <span>· Pousadas visíveis: <strong className="text-ink">{partners ?? '—'}</strong></span>
+        <span>· Afiliados visíveis: <strong className="text-ink">{partners ?? '—'}</strong></span>
         <span>· Reservas de teste visíveis: <strong className="text-ink">{testBookings ?? '—'}</strong></span>
       </div>
       {!databaseReadable || !cohortReadable ? <Note tone="warning" className="mt-3">
@@ -147,7 +147,7 @@ export default async function ProtectionQaPage() {
           label="2. Contas para homologação"
           status={cohortReadable && (instructors ?? 0) >= 2 && (students ?? 0) >= 1 && (partners ?? 0) >= 1 ? 'ok' : 'pending'}
           description={cohortReadable
-            ? 'Para testar substituição, precisamos de ao menos dois instrutores cadastrados, um aluno e uma pousada. As contagens exibem apenas o que esta sessão pode consultar.'
+            ? 'Para testar substituição, precisamos de ao menos dois instrutores cadastrados, um aluno e um afiliado. As contagens exibem apenas o que esta sessão pode consultar.'
             : 'Não foi possível contar os perfis de teste disponíveis.'}
         />
         <Check
@@ -158,7 +158,7 @@ export default async function ProtectionQaPage() {
         <Check
           label="4. Storage privado real"
           status="pending"
-          description="Testar upload de JPEG/PNG/WebP/PDF, limites, confirmação, download assinado e bloqueio para Pousada ou outro participante. Nunca usar fotos ou dados reais como massa de teste."
+          description="Testar upload de JPEG/PNG/WebP/PDF, limites, confirmação, download assinado e bloqueio para Afiliado ou outro participante. Nunca usar fotos ou dados reais como massa de teste."
         />
         <Check
           label="5. iPhone, desktop e histórico"

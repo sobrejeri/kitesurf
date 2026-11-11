@@ -12,7 +12,7 @@ import { Field, Note, inputClass } from '../ui';
 /**
  * The login and sign-up screens of one app. Full screen, dark, the app's own
  * name on top: opened from the home-screen icon, this is the first thing the
- * user sees. Instrutor and Admin use the blue staff accent (theme-pro-auth).
+ * user sees. Instrutor, Admin and Afiliado use the blue workspace accent (theme-pro-auth).
  */
 function AuthFrame({ area, title, highlight, lead, children }: { area: AppArea; title: string; highlight: string; lead: string; children: React.ReactNode }) {
   const info = APP_AREAS[area];
@@ -21,7 +21,7 @@ function AuthFrame({ area, title, highlight, lead, children }: { area: AppArea; 
   const studentSignup = area === 'aluno' && title === 'Seu primeiro bordo começa aqui.';
   const studentAuth = studentLogin || studentSignup;
   return (
-    <div className={`${area === 'aluno' ? 'theme-beach kite-m3-auth vento-pc-auth-shell' : area === 'pousada' ? 'theme-sunset' : 'theme-sunset theme-pro-auth'} ${studentLogin ? 'kite-m3-auth--student-login' : ''} ${studentSignup ? 'kite-m3-auth--student-signup' : ''} relative min-h-dvh overflow-hidden bg-canvas text-ink`}>
+    <div className={`${area === 'aluno' ? 'theme-beach kite-m3-auth vento-pc-auth-shell' : 'theme-sunset theme-pro-auth'} ${studentLogin ? 'kite-m3-auth--student-login' : ''} ${studentSignup ? 'kite-m3-auth--student-signup' : ''} relative min-h-dvh overflow-hidden bg-canvas text-ink`}>
       {area === 'aluno' ? <StudentDesktopAuthStory kind={studentLogin ? 'login' : 'signup'}/> : null}
       <img src={studentAuth ? '/images/prea-coast.webp' : area === 'aluno' ? '/images/vento-ocean-hero.webp' : '/images/kite-lesson.webp'} alt="" className="sunset-photo absolute inset-x-0 top-0 h-[46dvh] w-full object-cover" />
       <div className="sunset-veil absolute inset-x-0 top-0 h-[46dvh]" aria-hidden="true" />
@@ -114,7 +114,7 @@ export function AreaLogin({
 const SIGNUP_COPY: Readonly<Record<Exclude<AppArea, 'admin'>, { title: string; highlight: string; lead: string }>> = {
   aluno: { title: 'Seu primeiro bordo começa aqui.', highlight: 'aqui.', lead: 'Crie sua conta para reservar aulas.' },
   instrutor: { title: 'Ensine com a gente.', highlight: 'com a gente.', lead: 'Seu perfil passa por análise antes de receber pedidos.' },
-  pousada: { title: 'Indique bons ventos.', highlight: 'bons ventos.', lead: 'Cadastre sua pousada e ganhe comissão nas aulas.' },
+  afiliado: { title: 'Indique e ganhe.', highlight: 'ganhe.', lead: 'Crie sua conta de afiliado e receba comissão pelas aulas que indicar.' },
 };
 
 export function AreaSignup({ area }: { area: Exclude<AppArea, 'admin'> }) {
@@ -123,7 +123,7 @@ export function AreaSignup({ area }: { area: Exclude<AppArea, 'admin'> }) {
     <AuthFrame area={area} title={copy.title} highlight={copy.highlight} lead={copy.lead}>
       <ActionForm action={signUp} submitLabel="Criar conta" className={`grid gap-4 ${area === 'aluno' ? 'kite-m3-auth-signup-form' : ''}`} wideSubmit>
         <input type="hidden" name="role" value={APP_AREAS[area].role} />
-        <Field label={area === 'pousada' ? 'Seu nome (responsável)' : 'Nome'}>
+        <Field label={area === 'afiliado' ? 'Seu nome' : 'Nome'}>
           <input name="fullName" required minLength={2} maxLength={120} autoComplete="name" placeholder="Seu nome completo" className={inputClass} />
         </Field>
         {area === 'aluno' ? (

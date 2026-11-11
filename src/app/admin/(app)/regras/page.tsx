@@ -34,7 +34,7 @@ export default async function OperationRulesPage() {
             Ajustes específicos são feitos em{' '}
             <Link href="/admin/instrutores" className="font-semibold text-brand underline">Instrutores</Link>
             {' '}e{' '}
-            <Link href="/admin/afiliados" className="font-semibold text-brand underline">Pousadas afiliadas</Link>.
+            <Link href="/admin/afiliados" className="font-semibold text-brand underline">Afiliados</Link>.
           </p>
           {!current?.level_prices_ready ? <Note tone="warning" className="mt-4">Os valores atuais continuam válidos. Para editar por nível, aplique a migração 36 no Supabase.</Note> : null}
           <ActionForm action={publishPrice} submitLabel="Publicar valores por nível" disabled={!current?.level_prices_ready} className="mt-5 grid gap-4">

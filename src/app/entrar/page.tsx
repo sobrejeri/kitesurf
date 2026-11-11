@@ -10,7 +10,7 @@ export const metadata: Metadata = { title: 'Escolha seu app' };
 const CHOICES: readonly { area: AppArea; icon: IconName; text: string }[] = [
   { area: 'aluno', icon: 'kite', text: 'Quero fazer aulas' },
   { area: 'instrutor', icon: 'users', text: 'Sou instrutor' },
-  { area: 'pousada', icon: 'home', text: 'Sou pousada parceira' },
+  { area: 'afiliado', icon: 'link', text: 'Sou afiliado' },
   { area: 'admin', icon: 'shield', text: 'Equipe de operação' },
 ];
 

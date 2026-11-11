@@ -10,12 +10,12 @@ export type PartnerProgress = {
   payout:boolean;
 };
 export const PARTNER_REQUIRED = [
-  {key:'name',label:'Nome da pousada'},
-  {key:'beach',label:'Praia de referência'},
+  {key:'name',label:'Nome do afiliado ou da empresa'},
+  {key:'beach',label:'Praia onde atua'},
   {key:'responsible',label:'Nome do responsável'},
   {key:'phone',label:'Telefone / WhatsApp'},
   {key:'city',label:'Cidade'},
-  {key:'address',label:'Endereço da pousada'},
+  {key:'address',label:'Endereço'},
 ] as const;
 export const PARTNER_OPTIONAL = [
   {key:'avatar',label:'Foto ou logo'},

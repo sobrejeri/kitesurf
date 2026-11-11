@@ -13,7 +13,7 @@ import {formatBps,formatMoney} from '@/lib/format';
 import {PARTNER_REQUIRED,PARTNER_OPTIONAL,parsePartnerProgress,partnerCompletion} from '@/lib/partner-progress';
 import {createSupabaseServerClient} from '@/lib/supabase/server';
 
-export const metadata:Metadata={title:'Analisar pousada'};
+export const metadata:Metadata={title:'Analisar afiliado'};
 type AdminData={
   responsible_name:string;phone:string;city:string;address:string;instagram:string;
   avatar_path:string|null;
@@ -54,18 +54,18 @@ export default async function PartnerReviewPage({
   const ready=completion.ready&&Boolean(contact)&&!progressResult.error;
   return <>
     <div className="mb-4">
-      <ButtonLink href="/admin/afiliados" variant="ghost" size="sm" icon="back">Todas as pousadas</ButtonLink>
+      <ButtonLink href="/admin/afiliados" variant="ghost" size="sm" icon="back">Todos os afiliados</ButtonLink>
     </div>
-    <AdminTitle title={partner.name} subtitle="Validação de pousada parceira" />
+    <AdminTitle title={partner.name} subtitle="Validação de afiliado" />
 
     <Card className="mb-4">
       <div className="flex flex-wrap items-center gap-4">
         {photoUrl?(
-          <img src={photoUrl} alt={'Logo da '+partner.name}
+          <img src={photoUrl} alt={'Foto de '+partner.name}
             className="h-20 w-20 shrink-0 rounded-[18px] border border-line object-cover"/>
         ):(
           <span className="grid h-20 w-20 shrink-0 place-items-center rounded-[18px] bg-brand-soft text-brand">
-            <Icon name="home" className="!h-8 !w-8"/>
+            <Icon name="link" className="!h-8 !w-8"/>
           </span>
         )}
         <div className="min-w-0 flex-1">
@@ -75,7 +75,7 @@ export default async function PartnerReviewPage({
           </div>
           <p className="mt-1 text-[12px] text-muted">{partner.beach?.name??'Praia não informada'} · {partner.code}</p>
           <div className="mt-2"><Badge tone={partner.status==='approved'?'success':'warning'}>
-            {partner.status==='approved'?'Aprovada':'Em análise'}
+            {partner.status==='approved'?'Aprovado':'Em análise'}
           </Badge></div>
         </div>
       </div>
@@ -137,20 +137,20 @@ export default async function PartnerReviewPage({
     </Card>
 
     <Card className="mb-4">
-      <h2 className="text-[18px] font-bold text-ink">Comissão da pousada</h2>
+      <h2 className="text-[18px] font-bold text-ink">Comissão do afiliado</h2>
       <p className="mt-1 text-[12px] text-muted">
-        Percentual sobre o valor das aulas de hóspedes indicados, somente na
+        Percentual sobre o valor das aulas de alunos indicados, somente na
         primeira reserva paga de cada cliente. Sai da parte da plataforma.
       </p>
       <p className="mt-3 text-[14px] text-ink">
         Comissão atual: <strong className="text-brand">{formatBps(partner.commission_bps)}</strong>
       </p>
       <ActionForm action={setIndividualPartnerCommission}
-        submitLabel="Salvar comissão da pousada"
+        submitLabel="Salvar comissão do afiliado"
         className="mt-4 grid gap-3">
         <input type="hidden" name="partnerId" value={partner.id}/>
         <label className="grid gap-1.5 text-[12px] text-label">
-          Comissão da pousada (%)
+          Comissão do afiliado (%)
           <input name="commissionPercent" type="number" required min={0} max={50}
             step="0.01" defaultValue={(partner.commission_bps / 100).toFixed(2)}
             className={inputClass}/>
@@ -163,7 +163,7 @@ export default async function PartnerReviewPage({
       </ActionForm>
       <p className="mt-3 text-[11px] text-muted">
         Se a comissão disponível da plataforma for menor que a porcentagem
-        configurada para a pousada, o repasse da pousada ficará limitado
+        configurada para o afiliado, o repasse do afiliado ficará limitado
         àquela comissão disponível. Reservas já contratadas não mudam.
       </p>
     </Card>
@@ -172,7 +172,7 @@ export default async function PartnerReviewPage({
       <Card>
         <h2 className="text-[18px] font-bold text-ink">Analisar cadastro</h2>
         {ready?(
-          <ActionForm action={approvePartner} submitLabel="Aprovar pousada"
+          <ActionForm action={approvePartner} submitLabel="Aprovar afiliado"
             className="mt-3 grid gap-3">
             <input type="hidden" name="partnerId" value={partner.id}/>
             <label className="text-[13px] font-semibold text-ink" htmlFor="partner-reason">Motivo da aprovação</label>
@@ -181,13 +181,13 @@ export default async function PartnerReviewPage({
           </ActionForm>
         ):(
           <Note tone="warning" className="mt-3" title="Aprovação pendente">
-            A pousada precisa preencher o responsável, telefone, cidade e endereço.
+            O afiliado precisa preencher o responsável, telefone, cidade e endereço.
             Esses dados serão avaliados pela administração antes da liberação do link.
           </Note>
         )}
       </Card>
     ):(
-      <Note title="Pousada aprovada">
+      <Note title="Afiliado aprovado">
         O link de indicação está liberado. Alterações no nome ou praia exigem revisão administrativa.
       </Note>
     )}

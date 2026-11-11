@@ -1,12 +1,12 @@
 import { NextResponse, type NextRequest } from 'next/server';
-import { isArea } from '@/lib/app-areas';
+import { areaFromParam } from '@/lib/app-areas';
 import { createSupabaseServerClient } from '@/lib/supabase/server';
 
 /** Supports the default PKCE redirect and a recovery-token email template. */
 export async function GET(request: NextRequest) {
   const params = request.nextUrl.searchParams;
   const requested = params.get('area');
-  const area = isArea(requested) ? requested : 'aluno';
+  const area = areaFromParam(requested) ?? 'aluno';
   const db = await createSupabaseServerClient(area);
   const code = params.get('code');
   const token = params.get('token_hash');

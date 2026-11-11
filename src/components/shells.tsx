@@ -19,8 +19,8 @@ import { studentSafeBackHref } from '@/lib/student-safe-back';
 /**
  * Page frames for the four areas of the prototype.
  *
- * The student and partner areas are a mobile-first site with a header (and a
- * bottom bar on phones); the instructor and admin areas are a workspace with a
+ * The student area is a mobile-first site with a header (and a bottom bar on
+ * phones); the instructor, admin and affiliate areas are a workspace with a
  * sidebar. Showing a link here is presentation only — when the prototype gets
  * a backend, each route still has to be authorised on the server.
  */
@@ -49,9 +49,9 @@ export function TopBar({ viewer, signOut }: { viewer: TopBarViewer | null; signO
   const app = areaFromPath(pathname);
   // The login screens are full-screen app screens of their own.
   if (pathname === '/entrar' || /^\/[a-z]+\/(entrar|criar-conta|recuperar|redefinir)/.test(pathname)) return null;
-  // Instrutor and Admin are full workspaces: their shell has the area switcher,
-  // the account and the sign-out, so a second bar on top would only repeat them.
-  if (/^\/(instrutor|admin)(\/|$)/.test(pathname)) return null;
+  // Instrutor, Admin and Afiliado are full workspaces: their shell has the area
+  // switcher, the account and the sign-out, so a second bar would only repeat them.
+  if (/^\/(instrutor|admin|afiliado)(\/|$)/.test(pathname)) return null;
   return (
     <div className="sticky top-0 z-40 hidden h-14 items-center justify-between gap-3 border-b border-line bg-chrome px-6 text-[12px] text-label lg:flex">
       {areas.length > 1 ? (
@@ -104,8 +104,8 @@ function SiteFooter() {
     <footer className="mx-auto mt-14 hidden max-w-6xl flex-wrap items-center justify-between gap-3 px-8 pb-10 text-[11px] text-subtle md:flex">
       <Logo size="sm" />
       <p>Feito de mar, vento e boas histórias.</p>
-      <Link href="/pousada/criar-conta" className="font-[550] text-brand">
-        É pousada? Seja parceira
+      <Link href="/afiliado/criar-conta" className="font-[550] text-brand">
+        Indique aulas e ganhe: seja afiliado
       </Link>
     </footer>
   );
@@ -539,97 +539,8 @@ function shortLabel(label: string): string {
     'Meu financeiro': 'Financeiro',
     'Fila e distribuição': 'Fila',
     'Visão geral': 'Visão geral',
+    'Minhas indicações': 'Indicações',
+    'Meu perfil': 'Perfil',
   };
   return SHORT[label] ?? label;
-}
-
-const PARTNER_NAV = [
-  { label: 'Início', href: '/pousada/inicio', icon: 'home' },
-  { label: 'Indicações', href: '/pousada/indicacoes', icon: 'users' },
-  { label: 'Divulgação', href: '/pousada/divulgacao', icon: 'link' },
-  { label: 'Meu perfil', href: '/pousada/perfil', icon: 'user' },
-] as const satisfies readonly TabItem[];
-
-const PARTNER_MENU: readonly SheetLink[] = [
-  { label: 'Central da pousada', href: '/pousada/central', icon: 'grid' },
-  { label: 'Meu perfil', href: '/pousada/perfil', icon: 'user' },
-  { label: 'Cadastro inicial', href: '/pousada/cadastro', icon: 'file' },
-];
-
-function PartnerHeaderAvatar({ partner, size = 40 }: {
-  partner: { name:string; initials:string; photoUrl?:string|null };
-  size?:number;
-}) {
-  return (
-    <Link href="/pousada/perfil" aria-label="Abrir meu perfil da pousada" title="Meu perfil"
-      className="press inline-grid shrink-0 place-items-center rounded-full focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand">
-      {partner.photoUrl ? (
-        <span className="overflow-hidden rounded-full border border-line-ghost bg-sand"
-          style={{width:size,height:size}}>
-          <img src={partner.photoUrl} alt="" className="h-full w-full object-cover"/>
-        </span>
-      ) : <Avatar initials={partner.initials} size={size}/>}
-    </Link>
-  );
-}
-
-export function PartnerShell({
-  children,
-  partner,
-  signOut,
-  areas,
-}: {
-  children: React.ReactNode;
-  partner: { name: string; initials: string; photoUrl?:string|null };
-  signOut: () => Promise<void>;
-  areas?: readonly { label: string; href: string }[];
-}) {
-  const pathname = usePathname();
-  return (
-    <div className="theme-sunset min-h-dvh bg-canvas text-ink">
-      <header className="hidden border-b border-line bg-chrome md:block">
-        <div className="mx-auto flex max-w-6xl items-center justify-between gap-4 px-8 py-4">
-          <StudentBrand subtitle="Pousada parceira" />
-          <div className="flex items-center gap-2.5">
-            <PartnerHeaderAvatar partner={partner} size={40}/>
-            <span className="text-[12px] leading-tight">
-              <strong className="block font-[550] text-ink">{partner.name}</strong>
-              <span className="text-[11px] text-muted">Pousada parceira</span>
-            </span>
-          </div>
-        </div>
-        <nav aria-label="Área da pousada" className="mx-auto flex max-w-6xl gap-6 px-8">
-          {PARTNER_NAV.map((item) => {
-            const active = isActive(pathname, item);
-            return (
-              <Link
-                key={item.href}
-                href={item.href}
-                aria-current={active ? 'page' : undefined}
-                className={`shrink-0 border-b-2 pb-3 text-[14px] ${active ? 'border-brand font-[550] text-brand' : 'border-transparent text-muted hover:text-ink'}`}
-              >
-                {item.label}
-              </Link>
-            );
-          })}
-        </nav>
-      </header>
-      <MobileHeader
-        leading={<StudentBrand subtitle="Pousada" />}
-        trailing={<PartnerHeaderAvatar partner={partner} size={42}/>} 
-      />
-      <main className="mx-auto max-w-6xl px-4 pb-tabbar pt-4 md:px-8 md:pb-0 md:pt-7">{children}</main>
-      <SiteFooter />
-      <TabBar
-        label="Área da pousada"
-        variant="underline"
-        items={PARTNER_NAV.slice(0, 3)}
-        more={{
-          title: 'Pousada parceira',
-          links: PARTNER_MENU,
-          footer: <SheetAccount name={partner.name} subtitle="Pousada parceira" initials={partner.initials} signOut={signOut} areas={areas} />,
-        }}
-      />
-    </div>
-  );
 }

@@ -117,11 +117,11 @@ export async function approvePartner(_prev: ActionState, form: FormData): Promis
   if (error) return { error: friendlyError(error) };
   revalidatePath('/admin/afiliados');
   revalidatePath('/admin/afiliados/[id]', 'page');
-  revalidatePath('/pousada', 'layout');
-  revalidatePath('/pousada/perfil');
-  revalidatePath('/pousada/central');
-  revalidatePath('/pousada/divulgacao');
-  return { ok: 'Pousada aprovada.' };
+  revalidatePath('/afiliado', 'layout');
+  revalidatePath('/afiliado/perfil');
+  revalidatePath('/afiliado/central');
+  revalidatePath('/afiliado/divulgacao');
+  return { ok: 'Afiliado aprovado. O link de indicação foi liberado.' };
 }
 
 const NewBeach = z.strictObject({
@@ -228,10 +228,10 @@ export async function setIndividualPartnerCommission(
     partnerId: form.get('partnerId'),
     reason: form.get('reason'),
   });
-  if (!parsed.success) return { error: 'Confira a pousada e informe o motivo.' };
+  if (!parsed.success) return { error: 'Confira o afiliado e informe o motivo.' };
   const commissionBps = parseCommissionBps(form.get('commissionPercent'), 5000);
   if (commissionBps === null) {
-    return { error: 'Informe a comissão da pousada de 0 a 50%, com até duas casas decimais.' };
+    return { error: 'Informe a comissão do afiliado de 0 a 50%, com até duas casas decimais.' };
   }
   const db = await createSupabaseServerClient();
   const { error } = await db.rpc('set_partner_commission', {
@@ -242,10 +242,10 @@ export async function setIndividualPartnerCommission(
   if (error) return { error: friendlyError(error) };
   revalidatePath('/admin/afiliados');
   revalidatePath('/admin/afiliados/[id]', 'page');
-  revalidatePath('/pousada', 'layout');
-  revalidatePath('/pousada/perfil');
-  revalidatePath('/pousada/central');
-  revalidatePath('/pousada/divulgacao');
-  revalidatePath('/pousada/indicacoes');
-  return { ok: 'Comissão da pousada atualizada para novas reservas. As anteriores não mudam.' };
+  revalidatePath('/afiliado', 'layout');
+  revalidatePath('/afiliado/perfil');
+  revalidatePath('/afiliado/central');
+  revalidatePath('/afiliado/divulgacao');
+  revalidatePath('/afiliado/indicacoes');
+  return { ok: 'Comissão do afiliado atualizada para novas reservas. As anteriores não mudam.' };
 }

@@ -11,9 +11,10 @@ import {VerifiedVentoBadge} from '@/components/verified-badge';
 import {listAllBookings,listAllPartners} from '@/lib/data';
 import {formatBps,formatMoney} from '@/lib/format';
 import {parsePartnerProgress,partnerCompletion} from '@/lib/partner-progress';
+import {initials} from '@/lib/people';
 import {createSupabaseServerClient} from '@/lib/supabase/server';
 
-export const metadata:Metadata={title:'Pousadas afiliadas'};
+export const metadata:Metadata={title:'Afiliados'};
 
 export default async function PartnersAdminPage(){
   await requireRole(['admin'],'/admin/afiliados');
@@ -33,23 +34,23 @@ export default async function PartnersAdminPage(){
     return {count:theirs.length,commission:theirs.reduce((sum,b)=>sum+b.partner_cents,0)};
   };
   return <>
-    <AdminTitle title="Pousadas afiliadas"
-      subtitle={`${partners.length} cadastrada(s) · ${pending} em análise · ${approved} aprovada(s)`}/>
+    <AdminTitle title="Afiliados"
+      subtitle={`${partners.length} cadastrado(s) · ${pending} em análise · ${approved} aprovado(s)`}/>
     {partners.length===0?(
-      <EmptyState>Nenhuma pousada cadastrada. Pousadas criam conta em /pousada/criar-conta.</EmptyState>
+      <EmptyState>Nenhum afiliado cadastrado. Afiliados criam conta em /afiliado/criar-conta.</EmptyState>
     ):(
       <ul className="grid gap-3 lg:grid-cols-2">
         {partners.map(partner=>{
           const {count,commission}=stats(partner.id);
           const completion=progressById.get(partner.id);
           return <li key={partner.id} className="overflow-hidden rounded-[18px] border border-line bg-surface">
-            <Link href={`/admin/afiliados/${partner.id}`} aria-label={`Analisar pousada ${partner.name}`}
+            <Link href={`/admin/afiliados/${partner.id}`} aria-label={`Analisar afiliado ${partner.name}`}
               className="press block p-4">
               <div className="flex items-start gap-3">
                 <AdminProfilePhoto
                   src={avatarUrls.get(partner.id)}
                   name={partner.name}
-                  initials={partner.name.slice(0,1).toUpperCase()}
+                  initials={initials(partner.name)}
                   kind="partner"
                   size={64}
                 />
@@ -60,7 +61,7 @@ export default async function PartnersAdminPage(){
                       <VerifiedVentoBadge kind="partner" status={partner.status} size="sm"/>
                     </div>
                     <Badge tone={partner.status==='approved'?'success':'warning'}>
-                      {partner.status==='approved'?'Aprovada':'Em análise'}
+                      {partner.status==='approved'?'Aprovado':'Em análise'}
                     </Badge>
                   </div>
                   <p className="mt-1 break-words text-[12px] text-muted">
@@ -87,7 +88,7 @@ export default async function PartnersAdminPage(){
       </ul>
     )}
     <Note className="mt-4" title="Como funciona a aprovação">
-      A pousada precisa preencher os dados essenciais antes da aprovação. Foto, Instagram
+      O afiliado precisa preencher os dados essenciais antes da aprovação. Foto, Instagram
       e dados bancários são opcionais. A comissão continua saindo da parcela da plataforma.
     </Note>
   </>;

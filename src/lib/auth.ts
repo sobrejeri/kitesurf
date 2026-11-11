@@ -22,7 +22,7 @@ export const ROLE_HOME: Readonly<Record<AppRole, string>> = {
   student: '/aluno/aulas',
   instructor: '/instrutor/hoje',
   admin: '/admin/visao',
-  partner: '/pousada/inicio',
+  partner: '/afiliado/inicio',
 };
 
 /** The signed-in user and their profile, once per request. */

@@ -219,3 +219,7 @@ O projeto possui um **avaliador independente preparado, não necessariamente con
 - Nova PR #152 (branch `test/l0-partner-payout-two-owners-20261111`, commit `032502275d6ba0604a7107f6d9d6996bbea8a41f`) adiciona regressão SQL 96 com duas pousadas legítimas e negativa de leitura/alteração cruzada; **CI pendente**, não integrar sem sucesso.
 - Supabase correto `qadkqjfmmnxvovyyhqxw` consultado somente leitura: ledger contém apenas migrations 39–42. Migrations 43–46 **não aplicadas**; conciliar ordem e dependências antes de qualquer DDL remoto. Protege 3B bloqueado e checkout OFF. Nenhum dado real alterado.
 - Retomar: CI e Claude QA #152, corrigir se necessário, merge só com CI aprovado, confirmar Render SHA live; avançar reconciliação SQL 43–46 e testes Storage HTTP autenticados quando houver sessões. 0/18 frentes integralmente homologadas.
+
+## Nota de design — 11/11/2026 — Pousada passa a se chamar Afiliado
+
+- Área `/pousada/*` agora é `/afiliado/*` (redirect 307 dos links antigos; `area=pousada` aceito nos links de e-mail; cookie `vento-pousada-auth` mantido). No banco nada mudou: papel `partner` e tabelas `partner_*`. Onde este log diz "Pousada" para papel ou telas, leia "Afiliado". Detalhes em `AUDITORIA_L0_NAVEGACAO_E_DESIGN.md`.

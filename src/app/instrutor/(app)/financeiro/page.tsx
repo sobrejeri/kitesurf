@@ -29,7 +29,7 @@ export default async function InstructorFinancePage() {
       <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
         <Metric label="Líquido previsto" value={formatMoney(net)} hint="Após comissão" hintTone="success" icon="wallet" tone="green" />
         <Metric label="Vendas brutas" value={formatMoney(gross)} hint="Valores das reservas" icon="chart" tone="blue" />
-        <Metric label="Comissão total" value={formatMoney(gross - net)} hint="Plataforma e pousada" icon="sliders" tone="sky" />
+        <Metric label="Comissão total" value={formatMoney(gross - net)} hint="Plataforma e afiliado" icon="sliders" tone="sky" />
         <Metric label="Reservas" value={String(bookings.length)} hint="Confirmadas" icon="book" tone="slate" />
       </div>
 

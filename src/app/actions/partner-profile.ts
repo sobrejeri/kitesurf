@@ -7,7 +7,7 @@ import { requireRole } from '@/lib/auth';
 import { createSupabaseServerClient } from '@/lib/supabase/server';
 import { friendlyError, type ActionState } from './errors';
 
-const MISSING_PROFILE='O perfil completo da pousada ainda não está habilitado. Execute a migração 22 no Supabase.';
+const MISSING_PROFILE='O perfil completo do afiliado ainda não está habilitado. Execute a migração 22 no Supabase.';
 
 function readableError(error:{code?:string;message?:string}):string {
   if(['PGRST202','PGRST205','PGRST204','42P01','42883'].includes(error.code??''))
@@ -17,10 +17,10 @@ function readableError(error:{code?:string;message?:string}):string {
   return friendlyError(error);
 }
 function refreshPartner() {
-  revalidatePath('/pousada','layout');
-  revalidatePath('/pousada/perfil');
-  revalidatePath('/pousada/inicio');
-  revalidatePath('/pousada/cadastro');
+  revalidatePath('/afiliado','layout');
+  revalidatePath('/afiliado/perfil');
+  revalidatePath('/afiliado/inicio');
+  revalidatePath('/afiliado/cadastro');
   revalidatePath('/admin/afiliados');
   revalidatePath('/admin/afiliados/[id]','page');
 }
@@ -37,7 +37,7 @@ const Business=z.strictObject({
 
 export async function savePartnerProfile(_previous:ActionState,form:FormData):Promise<ActionState> {
   const viewer=await requireRole(['partner']);
-  if(viewer.role!=='partner')return {error:'Apenas a pousada pode alterar seu cadastro.'};
+  if(viewer.role!=='partner')return {error:'Apenas o afiliado pode alterar seu cadastro.'};
   const parsed=Business.safeParse({
     name:form.get('name'),beachId:form.get('beachId'),
     responsibleName:form.get('responsibleName'),phone:form.get('phone'),
@@ -57,7 +57,7 @@ export async function savePartnerProfile(_previous:ActionState,form:FormData):Pr
     return {error:readableError(error)};
   }
   refreshPartner();
-  return {ok:'Dados da pousada atualizados. O progresso será recalculado automaticamente.'};
+  return {ok:'Dados atualizados. O progresso do cadastro é recalculado automaticamente.'};
 }
 
 const Payout=z.strictObject({
@@ -68,7 +68,7 @@ const Payout=z.strictObject({
 });
 export async function savePartnerPayout(_previous:ActionState,form:FormData):Promise<ActionState> {
   const viewer=await requireRole(['partner']);
-  if(viewer.role!=='partner')return {error:'Apenas a pousada pode cadastrar seu recebimento.'};
+  if(viewer.role!=='partner')return {error:'Apenas o afiliado pode cadastrar seu recebimento.'};
   const parsed=Payout.safeParse({
     method:form.get('method'),holderName:form.get('holderName'),
     pixKey:form.get('pixKey')??'',bankName:form.get('bankName')??'',
@@ -114,7 +114,7 @@ function validImage(bytes:Uint8Array,mime:keyof typeof AVATAR_MIMES):boolean {
 }
 export async function uploadPartnerAvatar(_previous:ActionState,form:FormData):Promise<ActionState> {
   const viewer=await requireRole(['partner']);
-  if(viewer.role!=='partner')return {error:'Apenas a pousada pode alterar sua foto.'};
+  if(viewer.role!=='partner')return {error:'Apenas o afiliado pode alterar sua foto.'};
   const file=form.get('avatar');
   if(!(file instanceof File)||file.size===0)return {error:'Selecione uma foto ou logo.'};
   if(file.size>3*1024*1024)return {error:'A imagem deve ter no máximo 3 MB.'};
@@ -138,7 +138,7 @@ export async function uploadPartnerAvatar(_previous:ActionState,form:FormData):P
       return {error:readableError(save.error)};
     }
     refreshPartner();
-    return {ok:'Foto da pousada atualizada.'};
+    return {ok:'Foto atualizada.'};
   }catch(error){
     console.error('[partner.avatar.unexpected]',error);
     return {error:'Não foi possível atualizar a foto. Tente novamente com JPG, PNG ou WebP de até 3 MB.'};
@@ -158,7 +158,7 @@ export async function preparePartnerAvatarUpload(input: {
   | { path: string; token: string; error?: never }
 > {
   const viewer = await requireRole(['partner']);
-  if (viewer.role !== 'partner') return { error: 'Apenas a pousada pode enviar sua foto.' };
+  if (viewer.role !== 'partner') return { error: 'Apenas o afiliado pode enviar sua foto.' };
 
   const parsed = z.strictObject({
     mime: z.enum(['image/jpeg', 'image/png', 'image/webp']),
@@ -171,7 +171,7 @@ export async function preparePartnerAvatarUpload(input: {
     const { data: partner, error: partnerError } = await db.from('partners')
       .select('id').eq('owner_id', viewer.id).maybeSingle();
     if (partnerError || !partner) {
-      return { error: 'Complete o cadastro da pousada antes de adicionar uma foto.' };
+      return { error: 'Complete seu cadastro de afiliado antes de adicionar uma foto.' };
     }
     const path = viewer.id + '/avatar.' + AVATAR_MIMES[parsed.data.mime];
     // For changing an existing avatar, the signed ticket must authorize
@@ -195,13 +195,13 @@ export async function preparePartnerAvatarUpload(input: {
  */
 export async function registerPartnerAvatarUpload(input: { path: string }): Promise<ActionState> {
   const viewer = await requireRole(['partner']);
-  if (viewer.role !== 'partner') return { error: 'Apenas a pousada pode confirmar sua foto.' };
+  if (viewer.role !== 'partner') return { error: 'Apenas o afiliado pode confirmar sua foto.' };
 
   const parsed = z.strictObject({ path: z.string().min(1).max(200) }).safeParse(input);
   if (!parsed.success) return { error: 'Caminho da foto inválido.' };
   const path = parsed.data.path;
   const allowed = new RegExp('^' + viewer.id + '/avatar\\.(jpg|png|webp)$');
-  if (!allowed.test(path)) return { error: 'A foto não pertence a esta pousada.' };
+  if (!allowed.test(path)) return { error: 'A foto não pertence a este afiliado.' };
 
   const ext = path.split('.').pop();
   const mime: keyof typeof AVATAR_MIMES =
@@ -228,7 +228,7 @@ export async function registerPartnerAvatarUpload(input: { path: string }): Prom
       return { error: readableError(error) };
     }
     refreshPartner();
-    return { ok: 'Foto da pousada atualizada!' };
+    return { ok: 'Foto atualizada!' };
   } catch (cause) {
     console.error('[partner.avatar.verify.unexpected]', cause);
     return { error: 'A foto foi enviada, mas não conseguimos finalizar o cadastro. Tente confirmar novamente.' };

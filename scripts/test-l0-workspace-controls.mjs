@@ -14,8 +14,8 @@ const cases = [
   ['/instrutor/aulas', '/instrutor/aula', false],
   ['/instrutor/agenda/semana', '/instrutor/agenda', true],
   ['/instrutor/agendamento', '/instrutor/agenda', false],
-  ['/pousada/indicacoes/123', '/pousada/indicacoes', true],
-  ['/pousada/indicacoes-externas', '/pousada/indicacoes', false],
+  ['/afiliado/indicacoes/123', '/afiliado/indicacoes', true],
+  ['/afiliado/indicacoes-externas', '/afiliado/indicacoes', false],
   ['/aluno/reserva/booking-123', '/aluno/reserva', true],
   ['/aluno/reservar', '/aluno/reserva', false],
 ];

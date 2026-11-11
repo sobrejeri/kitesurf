@@ -35,7 +35,7 @@ export default async function AdminFinancePage() {
         <Metric label="Volume confirmado" value={formatMoney(volume)} hint={`${paid.length} reservas confirmadas`} hintTone="success" icon="wallet" tone="green" />
         <Metric label="Parcela plataforma" value={formatMoney(platform)} hint={formatBps(share(platform))} hintTone="muted" icon="chart" tone="sky" />
         <Metric label="Líquido instrutores" value={formatMoney(instructors)} hint={formatBps(share(instructors))} hintTone="muted" icon="users" tone="blue" />
-        <Metric label="Comissões pousadas" value={formatMoney(partners)} hint={formatBps(share(partners))} hintTone="brand" icon="home" tone="slate" />
+        <Metric label="Comissões de afiliados" value={formatMoney(partners)} hint={formatBps(share(partners))} hintTone="brand" icon="home" tone="slate" />
       </div>
 
       <Panel title="Valores por data da reserva" action={<span className="text-[12px] text-muted">Últimos 7 dias</span>} className="mt-4">
@@ -57,7 +57,7 @@ export default async function AdminFinancePage() {
                   <div><dt className="text-muted">Total</dt><dd className="font-semibold text-ink">{formatMoney(b.total_cents)}</dd></div>
                   <div><dt className="text-muted">Instrutor</dt><dd className="text-ink">{formatMoney(b.instructor_net_cents)}</dd></div>
                   <div><dt className="text-muted">Plataforma</dt><dd className="text-ink">{formatMoney(b.platform_cents)}</dd></div>
-                  <div><dt className="text-muted">Pousada</dt><dd className="text-ink">{formatMoney(b.partner_cents)}</dd></div>
+                  <div><dt className="text-muted">Afiliado</dt><dd className="text-ink">{formatMoney(b.partner_cents)}</dd></div>
                 </dl>
               </li>
             ))}

@@ -1,7 +1,7 @@
 import type { EmailOtpType } from '@supabase/supabase-js';
 import { NextResponse, type NextRequest } from 'next/server';
 
-import { isArea } from '@/lib/app-areas';
+import { areaFromParam } from '@/lib/app-areas';
 import { createSupabaseServerClient } from '@/lib/supabase/server';
 
 /**
@@ -15,7 +15,7 @@ export async function GET(request: NextRequest) {
   const tokenHash = params.get('token_hash');
   const type = params.get('type') as EmailOtpType | null;
   const requested = params.get('area');
-  const area = isArea(requested) ? requested : 'aluno';
+  const area = areaFromParam(requested) ?? 'aluno';
 
   if (tokenHash && type) {
     const supabase = await createSupabaseServerClient(area);

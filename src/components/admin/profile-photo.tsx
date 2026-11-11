@@ -1,7 +1,6 @@
 'use client';
 
 import { useState } from 'react';
-import { Icon } from '@/components/icon';
 
 /**
  * Photo when available, current initials/icon when absent or broken.
@@ -31,9 +30,9 @@ export function AdminProfilePhoto({
       className={'relative grid shrink-0 place-items-center overflow-hidden rounded-[14px] font-bold ' + fallback}
       style={{ width: size, height: size, fontSize: Math.round(size / 3) }}
       role="img"
-      aria-label={kind === 'partner' ? 'Foto da pousada ' + name : 'Foto do instrutor ' + name}
+      aria-label={kind === 'partner' ? 'Foto do afiliado ' + name : 'Foto do instrutor ' + name}
     >
-      {kind === 'partner' ? <Icon name="home" className="!h-7 !w-7" /> : initials}
+      {initials}
       {showImage ? (
         <img
           key={src}

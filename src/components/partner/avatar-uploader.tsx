@@ -57,7 +57,7 @@ export function PartnerAvatarUploader({
     }
     setUploadedPath(null);
     setError(null);
-    setNotice(result.ok ?? 'Foto da pousada atualizada.');
+    setNotice(result.ok ?? 'Foto atualizada.');
     router.refresh();
   }
 
@@ -165,32 +165,32 @@ export function PartnerAvatarUploader({
         disabled={!enabled || busy}
       />
       <div className="relative h-[118px] w-[118px] shrink-0">
-        <div className="absolute inset-0 overflow-hidden rounded-full border-2 border-white/20 bg-[#173148] ring-2 ring-[#ff861e]/20">
+        <div className="absolute inset-0 overflow-hidden rounded-full border-2 border-line-ghost bg-sand ring-2 ring-brand/20">
           {photoUrl ? <img src={photoUrl} alt={'Foto de perfil de ' + name} className="h-full w-full object-cover" /> : null}
         </div>
         {photoUrl ? (
           <button type="button" aria-label="Atualizar foto de perfil" title="Atualizar foto"
             onClick={choosePhoto} disabled={busy || !enabled}
-            className="press absolute -bottom-0.5 -right-1 grid h-[44px] w-[44px] place-items-center rounded-full border-[4px] border-[#07182b] bg-white text-[#14253b] shadow-lg disabled:opacity-60">
+            className="press absolute -bottom-0.5 -right-1 grid h-[44px] w-[44px] place-items-center rounded-full border-[4px] border-surface bg-brand text-on-brand shadow-lg disabled:opacity-60">
             <Icon name="plus" className="!h-5 !w-5" />
           </button>
         ) : (
           <button type="button" aria-label="Adicionar foto de perfil" title="Adicionar foto"
             onClick={choosePhoto} disabled={busy || !enabled}
-            className="press absolute inset-0 flex flex-col items-center justify-center gap-1 rounded-full border-2 border-dashed border-white/30 bg-[#112e44] text-[#ff861e] disabled:opacity-60">
+            className="press absolute inset-0 flex flex-col items-center justify-center gap-1 rounded-full border-2 border-dashed border-brand-focus bg-brand-wash text-brand disabled:opacity-60">
             <Icon name="plus" className="!h-8 !w-8" />
-            <span className="px-2 text-[11px] font-semibold leading-tight text-white">Adicionar foto</span>
+            <span className="px-2 text-[11px] font-semibold leading-tight text-label">Adicionar foto</span>
           </button>
         )}
       </div>
       <div aria-live="polite" className="mt-2 max-w-[280px] text-center text-[12px] leading-relaxed sm:text-left">
-        {busy ? <p role="status" className="text-[#ff861e]">{phaseText}</p> : null}
-        {error ? <p role="alert" className="text-[#ffb26b]">{error}</p> : null}
-        {notice ? <p role="status" className="text-[#ff861e]">{notice}</p> : null}
+        {busy ? <p role="status" className="text-brand">{phaseText}</p> : null}
+        {error ? <p role="alert" className="text-danger">{error}</p> : null}
+        {notice ? <p role="status" className="text-success">{notice}</p> : null}
         {!enabled ? <p className="text-muted">Fotos indisponíveis. Confira a migração 22 e o bucket privado.</p> : null}
         {uploadedPath && !busy ? (
           <button type="button" onClick={() => void retryConfirmation()}
-            className="mt-2 min-h-11 rounded-full border border-[#ff861e] px-3 text-[12px] font-semibold text-[#ff861e]">
+            className="mt-2 min-h-11 rounded-full border border-brand px-3 text-[12px] font-semibold text-brand">
             Confirmar foto sem reenviar
           </button>
         ) : null}

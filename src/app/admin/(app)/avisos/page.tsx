@@ -18,7 +18,7 @@ export default async function AdminInboxPage() {
   ]);
   const items = [
     { label: 'Instrutores em análise', result: instructors, href: '/admin/instrutores' },
-    { label: 'Pousadas em análise', result: partners, href: '/admin/afiliados' },
+    { label: 'Afiliados em análise', result: partners, href: '/admin/afiliados' },
     { label: 'Documentos pendentes', result: documents, href: '/admin/documentos' },
     { label: 'Ocorrências abertas', result: incidents, href: '/admin/ocorrencias' },
   ];

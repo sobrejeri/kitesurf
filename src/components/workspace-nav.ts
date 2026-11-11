@@ -1,7 +1,7 @@
 import type { WorkspaceNavItem } from './shells';
 
 /**
- * Every page of the two staff workspaces, in menu order. One list feeds the
+ * Every page of the workspaces (Instrutor, Admin, Afiliado), in menu order. One list feeds the
  * sidebar, the phone tab bar ("tab"), the "Mais" sheet and each area's hub
  * page, so a page added here shows up everywhere at once. Listing a page is
  * presentation only: each route still checks the role on the server.
@@ -34,7 +34,7 @@ export const ADMIN_NAV: readonly WorkspaceNavItem[] = [
   { group: 'Operação', label: 'Avisos da operação', href: '/admin/avisos', icon: 'bell' },
   { group: 'Pessoas', label: 'Instrutores', href: '/admin/instrutores', icon: 'users', tab: true },
   { group: 'Pessoas', label: 'Validar documentos', href: '/admin/documentos', icon: 'file' },
-  { group: 'Pessoas', label: 'Pousadas afiliadas', href: '/admin/afiliados', icon: 'home' },
+  { group: 'Pessoas', label: 'Afiliados', href: '/admin/afiliados', icon: 'link' },
   { group: 'Financeiro', label: 'Financeiro', href: '/admin/financeiro', icon: 'wallet', tab: true },
   { group: 'Financeiro', label: 'Regras da operação', href: '/admin/regras', icon: 'sliders' },
   { group: 'Financeiro', label: 'Políticas comerciais', href: '/admin/politicas', icon: 'book' },
@@ -47,4 +47,12 @@ export const ADMIN_NAV: readonly WorkspaceNavItem[] = [
   { group: 'Sistema', label: 'Estrutura da plataforma', href: '/admin/estrutura', icon: 'sliders' },
   { group: 'Sistema', label: 'Criar aula teste', href: '/admin/aula-teste', icon: 'kite' },
   { group: 'Sistema', label: 'Mais opções', href: '/admin/central', icon: 'grid' },
+];
+
+export const AFFILIATE_NAV: readonly WorkspaceNavItem[] = [
+  { group: 'Indicações', label: 'Início', href: '/afiliado/inicio', icon: 'home', tab: true },
+  { group: 'Indicações', label: 'Divulgar', href: '/afiliado/divulgacao', icon: 'link', tab: true },
+  { group: 'Indicações', label: 'Minhas indicações', href: '/afiliado/indicacoes', icon: 'chart', tab: true },
+  { group: 'Conta', label: 'Meu perfil', href: '/afiliado/perfil', icon: 'user', tab: true },
+  { group: 'Conta', label: 'Central do afiliado', href: '/afiliado/central', icon: 'grid' },
 ];

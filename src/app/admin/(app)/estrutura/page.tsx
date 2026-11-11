@@ -6,7 +6,7 @@ import { Card, Note, PageHeader } from '@/components/ui';
 export const metadata: Metadata = { title: 'Estrutura da plataforma' };
 
 const MODULES = [
-  ['Pousadas afiliadas', 'Cadastro, aprovação, link/QR e comissões de indicação.', '/admin/afiliados'],
+  ['Afiliados', 'Cadastro, aprovação, link/QR e comissões de indicação.', '/admin/afiliados'],
   ['Conta e acesso', 'Sessões separadas por perfil e recuperação por e-mail via Supabase.', '/aluno/acesso'],
   ['Reservas e revisão', 'Horas livres, encontros, edição sem perder dados', '/aluno/reservar'],
   ['Fila', 'Ofertas sequenciais com prazos no servidor e validação de agenda.', '/admin/distribuicao'],

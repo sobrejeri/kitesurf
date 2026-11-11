@@ -101,3 +101,13 @@ Os shells **Instrutor/Admin/Pousada** exigem uma sessão da role apropriada; o s
 - [x] **PC**: telas secundárias com cabeçalho compacto (voltar, título e uma linha), sem faixa de foto; as quatro telas principais mantêm os banners aprovados.
 - [x] Teste `scripts/test-student-app-screens.mjs` no CI. Conferido com capturas de celular (393px) e PC (1440px) das **páginas reais**, servidas por um backend Supabase fictício local com dados inventados (sem conta nem banco reais). Também conferidas as telas reais do Instrutor que compartilham avisos, chat e Protege.
 - [ ] Falta conferir com login real no Render (aluno e instrutor).
+
+## Pousada vira Afiliado — 11/11/2026
+
+- [x] **Conceito**: o usuário "pousada" passa a ser **afiliado** — qualquer pessoa ou empresa (pousada, escola, loja, perfil nas redes) que indica aulas e recebe comissão. No banco nada muda: papel `partner`, tabelas `partners`/`partner_*`, regra de comissão e RLS continuam iguais (sem migration).
+- [x] **Rotas**: `/pousada/*` virou `/afiliado/*`. Links antigos redirecionam (307) para a mesma página (`next.config.mjs`); links de e-mail com `area=pousada` continuam valendo (`areaFromParam`); o cookie de sessão mantém o nome `vento-pousada-auth`, então quem já estava logado continua logado.
+- [x] **App do afiliado** no padrão profissional do Instrutor/Admin (`WorkspaceShell`, tema Vento Pro), com quatro abas no celular: **Início** (link de indicação com Copiar/Compartilhar, comissão e totais), **Divulgar** (link, QR Code gerado no próprio app e baixável para impressão, mensagens prontas para WhatsApp, Instagram e recepção), **Minhas indicações** (só totais, sem dados dos alunos) e **Meu perfil** (dados, foto, recebimento e conta), além da Central do afiliado. As regras da comissão ficam num único bloco "Como funciona a comissão", em vez de repetidas em cada tela.
+- [x] **Textos do sistema**: Admin (Pessoas › Afiliados, aprovação, financeiro, reservas, auditoria, avisos, transporte), login e cadastro ("Indique e ganhe."), escolha de perfil ("Sou afiliado") e rodapé do aluno. A barra global do PC deixou de aparecer em cima do app do afiliado, como já acontecia no Instrutor e no Admin.
+- [x] **PWA** "VentoKite Afiliados" (`/apps/afiliado.webmanifest`, escopo `/afiliado/`, ícones 192/512 novos, atalhos Início, Divulgar e Minhas indicações). Quem instalou o app Pousada precisa instalar de novo.
+- [x] Teste `scripts/test-affiliate-area.mjs` no CI. Conferido com capturas de celular (393px) e PC (1440px) das páginas reais, servidas por um backend Supabase fictício local.
+- [ ] Falta conferir com login real de afiliado no Render. Salvar os dados de recebimento continua dependendo da migration 46 (ver CONTINUIDADE), sem relação com esta mudança.

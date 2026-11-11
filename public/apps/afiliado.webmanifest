@@ -1,0 +1,39 @@
+{
+  "id": "/afiliado/",
+  "name": "VentoKite Afiliados",
+  "short_name": "Afiliados",
+  "description": "Indique aulas de kitesurf com seu link e acompanhe suas comissões no VentoKite.",
+  "start_url": "/afiliado/inicio",
+  "scope": "/afiliado/",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#0b1220",
+  "theme_color": "#0b1220",
+  "lang": "pt-BR",
+  "categories": ["business", "sports"],
+  "icons": [
+    {
+      "src": "/apps/afiliado-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "/apps/afiliado-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "/apps/afiliado-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "maskable"
+    }
+  ],
+  "shortcuts": [
+    { "name": "Início", "url": "/afiliado/inicio" },
+    { "name": "Divulgar meu link", "short_name": "Divulgar", "url": "/afiliado/divulgacao" },
+    { "name": "Minhas indicações", "short_name": "Indicações", "url": "/afiliado/indicacoes" }
+  ]
+}

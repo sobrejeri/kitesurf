@@ -76,7 +76,7 @@ export default async function AdminBookingPage({ params }: { params: Promise<{ i
             <dl className="tabular grid gap-2.5 text-[14px]">
               <div className="flex justify-between"><dt className="text-label">Instrutor (líquido)</dt><dd className="text-ink">{formatMoney(booking.instructor_net_cents)}</dd></div>
               <div className="flex justify-between"><dt className="text-label">Plataforma</dt><dd className="text-ink">{formatMoney(booking.platform_cents)}</dd></div>
-              <div className="flex justify-between"><dt className="text-label">Pousada parceira</dt><dd className="text-ink">{formatMoney(booking.partner_cents)}</dd></div>
+              <div className="flex justify-between"><dt className="text-label">Afiliado</dt><dd className="text-ink">{formatMoney(booking.partner_cents)}</dd></div>
             </dl>
             <p className="mt-3 text-[12px] text-muted">{booking.is_test ? 'Valores apenas ilustrativos: não houve pagamento e não há comissão ou repasse.' : 'Fixada no momento da reserva; mudanças de preço não alteram este valor.'}</p>
           </Panel>

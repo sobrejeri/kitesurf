@@ -88,7 +88,7 @@ export default async function TransportPage() {
         </Panel>
       </div>
       <Note className="mt-4">
-        O valor do transporte vai inteiro para o instrutor, sem comissão da plataforma nem da pousada. A operação não controla agenda do veículo.
+        O valor do transporte vai inteiro para o instrutor, sem comissão da plataforma nem do afiliado. A operação não controla agenda do veículo.
       </Note>
     </>
   );

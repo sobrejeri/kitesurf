@@ -23,7 +23,7 @@ const ROLE_WORD: Readonly<Record<AppRole, string>> = {
   student: 'aluno',
   instructor: 'instrutor',
   admin: 'administrador',
-  partner: 'pousada',
+  partner: 'afiliado',
 };
 
 /**
