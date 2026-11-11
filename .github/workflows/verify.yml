@@ -109,6 +109,18 @@ jobs:
         run: node scripts/verify-postgrest-relationships.mjs
       - run: pnpm build
       - name: Install isolated PostgreSQL tooling
-        run: sudo apt-get update && sudo apt-get install -y postgresql
+        # Ubuntu package mirrors can have transient DNS failures. Retry only the
+        # tooling installation; the PostgreSQL SQL assertions must still pass.
+        run: |
+          for attempt in 1 2 3; do
+            if sudo apt-get update && sudo apt-get install -y postgresql; then
+              exit 0
+            fi
+            if [ "$attempt" -eq 3 ]; then
+              echo "PostgreSQL installation failed after 3 attempts" >&2
+              exit 1
+            fi
+            sleep 15
+          done
       - name: Run isolated database migrations and SQL assertions
         run: bash scripts/test-db.sh
