@@ -175,3 +175,11 @@ O projeto possui um **avaliador independente preparado, não necessariamente con
 - Supabase VentoKite `qadkqjfmmnxvovyyhqxw`: ledger somente 39–42; migrations 43/44/45 continuam versionadas sem aplicação. Protege 3B e checkout continuam fechados. Nenhuma alteração de dados reais nesta execução.
 - PR #148 branch `test/l0-partner-payout-cross-owner-20261111`: teste SQL 96 ampliado para negar SELECT, UPDATE **e DELETE** por usuário autenticado estranho; commit `4832f1e20f8e9171127d11c8bdbf917763d70ad5`. Aguardar CI do HEAD e confirmar job Claude QA (documentação indica desativado; não atribuir revisão inexistente). Não integrar sem CI success.
 - E2E HTTP autenticado de Storage, segundo instrutor e homologação visual em dispositivo real permanecem pendentes; 0/18 frentes homologadas integralmente. Próximo ciclo: CI/QA #148, corrigir falhas ou integrar se aprovado, conferir Render, avançar testes de RLS/Storage por papéis; reconciliar 43–45 antes de qualquer DDL real. Não ativar pagamentos.
+
+
+## Handoff L0 — 11/11/2026 02h BRT (PR #148 e teste DELETE)
+
+- PR #148: CI HEAD `dbdc765a` success, run `42957957349`; Claude QA `42957957339` skipped (sem revisão). Merge squash `851ba42917fcb72ba368c2f8e57b8f899d0aa8d8` realizado; verificar Render live deste SHA.
+- Auditoria pós-merge encontrou defeito real no teste SQL 96: a seção DELETE tinha caracteres literais `\\n` na linha de comentário, de modo que o CI success **não executava** a asserção DELETE. Branch `test/fix-payout-delete-assertion-20261111`, commit `1025751b`, corrige quebras de linha; aguardar CI do novo PR e corrigir falhas antes de integrar.
+- Render último live confirmado `012a1fbfdb6b4b961f2421a33657368710cf9dbc` (#147); ledger Supabase real somente migrations 39–42; 43–45 ainda pendentes. Não aplicar sem revisão do plano de migração, especialmente 43/44, e sem verificar dependências. Protege 3B e checkout permanecem OFF.
+- E2E HTTP autenticado com quatro perfis, dois instrutores e Safari/PWA ainda BLOQUEADO por falta de evidência de contas/dispositivos. Zero de 18 frentes homologadas. Próximo: CI novo teste DELETE, merge se success, verificar SHA live e retomar segurança RLS/Storage, não declarar DELETE validado pelo CI anterior.
