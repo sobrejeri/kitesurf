@@ -142,6 +142,31 @@ export function Note({
   );
 }
 
+/**
+ * Supporting guidance folded behind one tap, so long explanations stay
+ * available without pushing the screen's actions down. Works without JS.
+ */
+export function InfoDisclosure({
+  title,
+  children,
+  className = '',
+}: {
+  title: string;
+  children: React.ReactNode;
+  className?: string;
+}) {
+  return (
+    <details className={`vk-info group rounded-note border border-note-line bg-brand-wash text-note-ink ${className}`}>
+      <summary className="flex min-h-11 cursor-pointer list-none items-center gap-2 px-4 text-[12.5px] font-semibold text-ink [&::-webkit-details-marker]:hidden">
+        <Icon name="info" className="!h-4 !w-4 shrink-0 opacity-80" />
+        <span className="min-w-0 flex-1">{title}</span>
+        <Icon name="chevronDown" className="!h-4 !w-4 shrink-0 transition-transform group-open:rotate-180" />
+      </summary>
+      <div className="px-4 pb-3.5 text-[12px] leading-relaxed">{children}</div>
+    </details>
+  );
+}
+
 export function Eyebrow({ children, icon }: { children: React.ReactNode; icon?: IconName }) {
   return (
     <p className="flex items-center gap-1.5 text-[10px] font-[550] uppercase tracking-[1px] text-brand">

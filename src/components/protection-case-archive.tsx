@@ -1,5 +1,5 @@
 import { ActionForm } from '@/components/action-form';
-import { Card, Note, inputClass, textareaClass } from '@/components/ui';
+import { Card, InfoDisclosure, Note, inputClass, textareaClass } from '@/components/ui';
 import { reviewLessonIncident } from '@/app/actions/incidents';
 import { reviewProtectionStatement } from '@/app/actions/protection-statements';
 import { protectionStage3Enabled, PROTECTION_ASSESSMENTS, PROTECTION_DECLARATIONS } from '@/lib/protection-stage3';
@@ -48,15 +48,15 @@ function ArchivePager({
       {total!==null?` · ${total} registro(s) autorizado(s)`:''}
     </span>
     <nav aria-label={section==='ocPagina'?'Páginas das ocorrências':'Páginas das manifestações'}
-      className="flex gap-3">
+      className="flex gap-2">
       {previous
-        ? <a className="font-semibold text-brand underline"
+        ? <a className="press inline-flex min-h-9 items-center rounded-full border border-line-ghost px-3.5 font-semibold text-brand"
           href={protectionArchiveUrl(area,params,section,page-1)}>Anterior</a>
-        : <span aria-disabled="true">Anterior</span>}
+        : <span aria-disabled="true" className="inline-flex min-h-9 items-center rounded-full border border-line px-3.5 opacity-50">Anterior</span>}
       {next
-        ? <a className="font-semibold text-brand underline"
+        ? <a className="press inline-flex min-h-9 items-center rounded-full border border-line-ghost px-3.5 font-semibold text-brand"
           href={protectionArchiveUrl(area,params,section,page+1)}>Próxima</a>
-        : <span aria-disabled="true">Próxima</span>}
+        : <span aria-disabled="true" className="inline-flex min-h-9 items-center rounded-full border border-line px-3.5 opacity-50">Próxima</span>}
     </nav>
   </div>;
 }
@@ -283,11 +283,11 @@ export async function ProtectionCaseArchive({
         Para visualizar anexos fora desta página, consulte o suporte.
       </p>
     </section>:null}
-    <Note className="mt-5">
+    <InfoDisclosure className="mt-5" title="Sobre esta busca">
       Mostramos até 20 registros por página, em ordem estável.
       A busca pelo código exige acesso à reserva; instrutores substituídos
       podem ter acesso ao próprio relato na listagem geral, sem acesso aos
       dados atuais da reserva. Não encontrar um registro não comprova silêncio.
-    </Note>
+    </InfoDisclosure>
   </Card>;
 }

@@ -28,6 +28,7 @@ export function HomeDashboard({
   instructorPhotoUrl?: string | null;
 }) {
   const summary = studentHomeSummary(bookings);
+  const levelLabel = level?.assessed ? KITE_LEVEL_BADGES[level.assessed].label : 'Em acompanhamento';
   const { current, booking } = summary;
   const agendaUpcoming = summary.upcoming.filter((item) => item.meeting.id !== current?.meeting.id);
   const currentLabel = current?.meeting.status === 'in_progress'
@@ -149,7 +150,7 @@ export function HomeDashboard({
 
           <article className={[styles.card, styles.insightCard, styles.levelCard].join(' ')}>
             <span className={styles.label}><Icon name="chart" />Seu nível no kite</span>
-            <h2>{level?.assessed ? KITE_LEVEL_BADGES[level.assessed].label : 'Em acompanhamento'}</h2>
+            <h2 className={levelLabel.length > 12 ? styles.longLevel : undefined}>{levelLabel}</h2>
             <p><span className={styles.mobileSummary}>{level?.assessed ? 'Avaliado pelo instrutor' : 'Nível em avaliação'}</span><span className={styles.desktopSummary}>{level?.assessed ? 'Nível avaliado pelo instrutor.' : 'Seu instrutor acompanha seu nível ao longo das aulas.'}</span></p>
             {level?.assessedAt ? <small>Avaliação de {formatDateLong(level.assessedAt)}</small> : null}
             <Link href="/aluno/evolucao" className={styles.cardArrow} aria-label="Ver minhas conquistas"><Icon name="arrow" /></Link>

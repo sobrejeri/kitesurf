@@ -1,6 +1,7 @@
 import { reportLessonIncident, reviewLessonIncident } from '@/app/actions/incidents';
 import { ActionForm } from '@/components/action-form';
 import { Card, Note, PageHeader, inputClass } from '@/components/ui';
+import { StudentPageTitle } from '@/components/student/page-title';
 import { requireRole, type AppRole } from '@/lib/auth';
 import { listBookingsForInstructor, listBookingsForStudent } from '@/lib/data';
 import { formatDateLong, formatTime } from '@/lib/format';
@@ -91,8 +92,12 @@ export async function IncidentWorkspace({area,title,searchParams}:{
   ]);
   return (
     <>
-      <PageHeader eyebrow="Cada situação acompanhada" title={title ?? (admin?'Analisar ocorrências':'Imprevistos e ocorrências')}
-        lead="VentoKite Protege: acompanhe encontros sem registro, apresente relatos e confira as análises. Nenhuma ação financeira é automática."/>
+      {area==='aluno' ? (
+        <StudentPageTitle title="Imprevistos" subtitle="VentoKite Protege · relatos e análises das suas aulas"/>
+      ) : (
+        <PageHeader eyebrow="Cada situação acompanhada" title={title ?? (admin?'Analisar ocorrências':'Imprevistos e ocorrências')}
+          lead="VentoKite Protege: acompanhe encontros sem registro, apresente relatos e confira as análises. Nenhuma ação financeira é automática."/>
+      )}
       {records.error?<Note tone="warning">Não foi possível consultar as ocorrências. Tente novamente ou informe ao suporte.</Note>:null}
       <ProtectionMonitor items={protectionItems} area={area} reports={reportSummaries}
         error={Boolean(adminMeetingRead?.error || adminBookingRead?.error || records.error)}/>

@@ -534,3 +534,7 @@
     top: calc(env(safe-area-inset-top) + 48px);
   }
 }
+
+/* Long level labels ("Em acompanhamento") shrink to fit the half-width card
+   instead of being broken in the middle of a word. Short ones keep the size. */
+.insightCard h2.longLevel {font-size:clamp(14px,4.1vw,19px);overflow-wrap:break-word;hyphens:manual;}

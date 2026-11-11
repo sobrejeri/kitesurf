@@ -6,7 +6,8 @@ import { RequestPoller } from '@/components/student/request-poller';
 import { respondToSuggestedDate } from '@/app/actions/suggestions';
 import { ActionForm } from '@/components/action-form';
 import { formatDateLong, formatTime } from '@/lib/format';
-import { Badge, ButtonLink, Card, Note, PageHeader } from '@/components/ui';
+import { Badge, ButtonLink, Card, Note } from '@/components/ui';
+import { StudentPageTitle } from '@/components/student/page-title';
 import { requireRole } from '@/lib/auth';
 import { formatMoney } from '@/lib/format';
 import { createSupabaseServerClient } from '@/lib/supabase/server';
@@ -52,9 +53,9 @@ export default async function InstructorRequestPage({ params }: { params: Promis
     <div className="vento-pc-secondary-page vento-pc-request-screen vento-mobile-appbar-clearance">
       <DesktopPageHeader eyebrow="SUA SOLICITAÇÃO" title="Busca de instrutor" lead="Acompanhe a oferta, os retornos e as sugestões de horários." icon="users" backHref="/aluno/aulas" variant="coast"/>
       <div className="vento-pc-secondary-main">
-      <PageHeader eyebrow="Sua solicitação" title={accepted ? 'Instrutor encontrado!' : 'Procurando seu instrutor'}
-        lead={accepted ? (VALIDATION_WITHOUT_CHECKOUT ? 'Sua aula foi aceita. Confira a reserva e confirme sem cobrança.' : 'Sua aula foi aceita. Agora é só concluir o pagamento de teste.') :
-          'Enviamos a proposta aos profissionais compatíveis, seguindo a fila de atendimento.'}/>
+      <StudentPageTitle title={accepted ? 'Instrutor encontrado!' : 'Procurando seu instrutor'}
+        subtitle={accepted ? (VALIDATION_WITHOUT_CHECKOUT ? 'Confira a reserva e confirme sem cobrança.' : 'Agora é só concluir o pagamento de teste.') :
+          'Sua proposta foi enviada aos instrutores compatíveis.'}/>
       <Card className="max-w-2xl">
         <div className="flex items-center justify-between gap-3">
           <strong className="text-[17px] text-ink">{request.total_hours}h de kitesurf</strong>

@@ -1,4 +1,4 @@
-import { Badge, Card, Note } from '@/components/ui';
+import { Badge, Card, InfoDisclosure, Note } from '@/components/ui';
 import type { ProtectionMonitorItem, ProtectionMonitorPhase } from '@/lib/protection-monitor';
 import type { ProtectionReportSummary } from '@/lib/protection-report-summary';
 
@@ -98,24 +98,24 @@ export function ProtectionMonitor({
 
       {admin && items.length ? (
         <a href="#historico-ocorrencias"
-          className="mt-4 inline-flex min-h-10 items-center text-[13px] font-semibold text-brand underline">
+          className="press mt-4 inline-flex min-h-10 items-center gap-1.5 rounded-full border border-line-ghost px-4 text-[13px] font-semibold text-brand">
           Conferir os relatos disponíveis
         </a>
       ) : null}
 
       {!admin && items.length ? (
         <a href="#registrar-ocorrencia"
-          className="mt-4 inline-flex min-h-10 items-center text-[13px] font-semibold text-brand underline">
+          className="press mt-4 inline-flex min-h-10 items-center gap-1.5 rounded-full border border-line-ghost px-4 text-[13px] font-semibold text-brand">
           Registrar ou complementar um relato
         </a>
       ) : null}
 
-      <Note className="mt-4" title="Orientação importante">
+      <InfoDisclosure className="mt-4" title="Orientação importante">
         Um horário vencido não prova ausência nem aula realizada. O QR/PIN não pode ser usado
         retroativamente para simular presença. Este painel apenas informa prazos: notificações
         automáticas, retenção de pagamento e decisões financeiras ainda não estão ativadas.
         A ausência de relato nesta lista limitada não significa ausência de resposta. A janela de cinco dias não limita direitos legais de reclamação.
-      </Note>
+      </InfoDisclosure>
     </Card>
   );
 }

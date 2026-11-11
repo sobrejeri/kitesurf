@@ -211,8 +211,9 @@ export default async function BookingPage({ params }: { params: Promise<{ id: st
                 <p className="mt-2 text-[13px] font-semibold text-brand">{meetingPoint.title}</p>
                 {meetingPoint.details ? <p className="mt-1 text-[12px] text-muted">{meetingPoint.details}</p> : null}
                 <a href={`https://www.google.com/maps?q=${meetingPoint.latitude},${meetingPoint.longitude}`}
-                  target="_blank" rel="noopener noreferrer" className="mt-2 inline-block text-[13px] font-semibold text-brand underline">
-                  Abrir localização no mapa
+                  target="_blank" rel="noopener noreferrer"
+                  className="vento-voucher-map press mt-3 inline-flex min-h-10 items-center gap-1.5 rounded-full border border-[#9fd3df] px-3.5 text-[13px] font-semibold text-brand">
+                  <Icon name="pin" className="!h-4 !w-4" /> Abrir no mapa
                 </a>
               </div>
             ) : null}
@@ -323,31 +324,6 @@ export default async function BookingPage({ params }: { params: Promise<{ id: st
             </div>
           </section>
 
-          <Card>
-            <div className="flex items-center justify-between">
-              <h2 className="text-[16px]">Seu saldo de aprendizado</h2>
-              <span className="tabular font-[550]">{formatMinutes(balance.contracted)}</span>
-            </div>
-            <div className="mt-4">
-              <ProgressBar donePercent={donePercent} reservedPercent={reservedPercent} />
-            </div>
-            <p className="mt-2.5 flex flex-wrap gap-x-4 gap-y-1 text-[10px] text-muted">
-              <span>● {formatMinutes(balance.done)} realizadas</span>
-              <span>● {formatMinutes(balance.scheduled)} agendadas</span>
-              <span>○ {formatMinutes(balance.available)} disponíveis</span>
-            </p>
-            <Link href="/aluno/evolucao" className="mt-4 inline-flex items-center gap-1.5 text-[13px] font-[550] text-brand">
-              <Icon name="arrow" className="!h-4 !w-4" /> Acompanhar minha evolução
-            </Link>
-          </Card>
-
-          <BalanceMeetingPanel
-            bookingId={booking.id}
-            balanceMinutes={balanceMinutes}
-            requests={balanceRequests}
-            minStart={balanceMinStart}
-            maxStart={balanceMaxStart}
-          />
         </div>
 
         <div className="grid content-start gap-5">
@@ -436,6 +412,31 @@ export default async function BookingPage({ params }: { params: Promise<{ id: st
             ) : null}
           </Card>
           ) : null}
+          <Card>
+            <div className="flex items-center justify-between">
+              <h2 className="text-[16px]">Seu saldo de aprendizado</h2>
+              <span className="tabular font-[550]">{formatMinutes(balance.contracted)}</span>
+            </div>
+            <div className="mt-4">
+              <ProgressBar donePercent={donePercent} reservedPercent={reservedPercent} />
+            </div>
+            <p className="mt-2.5 flex flex-wrap gap-x-4 gap-y-1 text-[10px] text-muted">
+              <span>● {formatMinutes(balance.done)} realizadas</span>
+              <span>● {formatMinutes(balance.scheduled)} agendadas</span>
+              <span>○ {formatMinutes(balance.available)} disponíveis</span>
+            </p>
+            <Link href="/aluno/evolucao" className="mt-4 inline-flex items-center gap-1.5 text-[13px] font-[550] text-brand">
+              <Icon name="arrow" className="!h-4 !w-4" /> Acompanhar minha evolução
+            </Link>
+          </Card>
+
+          <BalanceMeetingPanel
+            bookingId={booking.id}
+            balanceMinutes={balanceMinutes}
+            requests={balanceRequests}
+            minStart={balanceMinStart}
+            maxStart={balanceMaxStart}
+          />
         </div>
       </div>
     </div>

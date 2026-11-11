@@ -5,7 +5,7 @@ import { DesktopStudentLessons } from '@/components/student/desktop-lessons';
 import { KiteModelo3Header } from '@/components/student/modelo3-header';
 import { requireRole } from '@/lib/auth';
 import { BOOKING_STATUS_LABELS, MEETING_STATUS_LABELS, listBookingsForStudent } from '@/lib/data';
-import { formatDateShort, formatDay, formatMinutes, formatMonthTag, formatTime } from '@/lib/format';
+import { formatDateShort, formatDay, formatLessonWhen, formatMinutes, formatMonthTag, formatTime } from '@/lib/format';
 import { initials } from '@/lib/people';
 import { lessonHasEvolution, lessonEvolutionHref, lessonIsPast, lessonNeedsInstructorRecord } from '@/lib/student-lesson-links';
 import { getStudentBookingInstructorAvatar } from '@/lib/student-booking-avatar';
@@ -59,13 +59,16 @@ export default async function MyLessonsPage({searchParams}:{searchParams:Promise
       ? (a.past ? b.startsAt.localeCompare(a.startsAt) : a.startsAt.localeCompare(b.startsAt))
       : a.past ? 1 : -1);
 
+  // Lessons are sorted upcoming-first, so the first one not yet past is the next.
+  const nextLesson = lessons.find((lesson) => !lesson.past);
+
   return (
     <div className="vento-student-desktop-lessons kite-modelo3 kite-modelo3--lessons">
       <div className="vento-pc-desktop-only">
         <DesktopStudentLessons lessons={lessons} initialTab={initialTab}/>
       </div>
       <div className="vento-pc-mobile-original">
-      <KiteModelo3Header title="Minhas aulas" subtitle="Acompanhe suas aulas, detalhes e status." />
+      <KiteModelo3Header title="Minhas aulas" subtitle={nextLesson ? `Próxima: ${formatLessonWhen(nextLesson.startsAt, now)}` : 'Nenhuma aula marcada'} />
       <MyLessons key={initialTab} initialTab={initialTab} lessons={lessons} />
       </div>
     </div>
