@@ -2,6 +2,7 @@ import type { EmailOtpType } from '@supabase/supabase-js';
 import { NextResponse, type NextRequest } from 'next/server';
 
 import { areaFromParam } from '@/lib/app-areas';
+import { siteUrl } from '@/lib/env';
 import { createSupabaseServerClient } from '@/lib/supabase/server';
 
 /**
@@ -20,7 +21,7 @@ export async function GET(request: NextRequest) {
   if (tokenHash && type) {
     const supabase = await createSupabaseServerClient(area);
     const { error } = await supabase.auth.verifyOtp({ type, token_hash: tokenHash });
-    if (!error) return NextResponse.redirect(new URL(`/${area}/entrar?confirmado=1`, request.url));
+    if (!error) return NextResponse.redirect(siteUrl(`/${area}/entrar?confirmado=1`));
   }
-  return NextResponse.redirect(new URL(`/${area}/entrar`, request.url));
+  return NextResponse.redirect(siteUrl(`/${area}/entrar`));
 }

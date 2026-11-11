@@ -25,6 +25,8 @@ jobs:
       - run: pnpm lint
       - name: Verify student level is asked only at signup
         run: node scripts/test-auth-kite-level.mjs
+      - name: Verify e-mail confirmation and password links return to the public site
+        run: node --experimental-strip-types scripts/test-auth-redirect-origin.mjs
       - name: Test Admin booking progress calculations
         run: node --experimental-strip-types scripts/test-booking-progress.mjs
       - name: Diagnose Admin demo multi-meeting schedule conflicts

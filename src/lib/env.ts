@@ -13,6 +13,16 @@ export const supabaseConfig = url && anonKey ? { url, anonKey } : null;
 
 export const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL ?? 'http://localhost:3000';
 
+/**
+ * Absolute address on the public site, for redirects from route handlers.
+ * Never build them from `request.url`: behind Render's proxy it carries the
+ * internal server address (https://localhost:10000), and the browser would be
+ * sent to a page that does not open. The e-mail links already use SITE_URL.
+ */
+export function siteUrl(path: string): URL {
+  return new URL(path, SITE_URL);
+}
+
 export class SupabaseNotConfiguredError extends Error {
   constructor() {
     super('NEXT_PUBLIC_SUPABASE_URL e NEXT_PUBLIC_SUPABASE_ANON_KEY não estão definidos.');
