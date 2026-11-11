@@ -37,6 +37,19 @@ BEGIN
   INSERT INTO public.partner_payout_details(id,method,holder_name,pix_key)
   VALUES (owner_uid,'pix','Test Owner','test-owner@example.invalid');
 
+  -- Direct Server Action uses authenticated role, not service_role.
+  IF NOT has_table_privilege('authenticated','public.partner_payout_details','INSERT')
+     OR NOT has_table_privilege('authenticated','public.partner_payout_details','UPDATE') THEN
+    RAISE EXCEPTION 'Authenticated partner must have INSERT and UPDATE table grants';
+  END IF;
+
+  UPDATE public.partner_payout_details SET holder_name = 'Test Owner Updated'
+  WHERE id = owner_uid;
+  GET DIAGNOSTICS affected = ROW_COUNT;
+  IF affected <> 1 THEN
+    RAISE EXCEPTION 'Owner payout UPDATE must affect exactly one row';
+  END IF;
+
   -- Authenticate as the unrelated user: their own UID is valid, but no partner exists.
   PERFORM set_config('request.jwt.claim.sub', stranger_uid::text, true);
   BEGIN
@@ -76,7 +89,7 @@ BEGIN
   PERFORM set_config('request.jwt.claim.sub', owner_uid::text, true);
   IF NOT EXISTS (
     SELECT 1 FROM public.partner_payout_details
-    WHERE id = owner_uid AND holder_name = 'Test Owner'
+    WHERE id = owner_uid AND holder_name = 'Test Owner Updated'
   ) THEN
     RAISE EXCEPTION 'Owner payout no longer readable or was modified';
   END IF;

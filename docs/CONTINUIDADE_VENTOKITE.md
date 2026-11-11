@@ -193,3 +193,13 @@ O projeto possui um **avaliador independente preparado, não necessariamente con
 - CI novo `42971063605` e Claude QA `42971063499` iniciados para `48515f4e`; **resultado pendente nesta anotação**. Claude QA só conta se realmente executar revisão; SKIPPED não conta.
 - **Retomada exata:** conferir resultado dos dois jobs para `48515f4e`; se CI success e Claude skipped, integrar PR #149; se Claude ativo, aguardar review e resolver P0/P1; conferir Render live após merge. Depois abrir correção independente P0 para o fluxo de payout/RPC/grants apenas após auditoria de código e schema; não mexer em dinheiro nem em dados reais. Registrar em #105/#102/#145. E2E autenticado real continua bloqueado.
 - Entregas concretas desta execução até esta anotação: 1 correção de teste SQL e 1 auditoria remota de grants; documentação é suporte, não conta como implementação.
+
+
+## Handoff L0 — 11/11/2026, 05h BRT — PR #150
+
+- Render **live** confirmado: `5143ce3152ad125aaad11e3c94da770f87cb8215` (PR #149), deploy `dep-dbq1f1u7bikc738eu060`.
+- Supabase VentoKite `qadkqjfmmnxvovyyhqxw`: somente migrations **39–42** registradas; **43–46 NÃO aplicadas**. Protege 3B continua fechado pela 41; checkout desativado.
+- Causa funcional #145 **rastreada no código**: `src/app/actions/partner-profile.ts` / `savePartnerPayout` usa `createSupabaseServerClient()` e INSERT/UPDATE diretos em `partner_payout_details`. Não há RPC de gravação nesse fluxo. ACL real de produção concede a `authenticated` somente SELECT; logo migration 45 isolada não habilita o cadastro.
+- PR **#150**: migration 46 condiciona GRANT INSERT/UPDATE à policy de owner corrigida da migration 45, sem DELETE/anon; teste SQL reforça grants, UPDATE legítimo e isolamento entre usuários. **Não aplicar migration 46 isoladamente**; aguardar CI e revisar migrations 43–45 antes de aplicação em produção.
+- Claude independent QA da primeira execução da PR #150: **SKIPPED**, não houve revisão independente. Não declarar E2E real; 0/18 frentes homologadas.
+- Retomar: consultar HEAD e CI atuais da PR #150; corrigir falhas; verificar QA; integrar somente após CI success; conferir Render live. Conciliar migrations 43–46 com schema real e plano de recuperação antes de qualquer DDL. Em seguida avançar P0 RLS/Storage ou reservas. Sem pagamentos ou reservas reais.
