@@ -154,3 +154,10 @@ O projeto possui um **avaliador independente preparado, não necessariamente con
 - Supabase VentoKite `qadkqjfmmnxvovyyhqxw`: ledger real 39–42 somente; migrations 43/44 NÃO aplicadas. Protege 3B fechado e checkout desativado.
 - PR #144 adiciona teste SQL isolado `supabase/tests/94_trigger_search_path.test.sql` para validar os quatro triggers da migration 44 (tipo, SECURITY INVOKER, search_path fixo, vínculo). CI/Claude QA ainda pendentes; não integrar sem CI aprovado. Não equivale a E2E autenticado nem aplicação em produção.
 - Issue #105 comentário `6784131347`, #115 `6784132109`. Próxima execução: conferir CI/QA da PR #144, corrigir falhas, integrar se aprovado, confirmar Render; depois executar testes negativos Storage/RLS com contas fictícias separadas dos quatro papéis. Sem E2E real, **0/18 homologadas**.
+
+## Handoff — 10/11/2026 23h12 BRT (L0, PR #147)
+
+- PR #147 `fix/partner-payout-rls-145`: migration 45 corrige `partner_payout_owner_insert` (exige `id = auth.uid()` e existência de `partners.owner_id = auth.uid()`). Não aplicada no Supabase real; policy real ainda usa predicado incorreto `p.owner_id = p.id`.
+- CI do commit `3bbdeb6` **success**, run `42943950877`; Claude QA **skipped**, run `42943950922`, portanto NÃO houve revisão independente. O teste SQL foi reforçado no commit `d047af6` para autenticar o usuário sem pousada antes da tentativa negativa. **Aguardar CI do HEAD `d047af6` antes do merge.**
+- Render último live consultado `8b20f003b74d38d4ffa9598a2b8911e14702d09d`, deploy `dep-dbpsoqi6ffts739t0q50` (redesign de workspace Instrutor/Admin em paralelo). Não atribuir a PR #147 a esse deploy.
+- Próxima etapa: CI do `d047af6`, corrigir se falhar, confirmar Claude QA skipped/ativo, merge apenas com success. Reconciliar ledger real antes de considerar aplicar migration 45; sem alterações em pagamentos ou checkout. Em seguida retomar primeira pendência P0 independente, com E2E autenticado ainda não homologado. Protege 3B fechado, 0/18 homologadas integralmente.
