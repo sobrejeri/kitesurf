@@ -250,3 +250,11 @@ O projeto possui um **avaliador independente preparado, não necessariamente con
 - Nova PR #155 (`fix/affiliate-avatar-owner-preflight-20261111`, HEAD `3229f286cd65f8d3cc39395cadf7373884afcd5a`) corrige upload legado de avatar do afiliado: verifica registro `partners` por `owner_id` antes de gravar no Storage; teste de regressão e CI. **Aguardar CI e Claude QA do HEAD, sem merge antecipado.** E2E autenticado Storage continua pendente.
 - Supabase projeto correto `qadkqjfmmnxvovyyhqxw`: ledger oficial somente 39–42; SQL manual 47/48 possui evidência de objetos presentes, mas sem registro no ledger. Não reaplicar, reconciliar baseline e confirmar políticas/RLS e sessão aal2 reais. Não executar 01–38. Protege 3B permanece fechado pela 41; checkout OFF.
 - Próximo: confirmar CI #155, integrar somente se aprovado; verificar SHA live do #154 e depois #155; continuar P0 E2E autenticado e correções independentes P1. **0/18 frentes integralmente homologadas.**
+
+
+## Handoff — 11/11/2026 16h15 BRT (PRs #155/#156)
+
+- PR #155 integrada após CI run 43077007293 **success**, Claude QA run 43077007329 **skipped** (sem revisão independente); squash SHA `fc5345af428cd9065e002b2792939052ad7ebbc6`. Render ainda deve confirmar deploy live deste SHA; último live visto: `5bb9ae242223bb3daf8af14d22ca5f362c8fd373` (#154).
+- PR #156 aberta: `fix/auth-public-site-url-fallback-20261111`, HEAD inicial `d4210ff64b780ed30fe1c6d3067bcb409e5d9bd4`. Correção P1 de URL de confirmação/redefinição quando `NEXT_PUBLIC_SITE_URL` está ausente em produção, com regressão no teste de autenticação. **Não corrige variável explicitamente errada**; conferir Render sem expor segredos. Aguardar CI e Claude QA do HEAD, não integrar antecipadamente.
+- Supabase kitesurf `qadkqjfmmnxvovyyhqxw`: ledger 39–42; SQL manual 47/48 evidenciado por objetos e consulta do usuário, sem reaplicar. Sem DDL nesta execução; Protege 3B e checkout fechados. E2E autenticado dos quatro perfis ainda pendente. 0/18 frentes homologadas.
+- Próxima execução: conferir CI/QA #156; corrigir falhas, integrar apenas com CI success; verificar Render live de #155/#156; prosseguir com correções P0/P1 independentes e E2E autorizado.
