@@ -60,7 +60,19 @@ BEGIN
     RAISE EXCEPTION 'Foreign payout UPDATE unexpectedly changed % rows', affected;
   END IF;
 
-  -- DELETE must also be denied to a different authenticated user.\n  DELETE FROM public.partner_payout_details WHERE id = owner_uid;\n  GET DIAGNOSTICS affected = ROW_COUNT;\n  IF affected <> 0 THEN\n    RAISE EXCEPTION 'Foreign payout DELETE unexpectedly removed % rows', affected;\n  END IF;\n\n  -- The owner still sees their unchanged payout after the negative tests.
+  -- DELETE is denied either by missing table grant (42501) or RLS (zero rows).
+  -- Keep the statement executable: a commented-out DELETE would give false coverage.
+  BEGIN
+    DELETE FROM public.partner_payout_details WHERE id = owner_uid;
+    GET DIAGNOSTICS affected = ROW_COUNT;
+    IF affected <> 0 THEN
+      RAISE EXCEPTION 'Foreign payout DELETE unexpectedly removed % rows', affected;
+    END IF;
+  EXCEPTION WHEN insufficient_privilege THEN
+    NULL; -- PostgreSQL rejects DELETE before RLS when the role lacks DELETE grant.
+  END;
+
+  -- The owner still sees their unchanged payout after the negative tests.
   PERFORM set_config('request.jwt.claim.sub', owner_uid::text, true);
   IF NOT EXISTS (
     SELECT 1 FROM public.partner_payout_details
