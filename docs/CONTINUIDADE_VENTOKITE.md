@@ -145,3 +145,12 @@ O projeto possui um **avaliador independente preparado, não necessariamente con
 - Supabase correto `qadkqjfmmnxvovyyhqxw`: ledger real permanece 39–42. Migration 43 e 44 somente versionadas, não aplicadas. Quatro funções `SECURITY INVOKER` de trigger continuam sem `proconfig`; `reject_test_payment` tem EXECUTE anon/auth, mas retorna trigger e está vinculada ao trigger ativo `bookings_test_no_payment` em `bookings`, rejeitando mudança de reserva de teste para `awaiting_payment`. Grant isolado não demonstra bypass; não revogar sem dependências e regressão.
 - Revisão estática dos quatro corpos da migration 44 identificou somente OLD/NEW/TG_*, `RAISE` e `now()` built-in, sem referências não qualificadas a tabelas públicas; `search_path=pg_catalog` parece compatível, mas **não equivale a teste PostgreSQL isolado**.
 - Handoff: confirmar deploy `f391ad8d` live; validar migrations 43/44 em PostgreSQL isolado com trigger real e testes antes/depois; avaliar aplicação individual após checagens de compatibilidade, sem executar 01–38; testar Storage/RLS com sessões fictícias distintas de Aluno/Instrutor/Admin/Pousada. Sem E2E autenticado e segundo instrutor, homologação BLOQUEADA. Preservar Protege 3B bloqueado e checkout desligado. Issue #105 comentário `6783062958`, #115 `6783063682`. **0/18 homologadas.**
+
+
+## Handoff L0 — 10/11/2026 22h19 BRT
+
+- PR #143 integrada após CI `42930408234` SUCCESS; Claude QA `42930408225` SKIPPED (não revisou). Merge `3b6e1c23f3f21f753c19ba9865722e2ae146de45`, deploy ainda não confirmado.
+- Render `srv-dbifnnks728c73f50arg`: último SHA confirmado LIVE `f391ad8d3abdfd2512d61f34fe6ea23d52d8b770`, deploy `dep-dbpr8kgae00c73fei330`.
+- Supabase VentoKite `qadkqjfmmnxvovyyhqxw`: ledger real 39–42 somente; migrations 43/44 NÃO aplicadas. Protege 3B fechado e checkout desativado.
+- PR #144 adiciona teste SQL isolado `supabase/tests/94_trigger_search_path.test.sql` para validar os quatro triggers da migration 44 (tipo, SECURITY INVOKER, search_path fixo, vínculo). CI/Claude QA ainda pendentes; não integrar sem CI aprovado. Não equivale a E2E autenticado nem aplicação em produção.
+- Issue #105 comentário `6784131347`, #115 `6784132109`. Próxima execução: conferir CI/QA da PR #144, corrigir falhas, integrar se aprovado, confirmar Render; depois executar testes negativos Storage/RLS com contas fictícias separadas dos quatro papéis. Sem E2E real, **0/18 homologadas**.
