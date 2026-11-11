@@ -228,3 +228,8 @@ O projeto possui um **avaliador independente preparado, não necessariamente con
 
 - Encontrado no ar (deploy `8ccc1c0`, mas o código já era assim antes): `/auth/confirm` e `/auth/recovery` respondiam `Location: https://localhost:10000/...`, porque montavam o redirecionamento com `request.url`, que no Render é o endereço interno do servidor. Efeito: depois de clicar no link do e-mail (confirmar conta ou redefinir senha), a pessoa caía numa página que não abre, em todos os apps.
 - Correção: os dois redirecionamentos usam `siteUrl()` (`src/lib/env.ts`), baseado em `NEXT_PUBLIC_SITE_URL`, o mesmo endereço que os e-mails já usam. Teste `scripts/test-auth-redirect-origin.mjs` no CI; conferido com `next start` na porta 10000, como no Render.
+
+## Nota — 11/11/2026 — CPF/CNPJ e código do admin (migrations 47 e 48)
+
+- **47** (`account_tax_ids`): CPF ou CNPJ privado de instrutor e afiliado, único por tipo de conta, exigido na primeira aprovação, travado depois (correção só pelo admin, auditada sem o número). **48**: `is_admin()` e `require_role()` exigem sessão `aal2` (código do app autenticador) para admin. As duas são independentes de 43–46 e não são alteradas por elas; o app funciona antes e depois de aplicá-las. Aplicar em ordem, depois que os admins cadastrarem o app autenticador. Detalhes e recuperação de acesso em `ACESSOS_E_CADASTROS.md`.
+- `scripts/test-db.sh` neste container precisa de `LC_ALL=C.UTF-8` (com locale POSIX o teste de slug com acento falha antes de qualquer mudança).

@@ -1,7 +1,8 @@
 'use server';
 
+import { redirect } from 'next/navigation';
 import { z } from 'zod';
-import { AREA_LIST, type AppArea } from '@/lib/app-areas';
+import { AREA_LIST, verificationPath, type AppArea } from '@/lib/app-areas';
 import { SITE_URL } from '@/lib/env';
 import { createSupabaseServerClient, currentArea } from '@/lib/supabase/server';
 import { friendlyError, type ActionState } from './errors';
@@ -33,6 +34,11 @@ export async function setRecoveredPassword(_previous: ActionState, form: FormDat
   const { data, error: sessionError } = await db.auth.getUser();
   if (sessionError || !data.user) return { error: 'O link expirou. Solicite outro para redefinir sua senha.' };
   const { error } = await db.auth.updateUser({ password: parsed.data.password });
+  // An account with the authenticator app (administrators) confirms the code
+  // first, then comes back here to choose the new password.
+  if (error?.code === 'insufficient_aal') {
+    redirect(verificationPath(parsed.data.area, `/${parsed.data.area}/redefinir`));
+  }
   if (error) return { error: friendlyError(error) };
   await db.auth.signOut({ scope: 'local' });
   return { ok: 'Senha atualizada. Entre novamente com sua nova senha.' };

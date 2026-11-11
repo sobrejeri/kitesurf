@@ -8,6 +8,7 @@ import { VerifiedInstructorBadge } from '@/components/instructor/verified-badge'
 import { Icon } from '@/components/icon';
 import { InstructorMultiSelect } from '@/components/instructor/instructor-multi-select';
 import { ProfilePhotoPicker } from '@/components/profile-photo-picker';
+import { TaxIdBody, taxIdSummary } from '@/components/tax-id-panel';
 import { InstructorPayoutForm } from '@/components/instructor/payout-form';
 import { Badge, Card, Field, Note, inputClass, textareaClass } from '@/components/ui';
 import { LANGUAGES } from '@/data/demo';
@@ -15,6 +16,7 @@ import { requireRole } from '@/lib/auth';
 import { getOwnInstructor, listActiveBeaches } from '@/lib/data';
 import { computeInstructorCompletion, type DocumentRecord, type ProgressFlags } from '@/lib/instructor-completion';
 import { createSupabaseServerClient } from '@/lib/supabase/server';
+import { getTaxIdState, taxIdFlag } from '@/lib/tax-id-data';
 
 export const metadata: Metadata = { title: 'Perfil profissional' };
 
@@ -29,7 +31,7 @@ export default async function InstructorProfileFormPage() {
   const supabase = await createSupabaseServerClient();
   // These private tables are introduced in a separate SQL migration. An older
   // deployment can still show and save the original professional fields.
-  const [privateResult, payoutResult, documentsResult] = await Promise.all([
+  const [privateResult, payoutResult, documentsResult, approvalResult] = await Promise.all([
     supabase.from('instructor_private_profiles')
       .select('phone, city, bio, avatar_path').eq('id', viewer.id).maybeSingle<PrivateProfile>(),
     supabase.from('instructor_payout_details')
@@ -37,7 +39,12 @@ export default async function InstructorProfileFormPage() {
     supabase.from('instructor_documents').select('kind,status')
       .eq('instructor_id',viewer.id).in('kind',['identity','certification'])
       .returns<DocumentRecord[]>(),
+    supabase.from('instructors').select('approved_at').eq('id', viewer.id)
+      .maybeSingle<{ approved_at: string | null }>(),
   ]);
+  // After the first approval the team has checked the CPF or CNPJ: read-only.
+  const taxId = await getTaxIdState(viewer.id, Boolean(approvalResult.data?.approved_at));
+  const hasTaxId = taxIdFlag(taxId);
   const privateReady = !privateResult.error;
   const payoutReady = !payoutResult.error;
   if (privateResult.error) console.warn('[instructor-profile] Personal fields unavailable', { code: privateResult.error.code });
@@ -57,6 +64,7 @@ export default async function InstructorProfileFormPage() {
     equipment: Boolean(me?.has_equipment),
     supportVehicle: Boolean(me?.has_support_vehicle),
     payout: Boolean(payoutResult.data),
+    ...(hasTaxId === undefined ? {} : { taxId: hasTaxId }),
   } : null;
   const completion = computeInstructorCompletion(
     flags,documentsResult.error?null:documentsResult.data??[],
@@ -162,6 +170,26 @@ export default async function InstructorProfileFormPage() {
               ) : (
                 <Note tone="warning" className="mt-4">Para salvar telefone, cidade e apresentação, instale a migração do perfil no Supabase.</Note>
               )}
+            </div>
+          </details>
+        </Card>
+
+        <Card className="!p-4 sm:!p-6">
+          <details className="group" open={taxId.status === 'missing'}>
+            <summary id="cadastro-documento" className="flex min-h-12 cursor-pointer list-none items-center justify-between gap-3 rounded-xl focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-brand [&::-webkit-details-marker]:hidden">
+              <span className="flex min-w-0 items-center gap-3">
+                <span className="grid h-10 w-10 shrink-0 place-items-center rounded-[12px] bg-brand-soft text-brand">
+                  <Icon name="file" className="!h-5 !w-5" />
+                </span>
+                <span className="min-w-0">
+                  <strong className="block text-[17px] font-extrabold leading-snug text-ink">CPF ou CNPJ</strong>
+                  <span className="mt-1 block text-[12px] leading-relaxed text-muted">{taxIdSummary(taxId)}</span>
+                </span>
+              </span>
+              <Icon name="chevronDown" className="!h-5 !w-5 shrink-0 text-brand transition-transform group-open:rotate-180" />
+            </summary>
+            <div className="mt-4 border-t border-line pt-4">
+              <TaxIdBody state={taxId} />
             </div>
           </details>
         </Card>

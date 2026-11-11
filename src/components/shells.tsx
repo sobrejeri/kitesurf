@@ -48,7 +48,7 @@ export function TopBar({ viewer, signOut }: { viewer: TopBarViewer | null; signO
   const areas = viewer ? AREAS.filter((area) => viewer.role === 'admin' || area.role === viewer.role) : [];
   const app = areaFromPath(pathname);
   // The login screens are full-screen app screens of their own.
-  if (pathname === '/entrar' || /^\/[a-z]+\/(entrar|criar-conta|recuperar|redefinir)/.test(pathname)) return null;
+  if (pathname === '/entrar' || /^\/[a-z]+\/(entrar|criar-conta|recuperar|redefinir|verificacao)/.test(pathname)) return null;
   // Instrutor, Admin and Afiliado are full workspaces: their shell has the area
   // switcher, the account and the sign-out, so a second bar would only repeat them.
   if (/^\/(instrutor|admin|afiliado)(\/|$)/.test(pathname)) return null;

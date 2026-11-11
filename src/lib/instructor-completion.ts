@@ -6,6 +6,8 @@ export const PROFILE_REQUIRED = [
   {key:'beaches',label:'Praias de atendimento',group:'Atendimento',anchor:'#cadastro-atendimento'},
   {key:'languages',label:'Idiomas das aulas',group:'Atendimento',anchor:'#cadastro-atendimento'},
 ] as const;
+/** Required once the database has migration 47; not listed before it. */
+export const PROFILE_TAX_ID = {key:'taxId',label:'CPF ou CNPJ',group:'Documento',anchor:'#cadastro-documento'} as const;
 export const PROFILE_RECOMMENDED = [
   {key:'photo',label:'Foto de perfil',anchor:'#cadastro-foto'},
   {key:'payout',label:'Dados de recebimento',anchor:'#cadastro-recebimento'},
@@ -23,6 +25,8 @@ export type ProgressFlags = {
   equipment:boolean;
   supportVehicle:boolean;
   payout:boolean;
+  /** Absent while the database does not track it yet (before migration 47). */
+  taxId?:boolean;
 };
 export type DocumentRecord = {
   kind:string;
@@ -45,7 +49,10 @@ export function readProgressFlags(raw:unknown):ProgressFlags|null {
     'experience','equipment','supportVehicle','payout',
   ];
   if(!keys.every(k=>typeof source[k]==='boolean'))return null;
-  return source as ProgressFlags;
+  const flags={} as ProgressFlags;
+  for(const key of keys)flags[key]=source[key] as boolean;
+  if(typeof source.taxId==='boolean')flags.taxId=source.taxId;
+  return flags;
 }
 
 function documentState(documents:DocumentRecord[]|null,kind:string):DocumentState {
@@ -62,6 +69,9 @@ export function computeInstructorCompletion(flags:ProgressFlags|null,documents:D
     ...item,
     state: flags===null?'unavailable':flags[item.key]?'done':'missing',
   }));
+  if(flags!==null&&typeof flags.taxId==='boolean'){
+    required.push({...PROFILE_TAX_ID,state:flags.taxId?'done':'missing'});
+  }
   const recommended:ProfileField[]=PROFILE_RECOMMENDED.map(item=>({
     ...item,group:'Complementar',
     state:flags===null?'unavailable':flags[item.key]?'done':'missing',

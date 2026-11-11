@@ -36,6 +36,8 @@ end $$;
 select pg_temp.act_as('00000000-0000-0000-0000-0000000000a1');
 update public.instructors set languages = '{Português,Inglês}', years_experience = 8 where id = auth.uid();
 select public.set_my_beaches(array(select id from public.beaches where slug in ('prea', 'jeri')));
+-- CPF is required for the first approval (migration 47); punctuation is accepted.
+select public.set_my_tax_id('529.982.247-25');
 -- An instructor cannot approve themselves or jump the queue.
 do $$ begin
   begin
@@ -47,6 +49,7 @@ select pg_temp.reset();
 select pg_temp.act_as('00000000-0000-0000-0000-0000000000a2');
 update public.instructors set languages = '{Português}' where id = auth.uid();
 select public.set_my_beaches(array(select id from public.beaches where slug = 'prea'));
+select public.set_my_tax_id('11144477735');
 select pg_temp.reset();
 
 -- A student cannot change their own role.
@@ -91,6 +94,8 @@ select public.update_my_partner_profile(
   'Rua da Praia, 100, Preá',
   '@pousadamarvento'
 );
+-- An affiliate may be a company: CNPJ (migration 47).
+select public.set_my_tax_id('11.222.333/0001-81');
 select pg_temp.reset();
 update public.partners set code = 'MAR-E-VENTO';
 select pg_temp.act_as('00000000-0000-0000-0000-00000000000a');
