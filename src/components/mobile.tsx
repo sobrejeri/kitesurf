@@ -28,6 +28,14 @@ export interface SheetLink {
   label: string;
   href: string;
   icon: IconName;
+  /** Unread or pending items waiting behind this link. */
+  count?: number;
+}
+
+/** A titled section of the "Mais" sheet (staff workspaces). */
+export interface SheetGroup {
+  title: string;
+  links: readonly SheetLink[];
 }
 
 export function MobileHeader({
@@ -35,15 +43,18 @@ export function MobileHeader({
   leading,
   trailing,
   breakpoint = 'md',
+  tone = 'chrome',
 }: {
   title?: string;
   leading?: React.ReactNode;
   trailing?: React.ReactNode;
   breakpoint?: 'md' | 'lg';
+  /** "navy": the dark staff app bar that carries the white logo. */
+  tone?: 'chrome' | 'navy';
 }) {
   return (
     <header
-      className={`pt-safe sticky top-0 z-30 border-b border-line/80 bg-chrome/90 backdrop-blur-xl ${breakpoint === 'md' ? 'md:hidden' : 'lg:hidden'}`}
+      className={`pt-safe sticky top-0 z-30 backdrop-blur-xl ${tone === 'navy' ? 'vk-chrome vk-appbar' : 'border-b border-line/80 bg-chrome/90'} ${breakpoint === 'md' ? 'md:hidden' : 'lg:hidden'}`}
     >
       {/* Content-sized: the two-line brand (logo + area label) is ~70px tall. */}
       <div className="flex min-h-14 items-center gap-3 px-4 py-1">
@@ -64,7 +75,7 @@ export function TabBar({
   variant = 'pill',
 }: {
   items: readonly TabItem[];
-  more?: { links: readonly SheetLink[]; footer?: React.ReactNode; title: string };
+  more?: { links: readonly SheetLink[]; groups?: readonly SheetGroup[]; footer?: React.ReactNode; title: string };
   /** A highlighted call-to-action placed in the middle of the bar (e.g. "Agendar"). */
   center?: TabItem;
   breakpoint?: 'md' | 'lg';
@@ -89,7 +100,7 @@ export function TabBar({
         <Link
           href={item.href}
           aria-current={active ? 'page' : undefined}
-          className={`press flex flex-col items-center gap-0.5 py-1 ${variant === 'underline' ? 'text-[11px]' : 'text-[10px]'} ${active ? `font-[550] ${variant === 'underline' ? 'text-sunrise' : 'text-brand'}` : 'text-tabbar-ink'}`}
+          className={`press flex flex-col items-center gap-0.5 py-1 ${variant === 'underline' ? 'text-[11px]' : 'text-[11px]'} ${active ? `font-[600] ${variant === 'underline' ? 'text-sunrise' : 'text-brand'}` : 'text-tabbar-ink'}`}
         >
           <span className={`grid h-8 w-14 place-items-center rounded-full transition-colors ${active && variant === 'pill' ? 'bg-brand-soft' : ''}`}>
             <Icon name={item.icon} className={`!h-[22px] !w-[22px] ${active ? '[stroke-width:1.9]' : ''}`} />
@@ -135,7 +146,7 @@ export function TabBar({
                 onClick={() => setOpenAt((current) => current === pathname ? null : pathname)}
                 aria-haspopup="dialog"
                 aria-expanded={open}
-                className={`press flex w-full flex-col items-center gap-0.5 py-1 ${variant === 'underline' ? 'text-[11px]' : 'text-[10px]'} ${moreActive ? `font-[550] ${variant === 'underline' ? 'text-sunrise' : 'text-brand'}` : 'text-tabbar-ink'}`}
+                className={`press flex w-full flex-col items-center gap-0.5 py-1 ${variant === 'underline' ? 'text-[11px]' : 'text-[11px]'} ${moreActive ? `font-[600] ${variant === 'underline' ? 'text-sunrise' : 'text-brand'}` : 'text-tabbar-ink'}`}
               >
                 <span className={`grid h-8 w-14 place-items-center rounded-full ${moreActive && variant === 'pill' ? 'bg-brand-soft' : ''}`}>
                   <Icon name="grid" className="!h-[22px] !w-[22px]" />
@@ -201,6 +212,7 @@ function MoreSheet({
   onClose,
   title,
   links,
+  groups,
   footer,
   studentStyle = false,
 }: {
@@ -208,6 +220,8 @@ function MoreSheet({
   onClose: () => void;
   title: string;
   links: readonly SheetLink[];
+  /** When given, the sheet lists these titled sections instead of the tile grid. */
+  groups?: readonly SheetGroup[];
   footer?: React.ReactNode;
   studentStyle?: boolean;
 }) {
@@ -283,6 +297,39 @@ function MoreSheet({
             Fechar <span className="text-xl leading-none" aria-hidden="true">×</span>
           </button>
         </div>
+        {groups ? (
+          <div className="mt-4 grid gap-4">
+            {groups.map((group) => (
+              <section key={group.title} aria-label={group.title}>
+                <h3 className="px-1.5 pb-1.5 text-[11px] font-semibold uppercase tracking-[.08em] text-subtle">{group.title}</h3>
+                <ul className="overflow-hidden rounded-[14px] bg-sand">
+                  {group.links.map((link) => {
+                    const active = isActive(pathname, link);
+                    return (
+                      <li key={link.href} className="border-b border-surface last:border-b-0">
+                        <Link
+                          href={link.href}
+                          onClick={onClose}
+                          aria-current={active ? 'page' : undefined}
+                          className={`flex min-h-[50px] items-center gap-3 px-3 text-[14px] active:bg-backdrop ${active ? 'font-semibold text-brand' : 'font-medium text-ink'}`}
+                        >
+                          <span className={`grid h-8 w-8 shrink-0 place-items-center rounded-[9px] ${active ? 'bg-brand text-on-brand' : 'bg-surface text-brand'}`} aria-hidden="true">
+                            <Icon name={link.icon} className="!h-[18px] !w-[18px]" />
+                          </span>
+                          <span className="min-w-0 flex-1 truncate">{link.label}</span>
+                          {link.count ? (
+                            <span className="tabular rounded-full bg-brand px-2 py-0.5 text-[11px] font-bold text-on-brand">{link.count > 9 ? '9+' : link.count}</span>
+                          ) : null}
+                          <Icon name="chevron" className="!h-4 !w-4 shrink-0 text-faint" />
+                        </Link>
+                      </li>
+                    );
+                  })}
+                </ul>
+              </section>
+            ))}
+          </div>
+        ) : (
         <ul className={`mt-4 grid grid-cols-3 gap-2.5 ${studentStyle ? 'vento-student-menu-grid' : ''}`}>
           {links.map((link) => {
             const active = isActive(pathname, link);
@@ -314,6 +361,7 @@ function MoreSheet({
             );
           })}
         </ul>
+        )}
         {footer ? <div className={`mt-4 border-t border-line pt-4 pb-2 ${studentStyle ? 'vento-student-menu-footer' : ''}`}>{footer}</div> : <div className="h-4" />}
       </div>
     </div>,

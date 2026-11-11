@@ -25,8 +25,8 @@ export default async function QueuePage() {
       <AdminTitle title="Minha prioridade" subtitle="Sua posição na fila e quando ela muda." />
       <div className="grid gap-4 lg:grid-cols-[1.3fr_1fr]">
         <Panel>
-          <div className="mb-3 flex items-center gap-4 rounded-[14px] bg-[linear-gradient(120deg,#3a2316,#16223a)] px-5 py-4">
-            <span className="text-[34px] font-bold leading-none text-brand">{position > 0 ? `${position}º` : '—'}</span>
+          <div className="mb-3 flex items-center gap-4 rounded-[12px] border border-note-line bg-brand-wash px-5 py-4">
+            <span className="tabular text-[34px] font-bold leading-none text-brand">{position > 0 ? `${position}º` : '—'}</span>
             <span className="text-[14px] font-medium text-ink">
               {position > 0 ? 'Sua posição na fila' : 'Você entra na fila após a aprovação'}
             </span>

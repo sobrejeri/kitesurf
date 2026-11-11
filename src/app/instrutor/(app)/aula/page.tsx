@@ -149,13 +149,13 @@ export default async function RunLessonPage({
               <div key={meeting.id} id={`aula-${meeting.id}`}
                 className={'grid gap-2 scroll-mt-28 rounded-[24px] transition-colors ' +
                   (expanded
-                    ? 'bg-[#262130] p-1.5 ring-2 ring-[#ff8a3d]/80 shadow-[0_12px_30px_#0000006b]'
+                    ? 'bg-brand-tint p-1.5 ring-2 ring-brand/70 shadow-search'
                     : '')}>
               <Link href={target}
                 aria-current={expanded ? 'page' : undefined}
                 className={'press block rounded-[20px] border p-4 shadow-card sm:p-5 ' +
                   (expanded
-                    ? 'border-[#ff8a3d] bg-[#2d2535] shadow-[0_4px_18px_#00000055]'
+                    ? 'border-brand-focus bg-surface'
                     : 'border-line bg-surface')}>
                 <div className="flex items-start gap-3">
                   <DateTile day={formatDay(meeting.starts_at)}
@@ -165,7 +165,7 @@ export default async function RunLessonPage({
                       <Badge tone={statusTone}>{MEETING_STATUS_LABELS[meeting.status]}</Badge>
                       {booking.is_test ? <Badge tone="warning">AULA TESTE</Badge> : null}
                       {expanded ? (
-                        <span className="rounded-full border border-[#ff8a3d]/65 bg-[#ff8a3d]/15 px-2 py-1 text-[10px] font-bold text-[#ffc18f]">
+                        <span className="rounded-full border border-brand-focus bg-brand-soft px-2 py-1 text-[10px] font-bold text-brand">
                           Detalhes abertos
                         </span>
                       ) : null}
@@ -206,7 +206,7 @@ export default async function RunLessonPage({
         const canStart = mayStartInstructorLesson(selected, todayInCeara, cearaDay);
         const studentName = booking.student?.full_name?.trim() || 'Aluno';
         return (
-          <Card as="section" className="!rounded-[20px] !border-[#734329] !bg-[#191c2b]">
+          <Card as="section" className="!rounded-[18px] !border-brand-reserved !bg-brand-wash">
             <div id="detalhes-aula" className="scroll-mt-5">
               <div className="flex flex-wrap items-center justify-between gap-2">
                 <h2 className="text-[19px] font-bold text-ink">
@@ -370,7 +370,7 @@ export default async function RunLessonPage({
                 recorded.some((skill) => skill.step_number === step.id));
               return (
                 <section id="detalhes-aula"
-                  className="scroll-mt-5 rounded-[20px] border border-[#734329] bg-[#191c2b] p-4">
+                  className="scroll-mt-5 rounded-[18px] border border-brand-reserved bg-brand-wash p-4">
                   <div className="flex flex-wrap items-center justify-between gap-2">
                     <h3 className="text-[17px] font-bold text-ink">
                       Detalhes do encontro {meeting.position}

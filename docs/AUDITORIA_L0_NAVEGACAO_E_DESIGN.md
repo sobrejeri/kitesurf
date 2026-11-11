@@ -78,3 +78,13 @@ Os shells **Instrutor/Admin/Pousada** exigem uma sessão da role apropriada; o s
 - [x] Botões padronizados permanecem com os tamanhos de toque atuais no mobile; nenhum redesenho dos componentes aprovados.
 - [x] Teste `scripts/test-l0-workspace-controls.mjs` incluído no CI para as quatro áreas, cobrindo prefixos colidentes, detalhes de reserva, estado ARIA do menu, wrap de badges e medidas dos botões.
 - [ ] Testar a legibilidade dos status e a navegação do Admin, Instrutor e Pousada em telas reais com login próprio; não equivale a homologação E2E nem a captura visual antes/depois.
+
+## Redesign Instrutor e Admin — "Vento Pro" (11/11/2026)
+
+- [x] **Tema de trabalho único** para Instrutor e Admin (`.theme-pro` em `globals.css`): superfícies brancas sobre cinza frio, azul `#2563eb` como único acento e barra lateral/app bar em azul-marinho `#0b1220` com o logo oficial. O laranja do tema antigo saiu das telas da equipe; Aluno e Pousada não mudam.
+- [x] **Navegação agrupada por assunto** em `src/components/workspace-nav.ts` (Instrutor: Trabalho, Ganhos, Cadastro, Suporte; Admin: Operação, Pessoas, Financeiro, Cadastros, Segurança, Sistema). A mesma lista alimenta a barra lateral do PC, as quatro abas do celular, a folha "Mais" (agora em seções) e as páginas Central/Mais opções. Avaliações do instrutor passou a ter entrada no menu.
+- [x] **Topo do PC** com trilha (área › grupo › página), seletor de áreas para admin e notificações com contador; a barra global antiga não aparece mais nessas duas áreas. Sair da conta fica no rodapé da barra lateral.
+- [x] **Meu dia** (Instrutor) prioriza a aula em andamento/próxima com ações diretas, a posição na fila e os números; **Visão geral** (Admin) abre com "Precisa da sua atenção" (cadastros em análise, reservas sem instrutor, pagamentos pendentes) e mostra as próximas aulas. Os números continuam vindo dos snapshots congelados das reservas, sem recálculo.
+- [x] **PWA**: novos ícones 192/512 (marca oficial do kite sobre o marinho, com o papel embaixo), manifestos com nome VentoKite, `theme_color` igual à app bar, atalhos de tela inicial e `viewport.themeColor` correspondente. Login, recuperação de senha, erro, aviso de nova versão e chat flutuante do instrutor seguem o mesmo azul.
+- [x] Teste `scripts/test-staff-workspace-redesign.mjs` no CI: todo link do menu tem página, toda página de primeiro nível é alcançável pelo menu ou pela central, quatro abas por área, sem laranja antigo nas telas da equipe, manifestos e tamanhos reais dos ícones.
+- [ ] Conferido com capturas desktop 1440px e iPhone 393px usando **dados fictícios em um ambiente local**; ainda falta conferir com login real de instrutor/admin no Render e instalar o PWA de novo no iPhone (o ícone antigo só é trocado ao reinstalar).

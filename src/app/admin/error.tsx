@@ -29,12 +29,12 @@ export default function AdminAreaError({
     : null;
 
   return (
-    <main className="theme-sunset min-h-screen bg-canvas px-4 py-16 text-ink">
+    <main className="theme-pro min-h-screen bg-canvas px-4 py-16 text-ink">
       <section role="alert" className="mx-auto max-w-lg rounded-[26px] border border-line bg-surface p-7 shadow-card">
         <span className="grid h-12 w-12 place-items-center rounded-2xl bg-brand-soft text-brand" aria-hidden="true">
           <Icon name="info" className="!h-6 !w-6" />
         </span>
-        <h1 className="mt-5 text-2xl font-bold">Não foi possível carregar o Vento Admin</h1>
+        <h1 className="mt-5 text-2xl font-bold">Não foi possível carregar o VentoKite Admin</h1>
         <p className="mt-3 text-sm leading-relaxed text-muted">
           Ocorreu uma falha ao carregar o painel. Seus cadastros e reservas não devem
           ser reenviados sem antes verificar os registros da operação.

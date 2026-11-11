@@ -33,9 +33,9 @@ export default async function AdminFinancePage() {
       <p className="mb-4 text-[12px] text-muted">Este resumo considera as últimas 500 reservas cadastradas, com totais apenas das confirmadas ou concluídas elegíveis.</p>
       <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
         <Metric label="Volume confirmado" value={formatMoney(volume)} hint={`${paid.length} reservas confirmadas`} hintTone="success" icon="wallet" tone="green" />
-        <Metric label="Parcela plataforma" value={formatMoney(platform)} hint={formatBps(share(platform))} hintTone="muted" icon="chart" tone="purple" />
+        <Metric label="Parcela plataforma" value={formatMoney(platform)} hint={formatBps(share(platform))} hintTone="muted" icon="chart" tone="sky" />
         <Metric label="Líquido instrutores" value={formatMoney(instructors)} hint={formatBps(share(instructors))} hintTone="muted" icon="users" tone="blue" />
-        <Metric label="Comissões pousadas" value={formatMoney(partners)} hint={formatBps(share(partners))} hintTone="brand" icon="home" tone="orange" />
+        <Metric label="Comissões pousadas" value={formatMoney(partners)} hint={formatBps(share(partners))} hintTone="brand" icon="home" tone="slate" />
       </div>
 
       <Panel title="Valores por data da reserva" action={<span className="text-[12px] text-muted">Últimos 7 dias</span>} className="mt-4">

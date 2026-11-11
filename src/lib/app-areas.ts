@@ -2,7 +2,7 @@
  * The four installable apps. Each lives under its own path, installs as its
  * own PWA (manifest scope = that path) and keeps its own Supabase session in
  * its own cookie — so a phone can be signed in as a student in "Vento" and as
- * an admin in "Vento Admin" at the same time.
+ * an admin in "VentoKite Admin" at the same time.
  *
  * Shared by the proxy, server code and client components; no server-only
  * imports here.
@@ -27,8 +27,8 @@ export interface AreaInfo {
 
 export const APP_AREAS: Readonly<Record<AppArea, AreaInfo>> = {
   aluno: { appName: 'Vento', subtitle: 'Aulas de kitesurf', audience: 'alunos', role: 'student', home: '/aluno/aulas', signup: true },
-  instrutor: { appName: 'Vento Instrutor', subtitle: 'Instrutor', audience: 'instrutores', role: 'instructor', home: '/instrutor/hoje', signup: true },
-  admin: { appName: 'Vento Admin', subtitle: 'Admin', audience: 'a equipe de operação', role: 'admin', home: '/admin/visao', signup: false },
+  instrutor: { appName: 'VentoKite Instrutor', subtitle: 'Instrutor', audience: 'instrutores', role: 'instructor', home: '/instrutor/hoje', signup: true },
+  admin: { appName: 'VentoKite Admin', subtitle: 'Admin', audience: 'a equipe de operação', role: 'admin', home: '/admin/visao', signup: false },
   pousada: { appName: 'Vento Pousada', subtitle: 'Pousada parceira', audience: 'pousadas parceiras', role: 'partner', home: '/pousada/inicio', signup: true },
 };
 

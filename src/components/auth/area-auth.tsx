@@ -12,7 +12,7 @@ import { Field, Note, inputClass } from '../ui';
 /**
  * The login and sign-up screens of one app. Full screen, dark, the app's own
  * name on top: opened from the home-screen icon, this is the first thing the
- * user sees.
+ * user sees. Instrutor and Admin use the blue staff accent (theme-pro-auth).
  */
 function AuthFrame({ area, title, highlight, lead, children }: { area: AppArea; title: string; highlight: string; lead: string; children: React.ReactNode }) {
   const info = APP_AREAS[area];
@@ -21,7 +21,7 @@ function AuthFrame({ area, title, highlight, lead, children }: { area: AppArea; 
   const studentSignup = area === 'aluno' && title === 'Seu primeiro bordo começa aqui.';
   const studentAuth = studentLogin || studentSignup;
   return (
-    <div className={`${area === 'aluno' ? 'theme-beach kite-m3-auth vento-pc-auth-shell' : 'theme-sunset'} ${studentLogin ? 'kite-m3-auth--student-login' : ''} ${studentSignup ? 'kite-m3-auth--student-signup' : ''} relative min-h-dvh overflow-hidden bg-canvas text-ink`}>
+    <div className={`${area === 'aluno' ? 'theme-beach kite-m3-auth vento-pc-auth-shell' : area === 'pousada' ? 'theme-sunset' : 'theme-sunset theme-pro-auth'} ${studentLogin ? 'kite-m3-auth--student-login' : ''} ${studentSignup ? 'kite-m3-auth--student-signup' : ''} relative min-h-dvh overflow-hidden bg-canvas text-ink`}>
       {area === 'aluno' ? <StudentDesktopAuthStory kind={studentLogin ? 'login' : 'signup'}/> : null}
       <img src={studentAuth ? '/images/prea-coast.webp' : area === 'aluno' ? '/images/vento-ocean-hero.webp' : '/images/kite-lesson.webp'} alt="" className="sunset-photo absolute inset-x-0 top-0 h-[46dvh] w-full object-cover" />
       <div className="sunset-veil absolute inset-x-0 top-0 h-[46dvh]" aria-hidden="true" />
@@ -81,7 +81,7 @@ export function AreaLogin({
 }) {
   const info = APP_AREAS[area];
   return (
-    <AuthFrame area={area} title={area === 'aluno' ? 'Bem-vindo de volta.' : `Entrar no ${info.appName}.`} highlight={area === 'aluno' ? 'de volta.' : info.appName.replace('Vento ', '') + '.'} lead={area === 'aluno' ? 'Acesse suas aulas.' : `Acesso para ${info.audience}.`}>
+    <AuthFrame area={area} title={area === 'aluno' ? 'Bem-vindo de volta.' : `Entrar no ${info.appName}.`} highlight={area === 'aluno' ? 'de volta.' : info.appName.replace(/^Vento(Kite)? /, '') + '.'} lead={area === 'aluno' ? 'Acesse suas aulas.' : `Acesso para ${info.audience}.`}>
       {confirmed ? <Note icon="check" className="mb-4">E-mail confirmado. Agora é só entrar.</Note> : null}
       {wrongAccount ? (
         <Note tone="warning" className="mb-4">Este app é para {info.audience}. Entre com a conta certa.</Note>

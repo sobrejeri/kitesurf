@@ -52,8 +52,8 @@ assert.ok(student.includes('getMeetingKiteSkills(selected.booking_meetings.map')
   'Student skill lookup stays scoped to the selected booking');
 
 
-assert.ok(instructor.includes('ring-[#ff8a3d]/80') &&
-  instructor.includes('bg-[#191c2b]') &&
+assert.ok(instructor.includes('ring-brand/70') &&
+  instructor.includes('bg-brand-wash') &&
   instructor.includes('Detalhes abertos'),
   'Instructor selected cards must retain their contrast and expansion cues');
 assert.ok(instructor.includes('const expanded = selected?.meeting.id === meeting.id;'),
