@@ -45,6 +45,8 @@ jobs:
         run: node scripts/test-partner-payout-server-authorization.mjs
       - name: Guard affiliate schema errors against unsafe legacy migration instructions
         run: node scripts/test-affiliate-missing-schema.mjs
+      - name: Verify affiliate avatar owner preflight before Storage writes
+        run: node scripts/test-affiliate-avatar-owner-preflight.mjs
       - name: Verify the Afiliado app (formerly Pousada), its redirects, sessions and PWA
         run: node --experimental-strip-types scripts/test-affiliate-area.mjs
       - name: Verify workspace phone header fits the logo and area label
