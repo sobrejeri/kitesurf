@@ -37,6 +37,17 @@ BEGIN
   INSERT INTO public.partner_payout_details(id,method,holder_name,pix_key)
   VALUES (owner_uid,'pix','Test Owner','test-owner@example.invalid');
 
+  -- Least-privilege regression: authenticated may write only through RLS,
+  -- anonymous clients cannot write, and nobody receives direct DELETE.
+  IF has_table_privilege('anon','public.partner_payout_details','INSERT')
+     OR has_table_privilege('anon','public.partner_payout_details','UPDATE')
+     OR has_table_privilege('anon','public.partner_payout_details','DELETE') THEN
+    RAISE EXCEPTION 'Anonymous payout write grant must remain revoked';
+  END IF;
+  IF has_table_privilege('authenticated','public.partner_payout_details','DELETE') THEN
+    RAISE EXCEPTION 'Authenticated payout DELETE grant must remain revoked';
+  END IF;
+
   -- Direct Server Action uses authenticated role, not service_role.
   IF NOT has_table_privilege('authenticated','public.partner_payout_details','INSERT')
      OR NOT has_table_privilege('authenticated','public.partner_payout_details','UPDATE') THEN

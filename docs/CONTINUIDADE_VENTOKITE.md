@@ -203,3 +203,11 @@ O projeto possui um **avaliador independente preparado, não necessariamente con
 - PR **#150**: migration 46 condiciona GRANT INSERT/UPDATE à policy de owner corrigida da migration 45, sem DELETE/anon; teste SQL reforça grants, UPDATE legítimo e isolamento entre usuários. **Não aplicar migration 46 isoladamente**; aguardar CI e revisar migrations 43–45 antes de aplicação em produção.
 - Claude independent QA da primeira execução da PR #150: **SKIPPED**, não houve revisão independente. Não declarar E2E real; 0/18 frentes homologadas.
 - Retomar: consultar HEAD e CI atuais da PR #150; corrigir falhas; verificar QA; integrar somente após CI success; conferir Render live. Conciliar migrations 43–46 com schema real e plano de recuperação antes de qualquer DDL. Em seguida avançar P0 RLS/Storage ou reservas. Sem pagamentos ou reservas reais.
+
+
+## Handoff L0 — 11/11/2026 06h BRT — PR #150 integrada; grants negativos
+
+- PR #150: HEAD `d10a6b6b83e6e2d2732c2ae19487aca83edf1c09`, CI `42986480031` SUCCESS; Claude QA `42986479617` SKIPPED (sem revisão independente). Merge squash `444ab82bc713a7c04a66c120e16c326424545eef`. Aguardar confirmação de deploy LIVE desse SHA; merge não equivale a deploy.
+- Render último SHA LIVE confirmado antes do merge: `5143ce3152ad125aaad11e3c94da770f87cb8215`, deploy `dep-dbq1f1u7bikc738eu060`. Supabase correto `qadkqjfmmnxvovyyhqxw`: ledger 39–42 somente; 43–46 versionadas, não aplicadas. Policy INSERT remota ainda contém `p.owner_id = p.id`, e authenticated só possui SELECT na tabela; não declarar cadastro de payout corrigido em produção.
+- Nova PR de testes de menor privilégio: branch `test/l0-partner-payout-grant-boundaries-20261111`, reforça teste SQL 96 para negar INSERT/UPDATE/DELETE a anon e DELETE a authenticated. Exigir CI do HEAD e Claude QA antes de merge.
+- Próximo ciclo: verificar CI da PR de testes, merge apenas se SUCCESS; confirmar Render LIVE. Reconciliar dependências 43–46 e aplicar individualmente apenas quando seguro, com rollback/plano de recuperação e evidências, nunca 01–38 em lote. E2E autenticado quatro papéis, Storage HTTP e segundo instrutor permanecem BLOQUEADOS. Protege 3B e checkout OFF; 0/18 frentes integralmente homologadas.
