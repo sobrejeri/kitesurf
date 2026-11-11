@@ -223,3 +223,8 @@ O projeto possui um **avaliador independente preparado, não necessariamente con
 ## Nota de design — 11/11/2026 — Pousada passa a se chamar Afiliado
 
 - Área `/pousada/*` agora é `/afiliado/*` (redirect 307 dos links antigos; `area=pousada` aceito nos links de e-mail; cookie `vento-pousada-auth` mantido). No banco nada mudou: papel `partner` e tabelas `partner_*`. Onde este log diz "Pousada" para papel ou telas, leia "Afiliado". Detalhes em `AUDITORIA_L0_NAVEGACAO_E_DESIGN.md`.
+
+## Correção — 11/11/2026 — links de confirmação e de senha mandavam para localhost
+
+- Encontrado no ar (deploy `8ccc1c0`, mas o código já era assim antes): `/auth/confirm` e `/auth/recovery` respondiam `Location: https://localhost:10000/...`, porque montavam o redirecionamento com `request.url`, que no Render é o endereço interno do servidor. Efeito: depois de clicar no link do e-mail (confirmar conta ou redefinir senha), a pessoa caía numa página que não abre, em todos os apps.
+- Correção: os dois redirecionamentos usam `siteUrl()` (`src/lib/env.ts`), baseado em `NEXT_PUBLIC_SITE_URL`, o mesmo endereço que os e-mails já usam. Teste `scripts/test-auth-redirect-origin.mjs` no CI; conferido com `next start` na porta 10000, como no Render.
