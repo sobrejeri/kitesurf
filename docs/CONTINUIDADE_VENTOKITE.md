@@ -233,3 +233,13 @@ O projeto possui um **avaliador independente preparado, não necessariamente con
 
 - **47** (`account_tax_ids`): CPF ou CNPJ privado de instrutor e afiliado, único por tipo de conta, exigido na primeira aprovação, travado depois (correção só pelo admin, auditada sem o número). **48**: `is_admin()` e `require_role()` exigem sessão `aal2` (código do app autenticador) para admin. As duas são independentes de 43–46 e não são alteradas por elas; o app funciona antes e depois de aplicá-las. Aplicar em ordem, depois que os admins cadastrarem o app autenticador. Detalhes e recuperação de acesso em `ACESSOS_E_CADASTROS.md`.
 - `scripts/test-db.sh` neste container precisa de `LC_ALL=C.UTF-8` (com locale POSIX o teste de slug com acento falha antes de qualquer mudança).
+
+
+## Handoff — 11/11/2026 11h14 BRT (PR #154)
+
+- Render serviço `srv-dbifnnks728c73f50arg`: deploy `dep-dbq744u7bikc738mk560` **live**, SHA `73e14a01560da36842000cf17c45674fd6462f13`. Esse commit externo introduziu cadastro CPF/CNPJ e MFA admin; **não confundir código publicado com migrations aplicadas**.
+- Supabase kitesurf `qadkqjfmmnxvovyyhqxw`: ledger consultado **somente 39–42**. Migrations 43–48 **não registradas**. A migration 41 mantém Protege 3B fechado; nenhuma SQL foi executada. A migration 48 é essencial para impor MFA de admin também no banco, mas o procedimento documentado exige cadastrar autenticador de cada admin antes de aplicar; não aplicar às cegas.
+- PR #153 integrada, CI `43019740020` **success**, Claude QA `43019740017` **skipped**. Deploy #153 foi substituído pelo SHA `73e14a0` live.
+- PR #154 aberta na branch `fix/l0-affiliate-missing-schema-message-20261111`: corrige orientação insegura que mandava usuário executar migration antiga 22; inclui teste automatizado e job no CI. HEAD inicial `f007fd8d1af74c3cade84072f71fc17f45f3a935`. **Aguardar CI/Claude QA do HEAD antes de merge**; sem merge nem deploy confirmado para #154.
+- P0 bloqueado por E2E autenticado e conciliação de schema: verificar dependências das migrations 43–48, especialmente MFA admin 48 e CPF/CNPJ 47, sem executar 01–38 nem aplicar DDL sem avaliação. P1 #154 é independente. A identidade aprovada é azul/preto/cinza/branco; a alteração externa verde requer revisão visual.
+- Próxima execução: conferir CI/Claude da #154, corrigir e integrar somente se aprovado; confirmar deploy; iniciar correção funcional P0/P1 independente após reconciliar código atual, e registrar evidências na #105. **0/18 homologadas integralmente; checkout desligado.**
