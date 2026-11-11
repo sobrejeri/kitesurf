@@ -7,6 +7,7 @@ DECLARE
   stranger_uid uuid := '00000000-0000-0000-0000-000000000146';
   partner_uid uuid := '00000000-0000-0000-0000-000000000147';
   pol text;
+  affected integer;
 BEGIN
   SELECT with_check INTO pol
   FROM pg_policies
@@ -45,6 +46,28 @@ BEGIN
   EXCEPTION WHEN insufficient_privilege THEN
     NULL;
   END;
+
+  -- RLS must also hide the owner's payout from an unrelated authenticated user.
+  IF EXISTS (SELECT 1 FROM public.partner_payout_details WHERE id = owner_uid) THEN
+    RAISE EXCEPTION 'Foreign payout SELECT unexpectedly visible';
+  END IF;
+
+  UPDATE public.partner_payout_details
+  SET holder_name = 'Unauthorized Update'
+  WHERE id = owner_uid;
+  GET DIAGNOSTICS affected = ROW_COUNT;
+  IF affected <> 0 THEN
+    RAISE EXCEPTION 'Foreign payout UPDATE unexpectedly changed % rows', affected;
+  END IF;
+
+  -- DELETE must also be denied to a different authenticated user.\n  DELETE FROM public.partner_payout_details WHERE id = owner_uid;\n  GET DIAGNOSTICS affected = ROW_COUNT;\n  IF affected <> 0 THEN\n    RAISE EXCEPTION 'Foreign payout DELETE unexpectedly removed % rows', affected;\n  END IF;\n\n  -- The owner still sees their unchanged payout after the negative tests.
+  PERFORM set_config('request.jwt.claim.sub', owner_uid::text, true);
+  IF NOT EXISTS (
+    SELECT 1 FROM public.partner_payout_details
+    WHERE id = owner_uid AND holder_name = 'Test Owner'
+  ) THEN
+    RAISE EXCEPTION 'Owner payout no longer readable or was modified';
+  END IF;
 END
 $test$;
 ROLLBACK;
