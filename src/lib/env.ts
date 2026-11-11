@@ -14,10 +14,11 @@ export const supabaseConfig = url && anonKey ? { url, anonKey } : null;
 // Render does not guarantee NEXT_PUBLIC_SITE_URL is set. In a production build,
 // never send account confirmation or recovery links to localhost when it is absent.
 // An explicit URL still takes precedence for preview/staging deployments.
+// NODE_ENV is set and inlined by Next.js itself; it is not a secret.
+// eslint-disable-next-line no-restricted-syntax
+const productionBuild = process.env.NODE_ENV === 'production';
 export const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL ||
-  (process.env.NODE_ENV === 'production'
-    ? 'https://vento-kitesurf.onrender.com'
-    : 'http://localhost:3000');
+  (productionBuild ? 'https://vento-kitesurf.onrender.com' : 'http://localhost:3000');
 
 /**
  * Absolute address on the public site, for redirects from route handlers.
