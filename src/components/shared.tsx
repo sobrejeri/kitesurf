@@ -345,7 +345,7 @@ export function BookingsTable({ totalLabel }: { totalLabel: string }) {
     <div className="relative overflow-x-auto">
       <table className="w-full min-w-[640px] text-left">
         <thead>
-          <tr className="bg-[#fafbfe] text-[10px] uppercase tracking-[.5px] text-quiet">
+          <tr className="bg-sand text-[10.5px] uppercase tracking-[.5px] text-muted">
             <th className="px-4 py-3 font-medium">Reserva</th>
             <th className="px-4 py-3 font-medium">Aluno e instrutor</th>
             <th className="px-4 py-3 font-medium">Data da aula</th>
@@ -356,8 +356,8 @@ export function BookingsTable({ totalLabel }: { totalLabel: string }) {
             </th>
           </tr>
         </thead>
-        <tbody className="text-[12px] text-[#596b87]">
-          <tr className="border-t border-[#eef1f6]">
+        <tbody className="text-[12.5px] text-label">
+          <tr className="border-t border-line">
             <td className="px-4 py-4">
               <strong className="block font-[550] text-brand">{BOOKING.code}</strong>
               {BOOKING.title}

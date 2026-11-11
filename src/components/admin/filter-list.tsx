@@ -36,7 +36,7 @@ export function FilterList({
 
   return (
     <>
-      <label className="flex h-12 items-center gap-3 rounded-[14px] border border-line bg-surface px-4">
+      <label className="flex h-12 items-center gap-3 rounded-[12px] border border-line-input bg-surface px-4 shadow-card focus-within:border-brand-focus focus-within:shadow-focus md:h-11">
         <Icon name="search" className="!h-5 !w-5 text-muted" />
         <span className="sr-only">{placeholder}</span>
         <input
@@ -55,7 +55,7 @@ export function FilterList({
             role="tab"
             aria-selected={chip === item.id}
             onClick={() => setChip(item.id)}
-            className={`press shrink-0 rounded-full border px-4 py-2 text-[13px] ${chip === item.id ? 'btn-primary border-transparent !text-[13px] font-semibold text-white' : 'border-line bg-surface text-label'}`}
+            className={`press shrink-0 rounded-full border px-4 py-2 text-[13px] ${chip === item.id ? 'btn-primary border-transparent !text-[13px] font-semibold text-white' : 'border-line bg-surface font-medium text-label hover:border-line-ghost hover:text-ink'}`}
           >
             {item.label} ({count(item.id)})
           </button>

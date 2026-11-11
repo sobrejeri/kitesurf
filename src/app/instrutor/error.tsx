@@ -20,8 +20,8 @@ export default function InstructorAreaError({
     : null;
 
   return (
-    <main className="theme-sunset min-h-screen bg-canvas px-4 py-16 text-ink">
-      <section role="alert" className="mx-auto max-w-lg rounded-[26px] border border-line bg-surface p-7 shadow-card">
+    <main className="theme-pro min-h-screen bg-canvas px-4 py-16 text-ink">
+      <section role="alert" className="mx-auto max-w-lg rounded-[18px] border border-line bg-surface p-7 shadow-card">
         <span className="grid h-12 w-12 place-items-center rounded-2xl bg-brand-soft text-brand" aria-hidden="true">
           <Icon name="info" className="!h-6 !w-6" />
         </span>

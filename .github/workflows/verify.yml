@@ -33,6 +33,8 @@ jobs:
         run: node scripts/test-claude-qa-config.mjs
       - name: Verify workspace navigation and responsive status labels
         run: node --experimental-strip-types scripts/test-l0-workspace-controls.mjs
+      - name: Verify Instrutor/Admin workspace menus, theme and PWA manifests
+        run: node --experimental-strip-types scripts/test-staff-workspace-redesign.mjs
       - name: Verify workspace phone header fits the logo and area label
         run: node scripts/test-workspace-mobile-header-fit.mjs
       - name: Verify accessible shared fields and bounded progress meters

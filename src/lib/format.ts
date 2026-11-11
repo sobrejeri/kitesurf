@@ -34,6 +34,18 @@ export const formatTime = (iso: string) => TIME.format(new Date(iso));
 export const formatDay = (iso: string) => DAY.format(new Date(iso));
 export const formatMonthTag = (iso: string) => MONTH.format(new Date(iso)).toUpperCase();
 
+const WEEKDAY_DATE = new Intl.DateTimeFormat('pt-BR', { weekday: 'long', day: 'numeric', month: 'long', timeZone: LESSON_TIME_ZONE });
+const HOUR = new Intl.DateTimeFormat('en-GB', { hour: '2-digit', hourCycle: 'h23', timeZone: LESSON_TIME_ZONE });
+
+/** "terça-feira, 10 de novembro", in Ceará time. */
+export const formatWeekdayDate = (iso: string) => WEEKDAY_DATE.format(new Date(iso));
+
+/** The greeting for the time of day in Ceará: before noon, afternoon, evening. */
+export function dayGreeting(iso: string): 'Bom dia' | 'Boa tarde' | 'Boa noite' {
+  const hour = Number(HOUR.format(new Date(iso)));
+  return hour < 12 ? 'Bom dia' : hour < 18 ? 'Boa tarde' : 'Boa noite';
+}
+
 /** Basis points as a percentage label: 1500 → "15%", 550 → "5,5%". */
 export function formatBps(bps: number): string {
   const whole = Math.trunc(bps / 100);

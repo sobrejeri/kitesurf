@@ -642,3 +642,246 @@ body:has(.theme-beach) {
     border-radius: 11px;
   }
 }
+
+/* ---------------------------------------------------------------------------
+ * Vento Pro — the staff workspaces (Instrutor and Admin)
+ *
+ * The VentoKite identity for people who work in the app all day: white
+ * surfaces on a cool grey canvas, one blue accent, near-black navy chrome
+ * (sidebar on a computer, app bar on a phone) that carries the official
+ * white-and-lime logo. No orange: that belonged to the old marketplace look.
+ *
+ * Only tokens change, so every shared component (cards, badges, forms, chat,
+ * incident panels) follows without page-level overrides. Sheets are portaled
+ * to <body>, hence the body:has() twin.
+ *
+ * Contrast on white: ink #0f172a 17.8:1, label #334155 10.3:1, muted #5a6679
+ * 5.8:1, subtle #687589 4.7:1, brand #2563eb 5.2:1 (and white on brand 5.2:1).
+ * ------------------------------------------------------------------------- */
+
+body:has(.theme-pro),
+.theme-pro {
+  --color-brand: #2563eb;
+  --color-brand-hover: #1d4fd7;
+  --color-brand-bar: #2563eb;
+  --color-brand-reserved: #a9c4fb;
+  --color-brand-focus: #7da6f7;
+  --color-brand-soft: #e8f0fe;
+  --color-brand-tint: #f1f6ff;
+  --color-brand-wash: #f6f9ff;
+  --color-on-brand-muted: #dbe7ff;
+  --color-on-brand: #ffffff;
+
+  --color-ink: #0f172a;
+  --color-ink-strong: #0b1220;
+  --color-label: #334155;
+  --color-muted: #5a6679;
+  --color-subtle: #687589;
+  --color-faint: #98a3b5;
+
+  --color-surface: #ffffff;
+  --color-canvas: #f3f5f9;
+  --color-backdrop: #e9edf3;
+  --color-sand: #f1f4f8;
+  --color-line: #e2e7ee;
+  --color-line-input: #cfd7e2;
+  --color-line-ghost: #d6dde7;
+  --color-chrome: #ffffff;
+  --color-tabbar: #ffffff;
+  --color-tabbar-ink: #667387;
+
+  --color-success: #0d7a4e;
+  --color-success-soft: #e5f6ed;
+  --color-warning: #92570a;
+  --color-warning-soft: #fff3d9;
+  --color-danger: #bf3028;
+  --color-danger-soft: #fdecea;
+  --color-danger-line: #f3c4be;
+  --color-quiet: #5a6679;
+  --color-quiet-soft: #eef1f5;
+
+  --color-logo-ink: #0f172a;
+  --color-track: #e4e9f0;
+  --color-note-line: #cfdffb;
+  --color-note-ink: #2b4170;
+  --color-warm-line: #f1dcae;
+  --color-warm-note: #fff8e8;
+  --color-stat-icon: #2563eb;
+  --color-sun: #d97706;
+  --color-avatar-1: #e3ecfd;
+  --color-avatar-1-ink: #2456c4;
+  --color-avatar-2: #ebe8fb;
+  --color-avatar-2-ink: #5b47b8;
+  --color-avatar-3: #e0f3f1;
+  --color-avatar-3-ink: #0f6f68;
+  --color-avatar-4: #eef1f5;
+  --color-avatar-4-ink: #475569;
+
+  --shadow-card: 0 1px 2px #0f172a0a, 0 1px 3px #0f172a0f;
+  --shadow-search: 0 12px 32px #0f172a1f;
+  --shadow-button: 0 4px 12px #2563eb33;
+  --shadow-focus: 0 0 0 3px #2563eb29;
+
+  color-scheme: light;
+}
+
+body:has(.theme-pro) {
+  background: var(--color-canvas);
+  color: var(--color-ink);
+}
+
+.theme-pro :is(h1, h2, h3) {
+  letter-spacing: -0.02em;
+}
+
+/* One solid blue for every primary action; never a gradient. */
+body:has(.theme-pro) .btn-primary,
+.theme-pro .btn-primary {
+  background-image: none;
+  background-color: var(--color-brand);
+  color: #ffffff;
+  font-weight: 600;
+}
+body:has(.theme-pro) .btn-primary:hover,
+.theme-pro .btn-primary:hover {
+  background-color: var(--color-brand-hover);
+}
+
+/* Navy chrome: the sidebar and the phone app bar. Token-driven children
+   (avatar, labels, hairlines) read these instead of the light values. */
+.vk-chrome {
+  --color-ink: #ffffff;
+  --color-ink-strong: #ffffff;
+  --color-label: #c8d2e2;
+  --color-muted: #93a1b8;
+  --color-subtle: #8492a9;
+  --color-faint: #64728a;
+  --color-line: #1c2942;
+  --color-line-ghost: #2a3956;
+  --color-surface: #111b30;
+  --color-sand: #16223a;
+  --color-avatar-1: #1c2c4f;
+  --color-avatar-1-ink: #a9c6ff;
+  background: #0b1220;
+  color: #ffffff;
+  color-scheme: dark;
+}
+
+.vk-sidebar {
+  background: linear-gradient(180deg, #0b1220 0%, #0c1526 60%, #0e1a30 100%);
+  scrollbar-width: thin;
+  scrollbar-color: #26344f transparent;
+}
+.vk-sidebar .vento-official-logo { width: 168px; }
+
+.vk-nav-link {
+  display: flex;
+  align-items: center;
+  gap: 11px;
+  min-height: 36px;
+  padding: 7px 11px;
+  border-radius: 10px;
+  color: #b4c0d3;
+  font-size: 13.5px;
+  font-weight: 500;
+  line-height: 1.2;
+  transition: background-color 0.14s ease, color 0.14s ease;
+}
+.vk-nav-link .icon { width: 18px; height: 18px; color: #7f8da6; transition: color 0.14s ease; }
+.vk-nav-link:hover { background: #ffffff0f; color: #ffffff; }
+.vk-nav-link:hover .icon { color: #c8d2e2; }
+.vk-nav-link:focus-visible { outline: 2px solid #7da6f7; outline-offset: 2px; }
+.vk-nav-link[aria-current='page'] {
+  background: #2563eb;
+  color: #ffffff;
+  font-weight: 600;
+  box-shadow: 0 6px 16px #2563eb40;
+}
+.vk-nav-link[aria-current='page'] .icon { color: #ffffff; }
+.vk-nav-count {
+  margin-left: auto;
+  min-width: 20px;
+  padding: 1px 6px;
+  border-radius: 999px;
+  background: #2563eb;
+  color: #ffffff;
+  font-size: 11px;
+  font-weight: 700;
+  text-align: center;
+}
+.vk-nav-link[aria-current='page'] .vk-nav-count { background: #ffffff; color: #1d4fd7; }
+
+/* Phone app bar: the logo needs the dark ground, the status bar blends in. */
+.vk-appbar {
+  border-bottom: 1px solid #1c2942;
+  background: #0b1220f5;
+}
+
+/* Staff sign-in screens keep the photo splash, in blue instead of orange. */
+.theme-pro-auth {
+  --color-brand: #3b82f6;
+  --color-brand-hover: #2563eb;
+  --color-brand-bar: #3b82f6;
+  --color-brand-focus: #7da6f7;
+  --color-brand-soft: #14254a;
+  --color-brand-tint: #101c38;
+  --color-brand-wash: #0e1830;
+  --color-stat-icon: #6ea8ff;
+  --color-note-line: #24365c;
+  --color-note-ink: #c3d3ee;
+  --shadow-button: 0 10px 24px #2563eb40;
+  --shadow-focus: 0 0 0 3px #3b82f640;
+}
+.theme-pro-auth .text-sunrise,
+.theme-pro-auth .text-brand { color: #7fb0ff; }
+.theme-pro-auth .btn-primary {
+  background-image: none;
+  background-color: #2563eb;
+  font-weight: 650;
+  font-size: 15px;
+}
+.theme-pro-auth .btn-primary:hover { background-color: #1d4fd7; }
+.theme-pro-auth .sunset-photo {
+  filter: saturate(1.05) brightness(0.72) contrast(1.06);
+}
+.theme-pro-auth .sunset-veil {
+  background: linear-gradient(180deg, #08101ecc 0%, #08101e8c 30%, #08101eb3 60%, #08101ef2 84%, var(--color-canvas) 100%);
+}
+
+/* Icon-square tints of the workspace kit. Defaults suit the dark partner
+   theme; Vento Pro swaps them for quiet tints on white. */
+.vk-tone-blue { background: #3b6cf633; color: #8fb0ff; }
+.vk-tone-green { background: #22c55e2e; color: #5fd39a; }
+.vk-tone-orange { background: color-mix(in srgb, var(--color-brand) 20%, transparent); color: var(--color-brand); }
+.vk-tone-purple { background: #8b5cf638; color: #c4b0ff; }
+.vk-tone-slate { background: #94a3b833; color: #cbd5e1; }
+.vk-tone-sky { background: #0ea5e933; color: #7dd3fc; }
+.theme-pro .vk-tone-blue { background: #e8f0fe; color: #2563eb; }
+.theme-pro .vk-tone-green { background: #e5f6ed; color: #0d7a4e; }
+.theme-pro :is(.vk-tone-slate, .vk-tone-orange) { background: #eef1f5; color: #334155; }
+.theme-pro :is(.vk-tone-sky, .vk-tone-purple) { background: #e2f3fb; color: #0b6e99; }
+
+/* Initials standing in for a profile photo. */
+.vk-photo-fallback { background: linear-gradient(135deg, #ff8a3d, #3a2316 70%); }
+.theme-pro .vk-photo-fallback { background: linear-gradient(135deg, #2f6bf0, #0f1d3d); }
+
+/* Shared page header at the workspace's title scale (the student pages keep
+   their larger display size). */
+.theme-pro .vk-page-header h1 {
+  margin-top: 6px;
+  font-size: 24px;
+  font-weight: 700;
+  letter-spacing: -0.5px;
+}
+.theme-pro .vk-page-header p { line-height: 1.6; }
+@media (min-width: 1024px) {
+  .theme-pro .vk-page-header h1 { font-size: 26px; }
+}
+
+/* The one dark card on a workspace page: the lesson that comes first. */
+.vk-next-lesson {
+  background:
+    radial-gradient(120% 140% at 100% 0%, #2563eb59 0%, transparent 55%),
+    linear-gradient(135deg, #0b1220 0%, #10203f 100%);
+  box-shadow: 0 10px 28px #0b122033;
+}

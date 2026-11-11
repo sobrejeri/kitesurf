@@ -5,7 +5,7 @@ import { usePathname } from 'next/navigation';
 
 import { Icon, type IconName } from './icon';
 import { OfficialLogo } from './official-logo';
-import { MenuButton, MobileHeader, SheetAccount, TabBar, isActive, type SheetLink, type TabItem } from './mobile';
+import { MenuButton, MobileHeader, SheetAccount, TabBar, isActive, type SheetGroup, type SheetLink, type TabItem } from './mobile';
 import { StudentBrand } from './student/sunset';
 import { KiteModelo3Brand } from './student/modelo3-header';
 import { StudentProfileAvatar } from './student/profile-avatar';
@@ -49,6 +49,9 @@ export function TopBar({ viewer, signOut }: { viewer: TopBarViewer | null; signO
   const app = areaFromPath(pathname);
   // The login screens are full-screen app screens of their own.
   if (pathname === '/entrar' || /^\/[a-z]+\/(entrar|criar-conta|recuperar|redefinir)/.test(pathname)) return null;
+  // Instrutor and Admin are full workspaces: their shell has the area switcher,
+  // the account and the sign-out, so a second bar on top would only repeat them.
+  if (/^\/(instrutor|admin)(\/|$)/.test(pathname)) return null;
   return (
     <div className="sticky top-0 z-40 hidden h-14 items-center justify-between gap-3 border-b border-line bg-chrome px-6 text-[12px] text-label lg:flex">
       {areas.length > 1 ? (
@@ -105,16 +108,6 @@ function SiteFooter() {
         É pousada? Seja parceira
       </Link>
     </footer>
-  );
-}
-
-/** The app icon alone, for the compact phone header. */
-function LogoMark() {
-  return (
-    <Link href="/" aria-label="Vento — início" className="press shrink-0">
-      {/* Static SVG mark; nothing for next/image to optimise. */}
-      <img src="/icon.svg" alt="" width={30} height={30} className="rounded-[9px]" />
-    </Link>
   );
 }
 
@@ -336,8 +329,8 @@ export interface WorkspaceNavItem {
   label: string;
   href: string;
   icon: IconName;
-  /** Reached from the central hub; named in the breadcrumb but not in the sidebar. */
-  secondary?: boolean;
+  /** Section title in the sidebar and in the phone's "Mais" sheet. */
+  group: string;
   /** One of the four tabs of the phone tab bar. */
   tab?: boolean;
 }
@@ -365,135 +358,172 @@ function WorkspaceProfileAvatar({ person, size }: { person: { name: string; init
   ) : avatar;
 }
 
+function UnreadDot({ count, ring }: { count: number; ring: string }) {
+  if (count <= 0) return null;
+  return (
+    <span className={`tabular absolute -right-0.5 -top-0.5 grid h-[18px] min-w-[18px] place-items-center rounded-full bg-brand px-1 text-[10px] font-bold text-white ring-2 ${ring}`}>
+      {count > 9 ? '9+' : count}
+    </span>
+  );
+}
+
+/**
+ * Instrutor and Admin workspace ("Vento Pro").
+ *
+ * Computer: a navy sidebar with every page grouped by subject, and a white
+ * top bar with where you are, the area switcher (admins) and notifications.
+ * Phone / installed app: a navy app bar with the logo, four tabs for the daily
+ * pages and a "Mais" sheet that lists the rest under the same group titles.
+ */
 export function WorkspaceShell({
   children,
   workspace,
   nav,
-  tip,
   person,
   signOut,
   areas,
-  theme = 'light',
   brandSubtitle,
 }: {
   children: React.ReactNode;
   workspace: string;
   nav: readonly WorkspaceNavItem[];
-  tip: { title: string; body: string; icon: IconName };
   person: { name: string; initials: string; role: string; photoUrl?: string | null; profileHref?: string; unreadCount?: number };
   signOut: () => Promise<void>;
   areas?: readonly { label: string; href: string }[];
-  /** "sunset": the dark navy and orange look of the student and admin areas. */
-  theme?: 'light' | 'sunset';
-  /** Word under "Vento" in the sunset brand, e.g. "Admin". */
+  /** Word under the logo, e.g. "Admin". */
   brandSubtitle?: string;
 }) {
-  const sunset = theme === 'sunset';
   const pathname = usePathname();
   const current = nav.find((item) => isActive(pathname, item));
   const alertsHref = nav.find((item) => item.href.endsWith('/avisos'))?.href;
+  const homeHref = nav.find((item) => item.tab)?.href ?? nav[0]?.href ?? '/';
   const unread = person.unreadCount ?? 0;
   const workspaceTitle = workspace.charAt(0) + workspace.slice(1).toLowerCase();
+  const groupTitles = [...new Set(nav.map((item) => item.group))];
   const tabs = nav.filter((item) => item.tab).map(({ label, href, icon }) => ({ label: shortLabel(label), href, icon }));
-  const sheetLinks: SheetLink[] = nav.filter((item) => !item.tab).map(({ label, href, icon }) => ({ label, href, icon }));
+  const sheetLinks: SheetLink[] = nav.filter((item) => !item.tab).map(({ label, href, icon }) => ({
+    label, href, icon, count: href === alertsHref ? unread : undefined,
+  }));
+  const sheetGroups: SheetGroup[] = groupTitles
+    .map((title) => ({ title, links: sheetLinks.filter((link) => nav.find((item) => item.href === link.href)?.group === title) }))
+    .filter((group) => group.links.length > 0);
+  const alertsLabel = unread > 0 ? `Abrir notificações (${unread} não lidas)` : 'Abrir notificações';
 
   return (
-    <div className={`flex min-h-dvh flex-col lg:min-h-[calc(100dvh-56px)] lg:flex-row ${sunset ? 'theme-sunset bg-canvas text-ink' : ''}`}>
-      <aside className="hidden shrink-0 border-r border-line bg-chrome lg:sticky lg:top-14 lg:flex lg:h-[calc(100dvh-56px)] lg:w-[228px] lg:flex-col">
-        <div className="px-5 pb-6 pt-6">
-          {sunset ? <StudentBrand subtitle={brandSubtitle} /> : <Logo />}
+    <div className="theme-pro flex min-h-dvh flex-col bg-canvas text-ink lg:flex-row">
+      <aside className="vk-chrome vk-sidebar hidden shrink-0 lg:sticky lg:top-0 lg:flex lg:h-dvh lg:w-[264px] lg:flex-col">
+        <div className="px-5 pb-3.5 pt-5">
+          <Link href={homeHref} aria-label="VentoKite — início do painel" className="inline-flex rounded-[8px]">
+            <OfficialLogo compact />
+          </Link>
+          <p className="mt-2 flex w-fit items-center gap-1.5 rounded-full border border-line-ghost px-2.5 py-1 text-[10px] font-semibold uppercase tracking-[.12em] text-label">
+            <span className="h-1.5 w-1.5 rounded-full bg-[#baff06]" aria-hidden="true" />
+            {brandSubtitle ?? workspaceTitle}
+          </p>
         </div>
-        <p className="px-8 pb-2 text-[9px] font-[550] uppercase tracking-[1px] text-faint">{workspace}</p>
-        <nav aria-label={workspace} className="flex flex-col gap-1 overflow-y-auto px-5">
-          {nav.filter((item) => !item.secondary).map((item) => {
-            const active = isActive(pathname, item);
-            return (
-              <Link
-                key={item.href}
-                href={item.href}
-                aria-current={active ? 'page' : undefined}
-                className={`flex items-center gap-3 rounded-input px-3 py-2.5 text-[13px] font-medium ${active ? 'bg-brand-soft text-brand' : 'text-subtle hover:bg-sand hover:text-brand'}`}
-              >
-                <Icon name={item.icon} className="!h-[18px] !w-[18px]" />
-                {item.label}
-              </Link>
-            );
-          })}
+        <nav aria-label={workspace} className="min-h-0 flex-1 overflow-y-auto px-3 pb-4">
+          {groupTitles.map((title) => (
+            <div key={title} className="mt-4 first:mt-0.5">
+              <p className="px-3 pb-1.5 text-[10.5px] font-semibold uppercase tracking-[.1em] text-faint">{title}</p>
+              <ul className="grid gap-0.5">
+                {nav.filter((item) => item.group === title).map((item) => {
+                  const active = isActive(pathname, item);
+                  return (
+                    <li key={item.href}>
+                      <Link href={item.href} aria-current={active ? 'page' : undefined} className="vk-nav-link">
+                        <Icon name={item.icon} />
+                        <span className="min-w-0 flex-1 truncate">{item.label}</span>
+                        {item.href === alertsHref && unread > 0 ? <span className="vk-nav-count tabular">{unread > 9 ? '9+' : unread}</span> : null}
+                      </Link>
+                    </li>
+                  );
+                })}
+              </ul>
+            </div>
+          ))}
         </nav>
-        <div className="mt-auto p-5">
-          <div className="rounded-[13px] border border-line bg-canvas p-4 text-[11px] leading-relaxed text-muted">
-            <Icon name={tip.icon} className="text-stat-icon" />
-            <strong className="mt-3 block text-[12px] font-[550] text-label">{tip.title}</strong>
-            {tip.body}
-          </div>
-          <div className="mt-4 flex items-center gap-2.5 px-1">
-            <WorkspaceProfileAvatar person={person} size={34} />
-            <span className="text-[12px] leading-tight">
-              <strong className="block font-[550] text-label">{person.name}</strong>
-              <span className="text-[11px] text-subtle">{person.role}</span>
-            </span>
-          </div>
+        <div className="flex items-center gap-2.5 border-t border-line px-4 py-3.5">
+          <WorkspaceProfileAvatar person={person} size={36} />
+          <span className="min-w-0 flex-1 leading-tight">
+            <strong className="block truncate text-[13px] font-semibold text-ink">{person.name}</strong>
+            <span className="block truncate text-[11.5px] text-muted">{person.role}</span>
+          </span>
+          <form action={signOut}>
+            <button type="submit" aria-label="Sair da conta" title="Sair da conta"
+              className="press grid h-9 w-9 place-items-center rounded-[10px] text-muted hover:bg-[#ffffff12] hover:text-white focus-visible:outline-2 focus-visible:outline-[#7da6f7]">
+              <Icon name="logout" className="!h-[18px] !w-[18px]" />
+            </button>
+          </form>
         </div>
       </aside>
 
-      {sunset ? (
-        <MobileHeader
-          breakpoint="lg"
-          leading={<StudentBrand subtitle={brandSubtitle} />}
-          trailing={
-            <span className="flex items-center gap-2">
-              {alertsHref ? (
-                <Link href={alertsHref} aria-label="Abrir notificações"
-                  className="press relative grid h-10 w-10 place-items-center rounded-full text-ink">
-                  <Icon name="bell" className="!h-6 !w-6"/>
-                  {unread>0 ? <span className="absolute -right-0.5 -top-0.5 grid h-5 min-w-5 place-items-center rounded-full bg-brand px-1 text-[10px] font-bold text-white">{unread>9?'9+':unread}</span> : null}
-                </Link>
-              ) : null}
-              <WorkspaceProfileAvatar person={person} size={40} />
-            </span>
-          }
-        />
-      ) : (
-        <MobileHeader
-          breakpoint="lg"
-          leading={<LogoMark />}
-          title={current?.label ?? workspaceTitle}
-          trailing={<WorkspaceProfileAvatar person={person} size={36} />}
-        />
-      )}
-
-      <div className="min-w-0 flex-1">
-        <div className="hidden h-[76px] items-center justify-between border-b border-line bg-chrome px-9 lg:flex">
-          <p className="flex items-center gap-2 text-[11px] text-muted">
-            <span>{workspaceTitle}</span>
-            <Icon name="chevron" className="!h-3.5 !w-3.5" />
-            <strong className="font-[550] text-label">{current?.label ?? ''}</strong>
-          </p>
-          <div className="flex items-center gap-3">
-            <span className="flex items-center gap-1.5 text-[11px] text-muted">
-              <Icon name="pin" className="!h-4 !w-4" /> Preá, Ceará
-            </span>
+      <MobileHeader
+        breakpoint="lg"
+        leading={<StudentBrand subtitle={brandSubtitle} />}
+        tone="navy"
+        trailing={
+          <span className="flex items-center gap-1.5">
             {alertsHref ? (
-              <Link href={alertsHref} aria-label="Abrir notificações"
-                className="press relative grid h-10 w-10 place-items-center rounded-full border border-line text-label">
-                <Icon name="bell"/>
-                {unread>0 ? <span className="absolute -right-1 -top-1 grid h-5 min-w-5 place-items-center rounded-full bg-brand px-1 text-[10px] font-bold text-white">{unread>9?'9+':unread}</span> : null}
+              <Link href={alertsHref} aria-label={alertsLabel}
+                className="press relative grid h-10 w-10 place-items-center rounded-full text-white">
+                <Icon name="bell" className="!h-[22px] !w-[22px]" />
+                <UnreadDot count={unread} ring="ring-[#0b1220]" />
               </Link>
             ) : null}
-            <WorkspaceProfileAvatar person={person} size={36} />
+            <WorkspaceProfileAvatar person={person} size={38} />
+          </span>
+        }
+      />
+
+      <div className="min-w-0 flex-1">
+        <div className="sticky top-0 z-30 hidden h-16 items-center justify-between gap-4 border-b border-line bg-surface/95 px-8 backdrop-blur lg:flex">
+          <p className="flex min-w-0 items-center gap-2 text-[13px] text-muted">
+            <span className="shrink-0">{workspaceTitle}</span>
+            {current ? (
+              <>
+                <Icon name="chevron" className="!h-3.5 !w-3.5 shrink-0 text-faint" />
+                <span className="shrink-0">{current.group}</span>
+                <Icon name="chevron" className="!h-3.5 !w-3.5 shrink-0 text-faint" />
+                <strong className="truncate font-semibold text-ink">{current.label}</strong>
+              </>
+            ) : null}
+          </p>
+          <div className="flex shrink-0 items-center gap-3">
+            {areas && areas.length > 1 ? (
+              <nav aria-label="Áreas" className="flex rounded-[10px] bg-sand p-1 text-[12px]">
+                {areas.map((area) => {
+                  const here = pathname.startsWith(`/${area.href.split('/')[1]}/`);
+                  return (
+                    <Link key={area.href} href={area.href} aria-current={here ? 'true' : undefined}
+                      className={`rounded-[7px] px-3 py-1.5 font-medium ${here ? 'bg-surface text-brand shadow-card' : 'text-muted hover:text-ink'}`}>
+                      {area.label}
+                    </Link>
+                  );
+                })}
+              </nav>
+            ) : null}
+            {alertsHref ? (
+              <Link href={alertsHref} aria-label={alertsLabel}
+                className="press relative grid h-10 w-10 place-items-center rounded-full border border-line bg-surface text-label hover:bg-sand">
+                <Icon name="bell" className="!h-[19px] !w-[19px]" />
+                <UnreadDot count={unread} ring="ring-white" />
+              </Link>
+            ) : null}
+            <WorkspaceProfileAvatar person={person} size={38} />
           </div>
         </div>
-        <main className="mx-auto max-w-6xl px-4 pb-tabbar pt-4 sm:px-6 lg:px-9 lg:py-9">{children}</main>
+        <main className="mx-auto w-full max-w-[1180px] px-4 pb-tabbar pt-5 sm:px-6 lg:px-8 lg:pb-12 lg:pt-7">{children}</main>
       </div>
 
       <TabBar
         breakpoint="lg"
         label={workspace}
-        variant={sunset ? 'underline' : 'pill'}
+        variant="pill"
         items={tabs}
         more={{
           title: workspaceTitle,
           links: sheetLinks,
+          groups: sheetGroups,
           footer: <SheetAccount name={person.name} subtitle={person.role} initials={person.initials} signOut={signOut} areas={areas} />,
         }}
       />

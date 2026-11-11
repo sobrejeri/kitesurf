@@ -1,15 +1,16 @@
 {
   "id": "/admin/",
-  "name": "Vento Admin",
+  "name": "VentoKite Admin",
   "short_name": "Vento Admin",
-  "description": "Operação da plataforma Vento.",
+  "description": "Operação da plataforma VentoKite: reservas, instrutores, fila e financeiro.",
   "start_url": "/admin/visao",
   "scope": "/admin/",
   "display": "standalone",
   "orientation": "portrait",
-  "background_color": "#08101e",
-  "theme_color": "#08101e",
+  "background_color": "#0b1220",
+  "theme_color": "#0b1220",
   "lang": "pt-BR",
+  "categories": ["business", "productivity"],
   "icons": [
     {
       "src": "/apps/admin-192.png",
@@ -29,5 +30,11 @@
       "type": "image/png",
       "purpose": "maskable"
     }
+  ],
+  "shortcuts": [
+    { "name": "Visão geral", "url": "/admin/visao" },
+    { "name": "Reservas", "url": "/admin/reservas" },
+    { "name": "Instrutores", "url": "/admin/instrutores" },
+    { "name": "Financeiro", "url": "/admin/financeiro" }
   ]
 }

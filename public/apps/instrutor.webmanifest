@@ -1,15 +1,16 @@
 {
   "id": "/instrutor/",
-  "name": "Vento Instrutor",
+  "name": "VentoKite Instrutor",
   "short_name": "Instrutor",
-  "description": "Sua agenda, fila e aulas como instrutor Vento.",
+  "description": "Seu dia, suas aulas, sua vez na fila e seus ganhos como instrutor VentoKite.",
   "start_url": "/instrutor/hoje",
   "scope": "/instrutor/",
   "display": "standalone",
   "orientation": "portrait",
-  "background_color": "#08101e",
-  "theme_color": "#08101e",
+  "background_color": "#0b1220",
+  "theme_color": "#0b1220",
   "lang": "pt-BR",
+  "categories": ["sports", "business", "productivity"],
   "icons": [
     {
       "src": "/apps/instrutor-192.png",
@@ -29,5 +30,11 @@
       "type": "image/png",
       "purpose": "maskable"
     }
+  ],
+  "shortcuts": [
+    { "name": "Meu dia", "url": "/instrutor/hoje" },
+    { "name": "Realizar e registrar aula", "short_name": "Aulas", "url": "/instrutor/aula" },
+    { "name": "Agenda e bloqueios", "short_name": "Agenda", "url": "/instrutor/agenda" },
+    { "name": "Meu financeiro", "short_name": "Financeiro", "url": "/instrutor/financeiro" }
   ]
 }

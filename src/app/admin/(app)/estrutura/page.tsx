@@ -27,15 +27,15 @@ export default function PlatformMapPage() {
         <div className="relative overflow-x-auto">
           <table className="w-full min-w-[620px] text-left">
             <thead>
-              <tr className="bg-[#fafbfe] text-[10px] uppercase tracking-[.5px] text-quiet">
+              <tr className="bg-sand text-[10.5px] uppercase tracking-[.5px] text-muted">
                 <th className="px-5 py-3 font-medium sm:px-6">Módulo</th>
                 <th className="px-5 py-3 font-medium sm:px-6">Funcionalidades</th>
                 <th className="px-5 py-3 sm:px-6"><span className="sr-only">Abrir</span></th>
               </tr>
             </thead>
-            <tbody className="text-[12px] text-[#596b87]">
+            <tbody className="text-[12.5px] text-label">
               {MODULES.map(([module, available, href]) => (
-                <tr key={module} className="border-t border-[#eef1f6]">
+                <tr key={module} className="border-t border-line">
                   <td className="px-5 py-3.5 font-[550] text-ink sm:px-6">{module}</td>
                   <td className="px-5 py-3.5 sm:px-6">{available}</td>
                   <td className="px-5 py-3.5 text-right sm:px-6"><Link href={href} className="font-[550] text-brand">Abrir</Link></td>

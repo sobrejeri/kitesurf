@@ -23,8 +23,8 @@ export function AdminProfilePhoto({
   const [failedUrl, setFailedUrl] = useState<string | null>(null);
   const showImage = Boolean(src && failedUrl !== src);
   const fallback = kind === 'partner'
-    ? 'bg-[linear-gradient(135deg,#3a2316,#1d2a42)] text-brand'
-    : 'bg-[linear-gradient(135deg,#ff8a3d,#3a2316_70%)] text-white';
+    ? 'bg-brand-soft text-brand'
+    : 'vk-photo-fallback text-white';
 
   return (
     <span

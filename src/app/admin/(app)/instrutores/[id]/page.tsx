@@ -90,7 +90,7 @@ export default async function InstructorDetailPage({ params }: { params: Promise
         <Icon name="back" className="!h-4 !w-4" /> Instrutores
       </Link>
 
-      <section className="relative overflow-hidden rounded-[22px] border border-line bg-[linear-gradient(135deg,#1d2a42,#3a2316)] p-5">
+      <section className="relative overflow-hidden rounded-[18px] border border-[#1c2942] bg-[linear-gradient(135deg,#0b1220,#16305f)] p-5">
         <div className="flex items-center gap-4">
           <AdminProfilePhoto src={avatarUrls.get(row.id)} name={name} initials={initials(name)} size={84} />
           <div className="min-w-0">
@@ -101,7 +101,7 @@ export default async function InstructorDetailPage({ params }: { params: Promise
             <p className="mt-1 text-[13px] text-white/75">Instrutor</p>
             <div className="mt-2 flex flex-wrap items-center gap-2">
               <Badge tone={INSTRUCTOR_STATUS[row.status].tone}>{INSTRUCTOR_STATUS[row.status].label}</Badge>
-              {position > 0 ? <span className="text-[12px] text-label">{position}º na fila</span> : null}
+              {position > 0 ? <span className="text-[12px] text-white/80">{position}º na fila</span> : null}
             </div>
           </div>
         </div>

@@ -163,7 +163,7 @@ export function PageHeader({
   action?: React.ReactNode;
 }) {
   return (
-    <header className="mb-6 flex flex-wrap items-end justify-between gap-4">
+    <header className="vk-page-header mb-6 flex flex-wrap items-end justify-between gap-4">
       <div className="max-w-2xl">
         {eyebrow ? <Eyebrow>{eyebrow}</Eyebrow> : null}
         <h1 className="mt-2 text-[28px] leading-tight tracking-[-0.9px] sm:text-[32px]">{title}</h1>

@@ -11,17 +11,17 @@ export function AdminBookingsTable({ bookings }: { bookings: readonly Booking[] 
     <div className="relative overflow-x-auto">
       <table className="w-full min-w-[680px] text-left">
         <thead>
-          <tr className="bg-[#fafbfe] text-[10px] uppercase tracking-[.5px] text-quiet">
+          <tr className="bg-sand text-[10.5px] uppercase tracking-[.5px] text-muted">
             {['Reserva', 'Aluno e instrutor', 'Primeiro encontro', 'Total', 'Situação'].map((head) => (
               <th key={head} className="px-4 py-3 font-medium">{head}</th>
             ))}
           </tr>
         </thead>
-        <tbody className="text-[12px] text-[#596b87]">
+        <tbody className="text-[12.5px] text-label">
           {bookings.map((booking) => {
             const first = booking.booking_meetings[0];
             return (
-              <tr key={booking.id} className="border-t border-[#eef1f6]">
+              <tr key={booking.id} className="border-t border-line">
                 <td className="px-4 py-4">
                   <strong className="block font-[550] text-brand">{booking.code}</strong>
                   {booking.total_hours}h · {booking.booking_meetings.length} encontro(s)
