@@ -26,8 +26,9 @@ BEGIN
 
   -- auth.users creation triggers profile provisioning in the test schema.
 
-  INSERT INTO public.partners(id,owner_id,name,code,status)
-  VALUES (partner_uid,owner_uid,'Partner L0 fixture','L0-P145','pending');
+  INSERT INTO public.partners(id,owner_id,name,code,status,beach_id)
+  VALUES (partner_uid,owner_uid,'Partner L0 fixture','L0-P145','pending',
+    (SELECT id FROM public.beaches ORDER BY id LIMIT 1));
 
   PERFORM set_config('request.jwt.claim.sub', owner_uid::text, true);
   EXECUTE 'SET LOCAL ROLE authenticated';
