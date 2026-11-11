@@ -35,6 +35,8 @@ jobs:
         run: node --experimental-strip-types scripts/test-l0-workspace-controls.mjs
       - name: Verify Instrutor/Admin workspace menus, theme and PWA manifests
         run: node --experimental-strip-types scripts/test-staff-workspace-redesign.mjs
+      - name: Guard payout server action against cross-account IDOR
+        run: node scripts/test-partner-payout-server-authorization.mjs
       - name: Verify the Afiliado app (formerly Pousada), its redirects, sessions and PWA
         run: node --experimental-strip-types scripts/test-affiliate-area.mjs
       - name: Verify workspace phone header fits the logo and area label
