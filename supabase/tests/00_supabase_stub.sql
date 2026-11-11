@@ -38,6 +38,10 @@ create table storage.objects (
   bucket_id text not null references storage.buckets(id),
   name text not null
 );
+-- Supabase Storage enables RLS on storage.objects in its managed schema.
+-- Mirror that baseline in this isolated stand-in so regression tests match production.
+alter table storage.objects enable row level security;
+
 create function storage.foldername(p_name text) returns text[]
 language sql immutable as $$
   select string_to_array(p_name,'/');
