@@ -9,13 +9,15 @@ import { Icon } from '@/components/icon';
 import { VerifiedVentoBadge } from '@/components/verified-badge';
 import { PartnerPayoutFields } from '@/components/partner/payout-fields';
 import { PartnerAvatarUploader } from '@/components/partner/avatar-uploader';
+import { TaxIdBody, taxIdSummary } from '@/components/tax-id-panel';
 import { Badge, Card, Note, Field, inputClass } from '@/components/ui';
 import { requireRole } from '@/lib/auth';
 import { getOwnPartner, listActiveBeaches } from '@/lib/data';
 import {
-  PARTNER_OPTIONAL, PARTNER_REQUIRED, partnerCompletion, type PartnerProgress,
+  PARTNER_OPTIONAL, partnerCompletion, partnerRequired, type PartnerProgress,
 } from '@/lib/partner-progress';
 import { createSupabaseServerClient } from '@/lib/supabase/server';
+import { getTaxIdState, taxIdFlag } from '@/lib/tax-id-data';
 
 export const metadata:Metadata={title:'Meu perfil · Afiliado'};
 
@@ -28,7 +30,7 @@ type Payout={
   branch:string|null;account_number:string|null;account_type:'checking'|'savings'|null;
 };
 
-function SectionSummary({icon,title,hint}:{icon:'user'|'wallet';title:string;hint:string}) {
+function SectionSummary({icon,title,hint}:{icon:'user'|'wallet'|'file';title:string;hint:string}) {
   return (
     <summary className="flex cursor-pointer list-none items-center gap-3 [&::-webkit-details-marker]:hidden">
       <span className="vk-tone-blue grid h-10 w-10 shrink-0 place-items-center rounded-[11px]" aria-hidden="true">
@@ -51,14 +53,17 @@ export default async function AffiliateProfilePage(){
   ]);
   if(!partner)redirect('/afiliado/cadastro');
   const db=await createSupabaseServerClient();
-  const [details,payout]=await Promise.all([
+  const isApproved=partner.status==='approved';
+  const [details,payout,taxId]=await Promise.all([
     db.from('partner_private_profiles').select(
       'responsible_name,phone,city,address,instagram,avatar_path'
     ).eq('id',viewer.id).maybeSingle<PrivateData>(),
     db.from('partner_payout_details').select(
       'method,holder_name,pix_key,bank_name,branch,account_number,account_type'
     ).eq('id',viewer.id).maybeSingle<Payout>(),
+    getTaxIdState(viewer.id,isApproved),
   ]);
+  const hasTaxId=taxIdFlag(taxId);
   const ready=!details.error&&!payout.error;
   const d=details.data;
   const flags:PartnerProgress|null=ready?{
@@ -71,6 +76,7 @@ export default async function AffiliateProfilePage(){
     instagram:Boolean(d?.instagram?.trim()),
     avatar:Boolean(d?.avatar_path),
     payout:Boolean(payout.data),
+    ...(hasTaxId===undefined?{}:{taxId:hasTaxId}),
   }:null;
   const progress=partnerCompletion(flags);
   let photoUrl:string|null=null;
@@ -79,7 +85,6 @@ export default async function AffiliateProfilePage(){
       .createSignedUrl(d.avatar_path,3600);
     photoUrl=signed.data?.signedUrl??null;
   }
-  const isApproved=partner.status==='approved';
   return <>
     <AdminTitle title="Meu perfil" subtitle="Seus dados, foto e conta para receber as comissões."/>
 
@@ -106,7 +111,7 @@ export default async function AffiliateProfilePage(){
           <div>
             <p className="text-[13px] font-medium text-muted">Cadastro</p>
             <p className="mt-1 text-[15px] font-semibold text-ink">
-              {progress.ready ? 'Dados essenciais completos' : `${progress.requiredDone} de ${PARTNER_REQUIRED.length} dados essenciais`}
+              {progress.ready ? 'Dados essenciais completos' : `${progress.requiredDone} de ${progress.requiredTotal} dados essenciais`}
             </p>
             <p className="mt-0.5 text-[12.5px] text-muted">
               {progress.ready ? 'A aprovação depende da análise da equipe.' : 'Complete para a equipe liberar seu link.'}
@@ -125,7 +130,7 @@ export default async function AffiliateProfilePage(){
             <Icon name="chevronDown" className="!h-4 !w-4 text-muted transition-transform group-open:rotate-180"/>
           </summary>
           <ul className="grid gap-x-4 sm:grid-cols-2">
-            {[...PARTNER_REQUIRED,...PARTNER_OPTIONAL].map(item=>{
+            {[...partnerRequired(flags),...PARTNER_OPTIONAL].map(item=>{
               const filled=flags?.[item.key];
               return <li key={item.key} className="flex items-center justify-between gap-2 border-b border-line py-2 text-[12.5px]">
                 <span className="min-w-0 break-words text-ink">{item.label}</span>
@@ -187,6 +192,15 @@ export default async function AffiliateProfilePage(){
                 defaultValue={d?.instagram??''} placeholder="@seuperfil" className={inputClass}/>
             </Field>
           </ActionForm>
+        </details>
+      </Panel>
+
+      <Panel>
+        <details id="perfil-documento" className="group scroll-mt-24" open={taxId.status==='missing'}>
+          <SectionSummary icon="file" title="CPF ou CNPJ" hint={taxIdSummary(taxId)}/>
+          <div className="mt-4">
+            <TaxIdBody state={taxId}/>
+          </div>
         </details>
       </Panel>
 

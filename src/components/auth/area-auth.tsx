@@ -14,7 +14,7 @@ import { Field, Note, inputClass } from '../ui';
  * name on top: opened from the home-screen icon, this is the first thing the
  * user sees. Instrutor, Admin and Afiliado use the blue workspace accent (theme-pro-auth).
  */
-function AuthFrame({ area, title, highlight, lead, children }: { area: AppArea; title: string; highlight: string; lead: string; children: React.ReactNode }) {
+export function AuthFrame({ area, title, highlight, lead, children }: { area: AppArea; title: string; highlight: string; lead: string; children: React.ReactNode }) {
   const info = APP_AREAS[area];
   const at = title.lastIndexOf(highlight);
   const studentLogin = area === 'aluno' && title === 'Bem-vindo de volta.';

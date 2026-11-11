@@ -75,9 +75,15 @@ export function loginPath(area: AppArea, next?: string): string {
   return next ? `/${area}/entrar?next=${encodeURIComponent(next)}` : `/${area}/entrar`;
 }
 
+/** The authenticator-code screen an administrator passes after the password. */
+export function verificationPath(area: AppArea, next?: string | null): string {
+  return next ? `/${area}/verificacao?next=${encodeURIComponent(next)}` : `/${area}/verificacao`;
+}
+
 /** A post-login destination is only accepted inside the same app. */
 export function safeNextFor(area: AppArea, next: string | null | undefined): string | null {
   if (!next || next.startsWith('//') || !next.startsWith(`/${area}/`)) return null;
-  if (next.startsWith(`/${area}/entrar`) || next.startsWith(`/${area}/criar-conta`)) return null;
+  if (next.startsWith(`/${area}/entrar`) || next.startsWith(`/${area}/criar-conta`)
+    || next.startsWith(`/${area}/verificacao`)) return null;
   return next;
 }

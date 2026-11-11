@@ -22,8 +22,21 @@ create function auth.uid() returns uuid language sql stable as $$
   select nullif(current_setting('request.jwt.claim.sub', true), '')::uuid;
 $$;
 
+-- auth.jwt(): the claims of the request's token, as in Supabase. Tests set
+-- single claims (request.jwt.claim.sub, request.jwt.claim.aal). Tests written
+-- before migration 48 never set "aal" and act as an administrator who already
+-- passed the second factor, so it defaults to aal2;
+-- 99zzzzzzzzzzzz_admin_second_factor.test.sql sets aal1 explicitly.
+create function auth.jwt() returns jsonb language sql stable as $$
+  select jsonb_strip_nulls(jsonb_build_object(
+    'sub', nullif(current_setting('request.jwt.claim.sub', true), ''),
+    'aal', coalesce(nullif(current_setting('request.jwt.claim.aal', true), ''), 'aal2')
+  ));
+$$;
+
 grant usage on schema public, auth, extensions to anon, authenticated;
 grant execute on function auth.uid() to anon, authenticated;
+grant execute on function auth.jwt() to anon, authenticated;
 
 
 -- Supabase Storage stand-in: needed for avatar migration DDL in isolated PG.

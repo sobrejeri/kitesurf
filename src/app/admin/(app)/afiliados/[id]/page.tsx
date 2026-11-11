@@ -5,13 +5,16 @@ import {approvePartner,setIndividualPartnerCommission} from '@/app/actions/admin
 import {ActionForm} from '@/components/action-form';
 import {AdminTitle} from '@/components/admin/kit';
 import {Icon} from '@/components/icon';
+import {AdminTaxIdCorrection} from '@/components/tax-id-panel';
 import {Badge,ButtonLink,Card,Note,inputClass} from '@/components/ui';
 import {VerifiedVentoBadge} from '@/components/verified-badge';
 import {requireRole} from '@/lib/auth';
 import {listAllPartners,listAllBookings} from '@/lib/data';
 import {formatBps,formatMoney} from '@/lib/format';
-import {PARTNER_REQUIRED,PARTNER_OPTIONAL,parsePartnerProgress,partnerCompletion} from '@/lib/partner-progress';
+import {PARTNER_OPTIONAL,parsePartnerProgress,partnerCompletion,partnerRequired} from '@/lib/partner-progress';
 import {createSupabaseServerClient} from '@/lib/supabase/server';
+import {formatTaxId,taxIdLabel} from '@/lib/tax-id';
+import {getTaxIdState,type TaxIdState} from '@/lib/tax-id-data';
 
 export const metadata:Metadata={title:'Analisar afiliado'};
 type AdminData={
@@ -36,11 +39,16 @@ export default async function PartnerReviewPage({
   if(!partner)notFound();
 
   const db=await createSupabaseServerClient();
-  const [progressResult,contactResult,bookings]=await Promise.all([
+  const [progressResult,contactResult,bookings,ownerResult]=await Promise.all([
     db.rpc('get_partner_profile_progress',{p_partner_id:id}),
     db.rpc('get_partner_admin_details',{p_partner_id:id}),
     listAllBookings(500),
+    db.from('partners').select('owner_id').eq('id',id).maybeSingle<{owner_id:string}>(),
   ]);
+  const ownerId=ownerResult.data?.owner_id??null;
+  const taxId:TaxIdState=ownerId
+    ?await getTaxIdState(ownerId,partner.status==='approved')
+    :{status:'unavailable'};
   const flags=parsePartnerProgress(progressResult.data);
   const completion=partnerCompletion(flags);
   const contact=parseAdminData(contactResult.data);
@@ -101,10 +109,10 @@ export default async function PartnerReviewPage({
           style={{width:(completion.percentage??0)+'%'}}/>
       </div>
       <p className="mt-2 text-[12px] text-muted">
-        {completion.requiredDone} de {PARTNER_REQUIRED.length} campos essenciais preenchidos.
+        {completion.requiredDone} de {completion.requiredTotal} campos essenciais preenchidos.
       </p>
       <div className="mt-4 grid gap-2 sm:grid-cols-2">
-        {[...PARTNER_REQUIRED,...PARTNER_OPTIONAL].map(item=>(
+        {[...partnerRequired(flags),...PARTNER_OPTIONAL].map(item=>(
           <div key={item.key} className="flex flex-wrap items-center justify-between gap-2 border-b border-line py-2.5 text-[12px]">
             <span className="text-ink">{item.label}</span>
             <Badge tone={flags===null?'quiet':flags[item.key]?'success':'warning'}>
@@ -118,7 +126,7 @@ export default async function PartnerReviewPage({
     <Card className="mb-4">
       <h2 className="text-[18px] font-bold text-ink">Informações para conferência</h2>
       <p className="mt-1 text-[12px] text-muted">
-        Dados de contato visíveis somente para a administração. Dados bancários continuam privados.
+        Dados de contato e CPF ou CNPJ visíveis somente para a administração. Dados bancários continuam privados.
       </p>
       <dl className="mt-3 divide-y divide-line text-[13px]">
         {([
@@ -127,6 +135,9 @@ export default async function PartnerReviewPage({
           ['Cidade',contact?.city],
           ['Endereço',contact?.address],
           ['Instagram',contact?.instagram],
+          ['CPF ou CNPJ',taxId.status==='saved'
+            ?`${taxIdLabel(taxId.kind)} ${formatTaxId(taxId.number)}`
+            :taxId.status==='unavailable'?'Aguardando a migração 47':''],
         ] as const).map(([label,value])=>(
           <div key={label} className="flex flex-wrap justify-between gap-2 py-3">
             <dt className="text-muted">{label}</dt>
@@ -134,6 +145,7 @@ export default async function PartnerReviewPage({
           </div>
         ))}
       </dl>
+      {ownerId?<AdminTaxIdCorrection profileId={ownerId} state={taxId}/>:null}
     </Card>
 
     <Card className="mb-4">
@@ -181,7 +193,7 @@ export default async function PartnerReviewPage({
           </ActionForm>
         ):(
           <Note tone="warning" className="mt-3" title="Aprovação pendente">
-            O afiliado precisa preencher o responsável, telefone, cidade e endereço.
+            O afiliado precisa preencher o responsável, telefone, cidade, endereço e o CPF ou CNPJ.
             Esses dados serão avaliados pela administração antes da liberação do link.
           </Note>
         )}

@@ -3,7 +3,7 @@
 import { redirect } from 'next/navigation';
 import { z } from 'zod';
 
-import { APP_AREAS, AREA_LIST, areaForRole, safeNextFor, type AppArea } from '@/lib/app-areas';
+import { APP_AREAS, AREA_LIST, areaForRole, safeNextFor, verificationPath, type AppArea } from '@/lib/app-areas';
 import { type AppRole } from '@/lib/auth';
 import { SITE_URL } from '@/lib/env';
 import { createSupabaseServerClient, currentArea } from '@/lib/supabase/server';
@@ -56,6 +56,8 @@ export async function signIn(_prev: ActionState, form: FormData): Promise<Action
     return { error: `Esta é uma conta de ${ROLE_WORD[role]}. Entre pelo app ${right.appName}.` };
   }
 
+  // Administrators confirm the authenticator-app code right after the password.
+  if (role === 'admin') redirect(verificationPath(area, safeNextFor(area, parsed.data.next)));
   redirect(safeNextFor(area, parsed.data.next) ?? APP_AREAS[area].home);
 }
 

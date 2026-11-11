@@ -8,7 +8,7 @@ import { createSupabaseServerClient } from '@/lib/supabase/server';
 
 import { friendlyError, type ActionState } from './errors';
 import { moneyInputCents } from '@/lib/level-prices';
-import { PROFILE_REQUIRED, readProgressFlags } from '@/lib/instructor-completion';
+import { PROFILE_REQUIRED, PROFILE_TAX_ID, readProgressFlags } from '@/lib/instructor-completion';
 
 /** Each publication atomically versions all three lesson rates. */
 const Price = z.strictObject({
@@ -79,7 +79,8 @@ export async function setInstructorStatus(_prev: ActionState, form: FormData): P
       if(!completion.error) {
         const flags=readProgressFlags(completion.data);
         if(!flags)return {error:'Não foi possível verificar o preenchimento. Atualize a página e tente novamente.'};
-        const missing=PROFILE_REQUIRED.filter(field=>!flags[field.key]).map(field=>field.label);
+        const missing:string[]=PROFILE_REQUIRED.filter(field=>!flags[field.key]).map(field=>field.label);
+        if(flags.taxId===false)missing.push(PROFILE_TAX_ID.label);
         if(missing.length>0)return {
           error:'Antes da aprovação, o instrutor precisa completar: '+missing.join(', ')+'.',
         };

@@ -8,6 +8,7 @@ import { Panel } from '@/components/admin/kit';
 import { AdminProfilePhoto } from '@/components/admin/profile-photo';
 import { INSTRUCTOR_STATUS } from '@/components/admin/labels';
 import { Icon, type IconName } from '@/components/icon';
+import { AdminTaxIdCorrection } from '@/components/tax-id-panel';
 import { Badge, Note, inputClass } from '@/components/ui';
 import { InstructorCompletionPanel } from '@/components/instructor/completion-panel';
 import { VerifiedInstructorBadge } from '@/components/instructor/verified-badge';
@@ -18,6 +19,8 @@ import { initials } from '@/lib/people';
 import { formatBps } from '@/lib/format';
 import { computeInstructorCompletion, readProgressFlags, type DocumentRecord } from '@/lib/instructor-completion';
 import { createSupabaseServerClient } from '@/lib/supabase/server';
+import { formatTaxId, taxIdLabel } from '@/lib/tax-id';
+import { getTaxIdState } from '@/lib/tax-id-data';
 
  
 export const metadata: Metadata = { title: 'Instrutor' };
@@ -70,6 +73,7 @@ export default async function InstructorDetailPage({ params }: { params: Promise
     listPriceVersions(),
   ]);
   const flags = readProgressFlags(completionResult.data);
+  const taxId = await getTaxIdState(row.id, Boolean(previousApproval.data?.approved_at));
   const completion=computeInstructorCompletion(
     flags,documents.error?null:documents.data??[],
   );
@@ -115,12 +119,18 @@ export default async function InstructorDetailPage({ params }: { params: Promise
         <Panel title="Informações">
           <dl>
             <InfoRow icon="user" label="Nome completo" value={name} filled={flags?.fullName??null} />
+            {taxId.status === 'unavailable' ? null : (
+              <InfoRow icon="file" label="CPF ou CNPJ"
+                value={taxId.status === 'saved' ? `${taxIdLabel(taxId.kind)} ${formatTaxId(taxId.number)}` : 'Não informado'}
+                filled={taxId.status === 'saved'} />
+            )}
             <InfoRow icon="globe" label="Idiomas" value={row.languages.join(', ')||'Não informado'} filled={flags?.languages??null} />
             <InfoRow icon="clock" label="Anos de experiência" value={`${row.years_experience} anos`} filled={flags?.experience??null} />
             <InfoRow icon="kite" label="Equipamentos próprios" value={row.has_equipment ? 'Sim' : 'Não'} optional />
             <InfoRow icon="car" label="Veículo de apoio" value={row.has_support_vehicle ? 'Sim' : 'Não'} optional />
             <InfoRow icon="book" label="Reservas recebidas" value={String(theirs.length)} />
           </dl>
+          <AdminTaxIdCorrection profileId={row.id} state={taxId} />
         </Panel>
 
         <div className="grid content-start gap-4">

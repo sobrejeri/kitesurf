@@ -4,7 +4,7 @@ import { redirect } from 'next/navigation';
 import { connection } from 'next/server';
 import { cache } from 'react';
 
-import { APP_AREAS, loginPath } from './app-areas';
+import { APP_AREAS, loginPath, verificationPath } from './app-areas';
 import { supabaseConfig } from './env';
 import { createSupabaseServerClient, currentArea } from './supabase/server';
 
@@ -16,6 +16,8 @@ export interface Viewer {
   role: AppRole;
   fullName: string;
   language: string;
+  /** This session passed the authenticator-app code (Supabase MFA, aal2). */
+  secondFactor: boolean;
 }
 
 export const ROLE_HOME: Readonly<Record<AppRole, string>> = {
@@ -70,12 +72,14 @@ export const getViewer = cache(async (): Promise<Viewer | null> => {
     role: profile.role,
     fullName: profile.full_name,
     language: profile.language,
+    secondFactor: claims?.claims?.aal === 'aal2',
   };
 });
 
 /**
  * Role check for a page or action. Admins pass every check, so the operation
- * team can open any area; everyone else must hold one of the listed roles.
+ * team can open any area (after the authenticator code); everyone else must
+ * hold one of the listed roles.
  * The database repeats the check — this only decides what to render.
  */
 export async function requireRole(roles: readonly AppRole[], next?: string): Promise<Viewer> {
@@ -89,5 +93,8 @@ export async function requireRole(roles: readonly AppRole[], next?: string): Pro
   if (viewer.role !== 'admin' && !roles.includes(viewer.role)) {
     redirect(viewer.role === APP_AREAS[area].role ? ROLE_HOME[viewer.role] : `/${area}/entrar?erro=conta`);
   }
+  // Admin powers need the authenticator code too; the database refuses an
+  // admin session without it (migration 48), so ask for it before any page.
+  if (viewer.role === 'admin' && !viewer.secondFactor) redirect(verificationPath(area, next));
   return viewer;
 }
