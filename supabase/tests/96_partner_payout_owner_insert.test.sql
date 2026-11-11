@@ -33,12 +33,12 @@ BEGIN
   PERFORM set_config('request.jwt.claim.sub', owner_uid::text, true);
   EXECUTE 'SET LOCAL ROLE authenticated';
 
-  INSERT INTO public.partner_payout_details(id,method,holder_name)
-  VALUES (owner_uid,'pix','Test Owner');
+  INSERT INTO public.partner_payout_details(id,method,holder_name,pix_key)
+  VALUES (owner_uid,'pix','Test Owner','test-owner@example.invalid');
 
   BEGIN
-    INSERT INTO public.partner_payout_details(id,method,holder_name)
-    VALUES (stranger_uid,'pix','Unauthorized');
+    INSERT INTO public.partner_payout_details(id,method,holder_name,pix_key)
+    VALUES (stranger_uid,'pix','Unauthorized','stranger@example.invalid');
     RAISE EXCEPTION 'Foreign payout INSERT unexpectedly succeeded';
   EXCEPTION WHEN insufficient_privilege THEN
     NULL;
