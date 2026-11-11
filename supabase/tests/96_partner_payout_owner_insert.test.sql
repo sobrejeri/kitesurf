@@ -36,6 +36,8 @@ BEGIN
   INSERT INTO public.partner_payout_details(id,method,holder_name,pix_key)
   VALUES (owner_uid,'pix','Test Owner','test-owner@example.invalid');
 
+  -- Authenticate as the unrelated user: their own UID is valid, but no partner exists.
+  PERFORM set_config('request.jwt.claim.sub', stranger_uid::text, true);
   BEGIN
     INSERT INTO public.partner_payout_details(id,method,holder_name,pix_key)
     VALUES (stranger_uid,'pix','Unauthorized','stranger@example.invalid');
