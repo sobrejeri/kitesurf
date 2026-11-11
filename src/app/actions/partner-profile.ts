@@ -7,7 +7,7 @@ import { requireRole } from '@/lib/auth';
 import { createSupabaseServerClient } from '@/lib/supabase/server';
 import { friendlyError, type ActionState } from './errors';
 
-const MISSING_PROFILE='O perfil completo do afiliado ainda não está habilitado. Execute a migração 22 no Supabase.';
+const MISSING_PROFILE='O cadastro do afiliado está indisponível: o esquema do banco ainda precisa ser conciliado pela equipe técnica. Tente novamente mais tarde.';
 
 function readableError(error:{code?:string;message?:string}):string {
   if(['PGRST202','PGRST205','PGRST204','42P01','42883'].includes(error.code??''))
