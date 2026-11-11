@@ -1,14 +1,16 @@
 import type { Metadata } from 'next';
 import Link from 'next/link';
+import { Fragment } from 'react';
 
 import { assessStudentKiteLevel, recordMeeting, recordMeetingWithSkills, startMeeting } from '@/app/actions/instructor';
 import { ActionForm } from '@/components/action-form';
-import { Badge, Card, DateTile, EmptyState, Field, Note, inputClass, textareaClass } from '@/components/ui';
+import { Icon } from '@/components/icon';
+import { Badge, Card, EmptyState, Field, Note, inputClass, textareaClass } from '@/components/ui';
 import { InstructorStudentPhoto } from '@/components/instructor/student-photo';
 import { requireRole } from '@/lib/auth';
 import { LEVEL_LABELS, MEETING_STATUS_LABELS, listBookingsForInstructor } from '@/lib/data';
 import { getBookingProgress } from '@/lib/booking-progress';
-import { formatDateLong, formatDay, formatMinutes, formatMonthTag, formatTime } from '@/lib/format';
+import { formatDateLong, formatMinutes, formatTime } from '@/lib/format';
 import { getInstructorStudentAvatarUrls } from '@/lib/instructor-student-photos';
 import { KITE_CURRICULA, KITE_LEVEL_BADGES } from '@/lib/kite-steps';
 import { findCompletedInstructorMeeting, listCompletedInstructorMeetings } from '@/lib/instructor-completed-meetings';
@@ -23,6 +25,21 @@ import { getBookingLevelAssessments } from '@/lib/booking-level-assessments';
 
 
 export const metadata: Metadata = { title: 'Aulas do instrutor' };
+
+const WEEKDAY = new Intl.DateTimeFormat('pt-BR', { weekday: 'long', timeZone: 'America/Fortaleza' });
+const DAY_MONTH = new Intl.DateTimeFormat('pt-BR', { day: 'numeric', month: 'short', timeZone: 'America/Fortaleza' });
+const cearaKey = (ms: number) => new Date(ms).toLocaleDateString('en-CA', { timeZone: 'America/Fortaleza' });
+
+/** "Hoje · 4 de nov.", "Amanhã · 5 de nov.", "Quarta-feira · 12 de nov.", in Ceará time. */
+function lessonDayLabel(iso: string): string {
+  const key = cearaKey(Date.parse(iso));
+  const now = Date.now();
+  const relative = key === cearaKey(now) ? 'Hoje'
+    : key === cearaKey(now + 86_400_000) ? 'Amanhã'
+      : key === cearaKey(now - 86_400_000) ? 'Ontem' : null;
+  const weekday = WEEKDAY.format(new Date(iso));
+  return `${relative ?? weekday.charAt(0).toUpperCase() + weekday.slice(1)} · ${DAY_MONTH.format(new Date(iso))}`;
+}
 
 export default async function RunLessonPage({
   searchParams,
@@ -64,9 +81,24 @@ export default async function RunLessonPage({
 
   const tabs = [
     { id: 'proximas' as const, title: 'Próximas', count: groups.proximas.length },
-    { id: 'andamento' as const, title: 'Em andamento', count: groups.andamento.length },
+    { id: 'andamento' as const, title: 'Em aula', count: groups.andamento.length },
     { id: 'concluidas' as const, title: 'Concluídas', count: groups.concluidas.length },
   ];
+
+  // A day heading before the first lesson of each day, like a calendar app.
+  const dayHeadings = new Map<string, string>();
+  let previousDay = '';
+  for (const { meeting } of groups[activeTab]) {
+    const day = cearaDay(meeting.starts_at);
+    if (day !== previousDay) dayHeadings.set(meeting.id, lessonDayLabel(meeting.starts_at));
+    previousDay = day;
+  }
+  const nextLesson = groups.proximas[0];
+  const summary = groups.andamento.length
+    ? `${groups.andamento.length} ${groups.andamento.length === 1 ? 'aula em andamento' : 'aulas em andamento'}`
+    : nextLesson
+      ? `Próxima: ${(lessonDayLabel(nextLesson.meeting.starts_at).split(' · ')[0] ?? '').toLowerCase()} às ${formatTime(nextLesson.meeting.starts_at)}`
+      : 'Nenhuma aula marcada';
 
   // Pending make-up requests the students proposed for their paid balance.
   const balancePending = await listPendingBalanceRequestsForInstructor(viewer.id);
@@ -86,39 +118,40 @@ export default async function RunLessonPage({
 
   return (
     <>
-      <h1 className="text-[30px] font-bold leading-tight tracking-[-0.8px] text-ink md:text-[34px]">
-        Minhas aulas
-      </h1>
-      <p className="mt-2 text-[13px] leading-relaxed text-muted">
-        Organize seus encontros por status, escolha o aluno e toque para iniciar,
-        continuar o registro ou consultar uma aula finalizada.
-      </p>
-      <div className="mt-4 flex flex-wrap gap-x-4 gap-y-2 text-[13px]">
-        <Link href="/instrutor/hoje" className="font-semibold text-brand underline">Meu dia</Link>
-        <Link href="/instrutor/agenda" className="font-semibold text-brand underline">Agenda completa</Link>
-        <Link href="/instrutor/fila" className="font-semibold text-brand underline">Fila de solicitações</Link>
-      </div>
+      <header className="flex items-center justify-between gap-3">
+        <div className="min-w-0">
+          <h1 className="text-[24px] font-bold leading-tight tracking-[-0.5px] text-ink lg:text-[26px]">Minhas aulas</h1>
+          <p className="mt-0.5 truncate text-[14px] text-muted">{summary}</p>
+        </div>
+        <Link href="/instrutor/agenda" aria-label="Abrir agenda completa" title="Agenda completa"
+          className="press grid h-11 w-11 shrink-0 place-items-center rounded-full border border-line bg-surface text-brand shadow-card hover:bg-brand-wash">
+          <Icon name="calendar" className="!h-5 !w-5" />
+        </Link>
+      </header>
 
-      <div className="mt-6">
+      <div className="mt-4 empty:hidden">
         <InstructorBalanceRequests items={balanceItems} />
       </div>
 
       <nav aria-label="Filtrar aulas por status"
-        className="mt-6 grid grid-cols-3 gap-1 rounded-[18px] border border-line bg-surface p-1.5">
+        className="mt-4 grid grid-cols-3 gap-1 rounded-[12px] bg-backdrop p-1 lg:max-w-[480px]">
         {tabs.map((tab) => (
           <Link key={tab.id} href={'/instrutor/aula?aba=' + tab.id}
             aria-current={activeTab === tab.id ? 'page' : undefined}
-            className={'press flex min-h-14 flex-col items-center justify-center gap-0.5 rounded-[13px] px-1 py-2 text-center ' +
+            className={'press flex h-10 min-w-0 items-center justify-center gap-1.5 rounded-[9px] px-1 text-[12.5px] font-semibold sm:text-[13px] ' +
               (activeTab === tab.id
-                ? 'bg-brand text-on-brand shadow-button'
-                : 'text-label hover:bg-brand-tint')}>
-            <span className="text-[12px] font-bold leading-tight sm:text-[13px]">{tab.title}</span>
-            <span className="tabular text-[11px] opacity-80">{tab.count}</span>
+                ? 'bg-surface text-ink shadow-card'
+                : 'text-muted hover:text-ink')}>
+            <span className="truncate">{tab.title}</span>
+            <span className={'tabular grid h-5 min-w-5 shrink-0 place-items-center rounded-full px-1.5 text-[11px] font-bold ' +
+              (activeTab === tab.id ? 'bg-brand text-on-brand' : 'bg-surface/80 text-muted')}>
+              {tab.count}
+            </span>
           </Link>
         ))}
       </nav>
 
-      <div id="lista-aulas" className="mt-5 scroll-mt-5 grid gap-3">
+      <div id="lista-aulas" className="mt-4 scroll-mt-5 grid gap-2.5">
         {groups[activeTab].length === 0 ? (
           <EmptyState>
             {activeTab === 'proximas'
@@ -145,59 +178,70 @@ export default async function RunLessonPage({
               ? '/instrutor/aula?aba=' + activeTab + '#aula-' + meeting.id
               : '/instrutor/aula?aba=' + activeTab + '&aula=' + meeting.id + '#aula-' + meeting.id;
 
+            const primaryAction = !expanded && (meeting.status === 'in_progress' || actionLabel === 'Abrir e iniciar');
+            const dayHeading = dayHeadings.get(meeting.id);
+
             return (
-              <div key={meeting.id} id={`aula-${meeting.id}`}
+              <Fragment key={meeting.id}>
+              {dayHeading ? (
+                <h2 className="px-1 pt-2 text-[12px] font-semibold uppercase tracking-[.08em] text-subtle first:pt-0">{dayHeading}</h2>
+              ) : null}
+              <div id={`aula-${meeting.id}`}
                 className={'grid gap-2 scroll-mt-28 rounded-[24px] transition-colors ' +
                   (expanded
                     ? 'bg-brand-tint p-1.5 ring-2 ring-brand/70 shadow-search'
                     : '')}>
               <Link href={target}
                 aria-current={expanded ? 'page' : undefined}
-                className={'press block rounded-[20px] border p-4 shadow-card sm:p-5 ' +
-                  (expanded
-                    ? 'border-brand-focus bg-surface'
-                    : 'border-line bg-surface')}>
-                <div className="flex items-start gap-3">
-                  <DateTile day={formatDay(meeting.starts_at)}
-                    month={formatMonthTag(meeting.starts_at)} />
+                className={'press block overflow-hidden rounded-[16px] border bg-surface shadow-card transition-colors ' +
+                  (expanded ? 'border-brand-focus' : 'border-line hover:border-brand-focus')}>
+                <div className="flex items-stretch gap-3 p-3.5 sm:p-4">
+                  <div className="flex w-[58px] shrink-0 flex-col items-center justify-center rounded-[12px] bg-brand-tint py-2 text-center">
+                    <span className="tabular text-[16px] font-bold leading-none text-brand">{formatTime(meeting.starts_at)}</span>
+                    <span className="mt-1 text-[11px] font-medium text-muted">{formatMinutes(meeting.minutes)}</span>
+                  </div>
                   <div className="min-w-0 flex-1">
-                    <div className="flex flex-wrap items-center gap-1.5">
+                    <div className="flex items-start justify-between gap-2">
+                      <p className="min-w-0 truncate text-[16px] font-semibold leading-snug text-ink">{studentName}</p>
                       <Badge tone={statusTone}>{MEETING_STATUS_LABELS[meeting.status]}</Badge>
-                      {booking.is_test ? <Badge tone="warning">AULA TESTE</Badge> : null}
+                    </div>
+                    <p className="mt-0.5 flex min-w-0 items-center gap-1 text-[13px] text-muted">
+                      <Icon name="pin" className="!h-3.5 !w-3.5 shrink-0" />
+                      <span className="truncate">{booking.beach?.name ?? 'Praia'}</span>
+                    </p>
+                    <div className="mt-1.5 flex flex-wrap items-center gap-1.5">
+                      <span className="text-[11.5px] text-subtle">{booking.code}</span>
+                      {booking.is_test ? <Badge tone="warning">Aula teste</Badge> : null}
                       {expanded ? (
-                        <span className="rounded-full border border-brand-focus bg-brand-soft px-2 py-1 text-[10px] font-bold text-brand">
+                        <span className="rounded-full border border-brand-focus bg-brand-soft px-2 py-0.5 text-[10px] font-bold text-brand">
                           Detalhes abertos
                         </span>
                       ) : null}
                     </div>
-                    <p className="mt-2 break-words text-[15px] font-bold text-ink">
-                      {studentName}
-                    </p>
-                    <p className="mt-1 text-[12px] text-muted">
-                      {formatTime(meeting.starts_at)} · {formatMinutes(meeting.minutes)}
-                      {' · '}{booking.beach?.name ?? 'Praia'}
-                    </p>
                   </div>
                 </div>
-                <div className="mt-3 flex flex-wrap items-center justify-between gap-2">
-                  <p className="text-[12px] text-label">
-                    {booking.code} · Encontro {meeting.position} de {booking.booking_meetings.length}
-                  </p>
-                  <span className="text-[12px] font-bold text-brand">{actionLabel} ›</span>
-                </div>
-                {progress.total > 1 ? (
-                  <div className="mt-3 border-t border-line pt-3">
-                    <div className="flex items-center justify-between gap-2 text-[11px] text-muted">
-                      <span>Progresso da reserva</span>
-                      <span className="tabular">{progress.completed}/{progress.total} concluídos</span>
-                    </div>
-                    <div className="mt-2 flex h-1.5 w-full overflow-hidden rounded-full bg-track"
-                      role="progressbar" aria-label="Encontros concluídos"
-                      aria-valuemin={0} aria-valuemax={100} aria-valuenow={progress.percent}>
-                      <span className="h-full bg-brand" style={{ width: progress.percent + '%' }} />
-                    </div>
+                <div className="flex items-center gap-3 border-t border-line bg-sand/60 px-3.5 py-2.5 sm:px-4">
+                  <div className="min-w-0 flex-1">
+                    <p className="text-[12px] font-medium text-label">
+                      Encontro {meeting.position} de {booking.booking_meetings.length}
+                      {progress.total > 1 ? <span className="tabular font-normal text-muted"> · {progress.completed}/{progress.total} concluídos</span> : null}
+                    </p>
+                    {progress.total > 1 ? (
+                      <div className="mt-1.5 flex max-w-[180px] gap-1" role="progressbar" aria-label="Encontros concluídos"
+                        aria-valuemin={0} aria-valuemax={100} aria-valuenow={progress.percent}
+                        aria-valuetext={`${progress.completed} de ${progress.total} encontros concluídos`}>
+                        {Array.from({ length: progress.total }, (_, step) => (
+                          <span key={step} className={'h-1.5 flex-1 rounded-full ' + (step < progress.completed ? 'bg-brand' : 'bg-track')} />
+                        ))}
+                      </div>
+                    ) : null}
                   </div>
-                ) : null}
+                  <span className={'flex shrink-0 items-center gap-1 rounded-full text-[13px] font-semibold ' +
+                    (primaryAction ? 'bg-brand px-3.5 py-2 text-on-brand shadow-button' : 'text-brand')}>
+                    {actionLabel}
+                    <Icon name={expanded ? 'chevronDown' : 'chevron'} className={'!h-4 !w-4 ' + (expanded ? 'rotate-180' : '')} />
+                  </span>
+                </div>
               </Link>
               {expanded && activeTab !== 'concluidas' ? (
                 <>
@@ -278,7 +322,7 @@ export default async function RunLessonPage({
               {meeting.status === 'in_progress' ? (
                 <Note className="mt-4" title="Aula iniciada">
                   A presença já foi confirmada. Preencha os minutos e etapas quando terminar;
-                  até registrar a conclusão, este encontro continuará Em andamento.
+                  até registrar a conclusão, este encontro continuará na aba Em aula.
                 </Note>
               ) : null}
             <div className="mt-5 border-t border-line pt-5">
@@ -348,7 +392,7 @@ export default async function RunLessonPage({
               )}
             </div>
               <Link href={'/instrutor/aula?aba=' + activeTab + '#aula-' + meeting.id}
-                className="mt-4 inline-block text-[13px] font-bold text-brand underline">
+                className="press mt-4 inline-flex min-h-10 items-center gap-1.5 rounded-full border border-line-ghost bg-surface px-4 text-[13px] font-semibold text-brand">
                 Fechar detalhes
               </Link>
             </div>
@@ -461,7 +505,7 @@ export default async function RunLessonPage({
                     </div>
                   ) : null}
                   <Link href={'/instrutor/aula?aba=concluidas#aula-' + meeting.id}
-                    className="mt-5 inline-block text-[13px] font-bold text-brand underline">
+                    className="press mt-5 inline-flex min-h-10 items-center gap-1.5 rounded-full border border-line-ghost bg-surface px-4 text-[13px] font-semibold text-brand">
                     Fechar detalhes
                   </Link>
                 </section>
@@ -472,23 +516,23 @@ export default async function RunLessonPage({
                 </>
               ) : null}
               </div>
+              </Fragment>
             );
           })
         )}
       </div>
 
       {activeTab === 'proximas' ? (
-        <p className="mt-4 text-[12px] leading-relaxed text-muted">
-          A aula só pode ser iniciada no dia permitido, com o código de presença do aluno
-          e após os encontros anteriores da mesma reserva. Depois de iniciada,
-          ela passa para a aba Em andamento.
-        </p>
+        <Note className="mt-4">
+          Inicie no dia da aula com o código de presença do aluno, seguindo a ordem dos encontros.
+          Depois de iniciada, ela vai para a aba Em aula.
+        </Note>
       ) : null}
       {activeTab === 'andamento' ? (
-        <p className="mt-4 text-[12px] leading-relaxed text-muted">
-          Escolha a aula para registrar os minutos efetivamente realizados e as etapas praticadas.
-          Se ainda não terminou, deixe-a em andamento para continuar mais tarde.
-        </p>
+        <Note className="mt-4">
+          Toque na aula para registrar os minutos realizados e as etapas praticadas.
+          Se ainda não terminou, ela continua aqui.
+        </Note>
       ) : null}
 
       {activeTab === 'concluidas' ? (
@@ -498,7 +542,7 @@ export default async function RunLessonPage({
           ) : null}
         {reviews.ready && completed.length ? (
           <section className="mt-4 grid gap-3">
-            <h2 className="text-[20px] font-bold text-ink">Avaliações finais pendentes · {completed.length}</h2>
+            <h2 className="text-[17px] font-semibold text-ink">Avaliações finais pendentes · {completed.length}</h2>
             <p className="text-[12px] text-muted">
               A avaliação aparece quando todos os encontros da reserva terminarem.
               Depois de confirmar, ela sai das pendências e fica no histórico.
