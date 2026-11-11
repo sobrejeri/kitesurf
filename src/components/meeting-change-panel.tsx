@@ -196,7 +196,8 @@ export function MeetingChangePanel({
           </div>
         </details>
       ) : (
-        <p className="rounded-xl border border-line bg-surface px-3 py-2.5 text-[12px] text-muted">
+        <p className="vento-change-closed flex items-center gap-1.5 text-[12px] text-muted">
+          <Icon name="clock" className="!h-3.5 !w-3.5 shrink-0" />
           {viewerRole==='instructor'
             ? 'Prazo de alteração encerrado. Consulte a administração em caso de imprevisto.'
             : 'O prazo para solicitar alteração já terminou.'}

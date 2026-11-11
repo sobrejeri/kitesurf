@@ -5,33 +5,30 @@
   .vento-student-redesign .vento-pc-secondary-page{
     width:100%;max-width:1530px;margin:0 auto;color:#f2fbff;
   }
+  /* Secondary screens open with a compact app header: back button, title and
+     one line of context. Photographic banners stay on the four main screens. */
   .vento-student-redesign .vento-pc-secondary-desktop-header{
-    position:relative;display:flex;isolation:isolate;align-items:center;overflow:hidden;
-    min-height:225px;width:100%;border:1px solid #21889b;border-radius:24px;
-    background:#003b56;box-shadow:0 16px 38px #000e1c52;
+    position:relative;display:flex;align-items:center;gap:18px;
+    width:100%;padding:4px 0 20px;border-bottom:1px solid #145a6e;
   }
-  .vento-pc-detail-hero>img{position:absolute;inset:0;width:100%;height:100%;
-    object-fit:cover;object-position:80% 48%;z-index:-2}
-  .vento-pc-detail-hero-shade{position:absolute;inset:0;z-index:-1;
-    background:linear-gradient(90deg,#002237fa 4%,#00334ce9 37%,#004256a1 68%,#01314836 100%)}
-  .vento-pc-detail-hero-content{max-width:780px;padding:28px 35px}
-  .vento-pc-detail-eyebrow{display:flex;align-items:center;gap:10px;
-    color:#baff08;font-size:12px;font-weight:850;letter-spacing:.15em;text-transform:uppercase}
-  .vento-pc-detail-eyebrow svg{width:21px;height:21px}
-  .vento-pc-detail-hero h1{margin:10px 0 8px;color:#fff;
-    font-family:var(--font-space-grotesk),system-ui,sans-serif;font-size:clamp(31px,3.2vw,51px);
-    letter-spacing:-.04em;font-weight:900;line-height:1.05}
-  .vento-pc-detail-hero p{max-width:660px;margin:0;font-size:clamp(15px,1.15vw,18px);
-    color:#d7edf5;line-height:1.48}
-  .vento-pc-detail-hero-actions{display:flex;gap:12px;align-items:center;margin-top:19px}
+  .vento-pc-detail-hero-content{min-width:0;flex:1}
+  .vento-pc-detail-eyebrow{display:flex;align-items:center;gap:8px;
+    color:#baff08;font-size:11px;font-weight:850;letter-spacing:.14em;text-transform:uppercase}
+  .vento-pc-detail-eyebrow svg{width:17px;height:17px}
+  .vento-pc-detail-hero h1{margin:6px 0 4px;color:#fff;
+    font-family:var(--font-space-grotesk),system-ui,sans-serif;font-size:clamp(26px,2.1vw,32px);
+    letter-spacing:-.03em;font-weight:800;line-height:1.1}
+  .vento-pc-detail-hero p{max-width:720px;margin:0;font-size:15px;color:#b9d8e4;line-height:1.45}
+  .vento-pc-detail-hero-actions{display:flex;gap:12px;align-items:center;flex-shrink:0}
   .vento-pc-secondary-back,.vento-pc-secondary-action{
     display:inline-flex;align-items:center;justify-content:center;gap:9px;min-height:40px;
     border:1px solid #6ab0c0;border-radius:999px;padding:8px 16px;background:#00334bbb;
     color:#fff!important;text-decoration:none;font-size:13px;font-weight:800;
   }
+  .vento-pc-secondary-back{flex-shrink:0;width:46px;height:46px;padding:0;align-self:center}
   .vento-pc-secondary-action{background:#baff08;border-color:#baff08;color:#0b2e3e!important}
   .vento-pc-secondary-back:hover,.vento-pc-secondary-action:hover{filter:brightness(1.15)}
-  .vento-pc-secondary-back svg,.vento-pc-secondary-action svg{width:17px;height:17px}
+  .vento-pc-secondary-back svg,.vento-pc-secondary-action svg{width:19px;height:19px}
   .vento-student-redesign .vento-pc-secondary-page .vento-pc-original-hero{display:none!important}
   .vento-student-redesign .vento-pc-secondary-main{min-width:0;margin-top:23px}
   .vento-student-redesign .vento-pc-secondary-main>header:first-child{display:none}
@@ -238,31 +235,26 @@
     --pc-detail-muted:#bcdbe6;
   }
   .vento-student-redesign .vento-pc-secondary-desktop-header {
-    min-height:clamp(205px,17vw,252px);
-    border-color:#2b91a4;
-    box-shadow:0 18px 45px rgba(0,16,34,.35),inset 0 0 0 1px rgba(255,255,255,.04);
+    min-height:0;box-shadow:none;
   }
+  /* A short brand stroke under the compact page title. */
   .vento-student-redesign .vento-pc-detail-hero::after {
-    content:"";position:absolute;z-index:-1;inset:auto 0 0;
-    height:4px;background:linear-gradient(90deg,#baff08 0%,#13cfdd 38%,transparent 86%);
+    content:"";position:absolute;inset:auto auto -1px 0;
+    width:min(240px,40%);height:2px;background:linear-gradient(90deg,#baff08 0%,#13cfdd 70%,transparent 100%);
   }
-  .vento-student-redesign .vento-pc-detail-hero--coast > img {object-position:center 55%}
-  .vento-student-redesign .vento-pc-detail-hero--lesson > img {object-position:67% 48%}
   .vento-student-redesign .vento-pc-detail-hero-content {
-    width:min(100%,820px);
-    padding:clamp(25px,2.5vw,41px);
+    width:auto;padding:0;
   }
   .vento-student-redesign .vento-pc-detail-eyebrow {
-    width:fit-content;min-height:30px;padding:6px 11px 6px 8px;
-    border:1px solid rgba(186,255,8,.35);border-radius:99px;
-    background:rgba(0,37,55,.65);font-size:11px;letter-spacing:.13em;
+    width:fit-content;min-height:0;padding:0;border:0;background:none;
+    font-size:11px;letter-spacing:.13em;
   }
   .vento-student-redesign .vento-pc-detail-hero h1 {
-    max-width:690px;margin:12px 0 7px;
-    font-size:clamp(30px,3vw,45px);letter-spacing:-.035em;
+    max-width:none;margin:6px 0 4px;
+    font-size:clamp(26px,2.1vw,32px);letter-spacing:-.03em;
   }
   .vento-student-redesign .vento-pc-detail-hero p {
-    max-width:590px;line-height:1.55;font-size:clamp(14px,1.1vw,16px);
+    max-width:720px;line-height:1.45;font-size:15px;
   }
   .vento-student-redesign .vento-pc-secondary-main {margin-top:22px}
   .vento-student-redesign .vento-pc-secondary-main .rounded-card {
@@ -414,9 +406,61 @@
     color:#006e88!important;
   }
 }
+/* App-style lists and chat (2026-11-11). The light reading canvas above
+   still frames them; these rules only fit the new row and chat markup. */
+@media(min-width:1024px){
+  .vento-student-redesign .vento-pc-notices-screen .vento-pc-secondary-main .vento-inbox > li{
+    padding:14px 18px;border-radius:16px;
+  }
+  .vento-student-redesign .vento-pc-notices-screen .vento-pc-secondary-main .vento-inbox > li.is-unread{
+    background:#effbff;border-color:#9fd8e6;
+  }
+  .vento-student-redesign .vento-pc-notices-screen .vento-pc-secondary-main .vento-inbox .vento-inbox-icon{
+    background:#e3f5fb;color:#007f99;
+  }
+  .vento-student-redesign .vento-pc-notices-screen .vento-pc-secondary-main .vento-inbox .vento-inbox-dot{
+    border-color:#fff;background:#00a5bd;
+  }
+  .vento-student-redesign .vento-pc-notices-screen .vento-pc-secondary-main .vento-inbox .vento-inbox-title{
+    color:#0b2d42!important;font-size:16px;
+  }
+  .vento-student-redesign .vento-pc-notices-screen .vento-pc-secondary-main .vento-inbox button{
+    min-height:34px;background:#fff;border-color:#9fd3df;color:#006e89;
+  }
+  .vento-student-redesign .vento-pc-conversations-screen .vento-pc-secondary-main .vento-thread-list > li{
+    padding:0;
+  }
+  .vento-student-redesign .vento-pc-conversations-screen .vento-pc-secondary-main .vento-thread-list > li > a{
+    padding:14px 18px;border-radius:inherit;
+  }
+  .vento-student-redesign .vento-pc-conversations-screen .vento-pc-secondary-main .vento-thread-list :is(time,span span:last-child){
+    font-size:13px!important;
+  }
+  .vento-student-redesign .vento-pc-conversations-screen .vento-pc-secondary-main .vento-thread-list .text-label{
+    color:#2f5266!important;
+  }
+  .vento-student-redesign .vento-pc-chat-screen .vento-pc-secondary-main > .vento-chat{
+    padding:0;min-height:0;
+  }
+  .vento-student-redesign .vento-pc-chat-screen .vento-pc-secondary-main .vento-chat-head{
+    padding:16px 22px;border-color:#1d6b80;
+  }
+  .vento-student-redesign .vento-pc-chat-screen .vento-pc-secondary-main .vento-chat-log{
+    padding:18px 22px;background:#022c41;
+  }
+  .vento-student-redesign .vento-pc-chat-screen .vento-pc-secondary-main .vento-chat-log ol{gap:8px}
+  .vento-student-redesign .vento-pc-chat-screen .vento-pc-secondary-main .vento-chat-composer{
+    padding:14px 22px;background:#03354b;
+  }
+  .vento-student-redesign .vento-pc-chat-screen .vento-pc-secondary-main .vento-chat-composer textarea{
+    min-height:48px;resize:none;
+  }
+  .vento-student-redesign .vento-pc-central-screen .vento-pc-secondary-main > ul .vento-hub-icon{
+    background:#0b5a70;color:#baff08;
+  }
+}
 @media (min-width:1024px) and (max-width:1190px) {
-  .vento-student-redesign .vento-pc-detail-hero-content {padding:22px 25px}
-  .vento-student-redesign .vento-pc-detail-hero h1 {font-size:32px}
+  .vento-student-redesign .vento-pc-detail-hero h1 {font-size:26px}
   .vento-student-redesign .vento-pc-conversations-screen .vento-pc-secondary-main > .rounded-card,
   .vento-student-redesign .vento-pc-notices-screen .vento-pc-secondary-main > .rounded-card {padding:18px}
   .vento-student-redesign .vento-pc-chat-screen .vento-pc-secondary-main ol li > div {

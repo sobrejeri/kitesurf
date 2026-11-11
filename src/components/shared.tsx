@@ -16,6 +16,8 @@ export interface HubItem {
   title: string;
   body: string;
   href: string;
+  /** Shown in a tile before the title, like a settings list in a phone app. */
+  icon?: IconName;
 }
 
 export function Hub({ title, items, notice, bare = false }: { title: string; items: readonly HubItem[]; notice: string; bare?: boolean }) {
@@ -27,24 +29,32 @@ export function Hub({ title, items, notice, bare = false }: { title: string; ite
         lead="Tudo organizado por etapa, sem perder os dados já preenchidos."
       />}
       {/* A list of rows on phones, a grid of cards from md up. */}
-      <ul className="overflow-hidden rounded-card border border-line bg-surface shadow-card md:grid md:grid-cols-2 md:gap-4 md:overflow-visible md:border-0 md:bg-transparent md:shadow-none">
+      <ul className="vento-hub overflow-hidden rounded-card border border-line bg-surface shadow-card md:grid md:grid-cols-2 md:gap-4 md:overflow-visible md:border-0 md:bg-transparent md:shadow-none">
         {items.map((item) => (
           <li key={item.href} className="border-b border-line last:border-b-0 md:border-0">
             <Link
               href={item.href}
-              className="flex h-full items-center gap-3 px-4 py-4 active:bg-sand md:block md:rounded-card md:border md:border-line md:bg-surface md:p-6 md:shadow-card md:transition md:hover:border-brand-focus"
+              className="flex h-full items-center gap-3 px-4 py-3.5 active:bg-sand md:block md:rounded-card md:border md:border-line md:bg-surface md:p-6 md:shadow-card md:transition md:hover:border-brand-focus"
             >
+              {item.icon ? (
+                <span className="vento-hub-icon grid h-10 w-10 shrink-0 place-items-center rounded-[12px] bg-brand-soft text-brand md:mb-4 md:h-11 md:w-11" aria-hidden="true">
+                  <Icon name={item.icon} className="!h-5 !w-5" />
+                </span>
+              ) : null}
               <span className="min-w-0 flex-1">
-                <h2 className="text-[15px] md:text-[16px]">{item.title}</h2>
-                <p className="mt-0.5 text-[12px] text-muted md:mt-2 md:text-[13px]">{item.body}</p>
+                <h2 className="text-[15px] font-semibold leading-snug md:text-[16px]">{item.title}</h2>
+                <p className="mt-0.5 text-[12.5px] leading-snug text-muted md:mt-2 md:text-[13px]">{item.body}</p>
               </span>
-              <Icon name="chevron" className="!h-4 !w-4 text-faint md:hidden" />
+              <Icon name="chevron" className="!h-4 !w-4 shrink-0 text-faint md:hidden" />
               <span className="mt-4 hidden text-[12px] font-[550] text-brand md:inline-block">Abrir →</span>
             </Link>
           </li>
         ))}
       </ul>
-      <Note className="mt-6">{notice}</Note>
+      <p className="mt-4 flex items-start gap-2 px-1 text-[12px] leading-snug text-muted">
+        <Icon name="info" className="mt-px !h-4 !w-4 shrink-0" />
+        {notice}
+      </p>
     </>
   );
 }

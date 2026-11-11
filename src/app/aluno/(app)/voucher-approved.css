@@ -70,6 +70,10 @@
 .vento-voucher-reminders p{margin-top:6px;font-size:11px;line-height:1.45;color:#385a70}
 .vento-voucher nav {display:grid;grid-template-columns:1fr 1fr;gap:8px}
 .vento-voucher nav a {white-space:normal}
+/* The discreet issue link sits on its own line under the buttons; a lone
+   chat button takes the full width instead of sharing it with the link. */
+.vento-voucher nav a[href="/aluno/ocorrencias"] {grid-column:1 / -1;justify-self:center}
+.vento-voucher nav > a:first-child:nth-last-child(2) {grid-column:1 / -1}
 @media(max-width:420px) {
  .vento-voucher-banner{min-height:112px}
  .vento-voucher-banner-copy{max-width:66%;padding:22px 12px}

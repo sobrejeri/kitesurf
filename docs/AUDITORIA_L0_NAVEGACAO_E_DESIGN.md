@@ -88,3 +88,16 @@ Os shells **Instrutor/Admin/Pousada** exigem uma sessão da role apropriada; o s
 - [x] **PWA**: novos ícones 192/512 (marca oficial do kite sobre o marinho, com o papel embaixo), manifestos com nome VentoKite, `theme_color` igual à app bar, atalhos de tela inicial e `viewport.themeColor` correspondente. Login, recuperação de senha, erro, aviso de nova versão e chat flutuante do instrutor seguem o mesmo azul.
 - [x] Teste `scripts/test-staff-workspace-redesign.mjs` no CI: todo link do menu tem página, toda página de primeiro nível é alcançável pelo menu ou pela central, quatro abas por área, sem laranja antigo nas telas da equipe, manifestos e tamanhos reais dos ícones.
 - [ ] Conferido com capturas desktop 1440px e iPhone 393px usando **dados fictícios em um ambiente local**; ainda falta conferir com login real de instrutor/admin no Render e instalar o PWA de novo no iPhone (o ícone antigo só é trocado ao reinstalar).
+
+## Aluno com "cara de app" — 11/11/2026
+
+- [x] **Telas secundárias no celular** (Central, Regras, Avisos, Conversas, Conversa, Imprevistos, Solicitação) abrem com título compacto (`StudentPageTitle`): nome da tela e uma linha de status. Saem os cabeçalhos de site com sobretítulo, título grande e parágrafo, e os textos de protótipo ("Fluxos da plataforma", "Push externo ainda não está conectado").
+- [x] **Avisos** viram caixa de entrada: a linha inteira abre o aviso, ícone por tipo, ponto de não lido, horário relativo ("Hoje, 08:00") e "Marcar como lida" discreto. Compartilhado com Instrutor e Admin.
+- [x] **Conversas** viram lista de mensageiro (foto do instrutor, última mensagem e horário). Corrigido: mostrava "Reserva c0000000" (parte do id interno) em vez do código da reserva.
+- [x] **Chat** com cabeçalho do contato, separadores por dia e caixa de mensagem com botão "Enviar". Corrigido: as próprias mensagens tinham texto branco sobre o verde, quase ilegível; agora usam `text-on-brand` em todos os temas.
+- [x] **Reserva**: botão "Abrir no mapa", aviso de prazo encerrado discreto, link de imprevistos (mantido como texto, conforme decisão anterior) numa linha só, e saldo de aprendizado na coluna lateral — no PC a metade direita deixou de ficar vazia e, na reserva pendente, "Confirmar aula sem cobrança" vem logo após o voucher no celular.
+- [x] **Imprevistos (Protege)**: orientações longas dobradas em seções que abrem com um toque (texto jurídico inalterado) e paginação em botões.
+- [x] **Início**: "Em acompanhamento" não é mais cortado no meio da palavra. **Minhas aulas**: subtítulo mostra a próxima aula ("Próxima: amanhã às 09:00").
+- [x] **PC**: telas secundárias com cabeçalho compacto (voltar, título e uma linha), sem faixa de foto; as quatro telas principais mantêm os banners aprovados.
+- [x] Teste `scripts/test-student-app-screens.mjs` no CI. Conferido com capturas de celular (393px) e PC (1440px) das **páginas reais**, servidas por um backend Supabase fictício local com dados inventados (sem conta nem banco reais). Também conferidas as telas reais do Instrutor que compartilham avisos, chat e Protege.
+- [ ] Falta conferir com login real no Render (aluno e instrutor).

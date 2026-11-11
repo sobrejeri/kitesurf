@@ -29,5 +29,6 @@ export async function sendBookingMessage(_previous: ActionState, form: FormData)
   }
   revalidatePath('/aluno/atendimento/' + parsed.data.bookingId);
   revalidatePath('/instrutor/atendimento/' + parsed.data.bookingId);
-  return { ok: 'Mensagem enviada. A conversa atualiza automaticamente.' };
+  // The new bubble appearing in the conversation is the confirmation.
+  return {};
 }
