@@ -5,6 +5,21 @@ import { readFileSync } from 'node:fs';
 // public site. Behind Render's proxy, `request.url` in a route handler is the
 // internal server address (https://localhost:10000), so redirects built from it
 // sent the browser to a page that does not open (found live on 11/11/2026).
+// Production must never silently generate localhost links if Render's
+// NEXT_PUBLIC_SITE_URL was omitted. Keep localhost only in development.
+const originalSiteUrl = process.env.NEXT_PUBLIC_SITE_URL;
+const originalNodeEnv = process.env.NODE_ENV;
+delete process.env.NEXT_PUBLIC_SITE_URL;
+process.env.NODE_ENV = 'production';
+const productionEnv = await import('../src/lib/env.ts?test-production-fallback');
+assert.equal(productionEnv.SITE_URL, 'https://vento-kitesurf.onrender.com');
+process.env.NODE_ENV = 'development';
+const developmentEnv = await import('../src/lib/env.ts?test-development-fallback');
+assert.equal(developmentEnv.SITE_URL, 'http://localhost:3000');
+if (originalNodeEnv === undefined) delete process.env.NODE_ENV;
+else process.env.NODE_ENV = originalNodeEnv;
+if (originalSiteUrl === undefined) delete process.env.NEXT_PUBLIC_SITE_URL;
+else process.env.NEXT_PUBLIC_SITE_URL = originalSiteUrl;
 process.env.NEXT_PUBLIC_SITE_URL = 'https://vento-kitesurf.onrender.com';
 const { siteUrl } = await import('../src/lib/env.ts');
 
