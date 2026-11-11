@@ -161,3 +161,10 @@ O projeto possui um **avaliador independente preparado, não necessariamente con
 - CI do commit `3bbdeb6` **success**, run `42943950877`; Claude QA **skipped**, run `42943950922`, portanto NÃO houve revisão independente. O teste SQL foi reforçado no commit `d047af6` para autenticar o usuário sem pousada antes da tentativa negativa. **Aguardar CI do HEAD `d047af6` antes do merge.**
 - Render último live consultado `8b20f003b74d38d4ffa9598a2b8911e14702d09d`, deploy `dep-dbpsoqi6ffts739t0q50` (redesign de workspace Instrutor/Admin em paralelo). Não atribuir a PR #147 a esse deploy.
 - Próxima etapa: CI do `d047af6`, corrigir se falhar, confirmar Claude QA skipped/ativo, merge apenas com success. Reconciliar ledger real antes de considerar aplicar migration 45; sem alterações em pagamentos ou checkout. Em seguida retomar primeira pendência P0 independente, com E2E autenticado ainda não homologado. Protege 3B fechado, 0/18 homologadas integralmente.
+
+## Handoff L0 — 11/11/2026, execução seguinte
+
+- PR #147 integrada após CI success do HEAD `4efc983bd44beae2924efe679cce02191542f758` (Actions 42944467576); squash `012a1fbfdb6b4b961f2421a33657368710cf9dbc`. Claude QA **SKIPPED** (42944467586), não revisou. Migration 45 versionada, **NÃO aplicada** ao Supabase; ledger real apenas 39–42. Migration 43/44 pendentes: reconciliar ordem e dependências antes de qualquer DDL.
+- Render último deploy live consultado: `bdcc0a4f844824ca6a19a57f979c7ef019e5a86b` (02:18 UTC), **não** é o squash #147; confirmar novo deploy antes de afirmar publicação.
+- PR #148 adiciona testes transacionais negativos de SELECT/UPDATE entre usuários para dados PIX de pousada; aguardar CI e Claude QA, integrar somente após success. Nenhum pagamento, reserva ou dado real alterado.
+- Próxima ação: conferir CI da PR #148 e SHA live Render; se aprovado integrar; depois priorizar correções P0 de autorização/Storage e testes por papel. E2E autenticado e Safari/PWA continuam pendentes. Protege 3B OFF e checkout OFF. 0/18 frentes integralmente homologadas.
