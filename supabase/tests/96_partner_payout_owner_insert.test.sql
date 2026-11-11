@@ -24,8 +24,7 @@ BEGIN
     (owner_uid,'partner145@example.invalid'),
     (stranger_uid,'stranger145@example.invalid');
 
-  INSERT INTO public.profiles(id,role)
-  VALUES (owner_uid,'partner'), (stranger_uid,'student');
+  -- auth.users creation triggers profile provisioning in the test schema.
 
   INSERT INTO public.partners(id,owner_id,name,code,status)
   VALUES (partner_uid,owner_uid,'Partner L0 fixture','L0-P145','pending');
