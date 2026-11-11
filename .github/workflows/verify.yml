@@ -108,19 +108,12 @@ jobs:
       - name: Check PostgREST relationship ambiguity
         run: node scripts/verify-postgrest-relationships.mjs
       - run: pnpm build
-      - name: Install isolated PostgreSQL tooling
-        # Ubuntu package mirrors can have transient DNS failures. Retry only the
-        # tooling installation; the PostgreSQL SQL assertions must still pass.
-        run: |
-          for attempt in 1 2 3; do
-            if sudo apt-get update && sudo apt-get install -y postgresql; then
-              exit 0
-            fi
-            if [ "$attempt" -eq 3 ]; then
-              echo "PostgreSQL installation failed after 3 attempts" >&2
-              exit 1
-            fi
-            sleep 15
-          done
       - name: Run isolated database migrations and SQL assertions
-        run: bash scripts/test-db.sh
+        # Avoid Ubuntu apt mirrors: their DNS can fail on hosted runners.
+        # The official PostgreSQL image has all required server/client tools.
+        # No connection to Supabase or production data is made.
+        run: |
+          docker run --rm --user postgres \
+            -v "$PWD:/workspace:ro" -w /workspace \
+            -e LC_ALL=C.UTF-8 postgres:16 \
+            bash scripts/test-db.sh
