@@ -25,22 +25,22 @@ export default async function CheckInPage({searchParams}:{
   const meeting=booking.booking_meetings.find(m=>m.id===meetingId);
   if(!meeting) notFound();
   const eligible=booking.status==='confirmed' && meeting.status==='scheduled';
-  return <main className="mx-auto flex min-h-dvh max-w-lg flex-col justify-center bg-[#00283e] px-5 py-10 text-[#f0fbff]">
-    <section className="rounded-[24px] border border-[#18cbd9] bg-[#04364e] p-6 shadow-2xl">
-      <p className="text-xs font-extrabold uppercase tracking-[.2em] text-[#baff06]">VentoKite • Presença</p>
-      <h1 className="mt-3 text-2xl font-bold">Iniciar encontro</h1>
-      <p className="mt-3 text-sm text-[#c8e3ee]">Reserva {booking.code}</p>
-      <p className="mt-1 text-base font-semibold">{formatDateLong(meeting.starts_at)} às {formatTime(meeting.starts_at)} • {formatMinutes(meeting.minutes)}</p>
-      <p className="mt-1 text-sm">{booking.beach?.name ?? 'Local a confirmar'}</p>
+  return <div className="mx-auto flex min-h-[60dvh] max-w-lg flex-col justify-center py-6">
+    <section className="rounded-[18px] border border-line bg-surface p-6 shadow-search">
+      <p className="text-[11px] font-bold uppercase tracking-[.14em] text-brand">VentoKite • Presença</p>
+      <h1 className="mt-3 text-2xl font-bold text-ink">Iniciar encontro</h1>
+      <p className="mt-3 text-sm text-muted">Reserva {booking.code}</p>
+      <p className="mt-1 text-base font-semibold text-ink">{formatDateLong(meeting.starts_at)} às {formatTime(meeting.starts_at)} • {formatMinutes(meeting.minutes)}</p>
+      <p className="mt-1 text-sm text-label">{booking.beach?.name ?? 'Local a confirmar'}</p>
       {eligible ? <ActionForm action={startMeeting} submitLabel="Confirmar início da aula" className="mt-6">
         <input type="hidden" name="meetingId" value={meetingId}/>
         <input type="hidden" name="presenceCode" value={presenceCode}/>
-      </ActionForm> : <p role="status" className="mt-5 rounded-xl border border-[#c6a365] p-3 text-sm">
+      </ActionForm> : <p role="status" className="mt-5 rounded-xl border border-warm-line bg-warm-note p-3 text-sm text-warning">
         Este encontro não está disponível para iniciar. Consulte a situação da aula.
       </p>}
-      <Link href="/instrutor/aula" className="mt-5 inline-flex min-h-11 items-center text-sm font-semibold text-[#baff06] underline">
+      <Link href="/instrutor/aula" className="mt-5 inline-flex min-h-11 items-center text-sm font-semibold text-brand underline">
         Voltar para minhas aulas
       </Link>
     </section>
-  </main>;
+  </div>;
 }

@@ -27,7 +27,7 @@ export default async function TransportPage() {
     <>
       <AdminTitle title="Transporte de apoio" subtitle="Veículo do instrutor, cobrado por hora de aula." />
       <div className="grid grid-cols-2 gap-3 lg:grid-cols-3">
-        <Metric label="Tarifa atual" value={rate > 0 ? `${formatMoney(rate)}/h` : 'Desligado'} hint="Muda em Regras da operação" icon="car" tone="orange" />
+        <Metric label="Tarifa atual" value={rate > 0 ? `${formatMoney(rate)}/h` : 'Desligado'} hint="Muda em Regras da operação" icon="car" tone="slate" />
         <Metric label="Instrutores com veículo" value={String(withVehicle.length)} hint="Marcado no perfil" icon="users" tone="blue" />
         <div className="col-span-2 lg:col-span-1">
           <Metric label="Reservas com transporte" value={String(withTransport.length)} hint="Não canceladas" icon="book" tone="green" />

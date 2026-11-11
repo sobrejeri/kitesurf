@@ -16,7 +16,7 @@ export function InstructorStudentPhoto({
     <span
       role="img"
       aria-label={'Foto do aluno ' + name}
-      className="relative inline-grid shrink-0 place-items-center overflow-hidden rounded-full border-2 border-[#fd8b31] bg-[#1a3048]"
+      className="relative inline-grid shrink-0 place-items-center overflow-hidden rounded-full border-2 border-brand-focus bg-sand"
       style={{ height: size, width: size }}
     >
       <Avatar initials={initials(name)} tone="a3" size={size - 4} />

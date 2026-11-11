@@ -618,3 +618,14 @@
   .borderTracePath {animation:none;stroke-dashoffset:0;}
   .dockOpen .panelSucking {animation:none;opacity:0;}
 }
+
+
+/* Instrutor: the staff workspace's navy and blue (Vento Pro), in place of the
+   older teal. The student dock keeps its own Modelo 03 colours above. */
+.dock:not(.studentDock) button:focus-visible,.dock:not(.studentDock) a:focus-visible,.dock:not(.studentDock) textarea:focus-visible{outline-color:#2563eb}
+.dock:not(.studentDock) .head{background:#0b1220}
+.dock:not(.studentDock) .head small{color:#aab8cf}
+.dock:not(.studentDock) .launcher,.dock:not(.studentDock) .messageIcon,.dock:not(.studentDock) .compose button,.dock:not(.studentDock) .locationConfirm button{background:#2563eb;color:#fff}
+.dock:not(.studentDock) .log .mine>span{background:#dbe7ff}
+.dock:not(.studentDock) .thread:hover{background:#f1f6ff}
+.dock:not(.studentDock) .older,.dock:not(.studentDock) .context a{color:#1d4fd7}

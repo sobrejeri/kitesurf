@@ -25,11 +25,11 @@ export function BookingProgress({
     <div className="mt-4 border-t border-line pt-3.5">
       <div className="flex items-center justify-between gap-3">
         <p className="text-[12px] font-semibold text-label">Progresso das aulas</p>
-        <span className="tabular shrink-0 text-[13px] font-extrabold text-brand">{percent}%</span>
+        <span className="tabular shrink-0 text-[13px] font-bold text-brand">{percent}%</span>
       </div>
 
       <div
-        className="mt-2 flex h-2.5 w-full overflow-hidden rounded-full bg-[#27344c]"
+        className="mt-2 flex h-2 w-full overflow-hidden rounded-full bg-track"
         role="progressbar"
         aria-label="Encontros concluídos"
         aria-valuemin={0}
@@ -38,12 +38,12 @@ export function BookingProgress({
         aria-valuetext={`${completed} de ${total} encontros concluídos`}
       >
         <span
-          className="h-full bg-gradient-to-r from-[#ff7418] to-[#ffb052] transition-[width] duration-300"
+          className="h-full bg-brand-bar transition-[width] duration-300"
           style={{ width: `${percent}%` }}
         />
         {inProgressPercent > 0 ? (
           <span
-            className="h-full bg-[#31afc2] transition-[width] duration-300"
+            className="h-full bg-[#0ea5c6] transition-[width] duration-300"
             style={{ width: `${inProgressPercent}%` }}
           />
         ) : null}
@@ -56,7 +56,7 @@ export function BookingProgress({
             : `${completed} de ${total} ${total === 1 ? 'encontro concluído' : 'encontros concluídos'}`}
         </span>
         <span className={inProgress > 0 && bookingStatus !== 'cancelled'
-          ? 'font-semibold text-[#64d8e5]' : 'text-muted'}>
+          ? 'font-semibold text-[#0b6e99]' : 'text-muted'}>
           {statusText}
         </span>
       </div>

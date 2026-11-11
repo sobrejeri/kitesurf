@@ -1,5 +1,6 @@
 'use client';
 
+import { usePathname } from 'next/navigation';
 import { useCallback, useEffect, useState } from 'react';
 
 import { Icon } from './icon';
@@ -35,6 +36,8 @@ function remember(key: string, value: string) {
  * establishing the stored baseline for all future deployments.
  */
 export function UpdatePrompt() {
+  // The staff apps (Instrutor, Admin) show the notice in their own theme.
+  const staff = /^\/(instrutor|admin)(\/|$)/.test(usePathname());
   const [remote, setRemote] = useState<string | null>(null);
   const [lastSeen, setLastSeen] = useState<string | null>(null);
   const [dismissed, setDismissed] = useState<string | null>(null);
@@ -114,14 +117,14 @@ export function UpdatePrompt() {
     <div
       role="status"
       aria-live="polite"
-      className="theme-beach pointer-events-none fixed inset-x-0 bottom-[calc(90px+env(safe-area-inset-bottom))] z-[60] flex justify-center px-4 lg:bottom-6"
+      className={`${staff ? 'theme-pro' : 'theme-beach'} pointer-events-none fixed inset-x-0 bottom-[calc(90px+env(safe-area-inset-bottom))] z-[60] flex justify-center px-4 lg:bottom-6`}
     >
       <div className="update-toast pointer-events-auto flex items-center gap-3 rounded-full border border-line bg-surface/95 py-2 pl-3 pr-2 shadow-search backdrop-blur-xl">
         <span className="grid h-9 w-9 shrink-0 place-items-center rounded-full bg-brand-soft text-brand" aria-hidden="true">
           <Icon name="refresh" className="!h-5 !w-5" />
         </span>
         <span className="text-[13px] font-semibold text-ink">
-          {needsReload ? 'Nova versão disponível' : 'Vento atualizado'}
+          {needsReload ? 'Nova versão disponível' : staff ? 'App atualizado' : 'Vento atualizado'}
         </span>
         <button
           type="button"

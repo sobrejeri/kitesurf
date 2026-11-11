@@ -70,7 +70,7 @@ export default async function InstructorsPage() {
         entries={entries}
       />
       <p className="mt-5 text-center text-[12px] text-muted">
-        Instrutores criam a própria conta no app Vento Instrutor (/instrutor/criar-conta) e aparecem aqui em análise.
+        Instrutores criam a própria conta no app VentoKite Instrutor (/instrutor/criar-conta) e aparecem aqui em análise.
       </p>
     </>
   );
