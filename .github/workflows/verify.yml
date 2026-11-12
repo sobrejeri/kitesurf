@@ -115,6 +115,8 @@ jobs:
         run: node scripts/test-sandbox-allocation.mjs
       - name: Verify sandbox payment event idempotency and transitions
         run: node scripts/test-sandbox-payment-events.mjs
+      - name: Verify sandbox boleto order payload
+        run: node scripts/test-sandbox-boleto-order.mjs
       - name: Verify sandbox reconciliation and payout isolation
         run: node scripts/test-sandbox-reconciliation.mjs
       - name: Verify sandbox signed webhook manifest
