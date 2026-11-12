@@ -17,3 +17,29 @@ export function settlementEligibility(input: SettlementInput) {
   if (!input.releaseAuthorized) return 'authorization_required'
   return 'eligible'
 }
+
+type SplitInput = {
+  totalCents: number
+  platformCents: number
+  affiliateCents?: number
+}
+
+/** Builds a gross allocation from commission amounts calculated on the server, before gateway fees. */
+export function buildCheckoutSplit({ totalCents, platformCents, affiliateCents = 0 }: SplitInput) {
+  if (![totalCents, platformCents, affiliateCents].every(value => Number.isSafeInteger(value) && value >= 0)) {
+    throw new RangeError('Split amounts must be non-negative integer cents')
+  }
+
+  const instructorCents = totalCents - platformCents - affiliateCents
+  if (instructorCents <= 0 || platformCents <= 0) {
+    throw new RangeError('Split must include positive instructor and platform amounts')
+  }
+
+  const recipients = [
+    { role: 'instructor' as const, amountCents: instructorCents },
+    { role: 'platform' as const, amountCents: platformCents },
+  ]
+  return affiliateCents > 0
+    ? [...recipients, { role: 'affiliate' as const, amountCents: affiliateCents }]
+    : recipients
+}
