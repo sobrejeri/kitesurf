@@ -250,3 +250,11 @@ O projeto possui um **avaliador independente preparado, não necessariamente con
 - Nova PR #155 (`fix/affiliate-avatar-owner-preflight-20261111`, HEAD `3229f286cd65f8d3cc39395cadf7373884afcd5a`) corrige upload legado de avatar do afiliado: verifica registro `partners` por `owner_id` antes de gravar no Storage; teste de regressão e CI. **Aguardar CI e Claude QA do HEAD, sem merge antecipado.** E2E autenticado Storage continua pendente.
 - Supabase projeto correto `qadkqjfmmnxvovyyhqxw`: ledger oficial somente 39–42; SQL manual 47/48 possui evidência de objetos presentes, mas sem registro no ledger. Não reaplicar, reconciliar baseline e confirmar políticas/RLS e sessão aal2 reais. Não executar 01–38. Protege 3B permanece fechado pela 41; checkout OFF.
 - Próximo: confirmar CI #155, integrar somente se aprovado; verificar SHA live do #154 e depois #155; continuar P0 E2E autenticado e correções independentes P1. **0/18 frentes integralmente homologadas.**
+
+
+## Handoff — 12/11/2026 00h BRT — sandbox #101
+
+- PR #161 integrada após CI success `43140389532`, merge SHA `55d151574308dafbc916ace97b1977b99af5a04d`. Claude QA `43140389569` SKIPPED; não houve revisão independente. Render `dep-dbqitfqjnfac73bjlhcg` em `build_in_progress` na consulta inicial; confirmar `live` antes de declarar publicação.
+- PR #162 (branch `feat/sandbox-payment-events-20261112`, commit inicial `56170f28bfd0424955f0a2ef69cca95518237612`) adiciona reducer puro de eventos sandbox Pix/cartão, idempotência por event ID, transições seguras, testes e CI. Aguardar CI e Claude QA (não presumir aprovação); integrar somente com CI success e confirmar Render.
+- Sandbox ainda NÃO possui webhook assinado, persistência transacional, verificação de propriedade, conciliação Mercado Pago, reembolso parcial nem split 1:N comercial. Nenhum pagamento ou repasse real foi ativado.
+- Supabase correto `qadkqjfmmnxvovyyhqxw` mantém migrations 39–42; Protege 3B fechado. Issue #105 registra ponto de retomada e #101 detalhes financeiros. Priorizar PR #162, PR QA #157 sobre #156, e correções P0/P1 não financeiras independentes.
