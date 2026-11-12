@@ -13,6 +13,21 @@ assert.equal(hasScheduleConflict([reserved, slot('2026-11-11T12:00:00-03:00')]),
 assert.equal(slotsOverlap(reserved, slot('2026-11-11T14:00:00Z')), true, 'Timezone-equivalent slots overlap');
 assert.equal(slotsOverlap(slot('2026-11-11T23:00:00-03:00'), slot('2026-11-12T00:30:00-03:00')), true);
 assert.equal(hasScheduleConflict([], [reserved]), false);
+// Invalid timestamps or durations must never silently pass conflict validation.
+for (const invalid of [
+  slot('invalid-date'),
+  slot('2026-11-11T11:00:00-03:00', 0),
+  slot('2026-11-11T11:00:00-03:00', -60),
+  slot('2026-11-11T11:00:00-03:00', Number.NaN),
+  slot('2026-11-11T11:00:00-03:00', Number.POSITIVE_INFINITY),
+  slot('2026-11-11T11:00:00-03:00', 1.5),
+]) {
+  assert.equal(slotsOverlap(invalid, reserved), true, 'Malformed proposed intervals fail closed');
+  assert.equal(slotsOverlap(reserved, invalid), true, 'Malformed occupied intervals fail closed');
+  assert.equal(hasScheduleConflict([invalid], [reserved]), true);
+  assert.equal(hasScheduleConflict([reserved], [invalid]), true);
+}
+
 assert.equal(lessonHasEvolution('in_progress'), true);
 assert.equal(lessonHasEvolution('done'), true);
 assert.equal(lessonHasEvolution('scheduled'), false, 'A past clock time alone is not proof a lesson started');
