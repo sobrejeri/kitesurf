@@ -9,6 +9,7 @@ import { ActionForm } from '@/components/action-form';
 import { Icon } from '@/components/icon';
 import { StudentHero } from '@/components/student/sunset';
 import { DesktopPageHeader } from '@/components/student/desktop-page-header';
+import { SandboxCheckout } from '@/components/student/sandbox-checkout';
 import { StudentInstructorPhoto } from '@/components/student/instructor-photo';
 import { MeetingQR } from '@/components/student/meeting-qr';
 import { Badge, ButtonLink, Card, Note, ProgressBar } from '@/components/ui';
@@ -380,9 +381,15 @@ export default async function BookingPage({ params }: { params: Promise<{ id: st
               ) : null}
             </p>
             {awaiting && VALIDATION_WITHOUT_CHECKOUT ? (
-              <ActionForm action={confirmValidationLesson} submitLabel="Confirmar aula sem cobrança" className="mt-4 border-t border-line pt-4" wideSubmit>
-                <input type="hidden" name="bookingId" value={booking.id} />
-              </ActionForm>
+              <>
+                <ActionForm action={confirmValidationLesson} submitLabel="Confirmar aula sem cobrança" className="mt-4 border-t border-line pt-4" wideSubmit>
+                  <input type="hidden" name="bookingId" value={booking.id} />
+                </ActionForm>
+                <details className="mt-4 rounded-xl border border-line">
+                  <summary className="cursor-pointer px-4 py-3 text-sm font-semibold text-ink">Testar checkout</summary>
+                  <SandboxCheckout key={booking.id} bookingId={booking.id} amountCents={booking.total_cents} />
+                </details>
+              </>
             ) : awaiting ? (
               <div className="mt-4 border-t border-line pt-4">
                 <ActionForm action={confirmTestPayment} submitLabel="Confirmar pagamento de teste" className="grid gap-3" wideSubmit>
