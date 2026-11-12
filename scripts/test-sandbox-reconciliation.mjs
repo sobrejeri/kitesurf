@@ -21,4 +21,18 @@ assert.throws(() => reconcile([{ ...base, paymentId: 'x', status: 'approved', pa
 assert.throws(() => reconcile([{ ...base, paymentId: 'x', status: 'refunded', refundedCents: 2 }]));
 assert.throws(() => reconcile([{ ...base, paymentId: 'x', status: 'pending', refundedCents: 1 }]));
 assert.throws(() => reconcile([{ ...base, paymentId: 'x', status: 'approved', grossCents: 1.5 }]));
+const boleto = { ...base, method: 'boleto' };
+const boletoReport = reconcile([
+  { ...boleto, paymentId: 'b1', status: 'pending' },
+  { ...boleto, paymentId: 'b2', status: 'expired' },
+  { ...boleto, paymentId: 'b3', status: 'approved' },
+  { ...boleto, paymentId: 'b4', status: 'refunded', refundedCents: 10001 },
+]);
+assert.equal(boletoReport.totals.count, 4);
+assert.equal(boletoReport.totals.pendingCents, 10001);
+assert.equal(boletoReport.totals.expiredCount, 1);
+assert.equal(boletoReport.totals.netApprovedCents, 10001);
+assert.equal(boletoReport.totals.payoutReleasedCents, 0);
+assert.ok(boletoReport.rows.every(row => row.method === 'boleto'));
+assert.throws(() => reconcile([{ ...boleto, paymentId: 'b5', status: 'declined' }]));
 console.log('Sandbox reconciliation invariants passed');
