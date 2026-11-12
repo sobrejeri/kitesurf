@@ -37,6 +37,8 @@ export function slotsOverlap(a: StudentTimeSlot, b: StudentTimeSlot): boolean {
 }
 
 export function hasScheduleConflict(proposed: readonly StudentTimeSlot[], occupied: readonly StudentTimeSlot[] = []): boolean {
+  // A reservation with no meeting is invalid, not a conflict-free booking.
+  if (proposed.length === 0) return true;
   return proposed.some((slot, index) =>
     !Number.isFinite(parseAbsoluteSlotTime(slot.startsAt)) ||
     !Number.isSafeInteger(slot.minutes) || slot.minutes <= 0 ||
