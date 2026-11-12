@@ -1,5 +1,5 @@
 import assert from 'node:assert/strict';
-import { hasBookingLeadTime, hasScheduleConflict, slotsOverlap } from '../src/lib/student-schedule.ts';
+import { hasBookingLeadTime, hasExactMeetingAllocation, hasScheduleConflict, slotsOverlap } from '../src/lib/student-schedule.ts';
 import { lessonHasEvolution, lessonEvolutionHref, lessonIsPast, lessonNeedsInstructorRecord } from '../src/lib/student-lesson-links.ts';
 
 const slot = (startsAt, minutes = 120) => ({ startsAt, minutes });
@@ -57,3 +57,19 @@ assert.equal(hasBookingLeadTime(Date.parse('2026-11-12T12:59:59.999Z'), now), fa
 assert.equal(hasBookingLeadTime(Date.parse('2026-11-12T10:00:00-03:00'), now), true);
 assert.equal(hasBookingLeadTime(Date.parse('2026-11-12T13:00:00Z'), now), true);
 assert.equal(hasBookingLeadTime(Number.NaN, now), false);
+
+// Main E2E target: a 4h package distributed as two 2h meetings.
+assert.equal(hasExactMeetingAllocation([2, 2], 4), true);
+assert.equal(hasExactMeetingAllocation([2, 1], 4), false, 'Incomplete allocation is rejected');
+assert.equal(hasExactMeetingAllocation([2, 2, 1], 4), false, 'Extra hours are rejected');
+assert.equal(hasExactMeetingAllocation([4], 4), true, 'One-meeting packages remain valid');
+assert.equal(hasExactMeetingAllocation([2, 2]), true, 'Legacy clients still use server-derived total');
+for (const invalid of [[], [0, 4], [-1, 5], [1.5, 2.5], [9], [Number.NaN, 4], [Number.POSITIVE_INFINITY]]) {
+  assert.equal(hasExactMeetingAllocation(invalid, 4), false);
+}
+assert.equal(hasExactMeetingAllocation([2, 2], Number.NaN), false);
+const firstTwoHours = slot('2026-11-17T09:00:00-03:00', 120);
+const secondTwoHours = slot('2026-11-19T09:00:00-03:00', 120);
+assert.equal(hasScheduleConflict([firstTwoHours, secondTwoHours]), false);
+assert.equal(hasScheduleConflict([firstTwoHours, secondTwoHours], [secondTwoHours]), true);
+console.log('PASS: exact 4h/two-meeting allocation and schedule collision regression');
