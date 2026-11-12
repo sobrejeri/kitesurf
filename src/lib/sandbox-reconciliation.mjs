@@ -1,5 +1,5 @@
 /** Read-only reconciliation of synthetic sandbox payments; never releases payouts. */
-const METHODS = new Set(['pix', 'card']);
+const METHODS = new Set(['pix', 'card', 'boleto']);
 const STATUSES = new Set(['pending', 'approved', 'expired', 'declined', 'refunded']);
 function cents(value, name) {
   if (!Number.isSafeInteger(value) || value < 0) throw new RangeError(name + ' must be nonnegative integer cents');
@@ -14,7 +14,7 @@ export function reconcileSandboxPayments(payments) {
     if (!p || typeof p.paymentId !== 'string' || !p.paymentId.trim() || ids.has(p.paymentId)) throw new RangeError('missing or duplicate payment id');
     ids.add(p.paymentId);
     if (!METHODS.has(p.method) || !STATUSES.has(p.status)) throw new RangeError('unsupported payment method or status');
-    if ((p.method === 'pix' && p.status === 'declined') || (p.method === 'card' && p.status === 'expired')) throw new RangeError('inconsistent payment status');
+    if ((p.method !== 'card' && p.status === 'declined') || (p.method === 'card' && p.status === 'expired')) throw new RangeError('inconsistent payment status');
     if (p.payoutStatus !== 'not_started') throw new RangeError('sandbox payout must remain disabled');
     const gross = cents(p.grossCents, 'grossCents');
     const refund = cents(p.refundedCents ?? 0, 'refundedCents');
