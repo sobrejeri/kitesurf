@@ -111,6 +111,8 @@ jobs:
         run: node scripts/test-protection-qa-console.mjs
       - name: Check PostgREST relationship ambiguity
         run: node scripts/verify-postgrest-relationships.mjs
+      - name: Verify sandbox allocation in integer cents
+        run: node scripts/test-sandbox-allocation.mjs
       - run: pnpm build
       - name: Run isolated database migrations and SQL assertions
         # Avoid Ubuntu apt mirrors: their DNS can fail on hosted runners.
