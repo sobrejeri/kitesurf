@@ -274,3 +274,11 @@ O projeto possui um **avaliador independente preparado, não necessariamente con
 - PR #164 introduz verificação HMAC de assinatura Mercado Pago em módulo sandbox puro e regressões CI. Aguardar CI/QA, não integrar antes da aprovação. Ainda não existe endpoint de webhook autenticado, persistência de idempotência ou conciliação real com PSP.
 - PR #156 conflitada, PR QA #157 com CI queued; resolver sem contornar checks. Supabase kitesurf migrations 39–42; Protege 3B fechado; checkout e dinheiro real desligados. 0/18 frentes homologadas.
 - Retomar: CI/QA #164, Render #163, autenticação #156/#157 e próximo P0 seguro. Evidências nas issues #101/#105.
+
+## Handoff — 12/11/2026 03h BRT (#101)
+
+- PR #164 integrada após CI success `43160519857`, squash `66b01cdc77971b093b2104e4c27a130707ca56f3`; Claude QA `43160519861` SKIPPED (não revisou).
+- Render #163 `acd6b2c` confirmado live no deploy `dep-dbqknpnf3r2c73f9s570`. Deploy #164 `dep-dbqljk7f3r2c73fas3s0` estava `build_in_progress` e precisa nova conferência.
+- PR #165 criada com preflight puro de inbox de webhook e testes de colisão/replay, CI adicionado; não confundir com idempotência persistente/transacional. Aguardar CI/QA do HEAD `c40e34a` antes de merge.
+- #156 conflitada e #157 com CI queued; preservar correção de QA, reconciliar com branch atual e validar. Supabase VentoKite migrations 39–42; Protege 3B fechado, checkout real desligado, nenhuma SQL ou pagamento real alterado. 0/18 homologados.
+- Próximo: verificar CI/QA #165, Render #164, resolver #157→#156 e implementar persistência atômica de eventos em ambiente isolado; issues #101/#105 registram evidências.
