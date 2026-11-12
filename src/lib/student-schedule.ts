@@ -24,3 +24,14 @@ export function hasScheduleConflict(proposed: readonly StudentTimeSlot[], occupi
 export function hasBookingLeadTime(startsAtMs: number, nowMs = Date.now()): boolean {
   return Number.isFinite(startsAtMs) && startsAtMs >= nowMs + 3_600_000;
 }
+
+/** Validate the exact purchased package before any instructor search RPC.
+ * Accept integer hours only; never infer a missing/altered meeting from the UI.
+ */
+export function hasExactMeetingAllocation(hours: readonly number[], expectedHours?: number): boolean {
+  if (hours.length < 1 || hours.length > 8 ||
+      !hours.every((h) => Number.isSafeInteger(h) && h >= 1 && h <= 8)) return false;
+  const total = hours.reduce((sum, h) => sum + h, 0);
+  return total <= 8 && (expectedHours === undefined ||
+    (Number.isSafeInteger(expectedHours) && expectedHours >= 1 && expectedHours <= 8 && total === expectedHours));
+}
