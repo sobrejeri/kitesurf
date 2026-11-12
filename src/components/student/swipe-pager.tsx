@@ -62,6 +62,7 @@ export function StudentSwipePager({
   const current = useRef<HTMLElement>(null);
   const preview = useRef<HTMLDivElement>(null);
   const previousPath = useRef(pathname);
+  const swipeDestination = useRef<string | null>(null);
   const cache = useRef(new Map<string, CachedPage>());
   const inFlight = useRef(new Map<string, Promise<void>>());
   const shownRoute = useRef<string | null>(null);
@@ -81,13 +82,15 @@ export function StudentSwipePager({
   useLayoutEffect(() => {
     if (previousPath.current === pathname) return;
     previousPath.current = pathname;
+    const cameFromSwipe = swipeDestination.current === pathname;
+    swipeDestination.current = null;
     const page = current.current;
     const incoming = preview.current;
     let transition: Animation | undefined;
     if (page) {
       page.style.transition = 'none';
       page.style.transform = '';
-      if (window.innerWidth < 768 && !window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
+      if (!cameFromSwipe && window.innerWidth < 768 && !window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
         transition = page.animate([{ opacity: 0.55 }, { opacity: 1 }], {
           duration: 160,
           easing: 'ease-out',
@@ -124,6 +127,7 @@ export function StudentSwipePager({
       routeWatchdog = null;
       gesture = null;
       changingRoute = false;
+      swipeDestination.current = null;
       page.style.transition = 'none';
       page.style.transform = '';
       incoming.style.transition = 'none';
@@ -135,10 +139,8 @@ export function StudentSwipePager({
     };
 
     const isMobile = () => window.innerWidth < 768;
-    // WebKit can composite old page and fixed menu layers while dragging.
-    // On iOS, recognize the gesture without translating or previewing pages.
-    const animateSwipe = !/iPhone|iPad|iPod/i.test(navigator.userAgent)
-      && !(navigator.maxTouchPoints > 1 && /Macintosh/i.test(navigator.userAgent));
+    const isIOS = /iPhone|iPad|iPod/i.test(navigator.userAgent)
+      || (navigator.maxTouchPoints > 1 && /Macintosh/i.test(navigator.userAgent));
     // Home-screen app (iOS sets navigator.standalone; others the display mode).
     const isStandalone = () => window.matchMedia('(display-mode: standalone)').matches ||
       (navigator as Navigator & { standalone?: boolean }).standalone === true;
@@ -223,7 +225,7 @@ export function StudentSwipePager({
 
     // Warm only the immediately adjacent pages, not all five heavy dashboards.
     for (const neighbor of [STUDENT_SWIPE_ROUTES[index - 1], STUDENT_SWIPE_ROUTES[index + 1]]) {
-      if (animateSwipe && neighbor) fetchPreview(neighbor);
+      if (neighbor) fetchPreview(neighbor);
     }
 
     const onStart = (event: TouchEvent) => {
@@ -234,9 +236,9 @@ export function StudentSwipePager({
       const touch = event.touches.item(0);
       if (!touch) return;
       // Reserve the narrow left edge on iOS before WebKit begins history navigation.
-      const iosHistoryEdge = !animateSwipe && touch.clientX <= 16;
+      const iosHistoryEdge = isIOS && touch.clientX <= 16;
       if (event.cancelable && (iosHistoryEdge ||
-          (animateSwipe && shouldBlockEdgeTouchStart(touch.clientX, window.innerWidth, isStandalone())))) {
+          (!isIOS && shouldBlockEdgeTouchStart(touch.clientX, window.innerWidth, isStandalone())))) {
         event.preventDefault();
       }
       gesture = { x: touch.clientX, y: touch.clientY, at: Date.now(),
@@ -270,11 +272,10 @@ export function StudentSwipePager({
         frame.removeAttribute('data-dragging');
         return;
       }
-      if (animateSwipe && direction !== g.direction) renderPreview(route, direction);
+      if (direction !== g.direction) renderPreview(route, direction);
       g.direction = direction;
       g.nextRoute = route;
       g.dx = Math.max(-frame.clientWidth, Math.min(frame.clientWidth, dx));
-      if (!animateSwipe) return;
       const offset = frame.clientWidth * direction;
       page.style.transition = 'none';
       page.style.transform = `translate3d(${g.dx}px,0,0)`;
@@ -299,16 +300,6 @@ export function StudentSwipePager({
       const distance = Math.abs(g.dx);
       const elapsed = Math.max(1, Date.now() - g.at);
       const commit = shouldCommitStudentSwipe(distance, elapsed, frame.clientWidth);
-      if (!animateSwipe) {
-        if (commit) {
-          changingRoute = true;
-          router.replace(g.nextRoute, { scroll: true });
-          routeWatchdog = window.setTimeout(reset, SWIPE_ROUTE_STALL_MS);
-        } else {
-          reset();
-        }
-        return;
-      }
       const ms = window.matchMedia('(prefers-reduced-motion: reduce)').matches ? 0 : 240;
       page.style.transition = `transform ${ms}ms ${EASE}`;
       incoming.style.transition = `transform ${ms}ms ${EASE}`;
@@ -320,6 +311,7 @@ export function StudentSwipePager({
         settleTimer = window.setTimeout(() => {
           // Reuse the same persistent shell and footer. The full Next route
           // renders after the finger-following visual preview has docked.
+          swipeDestination.current = destination;
           router.replace(destination, { scroll: true });
           // On failed/offline navigation, do not leave the old page translated
           // off-screen and its bottom tab showing a different destination.
