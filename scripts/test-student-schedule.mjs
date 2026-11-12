@@ -24,6 +24,7 @@ for (const invalid of [
 ]) {
   assert.equal(slotsOverlap(invalid, reserved), true, 'Malformed proposed intervals fail closed');
   assert.equal(slotsOverlap(reserved, invalid), true, 'Malformed occupied intervals fail closed');
+  assert.equal(hasScheduleConflict([invalid]), true, 'Invalid single meeting cannot bypass validation');
   assert.equal(hasScheduleConflict([invalid], [reserved]), true);
   assert.equal(hasScheduleConflict([reserved], [invalid]), true);
 }
