@@ -29,7 +29,7 @@ export const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL ||
 export function siteUrl(path: string): URL {
   // Only local absolute paths may be used for authentication redirects.
   // URL() otherwise accepts protocol-relative (//host) and full external URLs.
-  if (!path.startsWith('/') || path.startsWith('//') || path.includes('\\') || /[\u0000-\u001f\u007f]/.test(path)) {
+  if (!path.startsWith('/') || path.startsWith('//') || path.includes('\\') || Array.from(path).some((char) => { const code = char.charCodeAt(0); return code < 32 || code === 127; })) {
     throw new Error('Invalid local redirect path');
   }
   const destination = new URL(path, SITE_URL);
