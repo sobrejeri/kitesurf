@@ -117,7 +117,7 @@ jobs:
         run: node scripts/test-sandbox-payment-events.mjs
       - name: Verify sandbox reconciliation and payout isolation
         run: node scripts/test-sandbox-reconciliation.mjs
-      - run: pnpm build
+      - name: Verify sandbox signed webhook manifest\n        run: node scripts/test-sandbox-webhook-signature.mjs\n      - run: pnpm build
       - name: Run isolated database migrations and SQL assertions
         # Avoid Ubuntu apt mirrors: their DNS can fail on hosted runners.
         # The official PostgreSQL image has all required server/client tools.
