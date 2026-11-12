@@ -27,6 +27,9 @@ assert.equal(siteUrl('/aluno/entrar').href, 'https://vento-kitesurf.onrender.com
 assert.equal(siteUrl('/afiliado/entrar?confirmado=1').href,
   'https://vento-kitesurf.onrender.com/afiliado/entrar?confirmado=1');
 assert.equal(siteUrl('/instrutor/redefinir').origin, 'https://vento-kitesurf.onrender.com');
+for (const unsafe of ['https://evil.example/login', '//evil.example/login', '/\\\\evil.example/login', 'javascript:alert(1)', '/login\\nLocation: https://evil.example']) {
+  assert.throws(() => siteUrl(unsafe), /Invalid local redirect path|Cross-origin redirect blocked/);
+}
 
 const read = (path) => readFileSync(path, 'utf8');
 for (const route of ['src/app/auth/confirm/route.ts', 'src/app/auth/recovery/route.ts']) {
