@@ -264,7 +264,7 @@ export function StudentShell({
 
       {/* Installed app: content scrolls under a translucent status bar, so a
           strip the height of the notch keeps text from running under the clock. */}
-      <div className="pointer-events-none fixed inset-x-0 top-0 z-50 h-[env(safe-area-inset-top)] bg-[#0b2a4a]/75 backdrop-blur-md md:hidden" aria-hidden="true" />
+      <div className="pointer-events-none fixed inset-x-0 top-0 z-50 h-[env(safe-area-inset-top)] bg-[#0b2a4a] md:hidden" aria-hidden="true" />
 
       {/* Phone app bar, floating over each page's photo hero. The bar itself is
           click-through so it never blocks content that sits near the top (e.g.
