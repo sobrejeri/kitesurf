@@ -1,4 +1,6 @@
 /** Pure sandbox CSV exporter. Caller must authorize and filter records server-side. */
+// Security-sensitive: explicit C0 controls are intentional to prevent spreadsheet formula injection.
+// eslint-disable-next-line no-control-regex
 const dangerous = /^[\s\u0000-\u001f]*[=+@\-\t\r]/u;
 export function safeCsvCell(value) {
   const raw = value == null ? '' : String(value);
