@@ -282,3 +282,11 @@ O projeto possui um **avaliador independente preparado, não necessariamente con
 - PR #165 criada com preflight puro de inbox de webhook e testes de colisão/replay, CI adicionado; não confundir com idempotência persistente/transacional. Aguardar CI/QA do HEAD `c40e34a` antes de merge.
 - #156 conflitada e #157 com CI queued; preservar correção de QA, reconciliar com branch atual e validar. Supabase VentoKite migrations 39–42; Protege 3B fechado, checkout real desligado, nenhuma SQL ou pagamento real alterado. 0/18 homologados.
 - Próximo: verificar CI/QA #165, Render #164, resolver #157→#156 e implementar persistência atômica de eventos em ambiente isolado; issues #101/#105 registram evidências.
+
+## Handoff — 12/11/2026 04h BRT (#101/#105)
+
+- PR #165 (`ba50cc7`) CI `43167143005` success, Claude QA `43167143024` SKIPPED (não revisou); integrada no SHA `2297d6de7e726fcf1e5d2b8bc565235319098482`. É somente preflight puro de inbox; **não** implementa persistência transacional.
+- Render VentoKite `srv-dbifnnks728c73f50arg`: SHA `66b01cdc77971b093b2104e4c27a130707ca56f3` (#164) confirmado live em `dep-dbqljk7f3r2c73fas3s0`. Novo deploy #165 ainda não confirmado nesta rodada.
+- Supabase correto `qadkqjfmmnxvovyyhqxw`: ledger 39–42 confirmado; não aplicadas migrations. Protege 3B fechado, checkout real desativado.
+- PR #166 criada sobre o SHA integrado da #165 com serializador CSV seguro contra fórmulas e teste Node executado localmente; workflow atualizado. **Aguardar CI/Claude QA** antes de merge; não representa endpoint nem autorização server-side.
+- PR #156 segue aberta; QA #157 (`5e711d9`) continua com workflow `43096919035` queued na consulta, não integrar sem resultado. Próxima rodada: verificar CI #166, Render #165, conciliar #157→#156, depois priorizar implementação P0 não financeira e idempotência persistente isolada. 0/18 frentes integralmente homologadas.
