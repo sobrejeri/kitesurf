@@ -14,6 +14,8 @@ export function slotsOverlap(a: StudentTimeSlot, b: StudentTimeSlot): boolean {
 
 export function hasScheduleConflict(proposed: readonly StudentTimeSlot[], occupied: readonly StudentTimeSlot[] = []): boolean {
   return proposed.some((slot, index) =>
+    !Number.isFinite(Date.parse(slot.startsAt)) ||
+    !Number.isSafeInteger(slot.minutes) || slot.minutes <= 0 ||
     proposed.some((other, j) => j > index && slotsOverlap(slot, other)) ||
     occupied.some((other) => slotsOverlap(slot, other)));
 }
