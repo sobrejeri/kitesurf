@@ -16,6 +16,7 @@ assert.equal(hasScheduleConflict([], [reserved]), false);
 assert.equal(hasScheduleConflict([slot('2026-11-11T11:00:00')]), true, 'Naive local timestamps must be rejected');
 assert.equal(hasScheduleConflict([slot('2026-11-11 11:00:00')]), true, 'Non-ISO local timestamps must be rejected');
 assert.equal(slotsOverlap(slot('2026-11-11T14:00:00Z'), reserved), true, 'Explicit UTC and Ceará offsets compare equally');
+assert.equal(slotsOverlap(slot('2026-11-11T14:00:00.123456+00:00'), reserved), true, 'PostgreSQL microsecond timestamps remain valid');
 
 // Invalid timestamps or durations must never silently pass conflict validation.
 for (const invalid of [
