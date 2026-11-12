@@ -266,3 +266,11 @@ O projeto possui um **avaliador independente preparado, não necessariamente con
 - PR #163 criada com reconciliação sandbox pura e testes de regressão; aguardar CI, sem merge prematuro. PR #156 conflitada e #157 com CI em fila; resolver após validação.
 - Supabase kitesurf migrations 39–42; Protege 3B fechado; nenhuma SQL nem transação real nesta rodada. 0/18 frentes homologadas.
 - Retomada: verificar CI e QA da #163, corrigir e integrar somente se aprovado, confirmar deploy live, depois avançar segurança de webhooks e autenticação. Issues #101/#105 contêm evidências.
+
+## Handoff — 12/11/2026 02h BRT (#101)
+
+- PR #163 integrada após CI success (run 43154270803), squash `acd6b2c46fa9730865d50312538f7869e87a250d`; Claude QA SKIPPED, sem revisão independente.
+- Render confirmou #162 `94e847a` live no deploy `dep-dbqjt449v7es73do82eg`. Confirmar #163 live separadamente.
+- PR #164 introduz verificação HMAC de assinatura Mercado Pago em módulo sandbox puro e regressões CI. Aguardar CI/QA, não integrar antes da aprovação. Ainda não existe endpoint de webhook autenticado, persistência de idempotência ou conciliação real com PSP.
+- PR #156 conflitada, PR QA #157 com CI queued; resolver sem contornar checks. Supabase kitesurf migrations 39–42; Protege 3B fechado; checkout e dinheiro real desligados. 0/18 frentes homologadas.
+- Retomar: CI/QA #164, Render #163, autenticação #156/#157 e próximo P0 seguro. Evidências nas issues #101/#105.
