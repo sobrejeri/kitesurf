@@ -29,9 +29,7 @@ export function applySandboxPaymentEvent(payment, event) {
     throw new RangeError('invalid payment snapshot');
   }
   if (payment.seenEventIds.includes(eventId)) {
-    if (payment.status !== status && !payment.seenEventIds.includes(eventId + ':' + status)) {
-      // Duplicate events are ignored even if delivered after later state changes.
-    }
+    // A previously applied event remains idempotent after subsequent transitions.
     return { ...payment, seenEventIds: [...payment.seenEventIds] };
   }
   if (!transitions.includes(status)) throw new RangeError('invalid or stale payment transition');
