@@ -3,8 +3,10 @@
  * Event IDs must be verified/authenticated upstream before calling this reducer.
  * A paid charge never implies an instructor payout.
  */
+const ASYNC_PAYMENT_STATES = { pending: ['approved', 'expired'], approved: ['refunded'], expired: [], refunded: [] };
 const STATES = Object.freeze({
-  pix: { pending: ['approved', 'expired'], approved: ['refunded'], expired: [], refunded: [] },
+  pix: ASYNC_PAYMENT_STATES,
+  boleto: ASYNC_PAYMENT_STATES,
   card: { pending: ['approved', 'declined'], approved: ['refunded'], declined: [], refunded: [] },
 });
 function text(value, label) {
