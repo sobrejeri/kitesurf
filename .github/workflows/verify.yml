@@ -93,6 +93,8 @@ jobs:
         run: node scripts/test-inline-detail-layout.mjs
       - name: Test VentoKite Protege five-day incident policy
         run: node --experimental-strip-types scripts/test-lesson-protection-policy.mjs
+      - name: Guard read-only expiration scheduler preflight
+        run: node scripts/test-expiration-scheduler-preflight.mjs
       - name: Test overdue lesson protection monitoring
         run: node --experimental-strip-types scripts/test-protection-monitor.mjs
       - name: Test visible VentoKite Protege incident report summaries
