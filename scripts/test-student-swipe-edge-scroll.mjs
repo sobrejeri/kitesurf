@@ -34,8 +34,9 @@ assert.equal(shouldBlockEdgeTouchStart(10, 0, false), false);
 const pager = readFileSync('src/components/student/swipe-pager.tsx', 'utf8');
 assert.match(pager, /shouldBlockEdgeTouchStart\(touch\.clientX, window\.innerWidth, isStandalone\(\)\)/,
   'The pager must use the tested edge policy with the real display mode');
-assert.match(pager, /const iosHistoryEdge = isIOS && touch\.clientX <= 16/);
-assert.match(pager, /event\.cancelable && \(iosHistoryEdge/);
+assert.match(pager, /touch\.clientX <= 32\) event\.preventDefault\(\)/);
+assert.match(pager, /window\.addEventListener\('touchstart', captureHistoryEdge, \{ capture: true, passive: false \}\)/);
+assert.match(pager, /window\.removeEventListener\('touchstart', captureHistoryEdge, true\)/);
 assert.match(pager, /page\.animate\(\[\{ opacity: 0\.55 \}, \{ opacity: 1 \}\]/);
 assert.match(pager, /prefers-reduced-motion: reduce/);
 assert.doesNotMatch(pager, /touch\.clientX <= 28 \|\| touch\.clientX >= window\.innerWidth - 28/,
