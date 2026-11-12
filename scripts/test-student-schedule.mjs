@@ -1,5 +1,5 @@
 import assert from 'node:assert/strict';
-import { hasScheduleConflict, slotsOverlap } from '../src/lib/student-schedule.ts';
+import { hasBookingLeadTime, hasScheduleConflict, slotsOverlap } from '../src/lib/student-schedule.ts';
 import { lessonHasEvolution, lessonEvolutionHref, lessonIsPast, lessonNeedsInstructorRecord } from '../src/lib/student-lesson-links.ts';
 
 const slot = (startsAt, minutes = 120) => ({ startsAt, minutes });
@@ -51,3 +51,9 @@ for (const status of ['done', 'in_progress', 'cancelled']) {
 assert.equal(lessonEvolutionHref('booking-a', 'meeting-b'),
   '/aluno/evolucao?reserva=booking-a&encontro=meeting-b#encontro-meeting-b');
 console.log('PASS: existing/new schedule overlaps, boundary times, timezones and per-meeting evolution links');
+
+const now = Date.parse('2026-11-12T09:00:00-03:00');
+assert.equal(hasBookingLeadTime(Date.parse('2026-11-12T12:59:59.999Z'), now), false);
+assert.equal(hasBookingLeadTime(Date.parse('2026-11-12T10:00:00-03:00'), now), true);
+assert.equal(hasBookingLeadTime(Date.parse('2026-11-12T13:00:00Z'), now), true);
+assert.equal(hasBookingLeadTime(Number.NaN, now), false);

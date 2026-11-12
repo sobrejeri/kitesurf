@@ -12,7 +12,7 @@ import { isAllowedLessonLevel } from '@/lib/kite-steps';
 import { LESSON_UTC_OFFSET } from '@/lib/format';
 import { createSupabaseServerClient } from '@/lib/supabase/server';
 import { getStudentOccupiedSlots } from '@/lib/student-occupied-slots';
-import { hasScheduleConflict } from '@/lib/student-schedule';
+import { hasBookingLeadTime, hasScheduleConflict } from '@/lib/student-schedule';
 import { VALIDATION_WITHOUT_CHECKOUT } from '@/lib/booking-mode';
 
 import { friendlyError, type ActionState } from './errors';
@@ -85,8 +85,8 @@ export async function createBooking(_prev: ActionState, form: FormData): Promise
       slot.starts < other.ends && other.starts < slot.ends))) {
     return { error: 'Há encontros no mesmo dia e horário. Separe os horários antes de procurar instrutor.' };
   }
-  if (timeSlots.some((slot) => !Number.isFinite(slot.starts) ||
-    slot.starts < Date.now() + 3600000)) {
+  const now = Date.now();
+  if (timeSlots.some((slot) => !hasBookingLeadTime(slot.starts, now))) {
     return { error: 'Os encontros precisam começar daqui a pelo menos uma hora.' };
   }
   // Repeat the existing-schedule check at submission time, including pending searches.
