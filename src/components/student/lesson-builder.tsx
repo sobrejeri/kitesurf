@@ -5,11 +5,10 @@ import { Fragment, useActionState, useState } from 'react';
 import { createBooking } from '@/app/actions/booking';
 import { LANGUAGES } from '@/data/demo';
 import { LEVEL_LABELS, type Beach, type LessonLevel, type QuoteRow } from '@/lib/data-labels';
-import { lessonDate } from '@/lib/dates';
 import { allowedLessonLevels, KITE_CURRICULA, KITE_LEVEL_BADGES } from '@/lib/kite-steps';
-import { formatMoney } from '@/lib/format';
+import { formatMoney, LESSON_UTC_OFFSET } from '@/lib/format';
 import { levelQuote } from '@/lib/level-prices';
-import { hasScheduleConflict, type StudentTimeSlot } from '@/lib/student-schedule';
+import { hasBookingLeadTime, hasScheduleConflict, type StudentTimeSlot } from '@/lib/student-schedule';
 import { VALIDATION_WITHOUT_CHECKOUT } from '@/lib/booking-mode';
 
 import { Icon, type IconName } from '../icon';
@@ -131,7 +130,8 @@ export function LessonBuilder({
   const totalHours = meetings.reduce((sum, meeting) => sum + meeting.hours, 0);
   const remainingHours = selectedHours - totalHours;
   const quote = levelQuote(quotes, level, selectedHours);
-  const datesValid = meetings.every((meeting) => meeting.date >= lessonDate());
+  const datesValid = meetings.every((meeting) =>
+    hasBookingLeadTime(Date.parse(`${meeting.date}T${meeting.start}:00${LESSON_UTC_OFFSET}`)));
   const meetingsOverlap = meetings.some((a, index) => {
     const aStart = Date.parse(`${a.date}T${a.start}:00-03:00`);
     const aEnd = aStart + a.hours * 3600000;
@@ -436,7 +436,7 @@ export function LessonBuilder({
                   {meetings.length} encontro(s). O total contratado permanece em {selectedHours}h.
                 </p>
               </div>
-              {!datesValid ? <p role="alert" className="mt-3 text-[12px] text-warning">Selecione hoje ou uma data futura para todos os encontros.</p> : null}
+              {!datesValid ? <p role="alert" className="mt-3 text-[12px] text-warning">Escolha um horário com pelo menos uma hora de antecedência para cada encontro.</p> : null}
               {meetingsOverlap ? (
                 <p role="alert" className="mt-3 text-[12px] text-warning">
                   Você colocou dois encontros no mesmo horário. Ajuste a data ou o início de uma das aulas para continuar.
