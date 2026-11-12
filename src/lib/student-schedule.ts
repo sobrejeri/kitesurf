@@ -19,3 +19,8 @@ export function hasScheduleConflict(proposed: readonly StudentTimeSlot[], occupi
     proposed.some((other, j) => j > index && slotsOverlap(slot, other)) ||
     occupied.some((other) => slotsOverlap(slot, other)));
 }
+
+/** Shared minimum lead time for the form and the booking action. */
+export function hasBookingLeadTime(startsAtMs: number, nowMs = Date.now()): boolean {
+  return Number.isFinite(startsAtMs) && startsAtMs >= nowMs + 3_600_000;
+}
