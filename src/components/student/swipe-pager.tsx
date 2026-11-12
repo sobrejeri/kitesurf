@@ -83,9 +83,16 @@ export function StudentSwipePager({
     previousPath.current = pathname;
     const page = current.current;
     const incoming = preview.current;
+    let transition: Animation | undefined;
     if (page) {
       page.style.transition = 'none';
       page.style.transform = '';
+      if (window.innerWidth < 768 && !window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
+        transition = page.animate([{ opacity: 0.55 }, { opacity: 1 }], {
+          duration: 160,
+          easing: 'ease-out',
+        });
+      }
     }
     if (incoming) {
       incoming.style.transition = 'none';
@@ -94,6 +101,7 @@ export function StudentSwipePager({
       incoming.replaceChildren();
     }
     shownRoute.current = null;
+    return () => transition?.cancel();
   }, [pathname]);
 
   useEffect(() => {
@@ -225,9 +233,10 @@ export function StudentSwipePager({
           ignoreTarget(event.target)) return;
       const touch = event.touches.item(0);
       if (!touch) return;
-      // Leave native history gestures at Safari's edge to the browser.
-      if (shouldBlockEdgeTouchStart(touch.clientX, window.innerWidth, isStandalone())) {
-        if (!animateSwipe) return;
+      // Reserve the narrow left edge on iOS before WebKit begins history navigation.
+      const iosHistoryEdge = !animateSwipe && touch.clientX <= 16;
+      if (event.cancelable && (iosHistoryEdge ||
+          (animateSwipe && shouldBlockEdgeTouchStart(touch.clientX, window.innerWidth, isStandalone())))) {
         event.preventDefault();
       }
       gesture = { x: touch.clientX, y: touch.clientY, at: Date.now(),

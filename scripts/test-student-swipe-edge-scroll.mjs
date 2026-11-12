@@ -34,8 +34,10 @@ assert.equal(shouldBlockEdgeTouchStart(10, 0, false), false);
 const pager = readFileSync('src/components/student/swipe-pager.tsx', 'utf8');
 assert.match(pager, /shouldBlockEdgeTouchStart\(touch\.clientX, window\.innerWidth, isStandalone\(\)\)/,
   'The pager must use the tested edge policy with the real display mode');
-assert.match(pager, /if \(!animateSwipe\) return;\s*event\.preventDefault\(\);/,
-  'The iOS browser must keep its native edge gesture without starting app navigation');
+assert.match(pager, /const iosHistoryEdge = !animateSwipe && touch\.clientX <= 16/);
+assert.match(pager, /event\.cancelable && \(iosHistoryEdge/);
+assert.match(pager, /page\.animate\(\[\{ opacity: 0\.55 \}, \{ opacity: 1 \}\]/);
+assert.match(pager, /prefers-reduced-motion: reduce/);
 assert.doesNotMatch(pager, /touch\.clientX <= 28 \|\| touch\.clientX >= window\.innerWidth - 28/,
   'The unconditional edge cancel must be gone');
 assert.match(pager, /matchMedia\('\(display-mode: standalone\)'\)\.matches/,
@@ -43,4 +45,4 @@ assert.match(pager, /matchMedia\('\(display-mode: standalone\)'\)\.matches/,
 assert.match(pager, /navigator as Navigator & \{ standalone\?: boolean \}\)\.standalone === true/,
   'Standalone detection must cover iOS home-screen apps');
 
-console.log('PASS: edge-started vertical scrolling works in the installed PWA; iOS Safari edge navigation stays native');
+console.log('PASS: platform-specific edge handling and content-only transition');
