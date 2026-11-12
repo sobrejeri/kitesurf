@@ -23,10 +23,15 @@ for (const impossible of [
   '2026-11-11T11:00:60-03:00',
   '2026-11-11T11:00:00+24:00',
   '2026-11-11T11:00:00+03:60',
+  '2026-11-11T11:00:00+15:00',
+  '2026-11-11T11:00:00-14:01',
+  '2026-11-11T11:00:00+13:60',
 ]) {
   assert.equal(hasScheduleConflict([slot(impossible)]), true, 'Impossible calendar dates cannot be normalized');
 }
 assert.equal(hasScheduleConflict([slot('2028-02-29T11:00:00-03:00')]), false, 'Valid leap days are allowed');
+assert.equal(hasScheduleConflict([slot('2026-11-11T11:00:00+14:00')]), false, 'UTC+14:00 remains valid');
+assert.equal(hasScheduleConflict([slot('2026-11-11T11:00:00-12:00')]), false, 'UTC-12:00 remains valid');
 assert.equal(slotsOverlap(slot('2026-11-11T14:00:00Z'), reserved), true, 'Explicit UTC and Ceará offsets compare equally');
 assert.equal(slotsOverlap(slot('2026-11-11T14:00:00.123456+00:00'), reserved), true, 'PostgreSQL microsecond timestamps remain valid');
 
