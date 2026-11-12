@@ -100,6 +100,7 @@ export function LessonBuilder({
   studentLevel,
   occupiedSlots,
   startEditing = false,
+  allowPackageSelection = false,
 }: {
   quotes: readonly QuoteRow[];
   beaches: readonly Beach[];
@@ -108,6 +109,7 @@ export function LessonBuilder({
   occupiedSlots: readonly StudentTimeSlot[];
   /** Open the "Sua aula" fields on arrival (used when nothing was pre-chosen on Explorar). */
   startEditing?: boolean;
+  allowPackageSelection?: boolean;
 }) {
   const [state, formAction, pending] = useActionState(createBooking, {});
   const [step, setStep] = useState<1 | 2>(1);
@@ -124,9 +126,8 @@ export function LessonBuilder({
   const [transport, setTransport] = useState(false);
   const [showCurriculum, setShowCurriculum] = useState(false);
 
-  // The hour package chosen in Explorar is fixed. Meetings only distribute it
-  // across dates; changing a meeting must not change the package or its quote.
-  const selectedHours = defaults.hours;
+  // An explicit package from Explorar stays fixed while meetings distribute it.
+  const [selectedHours, setSelectedHours] = useState(defaults.hours);
   const totalHours = meetings.reduce((sum, meeting) => sum + meeting.hours, 0);
   const remainingHours = selectedHours - totalHours;
   const quote = levelQuote(quotes, level, selectedHours);
@@ -149,6 +150,21 @@ export function LessonBuilder({
   const canAddMeeting = meetings.length < selectedHours &&
     (remainingHours > 0 || meetings.some((meeting) => meeting.hours > 1));
   const valid = hoursFullyDistributed && Boolean(beachId) && datesValid && !meetingsOverlap && !existingConflict && allowed.includes(level);
+
+  function changePackageHours(hours: number) {
+    if (!Number.isInteger(hours) || hours < meetings.length || hours > 8) return;
+    setSelectedHours(hours);
+    setMeetings((current) => {
+      if (current.length === 1) return current.map((meeting) => ({ ...meeting, hours }));
+      let remaining = hours;
+      return current.map((meeting, index) => {
+        const reservedForLater = current.length - index - 1;
+        const assigned = Math.min(meeting.hours, remaining - reservedForLater);
+        remaining -= assigned;
+        return { ...meeting, hours: assigned };
+      });
+    });
+  }
 
   function update(id: number, patch: Partial<Meeting>) {
     // The select options already cap each meeting, but validate state updates too.
@@ -336,6 +352,20 @@ export function LessonBuilder({
             ) : null}
 
             <Card>
+              {allowPackageSelection ? (
+                <div className="mb-4">
+                  <Field label="Total de horas da aula" icon="clock">
+                    <select className={inputClass} value={selectedHours}
+                      onChange={(event) => changePackageHours(Number(event.target.value))}>
+                      {Array.from({ length: 8 }, (_, index) => index + 1).map((hours) => (
+                        <option key={hours} value={hours} disabled={hours < meetings.length}>
+                          {hours === 1 ? '1 hora' : `${hours} horas`}
+                        </option>
+                      ))}
+                    </select>
+                  </Field>
+                </div>
+              ) : null}
               <SectionHead icon="calendar" title="Seus encontros" aside={<span className="text-[12px] text-muted">Mesmo instrutor</span>} />
               <p className="mt-3 text-[13px] leading-relaxed text-muted">
                 Você escolheu <strong className="text-ink">{selectedHours}h de aula</strong>. Divida esse total entre
