@@ -77,6 +77,23 @@ export function StudentSwipePager({
     }
   }, [signedIn]);
 
+  // Capture before controls or the page pager handle the touch. WebKit can
+  // otherwise start history navigation and snapshot the entire fixed shell.
+  useEffect(() => {
+    if (!signedIn) return;
+    const isIOS = /iPhone|iPad|iPod/i.test(navigator.userAgent)
+      || (navigator.maxTouchPoints > 1 && /Macintosh/i.test(navigator.userAgent));
+    if (!isIOS) return;
+
+    const captureHistoryEdge = (event: TouchEvent) => {
+      if (!event.cancelable || window.innerWidth >= 768 || event.touches.length !== 1) return;
+      const touch = event.touches.item(0);
+      if (touch && touch.clientX <= 32) event.preventDefault();
+    };
+    window.addEventListener('touchstart', captureHistoryEdge, { capture: true, passive: false });
+    return () => window.removeEventListener('touchstart', captureHistoryEdge, true);
+  }, [signedIn]);
+
   // The route can finish loading while a preview is still at x=0. Clear the
   // outgoing transform before paint so the real destination is full-width.
   useLayoutEffect(() => {
@@ -139,8 +156,7 @@ export function StudentSwipePager({
     };
 
     const isMobile = () => window.innerWidth < 768;
-    const isIOS = /iPhone|iPad|iPod/i.test(navigator.userAgent)
-      || (navigator.maxTouchPoints > 1 && /Macintosh/i.test(navigator.userAgent));
+
     // Home-screen app (iOS sets navigator.standalone; others the display mode).
     const isStandalone = () => window.matchMedia('(display-mode: standalone)').matches ||
       (navigator as Navigator & { standalone?: boolean }).standalone === true;
@@ -235,10 +251,8 @@ export function StudentSwipePager({
           ignoreTarget(event.target)) return;
       const touch = event.touches.item(0);
       if (!touch) return;
-      // Reserve the narrow left edge on iOS before WebKit begins history navigation.
-      const iosHistoryEdge = isIOS && touch.clientX <= 16;
-      if (event.cancelable && (iosHistoryEdge ||
-          (!isIOS && shouldBlockEdgeTouchStart(touch.clientX, window.innerWidth, isStandalone())))) {
+      if (event.cancelable && !event.defaultPrevented &&
+          shouldBlockEdgeTouchStart(touch.clientX, window.innerWidth, isStandalone())) {
         event.preventDefault();
       }
       gesture = { x: touch.clientX, y: touch.clientY, at: Date.now(),
