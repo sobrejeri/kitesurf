@@ -5,7 +5,7 @@ SELECT
   to_regclass('cron.job') IS NOT NULL AS cron_job_available,
   to_regprocedure('public.advance_instructor_offer(uuid)') IS NOT NULL AS advance_rpc_available,
   (SELECT count(*) FROM public.instructor_offers
-   WHERE status = 'pending' AND expires_at < now()) AS overdue_pending_offers,
+   WHERE status = 'offered' AND expires_at < now()) AS overdue_offered_offers,
   (SELECT count(*) FROM public.instructor_requests
    WHERE status = 'searching' AND expires_at < now()) AS overdue_searches,
   (SELECT count(*) FROM public.profiles WHERE role = 'instructor') AS instructor_profiles;
