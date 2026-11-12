@@ -1,9 +1,17 @@
 /** Shared interval rules; adjacent meetings are allowed, overlapping meetings are not. */
 export interface StudentTimeSlot { startsAt: string; minutes: number }
 
+/** Require an explicit UTC offset to avoid interpreting a local wall-clock time
+ * differently on the browser and the server (or during daylight changes).
+ */
+function parseAbsoluteSlotTime(value: string): number {
+  if (!/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}(?::\d{2}(?:\.\d{1,3})?)?(?:Z|[+-]\d{2}:\d{2})$/.test(value)) return Number.NaN;
+  return Date.parse(value);
+}
+
 export function slotsOverlap(a: StudentTimeSlot, b: StudentTimeSlot): boolean {
-  const start = Date.parse(a.startsAt);
-  const otherStart = Date.parse(b.startsAt);
+  const start = parseAbsoluteSlotTime(a.startsAt);
+  const otherStart = parseAbsoluteSlotTime(b.startsAt);
   // Fail closed: an invalid or zero-length interval must never bypass the
   // client-side conflict guard. Server/database checks remain authoritative.
   if (!Number.isFinite(start) || !Number.isFinite(otherStart) ||
@@ -14,7 +22,7 @@ export function slotsOverlap(a: StudentTimeSlot, b: StudentTimeSlot): boolean {
 
 export function hasScheduleConflict(proposed: readonly StudentTimeSlot[], occupied: readonly StudentTimeSlot[] = []): boolean {
   return proposed.some((slot, index) =>
-    !Number.isFinite(Date.parse(slot.startsAt)) ||
+    !Number.isFinite(parseAbsoluteSlotTime(slot.startsAt)) ||
     !Number.isSafeInteger(slot.minutes) || slot.minutes <= 0 ||
     proposed.some((other, j) => j > index && slotsOverlap(slot, other)) ||
     occupied.some((other) => slotsOverlap(slot, other)));
