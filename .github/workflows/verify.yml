@@ -119,6 +119,8 @@ jobs:
         run: node scripts/test-sandbox-reconciliation.mjs
       - name: Verify sandbox signed webhook manifest
         run: node scripts/test-sandbox-webhook-signature.mjs
+      - name: Verify sandbox webhook inbox replay and collision preflight
+        run: node scripts/test-sandbox-webhook-inbox.mjs
       - run: pnpm build
       - name: Run isolated database migrations and SQL assertions
         # Avoid Ubuntu apt mirrors: their DNS can fail on hosted runners.
