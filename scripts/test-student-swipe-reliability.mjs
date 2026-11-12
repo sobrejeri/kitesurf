@@ -49,9 +49,6 @@ assert.match(pager, /controller\.signal\.aborted/);
 assert.match(pager, /isFreshSwipePreview\(cache\.current\.get\(route\)\)/);
 assert.match(pager, /routeWatchdog = window\.setTimeout\(reset, SWIPE_ROUTE_STALL_MS\)/);
 assert.match(pager, /frame\.removeAttribute\('data-dragging'\)/);
-assert.match(pager, /if \(animateSwipe && neighbor\) fetchPreview\(neighbor\)/);
-assert.match(pager, /if \(!animateSwipe\) return;\s*const offset/);
-assert.match(pager, /if \(!animateSwipe\) \{\s*if \(commit\) \{\s*changingRoute = true;\s*router\.replace\(g\.nextRoute/);
 assert.match(pager, /inFlight\.current\.clear\(\)/);
 assert.match(pager, /'a', 'button', 'summary'/);
 assert.match(sanitizer, /'script', 'style', 'iframe', 'object'/);
@@ -59,4 +56,7 @@ assert.match(sanitizer, /element\.removeAttribute\(attr\.name\)/);
 assert.match(sanitizer, /element\.localName\.includes\('-'\)/);
 assert.doesNotMatch(pager, /incoming\.innerHTML = main\.innerHTML/,
   'Never inject unsanitized authenticated HTML into a live document');
+assert.match(pager, /if \(direction !== g\.direction\) renderPreview\(route, direction\)/);
+assert.match(pager, /page\.style\.transform = `translate3d\(\$\{g\.dx\}px,0,0\)`/);
+assert.match(pager, /swipeDestination\.current = destination;\s*router\.replace\(destination/);
 console.log('PASS: swipe boundaries, stale preview checks, failed-route recovery and sanitized inert snapshots');
