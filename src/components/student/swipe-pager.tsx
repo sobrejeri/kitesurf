@@ -127,6 +127,10 @@ export function StudentSwipePager({
     };
 
     const isMobile = () => window.innerWidth < 768;
+    // WebKit can composite old page and fixed menu layers while dragging.
+    // On iOS, recognize the gesture without translating or previewing pages.
+    const animateSwipe = !/iPhone|iPad|iPod/i.test(navigator.userAgent)
+      && !(navigator.maxTouchPoints > 1 && /Macintosh/i.test(navigator.userAgent));
     // Home-screen app (iOS sets navigator.standalone; others the display mode).
     const isStandalone = () => window.matchMedia('(display-mode: standalone)').matches ||
       (navigator as Navigator & { standalone?: boolean }).standalone === true;
@@ -211,7 +215,7 @@ export function StudentSwipePager({
 
     // Warm only the immediately adjacent pages, not all five heavy dashboards.
     for (const neighbor of [STUDENT_SWIPE_ROUTES[index - 1], STUDENT_SWIPE_ROUTES[index + 1]]) {
-      if (neighbor) fetchPreview(neighbor);
+      if (animateSwipe && neighbor) fetchPreview(neighbor);
     }
 
     const onStart = (event: TouchEvent) => {
@@ -221,11 +225,11 @@ export function StudentSwipePager({
           ignoreTarget(event.target)) return;
       const touch = event.touches.item(0);
       if (!touch) return;
-      // Prevent the iPhone's native history preview on true edge-origin swipes
-      // in a Safari tab only; the installed PWA has no such gesture and a
-      // cancelled touchstart would also cancel vertical scrolling.
-      if (shouldBlockEdgeTouchStart(touch.clientX, window.innerWidth, isStandalone()))
+      // Leave native history gestures at Safari's edge to the browser.
+      if (shouldBlockEdgeTouchStart(touch.clientX, window.innerWidth, isStandalone())) {
+        if (!animateSwipe) return;
         event.preventDefault();
+      }
       gesture = { x: touch.clientX, y: touch.clientY, at: Date.now(),
         dx: 0, axis: 'unknown', direction: 0, nextRoute: null };
     };
@@ -257,10 +261,11 @@ export function StudentSwipePager({
         frame.removeAttribute('data-dragging');
         return;
       }
-      if (direction !== g.direction) renderPreview(route, direction);
+      if (animateSwipe && direction !== g.direction) renderPreview(route, direction);
       g.direction = direction;
       g.nextRoute = route;
       g.dx = Math.max(-frame.clientWidth, Math.min(frame.clientWidth, dx));
+      if (!animateSwipe) return;
       const offset = frame.clientWidth * direction;
       page.style.transition = 'none';
       page.style.transform = `translate3d(${g.dx}px,0,0)`;
@@ -285,6 +290,16 @@ export function StudentSwipePager({
       const distance = Math.abs(g.dx);
       const elapsed = Math.max(1, Date.now() - g.at);
       const commit = shouldCommitStudentSwipe(distance, elapsed, frame.clientWidth);
+      if (!animateSwipe) {
+        if (commit) {
+          changingRoute = true;
+          router.replace(g.nextRoute, { scroll: true });
+          routeWatchdog = window.setTimeout(reset, SWIPE_ROUTE_STALL_MS);
+        } else {
+          reset();
+        }
+        return;
+      }
       const ms = window.matchMedia('(prefers-reduced-motion: reduce)').matches ? 0 : 240;
       page.style.transition = `transform ${ms}ms ${EASE}`;
       incoming.style.transition = `transform ${ms}ms ${EASE}`;

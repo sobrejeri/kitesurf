@@ -20,7 +20,7 @@ for (const x of [0, 6, 20, 28, 195, 362, 384, 390]) {
   assert.equal(shouldBlockEdgeTouchStart(x, width, true), false,
     `Standalone PWA must not block a touch starting at x=${x}`);
 }
-// Safari tab: unchanged behavior, only the outer 28px on each side.
+// Safari tab: detect only the outer 28px on each side.
 assert.equal(shouldBlockEdgeTouchStart(6, width, false), true);
 assert.equal(shouldBlockEdgeTouchStart(28, width, false), true);
 assert.equal(shouldBlockEdgeTouchStart(29, width, false), false);
@@ -34,6 +34,8 @@ assert.equal(shouldBlockEdgeTouchStart(10, 0, false), false);
 const pager = readFileSync('src/components/student/swipe-pager.tsx', 'utf8');
 assert.match(pager, /shouldBlockEdgeTouchStart\(touch\.clientX, window\.innerWidth, isStandalone\(\)\)/,
   'The pager must use the tested edge policy with the real display mode');
+assert.match(pager, /if \(!animateSwipe\) return;\s*event\.preventDefault\(\);/,
+  'The iOS browser must keep its native edge gesture without starting app navigation');
 assert.doesNotMatch(pager, /touch\.clientX <= 28 \|\| touch\.clientX >= window\.innerWidth - 28/,
   'The unconditional edge cancel must be gone');
 assert.match(pager, /matchMedia\('\(display-mode: standalone\)'\)\.matches/,
@@ -41,4 +43,4 @@ assert.match(pager, /matchMedia\('\(display-mode: standalone\)'\)\.matches/,
 assert.match(pager, /navigator as Navigator & \{ standalone\?: boolean \}\)\.standalone === true/,
   'Standalone detection must cover iOS home-screen apps');
 
-console.log('PASS: edge-started vertical scrolling works in the installed PWA; Safari tab guard unchanged');
+console.log('PASS: edge-started vertical scrolling works in the installed PWA; iOS Safari edge navigation stays native');

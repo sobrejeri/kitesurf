@@ -771,7 +771,9 @@ body:has(.theme-beach.theme-mar-profundo) { background:#001829; color:#f4fbff; }
     left:0;right:0;bottom:0;
     width:100%;max-width:100%;
     transform:none;
-    background:linear-gradient(180deg,#002638f8,#001524fd 72%) !important;
+    background:linear-gradient(180deg,#002638,#001524 72%) !important;
+    backdrop-filter:none;
+    -webkit-backdrop-filter:none;
     border-top:1px solid #1a98a9;
     border-radius:28px 28px 0 0;
     box-shadow:0 -10px 32px #000e20a3;
@@ -840,8 +842,6 @@ body:has(.theme-beach.theme-mar-profundo) { background:#001829; color:#f4fbff; }
     min-width:0;
     max-width:100%;
     margin-inline:auto;
-    will-change:transform;
-    backface-visibility:hidden;
   }
   .theme-mar-profundo .vento-student-swipe-viewport > .vento-student-swipe-preview {
     display:block;
