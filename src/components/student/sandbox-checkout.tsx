@@ -9,6 +9,14 @@ import { Card, inputClass } from '@/components/ui';
 type Method = 'pix' | 'card' | 'boleto';
 type Outcome = 'approved' | 'declined' | 'expired' | 'refunded';
 
+type SandboxPayment = {
+  paymentId: string;
+  method: Method;
+  status: 'pending' | Outcome;
+  seenEventIds: string[];
+  payoutStatus: 'not_started';
+};
+
 const METHODS = {
   pix: { label: 'Pix', instructions: 'Uma cobrança Pix aguardaria a confirmação do banco.' },
   card: { label: 'Cartão de crédito', instructions: 'O cartão aguardaria a resposta do emissor. Use os botões abaixo para simular a resposta.' },
@@ -27,7 +35,7 @@ const buttonClass = 'min-h-11 rounded-xl border border-line px-4 text-sm font-se
 
 export function SandboxCheckout({ bookingId, amountCents }: { bookingId: string; amountCents: number }) {
   const [method, setMethod] = useState<Method>('pix');
-  const [payment, setPayment] = useState<ReturnType<typeof applySandboxPaymentEvent> | null>(null);
+  const [payment, setPayment] = useState<SandboxPayment | null>(null);
 
   function apply(outcome: Outcome) {
     setPayment((current) => current && applySandboxPaymentEvent(current, {
