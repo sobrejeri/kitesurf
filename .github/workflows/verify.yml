@@ -23,6 +23,8 @@ jobs:
       - run: pnpm install --frozen-lockfile
       - run: pnpm typecheck
       - run: pnpm lint
+      - name: Verify checkout settlement eligibility
+        run: node --experimental-strip-types scripts/test-checkout-settlement.mjs
       - name: Verify student level is asked only at signup
         run: node scripts/test-auth-kite-level.mjs
       - name: Verify e-mail confirmation and password links return to the public site
