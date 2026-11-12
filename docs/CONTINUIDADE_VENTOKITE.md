@@ -336,3 +336,11 @@ O projeto possui um **avaliador independente preparado, não necessariamente con
 - PR #180 `920da5eaf126e1076bb7197b4f349682f025bbcf`: corrige aceitação de datas impossíveis normalizadas pelo JavaScript no validador compartilhado e adiciona testes de ano bissexto/24h. Aguardar CI do HEAD e verificar Claude QA antes de merge. Sem migrations, sem alterações de reservas reais.
 - E2E autenticado de 4h/2 encontros **não executado**: esta execução não possui sessões autenticadas de aluno e instrutor de homologação. Requer contas de teste autorizadas com sessão de navegador e reserva de teste; não simular aprovação. Fila A→B→C também depende de pelo menos 3 instrutores de teste e execução comprovada do agendador sem navegador; pg_cron ausente na última auditoria.
 - Retomar: (1) CI #180 e QA; (2) merge apenas com CI verde e QA conforme configuração; (3) Render SHA live; (4) priorizar E2E autenticado e scheduler da fila #90–#94/#103; (5) manter checkout real e Protege 3B fechados. **0/18 frentes homologadas.**
+
+
+## Execução 12/11/2026 — 13:18 BRT (fluxo principal)
+- Confirmado Render LIVE SHA `2b1cd0abbec0afaf8c8ef45ad79ba63b2a76d35b` (PR #178). PR #180 CI PASS run `43245941108`, Claude QA SKIPPED; merge squash SHA `b9e98c633936895c93748b0a69c5e2af5d56035e`, **deploy desse SHA ainda não confirmado**.
+- PR #181: complemento de validação de horários absolutos, rejeita segundos 60 e offsets com horas/minutos impossíveis; testes em `scripts/test-student-schedule.mjs`. Aguardar CI e Claude QA do HEAD; sem merge/deploy até CI aprovado.
+- Migrations reais Supabase projeto `qadkqjfmmnxvovyyhqxw`: ledger 39, 40, 41 e 42, preservadas; não houve DDL ou mutação de dados nesta execução.
+- E2E Aluno 4h/2 encontros → aceite Instrutor → presença/minutos/evolução → conferência Aluno segue **não executado**: conector não dispõe de sessão autenticada de navegador de homologação; exigir contas/sessões de teste isoladas. Fila A→B→C exige múltiplos instrutores de teste e scheduler comprovado. Não declarar homologação. 0/18.
+- Próximo: verificar CI/Claude da PR #181; merge se PASS e QA SKIPPED, conferir SHA live sequencialmente no Render; depois atacar fila offline e conflitos concorrentes. Checkout real OFF; Protege 3B fechado.
