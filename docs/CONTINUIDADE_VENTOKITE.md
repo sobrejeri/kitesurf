@@ -290,3 +290,12 @@ O projeto possui um **avaliador independente preparado, não necessariamente con
 - Supabase correto `qadkqjfmmnxvovyyhqxw`: ledger 39–42 confirmado; não aplicadas migrations. Protege 3B fechado, checkout real desativado.
 - PR #166 criada sobre o SHA integrado da #165 com serializador CSV seguro contra fórmulas e teste Node executado localmente; workflow atualizado. **Aguardar CI/Claude QA** antes de merge; não representa endpoint nem autorização server-side.
 - PR #156 segue aberta; QA #157 (`5e711d9`) continua com workflow `43096919035` queued na consulta, não integrar sem resultado. Próxima rodada: verificar CI #166, Render #165, conciliar #157→#156, depois priorizar implementação P0 não financeira e idempotência persistente isolada. 0/18 frentes integralmente homologadas.
+
+
+## Handoff — 12/11/2026 07h BRT (#89/#105)
+
+- Render `srv-dbifnnks728c73f50arg`: PR #166 SHA `0348d02b4038373dd04bbbfdee9fc9fa4d56d24d` confirmado **live** no deploy `dep-dbqo6eijnfac73bpn0a0`.
+- Supabase **VentoKite** `qadkqjfmmnxvovyyhqxw`: ledger oficial 39–42, nenhuma migration aplicada nesta rodada; não executar 01–38. Protege 3B e checkout real fechados.
+- PR #156 possui conflito com a base atual, embora o job verify do run `43189611464` tenha passado. Para preservar a correção e evitar merge conflitado, criada PR #167 `fix/auth-site-url-fallback-rebased-20261112`, a partir da base live, com `src/lib/env.ts` e `scripts/test-auth-redirect-origin.mjs` da #156 após incorporar o ajuste de lint da #157.
+- PR #167: HEAD de código `516009ab25cd04344bd5e40bf225d24b6938636e`; Claude QA run `43198514714` **SKIPPED** (não revisou); CI run `43198514754` estava em andamento. Este commit documental posterior exige verificar o CI do **HEAD final** antes de merge. Nenhum deploy da #167; E2E autenticado de confirmação e recuperação ainda pendente.
+- Próximo: aguardar CI da #167, corrigir falhas, confirmar Claude QA no HEAD final; integrar apenas com CI success e verificar SHA live no Render. Depois reconciliar/fechar #156 como substituída, continuar P0 de autorização por perfil e persistência transacional em ambiente seguro. **0/18 frentes integralmente homologadas**.
