@@ -20,6 +20,9 @@ for (const impossible of [
   '2025-02-29T11:00:00-03:00',
   '2026-04-31T11:00:00-03:00',
   '2026-11-11T24:00:00-03:00',
+  '2026-11-11T11:00:60-03:00',
+  '2026-11-11T11:00:00+24:00',
+  '2026-11-11T11:00:00+03:60',
 ]) {
   assert.equal(hasScheduleConflict([slot(impossible)]), true, 'Impossible calendar dates cannot be normalized');
 }
