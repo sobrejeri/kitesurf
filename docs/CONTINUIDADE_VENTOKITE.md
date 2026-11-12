@@ -258,3 +258,11 @@ O projeto possui um **avaliador independente preparado, não necessariamente con
 - PR #162 (branch `feat/sandbox-payment-events-20261112`, commit inicial `56170f28bfd0424955f0a2ef69cca95518237612`) adiciona reducer puro de eventos sandbox Pix/cartão, idempotência por event ID, transições seguras, testes e CI. Aguardar CI e Claude QA (não presumir aprovação); integrar somente com CI success e confirmar Render.
 - Sandbox ainda NÃO possui webhook assinado, persistência transacional, verificação de propriedade, conciliação Mercado Pago, reembolso parcial nem split 1:N comercial. Nenhum pagamento ou repasse real foi ativado.
 - Supabase correto `qadkqjfmmnxvovyyhqxw` mantém migrations 39–42; Protege 3B fechado. Issue #105 registra ponto de retomada e #101 detalhes financeiros. Priorizar PR #162, PR QA #157 sobre #156, e correções P0/P1 não financeiras independentes.
+
+## Handoff — 12/11/2026 01h BRT (sandbox #101)
+
+- PR #162 integrada após CI success (run 43146825191), squash `94e847a9742f90f6b6958b681e782859f89637fe`; Claude QA `SKIPPED` (run 43146825211), sem revisão independente.
+- Render último `live` confirmado `55d151574308dafbc916ace97b1977b99af5a04d` (deploy `dep-dbqitfqjnfac73bjlhcg`); não declarar #162 live sem verificação posterior.
+- PR #163 criada com reconciliação sandbox pura e testes de regressão; aguardar CI, sem merge prematuro. PR #156 conflitada e #157 com CI em fila; resolver após validação.
+- Supabase kitesurf migrations 39–42; Protege 3B fechado; nenhuma SQL nem transação real nesta rodada. 0/18 frentes homologadas.
+- Retomada: verificar CI e QA da #163, corrigir e integrar somente se aprovado, confirmar deploy live, depois avançar segurança de webhooks e autenticação. Issues #101/#105 contêm evidências.
