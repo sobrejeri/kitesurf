@@ -6,6 +6,16 @@ export interface StudentTimeSlot { startsAt: string; minutes: number }
  */
 function parseAbsoluteSlotTime(value: string): number {
   if (!/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}(?::\d{2}(?:\.\d{1,9})?)?(?:Z|[+-]\d{2}:\d{2})$/.test(value)) return Number.NaN;
+  // Date.parse normalizes impossible calendar dates on some runtimes (e.g.
+  // February 30). Validate the civil date before comparing UTC instants.
+  const year = Number(value.slice(0, 4));
+  const month = Number(value.slice(5, 7));
+  const day = Number(value.slice(8, 10));
+  const hour = Number(value.slice(11, 13));
+  const minute = Number(value.slice(14, 16));
+  if (year < 100 || month < 1 || month > 12 || day < 1 || hour > 23 || minute > 59) return Number.NaN;
+  const maxDay = new Date(Date.UTC(year, month, 0)).getUTCDate();
+  if (day > maxDay) return Number.NaN;
   return Date.parse(value);
 }
 

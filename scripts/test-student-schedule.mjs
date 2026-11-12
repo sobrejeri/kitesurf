@@ -15,6 +15,15 @@ assert.equal(slotsOverlap(slot('2026-11-11T23:00:00-03:00'), slot('2026-11-12T00
 assert.equal(hasScheduleConflict([], [reserved]), false);
 assert.equal(hasScheduleConflict([slot('2026-11-11T11:00:00')]), true, 'Naive local timestamps must be rejected');
 assert.equal(hasScheduleConflict([slot('2026-11-11 11:00:00')]), true, 'Non-ISO local timestamps must be rejected');
+for (const impossible of [
+  '2026-02-30T11:00:00-03:00',
+  '2025-02-29T11:00:00-03:00',
+  '2026-04-31T11:00:00-03:00',
+  '2026-11-11T24:00:00-03:00',
+]) {
+  assert.equal(hasScheduleConflict([slot(impossible)]), true, 'Impossible calendar dates cannot be normalized');
+}
+assert.equal(hasScheduleConflict([slot('2028-02-29T11:00:00-03:00')]), false, 'Valid leap days are allowed');
 assert.equal(slotsOverlap(slot('2026-11-11T14:00:00Z'), reserved), true, 'Explicit UTC and Ceará offsets compare equally');
 assert.equal(slotsOverlap(slot('2026-11-11T14:00:00.123456+00:00'), reserved), true, 'PostgreSQL microsecond timestamps remain valid');
 
