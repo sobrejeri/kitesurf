@@ -9,6 +9,7 @@ import { ActionForm } from '@/components/action-form';
 import { Icon } from '@/components/icon';
 import { StudentHero } from '@/components/student/sunset';
 import { DesktopPageHeader } from '@/components/student/desktop-page-header';
+import { SandboxCheckout } from '@/components/student/sandbox-checkout';
 import { StudentInstructorPhoto } from '@/components/student/instructor-photo';
 import { MeetingQR } from '@/components/student/meeting-qr';
 import { Badge, ButtonLink, Card, Note, ProgressBar } from '@/components/ui';
@@ -33,7 +34,10 @@ const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 const reservationActionClass =
   'w-full min-w-0 !min-h-12 !px-4 !py-3 text-center !text-[13px] !font-semibold leading-snug sm:!text-[14px]';
 
-export default async function BookingPage({ params }: { params: Promise<{ id: string }> }) {
+export default async function BookingPage({ params, searchParams }: {
+  params: Promise<{ id: string }>;
+  searchParams: Promise<{ checkout?: string | string[] }>;
+}) {
   const { id } = await params;
   const viewer = await requireRole(['student'], `/aluno/reserva/${id}`);
   if (!UUID.test(id)) notFound();
@@ -58,6 +62,8 @@ export default async function BookingPage({ params }: { params: Promise<{ id: st
     .select('stars,comment').eq('booking_id',booking.id).eq('student_id',viewer.id)
     .maybeSingle<{stars:number;comment:string}>() : null;
   const awaiting = booking.status === 'awaiting_payment';
+  const showCheckoutSimulation = VALIDATION_WITHOUT_CHECKOUT && awaiting
+    && (await searchParams).checkout === 'simulacao';
   const balance = learningBalance([{ ...booking, status: awaiting ? 'confirmed' : booking.status }]);
   // Paid-but-unrecorded minutes the student may reschedule as a make-up lesson.
   const balanceMinutes = booking.status === 'confirmed' && booking.instructor_id !== null
@@ -357,6 +363,9 @@ export default async function BookingPage({ params }: { params: Promise<{ id: st
               </ActionForm>
               )}
             </Card>
+          ) : null}
+          {showCheckoutSimulation ? (
+            <SandboxCheckout key={booking.id} bookingId={booking.id} amountCents={booking.total_cents} />
           ) : null}
           {awaiting ? (
           <Card>
