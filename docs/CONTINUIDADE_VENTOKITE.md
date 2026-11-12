@@ -307,3 +307,10 @@ O projeto possui um **avaliador independente preparado, não necessariamente con
 - PR #168 aberta na branch `fix/auth-site-url-relative-only-20261112`, reforçando `siteUrl()` contra redirecionamentos externos/protocol-relative e caracteres de controle, com regressão em `scripts/test-auth-redirect-origin.mjs`. CI do HEAD ainda sem resultado; NÃO integrar até verificar CI success e Claude QA. Esta alteração não afeta dados nem pagamentos.
 - PR #156 antiga permanece aberta/conflitada e foi funcionalmente substituída por #167; não integrar a antiga. Supabase migrations 39–42 mantidas, Protege 3B e checkout real fechados, 0/18 frentes homologadas; E2E autenticado por perfil pendente.
 - Próximo: verificar CI/QA da #168, corrigir se necessário, integrar somente após aprovação, confirmar Render #167 e depois #168 em SHA separado; avançar P0 de autorização por perfil e Storage ou idempotência transacional sandbox. Não criar PR de docs isolada.
+
+## Handoff — 12/11/2026 09h BRT (#102, PR #168)
+
+- CI do HEAD `3c908d9c` da PR #168 falhou no lint (`src/lib/env.ts:32`, `no-control-regex`), run 43208644639. Typecheck passou, demais testes foram pulados por falha antecipada. Claude QA run 43208644709 SKIPPED, sem revisão.
+- Correção funcional segura no commit `846f0dfcc75e08fc98beacd554233f30a4a44bb6`: detecção de controles ASCII por código de caractere em `siteUrl()` sem regex proibida, preservando o bloqueio de redirecionamento externo. **Verificar CI do HEAD após este handoff** antes de merge. Não houve merge/deploy da #168.
+- Render confirmou PR #167 `live`: SHA `41ec5b3e66289996027592cecddd75c8fa4bb976`, deploy `dep-dbqq2j8473hc738ajvng`. Supabase kitesurf: ledger 39–42, sem alterações. Protege 3B e checkout real fechados.
+- Issue #89 aparece CLOSED embora E2E autenticado por quatro perfis não esteja concluído; não tratar como frente homologada. Total 0/18. Retomada: CI/QA do HEAD da #168, merge somente se aprovado, deploy SHA exato e depois autorização por perfil/Storage. Evidências: issue #105 comentário 6823427341 e #102 comentário 6823429134.
