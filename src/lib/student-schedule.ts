@@ -19,7 +19,7 @@ function parseAbsoluteSlotTime(value: string): number {
   const offsetMinute = offset ? Number(offset[3]) : 0;
   if (year < 100 || month < 1 || month > 12 || day < 1 ||
       hour > 23 || minute > 59 || second > 59 ||
-      offsetHour > 23 || offsetMinute > 59) return Number.NaN;
+      offsetHour > 14 || offsetMinute > 59 || (offsetHour === 14 && offsetMinute !== 0)) return Number.NaN;
   const maxDay = new Date(Date.UTC(year, month, 0)).getUTCDate();
   if (day > maxDay) return Number.NaN;
   return Date.parse(value);
