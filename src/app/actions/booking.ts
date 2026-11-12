@@ -12,7 +12,7 @@ import { isAllowedLessonLevel } from '@/lib/kite-steps';
 import { LESSON_UTC_OFFSET } from '@/lib/format';
 import { createSupabaseServerClient } from '@/lib/supabase/server';
 import { getStudentOccupiedSlots } from '@/lib/student-occupied-slots';
-import { hasBookingLeadTime, hasScheduleConflict } from '@/lib/student-schedule';
+import { hasBookingLeadTime, hasExactMeetingAllocation, hasScheduleConflict } from '@/lib/student-schedule';
 import { VALIDATION_WITHOUT_CHECKOUT } from '@/lib/booking-mode';
 
 import { friendlyError, type ActionState } from './errors';
@@ -67,9 +67,10 @@ export async function createBooking(_prev: ActionState, form: FormData): Promise
   if (!studentLevel.ready) {
     return { error: 'Atualize o banco de dados para configurar seu nível e continuar a reserva.' };
   }
-  const totalHours = parsed.data.meetings.reduce((sum, meeting) => sum + meeting.hours, 0);
-  if (totalHours > 8) return { error: 'Cada reserva tem de 1 a 8 horas no total.' };
-  if (parsed.data.expectedHours !== undefined && totalHours !== parsed.data.expectedHours) {
+  if (!hasExactMeetingAllocation(parsed.data.meetings.map((meeting) => meeting.hours))) {
+    return { error: 'Cada reserva tem de 1 a 8 horas no total.' };
+  }
+  if (!hasExactMeetingAllocation(parsed.data.meetings.map((meeting) => meeting.hours), parsed.data.expectedHours)) {
     return { error: `Distribua exatamente as ${parsed.data.expectedHours}h escolhidas antes de continuar.` };
   }
   if (parsed.data.meetings.some((meeting) => meeting.date < lessonDate())) {
