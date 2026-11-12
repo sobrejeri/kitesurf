@@ -346,3 +346,11 @@ O projeto possui um **avaliador independente preparado, não necessariamente con
 - Próximo: verificar CI/Claude da PR #181; merge se PASS e QA SKIPPED, conferir SHA live sequencialmente no Render; depois atacar fila offline e conflitos concorrentes. Checkout real OFF; Protege 3B fechado.
 
 - 12/11 14:xx BRT — PR de continuidade `fix/booking-offset-boundary-20261112`: limita offsets ISO de encontros a ±14h (14h somente com minuto zero), testes de limites +14:00/-12:00 e rejeição +15:00/-14:01. PR #181 foi integrada com CI verde e Claude QA SKIPPED; merge SHA `46e2c96c6ce557cd85454f8fb52ed8430985689d`, deploy `dep-dbqv88nf3r2c73aev5v0` estava `build_in_progress` na última consulta. Não há E2E autenticado aprovado. Retomar CI desta nova PR, QA e merge/deploy somente se aprovados; depois atacar scheduler/fila #92/#103 e cenário 4h/2 encontros #90. Sem mexer em checkout ou Protege 3B.
+
+
+## Execução 12/11/2026 — 18:19 BRT — fila offline #92/#103
+- Render confirmado `live`: deploy `dep-dbr1132jnfac73dhp350`, SHA `e0ad7133bd5043a72733e45f927decc284af9671` (#184). PR #185 (gesto iOS) permanece independente e aberta.
+- Supabase correto `qadkqjfmmnxvovyyhqxw`: ledger 39–42. Preflight READ-ONLY constatou 1 instrutor aprovado, 3 buscas `searching` vencidas, 0 ofertas `pending`, 0 ofertas vencidas e 0 ofertas sem prazo. Ausência de cron.job anteriormente observada; **não equivale a prova de ausência de scheduler externo**.
+- PR #186: `scripts/instructor-queue-preflight.sql` e teste `scripts/test-instructor-queue-preflight.mjs`, inspeção agregada sem dados pessoais e sem executar `advance_instructor_offer`. CI/Claude QA e merge/deploy pendentes. Não há correção de scheduler ativada; não alegar que fila foi resolvida.
+- Bloqueio E2E: sem sessão autenticada de navegador de aluno/instrutor em homologação; só 1 instrutor aprovado, insuficiente para A→B→C. Nenhuma reserva real alterada; nenhum cenário E2E aprovado. 0/18 homologadas.
+- Próximo: conferir CI/QA do HEAD #186; se PASS e Claude SKIPPED, integrar, conferir SHA Render; localizar executor externo da fila e verificar logs/cron sem mutar dados, depois validar fluxo 4h/2 encontros com contas autorizadas. Checkout real OFF, Protege 3B fechado.
