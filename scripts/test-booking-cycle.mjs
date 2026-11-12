@@ -78,6 +78,35 @@ assert.equal(evolutionBookingStatus(shortRecorded), 'Saldo a reagendar');
 assert.equal(evolutionBookingStatus(booking('cancel', 'cancelled', [], [])), 'Cancelada');
 console.log('PASS: compact previews open only selected bookings with correct statuses');
 
+// A four-hour package advances one meeting at a time and retains its evolution in history.
+const dates = ['2026-11-17T12:00:00Z', '2026-11-19T12:00:00Z'];
+const twoMeetings = (first, second) => booking('four-hours', 'confirmed', dates, [
+  { status: first, minutes: 120 },
+  { status: second, minutes: 120 },
+], 4);
+
+const confirmedPackage = twoMeetings('scheduled', 'scheduled');
+assert.equal(evolutionBookingStatus(confirmedPackage), 'Confirmada');
+assert.deepEqual(activeBookingStageMeetingIds(confirmedPackage), []);
+
+const firstMeetingRecorded = twoMeetings('done', 'scheduled');
+assert.equal(evolutionBookingStatus(firstMeetingRecorded), 'Em andamento');
+assert.deepEqual(activeBookingStageMeetingIds(firstMeetingRecorded), ['four-hours-0']);
+assert.deepEqual(activeStudentBookings([firstMeetingRecorded]), [firstMeetingRecorded]);
+
+const secondMeetingInProgress = twoMeetings('done', 'in_progress');
+assert.equal(evolutionBookingStatus(secondMeetingInProgress), 'Em aula');
+assert.deepEqual(activeBookingStageMeetingIds(secondMeetingInProgress), ['four-hours-0']);
+
+const bothMeetingsRecorded = twoMeetings('done', 'done');
+assert.equal(evolutionBookingStatus(bothMeetingsRecorded), 'Concluída');
+assert.deepEqual(activeStudentBookings([bothMeetingsRecorded]), []);
+assert.deepEqual(
+  activeBookingStageMeetingIds(selectedStudentBooking([bothMeetingsRecorded], 'four-hours')),
+  ['four-hours-0', 'four-hours-1'],
+);
+console.log('PASS: four-hour package advances across two meetings and retains evolution in history');
+
 const reservationPage = readFileSync('src/app/aluno/(app)/reserva/[id]/page.tsx', 'utf8');
 const actionsStart = reservationPage.indexOf('<nav aria-label="Ações da reserva"');
 const actionsEnd = reservationPage.indexOf('</nav>', actionsStart);
