@@ -883,6 +883,8 @@ body:has(.theme-beach.theme-mar-profundo) { background:#001829; color:#f4fbff; }
     color:#baff08;
   }
   .theme-mar-profundo .vento-student-swipe-viewport[data-dragging="true"] {
+    overflow:clip;
+    clip-path:inset(0);
     cursor:grabbing;
   }
 }
