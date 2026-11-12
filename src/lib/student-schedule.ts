@@ -5,7 +5,7 @@ export interface StudentTimeSlot { startsAt: string; minutes: number }
  * differently on the browser and the server (or during daylight changes).
  */
 function parseAbsoluteSlotTime(value: string): number {
-  if (!/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}(?::\d{2}(?:\.\d{1,3})?)?(?:Z|[+-]\d{2}:\d{2})$/.test(value)) return Number.NaN;
+  if (!/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}(?::\d{2}(?:\.\d{1,9})?)?(?:Z|[+-]\d{2}:\d{2})$/.test(value)) return Number.NaN;
   return Date.parse(value);
 }
 
