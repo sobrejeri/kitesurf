@@ -73,7 +73,9 @@ for (const table of ['bookings', 'instructor_requests', 'booking_meetings']) {
 }
 const originalRequests = responses.instructor_requests;
 for (const invalid of [null, {}, [{ starts_at: '2099-11-18T09:00:00-03:00', hours: 0 }],
-  [{ starts_at: '2099-11-18T09:00:00-03:00', hours: '2' }]]) {
+  [{ starts_at: '2099-11-18T09:00:00-03:00', hours: '2' }],
+  [{ starts_at: 'not-a-date', hours: 2 }],
+  [{ starts_at: '2099-11-18T09:00:00-03:00', hours: Number.MAX_SAFE_INTEGER }]]) {
   responses.instructor_requests = { data: [{ meetings: invalid }], error: null };
   await assert.rejects(() => getStudentOccupiedSlots(studentId),
     /Não foi possível conferir sua agenda/,
@@ -95,6 +97,7 @@ for (const invalid of [
   { starts_at: null, minutes: 120 },
   { starts_at: '2099-11-17T09:00:00-03:00', minutes: 0 },
   { starts_at: '2099-11-17T09:00:00-03:00', minutes: '120' },
+  { starts_at: 'not-a-date', minutes: 120 },
   null,
 ]) {
   responses.booking_meetings = { data: [invalid], error: null };

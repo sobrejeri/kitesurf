@@ -23,7 +23,9 @@ export async function getStudentOccupiedSlots(studentId: string): Promise<Studen
   if (requests.data.some((request) => !Array.isArray(request.meetings)
     || request.meetings.some((meeting) => !meeting
       || typeof meeting.starts_at !== 'string'
-      || !Number.isSafeInteger(meeting.hours) || meeting.hours <= 0))) {
+      || !Number.isFinite(Date.parse(meeting.starts_at))
+      || !Number.isSafeInteger(meeting.hours) || meeting.hours <= 0
+      || !Number.isSafeInteger(meeting.hours * 60)))) {
     console.error('[student.schedule.requests]', { code: 'INVALID_MEETINGS' });
     throw new Error('Não foi possível conferir sua agenda. Tente novamente antes de buscar instrutor.');
   }
@@ -47,6 +49,7 @@ export async function getStudentOccupiedSlots(studentId: string): Promise<Studen
   }
   if (meetings.data.some((meeting) => !meeting
     || typeof meeting.starts_at !== 'string'
+    || !Number.isFinite(Date.parse(meeting.starts_at))
     || !Number.isSafeInteger(meeting.minutes) || meeting.minutes <= 0)) {
     console.error('[student.schedule.meetings]', { code: 'INVALID_MEETING_SLOT' });
     throw new Error('Não foi possível conferir os encontros da sua agenda. Tente novamente.');
