@@ -13,7 +13,7 @@ export async function getStudentOccupiedSlots(studentId: string): Promise<Studen
       .eq('status', 'searching').gt('expires_at', new Date().toISOString())
       .returns<{ meetings: { starts_at: string; hours: number }[] }[]>(),
   ]);
-  if (bookings.error || requests.error) {
+  if (bookings.error || requests.error || !Array.isArray(bookings.data) || !Array.isArray(requests.data)) {
     const error = bookings.error ?? requests.error;
     console.error('[student.schedule]', { code: error?.code, message: error?.message });
     throw new Error('Não foi possível conferir sua agenda. Tente novamente antes de buscar instrutor.');
@@ -24,7 +24,7 @@ export async function getStudentOccupiedSlots(studentId: string): Promise<Studen
     .select('starts_at,minutes').in('booking_id', ids)
     .in('status', ['scheduled', 'in_progress'])
     .returns<{ starts_at: string; minutes: number }[]>() : { data: [], error: null };
-  if (meetings.error) {
+  if (meetings.error || !Array.isArray(meetings.data)) {
     console.error('[student.schedule.meetings]', { code: meetings.error.code });
     throw new Error('Não foi possível conferir os encontros da sua agenda. Tente novamente.');
   }
