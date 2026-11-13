@@ -15,6 +15,7 @@ vm.runInNewContext(transpile(readFileSync(new URL('../src/lib/student-schedule.t
 
 const calls = [];
 let occupied = [];
+let occupiedError = false;
 let rpcError = null;
 let viewerRole = 'student';
 const requestId = '22222222-2222-4222-8222-222222222222';
@@ -40,7 +41,7 @@ const deps = {
   '@/lib/kite-steps': { isAllowedLessonLevel() { return true; } },
   '@/lib/format': { LESSON_UTC_OFFSET: '-03:00' },
   '@/lib/supabase/server': { async createSupabaseServerClient() { return db; } },
-  '@/lib/student-occupied-slots': { async getStudentOccupiedSlots() { return occupied; } },
+  '@/lib/student-occupied-slots': { async getStudentOccupiedSlots() { if (occupiedError) throw new Error('Occupied lookup unavailable'); return occupied; } },
   '@/lib/student-schedule': schedule.exports,
   '@/lib/booking-mode': { VALIDATION_WITHOUT_CHECKOUT: true },
   './errors': { friendlyError(error) { return error.message; } },
@@ -114,6 +115,13 @@ for (const updates of [
   assert.ok(result.error, 'Invalid booking must fail before RPC');
 }
 assert.equal(calls.length, 1);
+
+// A failed occupied-slot lookup must fail closed, never bypass schedule conflicts.
+occupiedError = true;
+result = await create({}, form());
+assert.match(result.error, /Não foi possível conferir sua agenda/);
+assert.equal(calls.length, 1);
+occupiedError = false;
 
 // Privileged RPC rejection must not redirect or report success.
 rpcError = { code: 'TEST_ERROR', message: 'Database rejected booking' };
