@@ -12,6 +12,9 @@ declare
   v_second timestamptz;
   v_id uuid;
   v_meetings jsonb;
+  v_rate integer;
+  v_price_id uuid;
+  v_count integer;
 begin
   select id into strict v_beach from public.beaches where slug='jeri';
   -- Choose two distinct local dates that meet the actual instructor schedule,
@@ -51,6 +54,13 @@ begin
       and b.instructor_id='00000000-0000-0000-0000-0000000000a1'
       and b.total_hours=4
   ) then raise exception '4h booking not persisted with expected owner/instructor'; end if;
+  -- The server, not the student payload, must determine the immutable price.
+  select hourly_rate_cents, price_version_id into v_rate,v_price_id
+  from public.bookings where id=v_id;
+  if v_rate is null or v_rate<=0 or v_price_id is null then
+    raise exception 'Booking price snapshot is missing'; end if;
+  if (select total_cents from public.bookings where id=v_id) <> 4*v_rate then
+    raise exception 'Server-priced booking total does not match 4h'; end if;
   if (select count(*) from public.booking_meetings where booking_id=v_id)<>2 then
     raise exception 'Expected exactly two meetings'; end if;
   if (select sum(minutes) from public.booking_meetings where booking_id=v_id)<>240 then
@@ -58,6 +68,20 @@ begin
   if (select count(distinct (starts_at at time zone 'America/Fortaleza')::date)
       from public.booking_meetings where booking_id=v_id)<>2 then
     raise exception 'Expected meetings on two distinct local days'; end if;
+  -- Exercise actual RLS as both authenticated students; no service-role reads.
+  perform set_config('request.jwt.claim.sub','00000000-0000-0000-0000-0000000000b1',true);
+  execute 'set local role authenticated';
+  select count(*) into v_count from public.bookings where id=v_id;
+  if v_count<>0 then raise exception 'IDOR: another student sees booking'; end if;
+  select count(*) into v_count from public.booking_meetings where booking_id=v_id;
+  if v_count<>0 then raise exception 'IDOR: another student sees meetings'; end if;
+  execute 'reset role';
+  perform set_config('request.jwt.claim.sub','00000000-0000-0000-0000-0000000000b2',true);
+  execute 'set local role authenticated';
+  select count(*) into v_count from public.booking_meetings where booking_id=v_id;
+  if v_count<>2 then raise exception 'Owner cannot read both meetings'; end if;
+  execute 'reset role';
+  raise notice 'PASS: RLS isolates both meetings; server price snapshot matches 4h';
   raise notice 'PASS: authenticated student booking 4h in two days persisted as 2x120 minutes';
 end $$;
 SQL
