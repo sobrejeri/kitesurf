@@ -139,3 +139,6 @@ await import('./test-instructor-meeting-actions.mjs');
 
 // Validate the student half of the 4h/2-meeting E2E target using real server action and isolated mocks.
 await import('./test-booking-four-hours-action.mjs');
+
+// Isolated 72h reschedule and cancellation-choice server action regression.
+await import('./test-meeting-change-actions.mjs');
