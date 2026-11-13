@@ -64,4 +64,11 @@ for (const table of ['bookings', 'instructor_requests', 'booking_meetings']) {
   await assert.rejects(() => getStudentOccupiedSlots(studentId), /Não foi possível conferir/);
   responses[table] = original;
 }
+for (const table of ['bookings', 'instructor_requests', 'booking_meetings']) {
+  const original = responses[table];
+  responses[table] = { data: null, error: null };
+  await assert.rejects(() => getStudentOccupiedSlots(studentId), /Não foi possível conferir/,
+    'Null query results must never be mistaken for an empty student schedule');
+  responses[table] = original;
+}
 console.log('PASS: occupied student schedule reads ownership, filters stale bookings, includes active requests and fails closed on all three query errors');
