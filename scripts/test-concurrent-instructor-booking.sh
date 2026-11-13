@@ -8,8 +8,9 @@ PSQL=(psql -X -h "$PG_TEST_SOCKET" -p "$PG_TEST_PORT" -U postgres -d postgres -v
 scratch="$(mktemp -d)"
 trap 'rm -rf "$scratch"' EXIT
 
-# Use a date within the booking horizon; +40 days was rejected by the
-# booking eligibility rules before concurrency could be exercised.
+# Match the known-good first_time level used by the isolated SQL booking fixtures.
+# The earlier 'returning' level did not establish an eligible instructor; this
+# test must first reach a valid offer before testing contention.
 slot="$("${PSQL[@]}" -c "select (now() + interval '6 days')::timestamptz")"
 beach="$("${PSQL[@]}" -c "select id from public.beaches where slug='jeri'")"
 [[ "$slot" =~ ^[0-9]{4}-[0-9]{2}-[0-9]{2} ]] || { echo "Invalid isolated test timestamp" >&2; exit 1; }
@@ -19,7 +20,7 @@ for entry in 'b1' 'b2'; do
   cat > "$scratch/$entry.sql" <<SQL
 set role authenticated;
 select set_config('request.jwt.claim.sub', '00000000-0000-0000-0000-0000000000$entry', false);
-select public.create_booking('$beach'::uuid, 'returning', 'Português',
+select public.create_booking('$beach'::uuid, 'first_time', 'Português',
   jsonb_build_array(jsonb_build_object('starts_at', '$slot', 'hours', 2)));
 SQL
 done
