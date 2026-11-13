@@ -136,3 +136,6 @@ await import('./test-queue-worker-http.mjs');
 
 // Isolated server-action regression for the instructor half of the 4h/2-meeting flow.
 await import('./test-instructor-meeting-actions.mjs');
+
+// Isolated server action for the 4h/two-encounter student reservation.
+await import('./test-booking-4h-isolated.mjs');
