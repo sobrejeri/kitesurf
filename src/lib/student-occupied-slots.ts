@@ -45,6 +45,12 @@ export async function getStudentOccupiedSlots(studentId: string): Promise<Studen
     console.error('[student.schedule.meetings]', { code: meetings.error?.code ?? 'NULL_RESULT' });
     throw new Error('Não foi possível conferir os encontros da sua agenda. Tente novamente.');
   }
+  if (meetings.data.some((meeting) => !meeting
+    || typeof meeting.starts_at !== 'string'
+    || !Number.isSafeInteger(meeting.minutes) || meeting.minutes <= 0)) {
+    console.error('[student.schedule.meetings]', { code: 'INVALID_MEETING_SLOT' });
+    throw new Error('Não foi possível conferir os encontros da sua agenda. Tente novamente.');
+  }
   return [
     ...(meetings.data ?? []).map((meeting) => ({ startsAt: meeting.starts_at, minutes: meeting.minutes })),
     ...(requests.data ?? []).flatMap((request) => request.meetings.map((meeting) =>

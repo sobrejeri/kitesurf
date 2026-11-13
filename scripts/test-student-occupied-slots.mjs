@@ -90,4 +90,17 @@ for (const invalidTimestamp of [null, 'not-a-date', '']) {
     'Malformed pending booking timestamp must not silently free a reserved slot');
 }
 responses.bookings = originalBookings;
+const originalMeetingRows = responses.booking_meetings;
+for (const invalid of [
+  { starts_at: null, minutes: 120 },
+  { starts_at: '2099-11-17T09:00:00-03:00', minutes: 0 },
+  { starts_at: '2099-11-17T09:00:00-03:00', minutes: '120' },
+  null,
+]) {
+  responses.booking_meetings = { data: [invalid], error: null };
+  await assert.rejects(() => getStudentOccupiedSlots(studentId),
+    /Não foi possível conferir os encontros/,
+    'Malformed occupied meeting rows must not be treated as available time');
+}
+responses.booking_meetings = originalMeetingRows;
 console.log('PASS: occupied student schedule reads ownership, filters stale bookings, includes active requests and fails closed on all three query errors');
