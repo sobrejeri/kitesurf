@@ -16,18 +16,14 @@ export async function startMeeting(_prev: ActionState, form: FormData): Promise<
   if (!parsed.success) return { error: 'Informe o código de 4 dígitos.' };
 
   const supabase = await createSupabaseServerClient();
-  let { error } = await supabase.rpc('start_ordered_meeting', {
+  const { error } = await supabase.rpc('start_ordered_meeting', {
     p_meeting_id: parsed.data.meetingId,
     p_presence_code: parsed.data.presenceCode,
   });
-  // During rollout, keep existing lessons operable until Migration 26 is
-  // applied. Once installed, PostgreSQL enforces the day and sequence checks.
+  // Fail closed: never fall back to start_meeting, which may bypass the
+  // ordered-meeting sequence and permitted start-window checks.
   if (error && (error.code === 'PGRST202' || error.code === '42883')) {
-    const legacy = await supabase.rpc('start_meeting', {
-      p_meeting_id: parsed.data.meetingId,
-      p_presence_code: parsed.data.presenceCode,
-    });
-    error = legacy.error;
+    return { error: 'O início seguro da aula ainda não está disponível no banco. Avise a administração.' };
   }
   if (error) return { error: friendlyError(error) };
   revalidatePath('/instrutor/aula');

@@ -102,3 +102,10 @@ assert.equal(hasRepeatedMeetingDay(['2026-11-17', '2026-11-17']), true, 'Two adj
 assert.equal(hasRepeatedMeetingDay(['2026-11-17', '2026-11-18', '2026-11-17']), true, 'Non-adjacent duplicate day rejected');
 assert.equal(hasRepeatedMeetingDay(['invalid']), true, 'Malformed day rejected');
 console.log('PASS: one encounter per calendar day');
+
+// The instructor must not fall back to an older RPC that skips ordering/window guards.
+import { readFileSync } from 'node:fs';
+const instructorActions = readFileSync(new URL('../src/app/actions/instructor.ts', import.meta.url), 'utf8');
+assert.match(instructorActions, /rpc\('start_ordered_meeting'/);
+assert.doesNotMatch(instructorActions, /rpc\('start_meeting'/, 'No legacy start fallback is allowed');
+console.log('PASS: instructor start action requires ordered meeting RPC');
