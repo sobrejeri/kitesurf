@@ -12,11 +12,13 @@ export function planExpiredQueueBatch(rows, options = {}) {
   const seen = new Set();
   const eligible = [];
   for (const row of rows) {
-    if (!row || typeof row.id !== 'string' || !/^[0-9a-f]{8}-[0-9a-f-]{27,}$/i.test(row.id)) continue;
+    if (!row || typeof row.id !== 'string' || !/^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(row.id)) continue;
     if (row.status !== 'searching' || seen.has(row.id)) continue;
     const created = Date.parse(row.created_at);
     const deadline = Date.parse(row.expires_at);
     if (!Number.isFinite(created) || !Number.isFinite(deadline)) continue;
+    // Reject inconsistent fixtures before considering an offline mutation.
+    if (created > current || deadline < created) continue;
     // Legacy requests must be triaged, never silently reprocessed.
     if (created < activation || deadline > current || deadline < current - maxAgeMinutes * 60000) continue;
     seen.add(row.id);
