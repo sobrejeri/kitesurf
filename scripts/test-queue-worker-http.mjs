@@ -19,7 +19,7 @@ const makeQuery = (rows, error = null) => ({
   lte() { return this; },
   gt() { return this; },
   order() { return this; },
-  limit(n) { assert.equal(n, 20); return Promise.resolve({ data: rows, error }); },
+  limit(n) { assert.equal(n, 20); return Promise.resolve({ data: rows.slice(0, n), error }); },
 });
 async function invoke({ enabled = 'true', authorization = 'Bearer ' + TOKEN,
   secret = 'test-only-secret', expired = [], active = [], expiredError = null,
@@ -98,5 +98,14 @@ const partial = await invoke({ expired: [{ id: 'a' }, { id: 'b' }],
 assert.equal(partial.status, 503);
 assert.deepEqual(partial.body, { processed: 1, failed: 1 });
 assert.deepEqual(partial.calls, ['a', 'b']);
+
+const batch = await invoke({
+  expired: Array.from({ length: 25 }, (_, i) => ({ id: 'expired-' + i })),
+  active: Array.from({ length: 25 }, (_, i) => ({ id: 'active-' + i })),
+});
+assert.equal(batch.status, 200);
+assert.deepEqual(batch.body, { processed: 40, failed: 0 });
+assert.equal(batch.calls.length, 40);
+assert.equal(new Set(batch.calls).size, 40, 'A batch must not process a request twice');
 
 console.log('PASS: queue maintenance HTTP handler fail-closed, authentication, selection errors, RPC partial failure and bounded query contract (isolated mocks)');
