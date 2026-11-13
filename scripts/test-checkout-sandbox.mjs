@@ -17,3 +17,5 @@ assert.throws(() => nextSandboxStatus('declined', 'approved'));
 assert.equal(sandboxIdempotencyKey('pagarme', 'event_12345678'), 'pagarme:event_12345678');
 assert.throws(() => sandboxIdempotencyKey('pagarme', '../unsafe'));
 console.log('PASS: offline checkout quote, split conservation, state transitions, event IDs');
+
+await import('./test-checkout-event-replay.mjs');
