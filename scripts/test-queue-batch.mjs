@@ -14,6 +14,14 @@ const rows = [
  row(2,'2026-11-13T11:01:00Z','2026-11-13T11:55:00Z'),
 ];
 assert.deepEqual(planExpiredQueueBatch(rows,{now,activatedAt}),[id(2),id(6)]);
+// A malformed ID or impossible timestamps must never enter the worker batch.
+const badRows = [
+  { ...row(7,'2026-11-13T11:01:00Z','2026-11-13T11:59:00Z'), id: id(7) + '-extra' },
+  row(8,'2026-11-13T12:01:00Z','2026-11-13T11:59:00Z'),
+  row(9,'2026-11-13T11:59:30Z','2026-11-13T11:59:00Z'),
+  row(10,'2026-11-13T11:01:00Z','2026-11-13T11:59:00Z'),
+];
+assert.deepEqual(planExpiredQueueBatch(badRows,{now,activatedAt}),[id(10)]);
 assert.deepEqual(planExpiredQueueBatch(rows,{now,activatedAt,limit:1}),[id(2)]);
 assert.deepEqual(planExpiredQueueBatch(rows,{now,activatedAt:'2026-11-13T12:00:00Z'}),[]);
 assert.throws(()=>planExpiredQueueBatch(rows,{now,activatedAt,limit:101}),RangeError);
