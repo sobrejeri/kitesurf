@@ -383,3 +383,10 @@ O projeto possui um **avaliador independente preparado, não necessariamente con
 - PR #206 CI `43492192314` SUCCESS e Claude QA `43492192281` SKIPPED, integrada SHA `176f58120a483f544dd71677651a6115ff2327d0`. Deploy `dep-dbrm9ftbedkc73bi1bo0` aguardava publicação na última consulta.
 - Branch `test/meeting-change-actions-isolated-20261113`: teste isolado da ação real de reagendamento, valida datas impossíveis/passadas, prazo de 72h, fuso -03:00, aceite/recusa, opção de substituir instrutor e erro de RPC. Aguardar CI/merge/deploy; não equivale a E2E de cancelamento/agenda.
 - E2E autenticado 4h/2 encontros ainda exige contas/sessões de Aluno e Instrutor e fixture isolada; 0/18 homologados. Checkout real OFF, Protege 3B fechado, worker OFF, migrations 39–42 preservadas.
+
+
+## 13/11/2026 17h BRT — leitura fail-closed da agenda (#91)
+- CI da PR #209 (run 43492713154) SUCCESS; Claude QA run 43492713067 SKIPPED; merge SHA 470f7a7d262d58149cc72d27d32d5fdd3b269286. Confirmar deploy deste SHA antes de declarar live.
+- Nova branch `fix/student-schedule-null-reads-20261113`: a leitura `getStudentOccupiedSlots` rejeita dados `null` e linhas inválidas mesmo quando PostgREST não retorna erro; antes, `?? []` poderia interpretar leitura incompleta como agenda livre. Teste isolado `scripts/test-student-occupied-slots.mjs` adicionado ao CI. Ainda requer CI, revisão, merge e deploy.
+- Migrations reais no projeto `qadkqjfmmnxvovyyhqxw`: 39, 40, 41, 42 listadas; nenhuma migration aplicada. Render SHA #208 `5db292c0` confirmado live. E2E concorrente com duas sessões e E2E Aluno→Instrutor→Aluno permanecem pendentes, sem fixtures/sessões autorizadas. Worker OFF, checkout real OFF, Protege 3B fechado, 0/18 homologadas.
+- Retomar: CI do hardening da agenda; corrigir se falhar; conferir QA, merge e deploy; depois prova transacional de corrida entre duas solicitações em PostgreSQL isolado e teste E2E autorizado.
