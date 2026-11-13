@@ -346,3 +346,7 @@ O projeto possui um **avaliador independente preparado, não necessariamente con
 - Próximo: verificar CI/Claude da PR #181; merge se PASS e QA SKIPPED, conferir SHA live sequencialmente no Render; depois atacar fila offline e conflitos concorrentes. Checkout real OFF; Protege 3B fechado.
 
 - 12/11 14:xx BRT — PR de continuidade `fix/booking-offset-boundary-20261112`: limita offsets ISO de encontros a ±14h (14h somente com minuto zero), testes de limites +14:00/-12:00 e rejeição +15:00/-14:01. PR #181 foi integrada com CI verde e Claude QA SKIPPED; merge SHA `46e2c96c6ce557cd85454f8fb52ed8430985689d`, deploy `dep-dbqv88nf3r2c73aev5v0` estava `build_in_progress` na última consulta. Não há E2E autenticado aprovado. Retomar CI desta nova PR, QA e merge/deploy somente se aprovados; depois atacar scheduler/fila #92/#103 e cenário 4h/2 encontros #90. Sem mexer em checkout ou Protege 3B.
+
+## Handoff 13/11/2026 — reserva 4h/2 encontros, regra por dia
+- PR em preparação: bloquear no servidor dois encontros da mesma reserva no mesmo dia, mesmo quando horários não se sobrepõem. Teste automatizado cobre 4h/2 datas válidas e duplicação de data. A validação atômica de reservas concorrentes permanece no banco.
+- E2E autenticado Aluno/Instrutor ainda pendente de sessões de homologação e fixtures isoladas. Protege 3B e checkout real seguem fechados. Supabase migrações 39–42; 43 não aplicada. Não afirmar deploy antes do Render live.
