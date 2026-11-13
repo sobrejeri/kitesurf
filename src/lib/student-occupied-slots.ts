@@ -13,7 +13,7 @@ export async function getStudentOccupiedSlots(studentId: string): Promise<Studen
       .eq('status', 'searching').gt('expires_at', new Date().toISOString())
       .returns<{ meetings: { starts_at: string; hours: number }[] }[]>(),
   ]);
-  if (bookings.error || requests.error) {
+  if (bookings.error || requests.error || !Array.isArray(bookings.data) || !Array.isArray(requests.data)) {
     const error = bookings.error ?? requests.error;
     console.error('[student.schedule]', { code: error?.code, message: error?.message });
     throw new Error('Não foi possível conferir sua agenda. Tente novamente antes de buscar instrutor.');
@@ -24,12 +24,18 @@ export async function getStudentOccupiedSlots(studentId: string): Promise<Studen
     .select('starts_at,minutes').in('booking_id', ids)
     .in('status', ['scheduled', 'in_progress'])
     .returns<{ starts_at: string; minutes: number }[]>() : { data: [], error: null };
-  if (meetings.error) {
+  if (meetings.error || !Array.isArray(meetings.data)) {
     console.error('[student.schedule.meetings]', { code: meetings.error.code });
     throw new Error('Não foi possível conferir os encontros da sua agenda. Tente novamente.');
   }
+  if (requests.data.some((request) => !Array.isArray(request.meetings) || request.meetings.some((meeting) =>
+    typeof meeting.starts_at !== 'string' || !Number.isSafeInteger(meeting.hours) || meeting.hours <= 0)) ||
+    meetings.data.some((meeting) => typeof meeting.starts_at !== 'string' ||
+      !Number.isSafeInteger(meeting.minutes) || meeting.minutes <= 0)) {
+    throw new Error('Não foi possível validar todos os horários da sua agenda. Tente novamente.');
+  }
   return [
-    ...(meetings.data ?? []).map((meeting) => ({ startsAt: meeting.starts_at, minutes: meeting.minutes })),
+    ...meetings.data.map((meeting) => ({ startsAt: meeting.starts_at, minutes: meeting.minutes })),
     ...(requests.data ?? []).flatMap((request) => request.meetings.map((meeting) =>
       ({ startsAt: meeting.starts_at, minutes: meeting.hours * 60 }))),
   ];
