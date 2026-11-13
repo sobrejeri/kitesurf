@@ -8,13 +8,32 @@ PSQL=(psql -X -h "$PG_TEST_SOCKET" -p "$PG_TEST_PORT" -U postgres -d postgres -v
 scratch="$(mktemp -d)"
 trap 'rm -rf "$scratch"' EXIT
 
-# Match the known-good first_time level used by the isolated SQL booking fixtures.
-# The earlier 'returning' level did not establish an eligible instructor; this
-# test must first reach a valid offer before testing contention.
-slot="$("${PSQL[@]}" -c "select (now() + interval '6 days')::timestamptz")"
+# Find an actually eligible slot using the same eligibility predicate as the RPC.
+# Avoid hardcoded +N-day assumptions, weekly schedules, and prior fixtures.
 beach="$("${PSQL[@]}" -c "select id from public.beaches where slug='jeri'")"
-[[ "$slot" =~ ^[0-9]{4}-[0-9]{2}-[0-9]{2} ]] || { echo "Invalid isolated test timestamp" >&2; exit 1; }
 [[ "$beach" =~ ^[0-9a-f-]{36}$ ]] || { echo "Missing isolated Jeri beach" >&2; exit 1; }
+slot="$("${PSQL[@]}" -c "
+with slots as (
+  select (date_trunc('day', now() at time zone 'America/Fortaleza')
+    + make_interval(days=>d, hours=>h)) at time zone 'America/Fortaleza' as st
+  from generate_series(2, 20) d cross join generate_series(8, 16) h
+)
+select st::text from slots
+where exists (
+  select 1 from public.instructors i
+  join public.instructor_beaches ib on ib.instructor_id=i.id
+  where i.id='00000000-0000-0000-0000-0000000000a1'::uuid
+    and i.status='approved' and ib.beach_id='$beach'::uuid
+    and 'Português'=any(i.languages)
+    and public.instructor_can_attend(i.id,
+      jsonb_build_array(jsonb_build_object('starts_at',st,'hours',2)))
+)
+order by st limit 1")"
+if [[ ! "$slot" =~ ^[0-9]{4}-[0-9]{2}-[0-9]{2} ]]; then
+  echo "Fixture invalid: no eligible Rafael/Jeri slot in next 20 days" >&2
+  "${PSQL[@]}" -c "select id,status,languages,queue_position from public.instructors where id='00000000-0000-0000-0000-0000000000a1'::uuid" >&2
+  exit 1
+fi
 
 for entry in 'b1' 'b2'; do
   cat > "$scratch/$entry.sql" <<SQL
