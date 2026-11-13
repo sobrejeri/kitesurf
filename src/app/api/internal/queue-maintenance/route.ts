@@ -37,7 +37,7 @@ export async function POST(request: NextRequest) {
     .from('instructor_requests').select('id').eq('status', 'searching')
     .lte('expires_at', now).order('expires_at', { ascending: true }).limit(20);
   if (expiredError || !Array.isArray(expired)) {
-    console.error('[queue-maintenance] expired selection failed', expiredError.code);
+    console.error('[queue-maintenance] expired selection failed', expiredError?.code ?? 'NULL_RESULT');
     return NextResponse.json({ error: 'Queue selection failed' }, { status: 500 });
   }
   // Also retry still-open requests; the RPC returns an active offer unchanged and
@@ -46,7 +46,7 @@ export async function POST(request: NextRequest) {
     .from('instructor_requests').select('id').eq('status', 'searching')
     .gt('expires_at', now).order('created_at', { ascending: true }).limit(20);
   if (activeError || !Array.isArray(active)) {
-    console.error('[queue-maintenance] active selection failed', activeError.code);
+    console.error('[queue-maintenance] active selection failed', activeError?.code ?? 'NULL_RESULT');
     return NextResponse.json({ error: 'Queue selection failed' }, { status: 500 });
   }
   let processed = 0;
