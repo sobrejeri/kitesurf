@@ -101,6 +101,10 @@ assert.equal(hasRepeatedMeetingDay(['2026-11-17', '2026-11-19']), false, '4h acr
 assert.equal(hasRepeatedMeetingDay(['2026-11-17', '2026-11-17']), true, 'Two adjacent meetings on the same day are forbidden');
 assert.equal(hasRepeatedMeetingDay(['2026-11-17', '2026-11-18', '2026-11-17']), true, 'Non-adjacent duplicate day rejected');
 assert.equal(hasRepeatedMeetingDay(['invalid']), true, 'Malformed day rejected');
+for (const invalidDay of ['2026-02-30', '2026-04-31', '2025-02-29', '2026-00-01', '2026-13-01', '0000-01-01']) {
+  assert.equal(hasRepeatedMeetingDay([invalidDay]), true, 'Impossible day must be rejected: ' + invalidDay);
+}
+assert.equal(hasRepeatedMeetingDay(['2028-02-29', '2028-03-01']), false, 'Valid leap day must be accepted');
 console.log('PASS: one encounter per calendar day');
 
 // The instructor must not fall back to an older RPC that skips ordering/window guards.
