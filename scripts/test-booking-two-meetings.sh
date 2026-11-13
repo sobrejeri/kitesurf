@@ -13,7 +13,7 @@ declare
   v_id uuid;
   v_meetings jsonb;
   v_rate integer;
-  v_price_id uuid;
+  v_price_id bigint;
   v_count integer;
 begin
   select id into strict v_beach from public.beaches where slug='jeri';
