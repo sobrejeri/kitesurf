@@ -109,7 +109,7 @@ begin
   perform set_config('request.jwt.claim.sub','00000000-0000-0000-0000-0000000000b2',true);
   execute 'set local role authenticated';
   select count(*) into v_count from public.booking_meetings
-    where booking_id=v_id and done_minutes>0 and notes is not null;
+    where booking_id=v_id and done_minutes>0 and note is not null;
   if v_count<>2 then
     raise exception 'Student cannot see progress/minutes for both encounters'; end if;
   execute 'reset role';
