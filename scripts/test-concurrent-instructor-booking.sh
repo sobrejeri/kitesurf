@@ -8,8 +8,9 @@ PSQL=(psql -X -h "$PG_TEST_SOCKET" -p "$PG_TEST_PORT" -U postgres -d postgres -v
 scratch="$(mktemp -d)"
 trap 'rm -rf "$scratch"' EXIT
 
-# Pick a future time outside the fixtures in 10_rules.test.sql.
-slot="$("${PSQL[@]}" -c "select (date_trunc('day', now() + interval '40 days') + interval '12 hours')::timestamptz")"
+# Use a date within the booking horizon; +40 days was rejected by the
+# booking eligibility rules before concurrency could be exercised.
+slot="$("${PSQL[@]}" -c "select (now() + interval '6 days')::timestamptz")"
 beach="$("${PSQL[@]}" -c "select id from public.beaches where slug='jeri'")"
 [[ "$slot" =~ ^[0-9]{4}-[0-9]{2}-[0-9]{2} ]] || { echo "Invalid isolated test timestamp" >&2; exit 1; }
 [[ "$beach" =~ ^[0-9a-f-]{36}$ ]] || { echo "Missing isolated Jeri beach" >&2; exit 1; }
