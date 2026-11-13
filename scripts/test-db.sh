@@ -30,3 +30,6 @@ done
 
 # Run actual two-connection race only in this disposable database, after rule fixtures.
 PG_TEST_SOCKET="$DATA" PG_TEST_PORT="$PORT" bash "$ROOT/scripts/test-concurrent-instructor-booking.sh"
+
+# Validate the core student flow: four scheduled hours split across two days.
+PG_TEST_SOCKET="$DATA" PG_TEST_PORT="$PORT" bash "$ROOT/scripts/test-booking-two-meetings.sh"
