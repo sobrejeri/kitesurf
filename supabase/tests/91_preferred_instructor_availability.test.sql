@@ -1,3 +1,15 @@
+-- Each SQL test file runs in a fresh psql connection; helpers from 10_rules do not persist.
+CREATE FUNCTION pg_temp.act_as(uid text) RETURNS void LANGUAGE plpgsql AS $$
+BEGIN
+  PERFORM set_config('request.jwt.claim.sub', uid, false);
+  EXECUTE 'set role authenticated';
+END $$;
+CREATE FUNCTION pg_temp.reset() RETURNS void LANGUAGE plpgsql AS $$
+BEGIN
+  EXECUTE 'reset role';
+  PERFORM set_config('request.jwt.claim.sub', '', false);
+END $$;
+
 -- Regression for #91/#92: every candidate, including preferred, must pass instructor_can_attend.
 DO $$
 DECLARE body text;
