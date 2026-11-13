@@ -1,5 +1,5 @@
 import assert from 'node:assert/strict';
-import { hasBookingLeadTime, hasExactMeetingAllocation, hasScheduleConflict, slotsOverlap } from '../src/lib/student-schedule.ts';
+import { hasBookingLeadTime, hasExactMeetingAllocation, hasRepeatedMeetingDay, hasScheduleConflict, slotsOverlap } from '../src/lib/student-schedule.ts';
 import { lessonHasEvolution, lessonEvolutionHref, lessonIsPast, lessonNeedsInstructorRecord } from '../src/lib/student-lesson-links.ts';
 
 const slot = (startsAt, minutes = 120) => ({ startsAt, minutes });
@@ -96,3 +96,9 @@ const secondTwoHours = slot('2026-11-19T09:00:00-03:00', 120);
 assert.equal(hasScheduleConflict([firstTwoHours, secondTwoHours]), false);
 assert.equal(hasScheduleConflict([firstTwoHours, secondTwoHours], [secondTwoHours]), true);
 console.log('PASS: exact 4h/two-meeting allocation and schedule collision regression');
+
+assert.equal(hasRepeatedMeetingDay(['2026-11-17', '2026-11-19']), false, '4h across two distinct days allowed');
+assert.equal(hasRepeatedMeetingDay(['2026-11-17', '2026-11-17']), true, 'Two adjacent meetings on the same day are forbidden');
+assert.equal(hasRepeatedMeetingDay(['2026-11-17', '2026-11-18', '2026-11-17']), true, 'Non-adjacent duplicate day rejected');
+assert.equal(hasRepeatedMeetingDay(['invalid']), true, 'Malformed day rejected');
+console.log('PASS: one encounter per calendar day');
