@@ -4,7 +4,7 @@ export interface StudentTimeSlot { startsAt: string; minutes: number }
 /** Require an explicit UTC offset to avoid interpreting a local wall-clock time
  * differently on the browser and the server (or during daylight changes).
  */
-function parseAbsoluteSlotTime(value: string): number {
+export function parseAbsoluteSlotTime(value: string): number {
   if (!/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}(?::\d{2}(?:\.\d{1,9})?)?(?:Z|[+-]\d{2}:\d{2})$/.test(value)) return Number.NaN;
   // Date.parse normalizes impossible calendar dates on some runtimes (e.g.
   // February 30). Validate the civil date before comparing UTC instants.
