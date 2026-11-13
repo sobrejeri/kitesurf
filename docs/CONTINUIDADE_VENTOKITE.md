@@ -360,3 +360,10 @@ O projeto possui um **avaliador independente preparado, não necessariamente con
 - Último Render live verificado: `4df219beceb9257d458417b987eb88ac34189fa3` (PR #202), deploy `dep-dbrjo4m7bikc73f5012g`. #203 ainda NÃO publicado.
 - Homologação real Aluno 4h/2 encontros → Instrutor aceite/presença/minutos/evolução → Aluno confere permanece bloqueada por ausência de sessões autenticadas e fixtures isoladas. Fila A→B→C exige três instrutores de teste e disparo offline homologado. 0/18 homologadas. Worker OFF, checkout real OFF, Protege 3B fechado, migrations 39–42 preservadas.
 - Próximo: conferir CI de `4689ecd`; se falhar, corrigir teste e repetir. Após merge e Render live, implementar teste de concorrência/seleção deduplicada em isolamento, sem executar RPC em dados reais.
+
+## 13/11/2026 15h BRT — hardening worker #92
+- Render deploy PR #203 `dep-dbrkbbtg1s2s73cklfe0` confirmado `live` no SHA `1cad1dd0d7c0a576481777be0cb6bad7886efbef` às 14:17 BRT; testes de handler com mocks publicados, **não** E2E offline.
+- Branch `fix/queue-worker-selection-failclosed-20261113`: worker retorna 500 se consulta sem erro vier com `data=null` (não fingir fila vazia), evita RPC duplicada no mesmo lote e rejeita identificadores ausentes com 503; regressões com Supabase simulado.
+- Antes do merge verificar CI do HEAD e status Claude QA real (workflow skipped não é aprovação); depois verificar SHA live sequencialmente.
+- Bloqueio E2E P0: sem sessão autenticada de Aluno e Instrutor de homologação e reserva 4h/2 encontros isolada acessível, não executar alterações em reservas existentes. Fila offline A→B→C requer 3 instrutores de teste aprovados, job externo homologado, revisão das 4 buscas e 3 ofertas antigas. Sem scheduler habilitado, checkout OFF, Protege 3B fechado. 0/18 frentes homologadas.
+- Próximo passo independente após este hardening: testar servidor e banco com fixtures isoladas para reserva 4h/2 encontros, conflito concorrente e início/presença/evolução; evitar PR apenas de documentação.

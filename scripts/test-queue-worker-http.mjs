@@ -19,7 +19,7 @@ const makeQuery = (rows, error = null) => ({
   lte() { return this; },
   gt() { return this; },
   order() { return this; },
-  limit(n) { assert.equal(n, 20); return Promise.resolve({ data: rows.slice(0, n), error }); },
+  limit(n) { assert.equal(n, 20); return Promise.resolve({ data: Array.isArray(rows) ? rows.slice(0, n) : rows, error }); },
 });
 async function invoke({ enabled = 'true', authorization = 'Bearer ' + TOKEN,
   secret = 'test-only-secret', expired = [], active = [], expiredError = null,
@@ -92,6 +92,26 @@ assert.deepEqual(failedSelection.calls, []);
 const failedActiveSelection = await invoke({ activeError: { code: 'TEST_FAILURE' } });
 assert.equal(failedActiveSelection.status, 500);
 assert.deepEqual(failedActiveSelection.calls, []);
+
+const missingExpiredRows = await invoke({ expired: null });
+assert.equal(missingExpiredRows.status, 500, 'Null expired selection must fail closed');
+assert.deepEqual(missingExpiredRows.calls, []);
+const missingActiveRows = await invoke({ active: null });
+assert.equal(missingActiveRows.status, 500, 'Null active selection must fail closed');
+assert.deepEqual(missingActiveRows.calls, []);
+
+const duplicated = await invoke({
+  expired: [{ id: 'duplicate' }, { id: 'expired-only' }],
+  active: [{ id: 'duplicate' }, { id: 'active-only' }],
+});
+assert.equal(duplicated.status, 200);
+assert.deepEqual(duplicated.calls, ['duplicate', 'expired-only', 'active-only'],
+  'Each request is advanced at most once per invocation');
+
+const invalidIdentifier = await invoke({ expired: [{ id: '' }, { id: 'valid' }] });
+assert.equal(invalidIdentifier.status, 503);
+assert.deepEqual(invalidIdentifier.body, { processed: 1, failed: 1 });
+assert.deepEqual(invalidIdentifier.calls, ['valid']);
 
 const partial = await invoke({ expired: [{ id: 'a' }, { id: 'b' }],
   rpcErrors: { b: { code: 'TEST_FAILURE' } } });

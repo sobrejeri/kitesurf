@@ -36,8 +36,8 @@ export async function POST(request: NextRequest) {
   const { data: expired, error: expiredError } = await db
     .from('instructor_requests').select('id').eq('status', 'searching')
     .lte('expires_at', now).order('expires_at', { ascending: true }).limit(20);
-  if (expiredError) {
-    console.error('[queue-maintenance] expired selection failed', expiredError.code);
+  if (expiredError || !Array.isArray(expired)) {
+    console.error('[queue-maintenance] expired selection failed', expiredError?.code ?? 'NULL_RESULT');
     return NextResponse.json({ error: 'Queue selection failed' }, { status: 500 });
   }
   // Also retry still-open requests; the RPC returns an active offer unchanged and
@@ -45,13 +45,23 @@ export async function POST(request: NextRequest) {
   const { data: active, error: activeError } = await db
     .from('instructor_requests').select('id').eq('status', 'searching')
     .gt('expires_at', now).order('created_at', { ascending: true }).limit(20);
-  if (activeError) {
-    console.error('[queue-maintenance] active selection failed', activeError.code);
+  if (activeError || !Array.isArray(active)) {
+    console.error('[queue-maintenance] active selection failed', activeError?.code ?? 'NULL_RESULT');
     return NextResponse.json({ error: 'Queue selection failed' }, { status: 500 });
   }
   let processed = 0;
   let failed = 0;
-  for (const request of [...(expired ?? []), ...(active ?? [])]) {
+  // Defensive deduplication: never advance the same request twice in one batch,
+  // even if a stale/inconsistent query response repeats an identifier.
+  const seen = new Set<string>();
+  for (const request of [...expired, ...active]) {
+    if (typeof request.id !== 'string' || request.id.length === 0) {
+      failed++;
+      console.error('[queue-maintenance] invalid request identifier');
+      continue;
+    }
+    if (seen.has(request.id)) continue;
+    seen.add(request.id);
     const { error } = await db.rpc('advance_instructor_offer', { p_request_id: request.id });
     if (error) {
       failed++;
