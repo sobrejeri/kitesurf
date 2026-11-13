@@ -26,7 +26,7 @@ export function applySandboxPaymentEvent(
   // A distinct event that repeats the current state is safe but recorded.
   const status = nextSandboxStatus(state.status, event.nextStatus);
   return {
-    state: { status, processedEventKeys: [...state.processedEventKeys, key] },
+    state: { ...state, status, processedEventKeys: [...state.processedEventKeys, key] },
     applied: true,
   };
 }
