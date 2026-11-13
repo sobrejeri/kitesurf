@@ -383,3 +383,12 @@ O projeto possui um **avaliador independente preparado, não necessariamente con
 - PR #206 CI `43492192314` SUCCESS e Claude QA `43492192281` SKIPPED, integrada SHA `176f58120a483f544dd71677651a6115ff2327d0`. Deploy `dep-dbrm9ftbedkc73bi1bo0` aguardava publicação na última consulta.
 - Branch `test/meeting-change-actions-isolated-20261113`: teste isolado da ação real de reagendamento, valida datas impossíveis/passadas, prazo de 72h, fuso -03:00, aceite/recusa, opção de substituir instrutor e erro de RPC. Aguardar CI/merge/deploy; não equivale a E2E de cancelamento/agenda.
 - E2E autenticado 4h/2 encontros ainda exige contas/sessões de Aluno e Instrutor e fixture isolada; 0/18 homologados. Checkout real OFF, Protege 3B fechado, worker OFF, migrations 39–42 preservadas.
+
+
+## Rodada 13/11/2026 — guarda de agenda e PR #212
+
+- PR #209 CI `43492713154` SUCCESS, Claude QA SKIPPED, merge `470f7a7d262d58149cc72d27d32d5fdd3b269286`; deploy Render `dep-dbrmu8p42hec73cd4r60` confirmado LIVE.
+- PR #210 CI `43499418993` SUCCESS, Claude QA SKIPPED, merge `29a4816f531186fe81caa9eb93bc703e979332c9`; deploy Render `dep-dbrmv6pv1jhc73ddiocg` confirmado LIVE.
+- PR #212 (agenda ocupada) CI anterior `43499994379` FAIL por TS18047; correção no HEAD `c3ca987a7d430dbe071a5c46e832c0162b7c8139`, CI `43500317290` SUCCESS, Claude QA `43500317159` SKIPPED. Merge `68dbd36ff6a20e7d67707d39b6380673ee56abfb`. **Deploy deste merge ainda não confirmado LIVE** na última consulta. O código trata `data: null` sem erro explícito como falha, não como agenda vazia, em três consultas.
+- Testes das PRs são isolados, não comprovam transação concorrente no banco nem E2E autenticado 4h/2 encontros. **0/18 homologados integralmente.**
+- Próximo passo: verificar deploy do SHA `68dbd36f` no Render; só avançar se estiver LIVE. Depois montar fixture isolada de duas sessões simultâneas e três instrutores para validar conflitos e fila A→B→C (#91, #103). Sem executar RPC mutante nos dados reais, sem ligar worker/checkout, sem migrations adicionais ou alterar Protege 3B.
