@@ -27,7 +27,15 @@ export async function getStudentOccupiedSlots(studentId: string): Promise<Studen
     console.error('[student.schedule.requests]', { code: 'INVALID_MEETINGS' });
     throw new Error('Não foi possível conferir sua agenda. Tente novamente antes de buscar instrutor.');
   }
-  const ids = (bookings.data ?? []).filter((booking) => booking.status === 'confirmed'
+  // Never drop an active payment hold because its creation timestamp is malformed.
+  // Otherwise a corrupt row can incorrectly make an occupied slot appear free.
+  if (bookings.data.some((booking) => booking.status === 'awaiting_payment'
+    && (typeof booking.created_at !== 'string'
+      || !Number.isFinite(Date.parse(booking.created_at))))) {
+    console.error('[student.schedule.bookings]', { code: 'INVALID_CREATED_AT' });
+    throw new Error('Não foi possível conferir sua agenda. Tente novamente antes de buscar instrutor.');
+  }
+  const ids = bookings.data.filter((booking) => booking.status === 'confirmed'
     || Date.parse(booking.created_at) >= Date.now() - 10 * 60_000).map((booking) => booking.id);
   const meetings = ids.length ? await db.from('booking_meetings')
     .select('starts_at,minutes').in('booking_id', ids)
