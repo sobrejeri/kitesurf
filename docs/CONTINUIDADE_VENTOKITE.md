@@ -350,3 +350,6 @@ O projeto possui um **avaliador independente preparado, não necessariamente con
 ## Handoff 13/11/2026 — reserva 4h/2 encontros, regra por dia
 - PR em preparação: bloquear no servidor dois encontros da mesma reserva no mesmo dia, mesmo quando horários não se sobrepõem. Teste automatizado cobre 4h/2 datas válidas e duplicação de data. A validação atômica de reservas concorrentes permanece no banco.
 - E2E autenticado Aluno/Instrutor ainda pendente de sessões de homologação e fixtures isoladas. Protege 3B e checkout real seguem fechados. Supabase migrações 39–42; 43 não aplicada. Não afirmar deploy antes do Render live.
+
+## 13/11/2026 — instructor start fail-closed
+- Correção de segurança em PR: remover fallback de `start_ordered_meeting` para `start_meeting`. Se função ordenada faltar, retornar erro explícito sem iniciar encontro; preserva ordem e janela de 24h imposta no PostgreSQL. Regressão no CI verifica ausência do fallback. Sem DDL nem mudança em pagamentos. E2E autenticado ainda pendente.
