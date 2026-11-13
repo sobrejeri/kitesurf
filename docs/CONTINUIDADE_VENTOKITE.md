@@ -399,3 +399,10 @@ O projeto possui um **avaliador independente preparado, não necessariamente con
 - PR #215: `fix/occupied-booking-timestamp-20261113`, bloqueia `created_at` inválido em reserva `awaiting_payment` para evitar liberar agenda por comparação `NaN`; três regressões. Aguardar CI, conferir Claude QA (SKIPPED não é aprovação), merge apenas com CI verde, confirmar Render SHA live.
 - E2E autenticado Aluno 4h/2 encontros → Instrutor aceita/registra presença/minutos/evolução → Aluno consulta ainda NÃO executado por falta de sessões autenticadas/fixture segura de aluno e instrutor; nenhuma aprovação E2E. 0/18 tópicos homologados. Testes de concorrência transacional e fila A→B→C também pendentes. Checkout real OFF, worker OFF, sem alterações financeiras ou dados reais.
 - Retomada exata: verificar CI da PR #215, merge se verde, validar deploy de #214 e #215 por SHA; em paralelo desenvolver fixture isolada de concorrência e fluxo multi-encontro, sem tocar produção real.
+
+## 13/11/2026 — rodada 19h (agenda e homologação)
+- PR #215 HEAD `0ac6b5ac` CI #43508949121 SUCCESS, Claude QA #43508949235 SKIPPED; merge `0920e5809c1d6df2a6bf3daf4857698b0d202ad7`. Confirmar Render LIVE para esse SHA antes de declarar publicado.
+- Novo bloqueio tratado em branch `fix/occupied-meeting-payload-20261113`: linhas malformadas de `booking_meetings` antes retornavam como horários; agora a leitura falha fechada, com quatro casos de regressão. PR e CI pendentes na abertura desta anotação.
+- Supabase projeto `qadkqjfmmnxvovyyhqxw`: migrations reais 39–42 presentes. Leitura somente: 5 perfis, 7 reservas, 9 encontros, 9 solicitações; não modificar dados reais.
+- E2E autenticado aluno 4h/2 encontros → aceite instrutor → presença/minutos/evolução → consulta aluno permanece sem evidência: não há sessões autenticadas e fixture isolada autorizada/validada para completar a jornada. Testes unitários/SQL não equivalem a E2E. 0/18 homologados integralmente.
+- Próximo: CI da nova PR, merge somente após success, verificar SHA live, preparar fixture transacional isolada de concorrência e jornada autenticada sem tocar produção ou pagamentos. Protege 3B/worker/checkout real OFF.
