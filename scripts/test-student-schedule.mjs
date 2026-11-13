@@ -105,7 +105,10 @@ for (const invalidDay of ['2026-02-30', '2026-04-31', '2025-02-29', '2026-00-01'
   assert.equal(hasRepeatedMeetingDay([invalidDay]), true, 'Impossible day must be rejected: ' + invalidDay);
 }
 assert.equal(hasRepeatedMeetingDay(['2028-02-29', '2028-03-01']), false, 'Valid leap day must be accepted');
-console.log('PASS: one encounter per calendar day');
+const changeAction = (await import('node:fs')).readFileSync(new URL('../src/app/actions/meeting-change.ts', import.meta.url), 'utf8');
+assert.match(changeAction, /hasRepeatedMeetingDay\(\[parsed\.data\.proposedDate\.slice\(0, 10\)\]\)/,
+  'Rescheduling must reject impossible civil dates before parsing timestamps');
+console.log('PASS: one encounter per calendar day and reschedule date guard');
 
 // The instructor must not fall back to an older RPC that skips ordering/window guards.
 import { readFileSync } from 'node:fs';

@@ -6,6 +6,7 @@ import { z } from 'zod';
 import { requireRole } from '@/lib/auth';
 import { createSupabaseServerClient } from '@/lib/supabase/server';
 import { friendlyError, type ActionState } from './errors';
+import { hasRepeatedMeetingDay } from '@/lib/student-schedule';
 
 const UUID=z.uuid();
 const ProposedDate=z.string().regex(
@@ -36,6 +37,10 @@ export async function requestMeetingChange(
     reason:form.get('reason'),
   });
   if(!parsed.success) return {error:'Informe uma nova data, horário e motivo com pelo menos 8 caracteres.'};
+  // Reject impossible calendar days before Date.parse can normalize them.
+  if (hasRepeatedMeetingDay([parsed.data.proposedDate.slice(0, 10)])) {
+    return {error:'Informe uma data válida para o reagendamento.'};
+  }
   // Local Ceará times are always -03:00. No browser-dependent timezone parsing.
   const newDate=parsed.data.proposedDate+':00-03:00';
   const epoch=Date.parse(newDate);
