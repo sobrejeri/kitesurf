@@ -71,4 +71,13 @@ for (const table of ['bookings', 'instructor_requests', 'booking_meetings']) {
     'Null query results must never be mistaken for an empty student schedule');
   responses[table] = original;
 }
+const originalRequests = responses.instructor_requests;
+for (const invalid of [null, {}, [{ starts_at: '2099-11-18T09:00:00-03:00', hours: 0 }],
+  [{ starts_at: '2099-11-18T09:00:00-03:00', hours: '2' }]]) {
+  responses.instructor_requests = { data: [{ meetings: invalid }], error: null };
+  await assert.rejects(() => getStudentOccupiedSlots(studentId),
+    /Não foi possível conferir sua agenda/,
+    'Malformed active queue requests must fail closed with an actionable error');
+}
+responses.instructor_requests = originalRequests;
 console.log('PASS: occupied student schedule reads ownership, filters stale bookings, includes active requests and fails closed on all three query errors');

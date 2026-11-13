@@ -18,6 +18,15 @@ export async function getStudentOccupiedSlots(studentId: string): Promise<Studen
     console.error('[student.schedule]', { code: error?.code, message: error?.message });
     throw new Error('Não foi possível conferir sua agenda. Tente novamente antes de buscar instrutor.');
   }
+  // A malformed JSON meetings payload must not be treated as an available slot.
+  // Reject it explicitly instead of letting a .map() TypeError escape to the UI.
+  if (requests.data.some((request) => !Array.isArray(request.meetings)
+    || request.meetings.some((meeting) => !meeting
+      || typeof meeting.starts_at !== 'string'
+      || !Number.isSafeInteger(meeting.hours) || meeting.hours <= 0))) {
+    console.error('[student.schedule.requests]', { code: 'INVALID_MEETINGS' });
+    throw new Error('Não foi possível conferir sua agenda. Tente novamente antes de buscar instrutor.');
+  }
   const ids = (bookings.data ?? []).filter((booking) => booking.status === 'confirmed'
     || Date.parse(booking.created_at) >= Date.now() - 10 * 60_000).map((booking) => booking.id);
   const meetings = ids.length ? await db.from('booking_meetings')
