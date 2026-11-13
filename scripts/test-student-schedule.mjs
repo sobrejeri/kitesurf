@@ -142,3 +142,6 @@ await import('./test-booking-four-hours-action.mjs');
 
 // Isolated 72h reschedule and cancellation-choice server action regression.
 await import('./test-meeting-change-actions.mjs');
+
+// Fail-closed occupied schedule reads for concurrent booking protection.
+await import('./test-student-occupied-slots.mjs');
