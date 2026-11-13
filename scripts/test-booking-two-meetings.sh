@@ -97,6 +97,21 @@ begin
     where booking_id=v_id and position=1;
   select id into strict v_m2 from public.booking_meetings
     where booking_id=v_id and position=2;
+  -- Student and an unrelated instructor must never start or record lessons.
+  perform set_config('request.jwt.claim.sub','00000000-0000-0000-0000-0000000000b2',true);
+  execute 'set local role authenticated';
+  begin
+    perform public.start_meeting(v_m1,v_pin);
+    raise exception 'SECURITY: student started instructor meeting';
+  exception when no_data_found or insufficient_privilege then null; end;
+  execute 'reset role';
+  perform set_config('request.jwt.claim.sub','00000000-0000-0000-0000-0000000000a2',true);
+  execute 'set local role authenticated';
+  begin
+    perform public.start_meeting(v_m1,v_pin);
+    raise exception 'SECURITY: unrelated instructor started meeting';
+  exception when no_data_found or insufficient_privilege then null; end;
+  execute 'reset role';
   perform set_config('request.jwt.claim.sub','00000000-0000-0000-0000-0000000000a1',true);
   execute 'set local role authenticated';
   perform public.start_meeting(v_m1,v_pin);
