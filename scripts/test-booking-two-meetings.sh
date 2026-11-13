@@ -114,8 +114,21 @@ begin
   execute 'reset role';
   perform set_config('request.jwt.claim.sub','00000000-0000-0000-0000-0000000000a1',true);
   execute 'set local role authenticated';
+  -- Each meeting requires the valid PIN; no recorded minutes above its quota.
+  begin
+    perform public.start_meeting(v_m1,case when v_pin='0000' then '0001' else '0000' end);
+    raise exception 'SECURITY: invalid PIN accepted for first meeting';
+  exception when invalid_parameter_value then null; end;
   perform public.start_meeting(v_m1,v_pin);
+  begin
+    perform public.record_meeting(v_m1,121,'invalid overrun');
+    raise exception 'SECURITY: instructor recorded 121 minutes for a 120-minute encounter';
+  exception when invalid_parameter_value then null; end;
   perform public.record_meeting(v_m1,110,'Controle e segurança: janela de vento');
+  begin
+    perform public.start_meeting(v_m2,case when v_pin='0000' then '0001' else '0000' end);
+    raise exception 'SECURITY: invalid PIN accepted for second meeting';
+  exception when invalid_parameter_value then null; end;
   perform public.start_meeting(v_m2,v_pin);
   perform public.record_meeting(v_m2,115,'Water start e primeiros bordos');
   execute 'reset role';
