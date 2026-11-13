@@ -1,4 +1,5 @@
 import assert from 'node:assert/strict';
+import { runOfflineQueueBatch } from './queue-offline-executor.mjs';
 import { planExpiredQueueBatch } from './queue-batch.mjs';
 const id = n => `00000000-0000-4000-8000-${String(n).padStart(12, '0')}`;
 const row = (n, created_at, expires_at, status = 'searching') => ({ id: id(n), created_at, expires_at, status });
@@ -27,3 +28,15 @@ assert.deepEqual(planExpiredQueueBatch(rows,{now,activatedAt:'2026-11-13T12:00:0
 assert.throws(()=>planExpiredQueueBatch(rows,{now,activatedAt,limit:101}),RangeError);
 assert.throws(()=>planExpiredQueueBatch(rows,{now,activatedAt:'2026-11-14T00:00:00Z'}),TypeError);
 console.log('PASS: offline queue batch planner skips legacy/future/duplicate/stale requests');
+
+// CI entrypoint also verifies the offline orchestration contract.
+const preview = await runOfflineQueueBatch(rows,{now,activatedAt});
+assert.equal(preview.dryRun,true);
+assert.deepEqual(preview.planned,[id(2),id(6)]);
+await assert.rejects(()=>runOfflineQueueBatch(rows,{now,activatedAt,dryRun:false}),TypeError);
+const claimed = new Set();
+const claimAndAdvance = async key => claimed.has(key) ? false : (claimed.add(key),true);
+const first = await runOfflineQueueBatch(rows,{now,activatedAt,dryRun:false,claimAndAdvance});
+assert.deepEqual(first.advanced,[id(2),id(6)]);
+const retry = await runOfflineQueueBatch(rows,{now,activatedAt,dryRun:false,claimAndAdvance});
+assert.deepEqual(retry.skipped,[id(2),id(6)]);
