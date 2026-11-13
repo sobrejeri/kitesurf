@@ -15,6 +15,9 @@ declare
   v_rate integer;
   v_price_id bigint;
   v_count integer;
+  v_m1 uuid;
+  v_m2 uuid;
+  v_pin text;
 begin
   select id into strict v_beach from public.beaches where slug='jeri';
   -- Choose two distinct local dates that meet the actual instructor schedule,
@@ -81,6 +84,36 @@ begin
   select count(*) into v_count from public.booking_meetings where booking_id=v_id;
   if v_count<>2 then raise exception 'Owner cannot read both meetings'; end if;
   execute 'reset role';
+  -- Simulate payment confirmation only in the disposable database.
+  -- This test RPC is never invoked against production.
+  perform set_config('request.jwt.claim.sub','00000000-0000-0000-0000-0000000000b2',true);
+  execute 'set local role authenticated';
+  perform public.confirm_test_payment(v_id);
+  execute 'reset role';
+  if (select status from public.bookings where id=v_id)<>'confirmed' then
+    raise exception 'Test booking was not confirmed'; end if;
+  select presence_code into strict v_pin from public.bookings where id=v_id;
+  select id into strict v_m1 from public.booking_meetings
+    where booking_id=v_id and position=1;
+  select id into strict v_m2 from public.booking_meetings
+    where booking_id=v_id and position=2;
+  perform set_config('request.jwt.claim.sub','00000000-0000-0000-0000-0000000000a1',true);
+  execute 'set local role authenticated';
+  perform public.start_meeting(v_m1,v_pin);
+  perform public.record_meeting(v_m1,110,'Controle e segurança: janela de vento');
+  perform public.start_meeting(v_m2,v_pin);
+  perform public.record_meeting(v_m2,115,'Water start e primeiros bordos');
+  execute 'reset role';
+  if (select sum(done_minutes) from public.booking_meetings where booking_id=v_id)<>225 then
+    raise exception 'Expected 225 actual teaching minutes across both meetings'; end if;
+  perform set_config('request.jwt.claim.sub','00000000-0000-0000-0000-0000000000b2',true);
+  execute 'set local role authenticated';
+  select count(*) into v_count from public.booking_meetings
+    where booking_id=v_id and done_minutes>0 and note is not null;
+  if v_count<>2 then
+    raise exception 'Student cannot see progress/minutes for both encounters'; end if;
+  execute 'reset role';
+  raise notice 'PASS: 4h booking confirmed, instructor recorded 2 encounters, student reads 225 completed minutes and progress';
   raise notice 'PASS: RLS isolates both meetings; server price snapshot matches 4h';
   raise notice 'PASS: authenticated student booking 4h in two days persisted as 2x120 minutes';
 end $$;
