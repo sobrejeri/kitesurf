@@ -1,4 +1,4 @@
-import { nextSandboxStatus, sandboxIdempotencyKey, type CheckoutStatus } from './checkout-sandbox';
+import { nextSandboxStatus, sandboxIdempotencyKey, type CheckoutStatus } from './checkout-sandbox.ts';
 
 /** Pure sandbox-only reducer. No database, gateway calls or financial effects.
  * Production must authenticate provider signatures BEFORE invoking a reducer,
