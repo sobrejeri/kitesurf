@@ -61,3 +61,8 @@ export function hasExactMeetingAllocation(hours: readonly number[], expectedHour
   return total <= 8 && (expectedHours === undefined ||
     (Number.isSafeInteger(expectedHours) && expectedHours >= 1 && expectedHours <= 8 && total === expectedHours));
 }
+
+/** A multi-encounter booking allows only one encounter per local calendar day. */
+export function hasRepeatedMeetingDay(dates: readonly string[]): boolean {
+  return dates.some((date, index) => !/^\d{4}-\d{2}-\d{2}$/.test(date) || dates.indexOf(date) !== index);
+}
