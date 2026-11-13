@@ -353,3 +353,10 @@ O projeto possui um **avaliador independente preparado, não necessariamente con
 
 ## 13/11/2026 — instructor start fail-closed
 - Correção de segurança em PR: remover fallback de `start_ordered_meeting` para `start_meeting`. Se função ordenada faltar, retornar erro explícito sem iniciar encontro; preserva ordem e janela de 24h imposta no PostgreSQL. Regressão no CI verifica ausência do fallback. Sem DDL nem mudança em pagamentos. E2E autenticado ainda pendente.
+
+## 13/11/2026 14h BRT — PR #203: testes isolados do worker de fila
+- PR #203 (`test/queue-worker-http-contract-20261113`) testa execução do handler POST real em VM isolada com mocks Supabase e NextResponse, sem rede ou credenciais. Casos: desativado, autenticação inválida, segredo ausente, falhas de SELECT, lote com duas solicitações, erro parcial RPC.
+- CI do HEAD inicial `37607d47` falhou no passo `Test student schedule conflicts and evolution destinations` (run 43469014779): `ReferenceError: Cannot access 'URL' before initialization`, devido a constante de teste que sombreava a classe global `URL`. Corrigido no commit `4689ecd` com renomeação para `SUPABASE_URL`; aguardar novo CI completo e Claude QA (último job `skipped`), revisar eventuais falhas e integrar somente se verde.
+- Último Render live verificado: `4df219beceb9257d458417b987eb88ac34189fa3` (PR #202), deploy `dep-dbrjo4m7bikc73f5012g`. #203 ainda NÃO publicado.
+- Homologação real Aluno 4h/2 encontros → Instrutor aceite/presença/minutos/evolução → Aluno confere permanece bloqueada por ausência de sessões autenticadas e fixtures isoladas. Fila A→B→C exige três instrutores de teste e disparo offline homologado. 0/18 homologadas. Worker OFF, checkout real OFF, Protege 3B fechado, migrations 39–42 preservadas.
+- Próximo: conferir CI de `4689ecd`; se falhar, corrigir teste e repetir. Após merge e Render live, implementar teste de concorrência/seleção deduplicada em isolamento, sem executar RPC em dados reais.

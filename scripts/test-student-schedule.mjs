@@ -130,3 +130,6 @@ console.log('PASS: queue worker is opt-in, authenticated and bounded');
 
 // Keep the isolated checkout contract covered by the existing CI regression entrypoint.
 await import('./test-checkout-sandbox.mjs');
+
+// Exercise the actual worker POST handler with isolated backend mocks.
+await import('./test-queue-worker-http.mjs');
