@@ -85,7 +85,7 @@ for (const [meetings, overrides] of [
   [[meeting(future1), meeting(future2)], { expectedHours: '5' }],
   [[meeting('2026-11-01'), meeting(future2)]],
   [[meeting(future1, '25:00'), meeting(future2)]],
-  [[meeting(future1), meeting(future2)], { price: '1' }],
+  [[meeting(future1), meeting(future2)], { preferredInstructorId: 'not-a-uuid' }],
 ]) {
   result = await submit(meetings, overrides);
   assert.ok(result.error, 'Malformed, duplicate-day or tampered booking must be rejected');
