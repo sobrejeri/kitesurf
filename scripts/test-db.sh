@@ -27,3 +27,6 @@ done
 for testfile in "$ROOT"/supabase/tests/[2-9]*.test.sql; do
   "${PSQL[@]}" -f "$testfile"
 done
+
+# Run actual two-connection race only in this disposable database, after rule fixtures.
+PG_TEST_SOCKET="$DATA" PG_TEST_PORT="$PORT" bash "$ROOT/scripts/test-concurrent-instructor-booking.sh"
