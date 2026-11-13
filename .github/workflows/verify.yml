@@ -95,6 +95,8 @@ jobs:
         run: node --experimental-strip-types scripts/test-lesson-protection-policy.mjs
       - name: Guard read-only expiration scheduler preflight
         run: node scripts/test-expiration-scheduler-preflight.mjs
+      - name: Verify guarded offline queue batch selection
+        run: node scripts/test-queue-batch.mjs
       - name: Verify read-only instructor queue expiry readiness preflight
         run: node scripts/test-queue-expiry-preflight.mjs
       - name: Test overdue lesson protection monitoring
