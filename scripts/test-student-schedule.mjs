@@ -117,5 +117,16 @@ assert.match(instructorActions, /rpc\('start_ordered_meeting'/);
 assert.doesNotMatch(instructorActions, /rpc\('start_meeting'/, 'No legacy start fallback is allowed');
 console.log('PASS: instructor start action requires ordered meeting RPC');
 
+// Queue maintenance must remain opt-in, authenticated, bounded and server-only.
+const workerSource = readFileSync(new URL('../src/app/api/internal/queue-maintenance/route.ts', import.meta.url), 'utf8');
+assert.match(workerSource, /QUEUE_WORKER_ENABLED !== 'true'/);
+assert.match(workerSource, /timingSafeEqual/);
+assert.match(workerSource, /QUEUE_WORKER_TOKEN/);
+assert.match(workerSource, /SUPABASE_SECRET_KEY/);
+assert.match(workerSource, /\.limit\(20\)/);
+assert.match(workerSource, /advance_instructor_offer/);
+assert.doesNotMatch(workerSource, /export async function GET/);
+console.log('PASS: queue worker is opt-in, authenticated and bounded');
+
 // Keep the isolated checkout contract covered by the existing CI regression entrypoint.
 await import('./test-checkout-sandbox.mjs');
