@@ -12,7 +12,7 @@ import { isAllowedLessonLevel } from '@/lib/kite-steps';
 import { LESSON_UTC_OFFSET } from '@/lib/format';
 import { createSupabaseServerClient } from '@/lib/supabase/server';
 import { getStudentOccupiedSlots } from '@/lib/student-occupied-slots';
-import { hasBookingLeadTime, hasExactMeetingAllocation, hasScheduleConflict } from '@/lib/student-schedule';
+import { hasBookingLeadTime, hasExactMeetingAllocation, hasRepeatedMeetingDay, hasScheduleConflict } from '@/lib/student-schedule';
 import { VALIDATION_WITHOUT_CHECKOUT } from '@/lib/booking-mode';
 
 import { friendlyError, type ActionState } from './errors';
@@ -72,6 +72,9 @@ export async function createBooking(_prev: ActionState, form: FormData): Promise
   }
   if (!hasExactMeetingAllocation(parsed.data.meetings.map((meeting) => meeting.hours), parsed.data.expectedHours)) {
     return { error: `Distribua exatamente as ${parsed.data.expectedHours}h escolhidas antes de continuar.` };
+  }
+  if (hasRepeatedMeetingDay(parsed.data.meetings.map((meeting) => meeting.date))) {
+    return { error: 'Escolha apenas um encontro por dia. Distribua as horas em datas diferentes.' };
   }
   if (parsed.data.meetings.some((meeting) => meeting.date < lessonDate())) {
     return { error: 'Não é possível reservar uma aula em uma data anterior a hoje.' };
