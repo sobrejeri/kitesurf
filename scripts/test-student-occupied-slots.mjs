@@ -8,6 +8,13 @@ const compiled = ts.transpileModule(source, {
   compilerOptions: { module: ts.ModuleKind.CommonJS, target: ts.ScriptTarget.ES2022 },
 }).outputText;
 
+const scheduleSource = readFileSync(new URL('../src/lib/student-schedule.ts', import.meta.url), 'utf8');
+const scheduleModule = { exports: {} };
+vm.runInNewContext(ts.transpileModule(scheduleSource, {
+  compilerOptions: { module: ts.ModuleKind.CommonJS, target: ts.ScriptTarget.ES2022 },
+}).outputText, { module: scheduleModule, exports: scheduleModule.exports, Date, Number },
+{ filename: 'student-schedule.cjs' });
+
 const studentId = '11111111-1111-4111-8111-111111111111';
 const now = Date.now();
 const calls = [];
@@ -43,6 +50,7 @@ vm.runInNewContext(compiled, {
   require(id) {
     if (id === 'server-only') return {};
     if (id === './supabase/server') return { async createSupabaseServerClient() { return db; } };
+    if (id === './student-schedule') return scheduleModule.exports;
     throw new Error('Unexpected import ' + id);
   },
 }, { filename: 'student-occupied-slots.cjs' });
@@ -75,6 +83,8 @@ const originalRequests = responses.instructor_requests;
 for (const invalid of [null, {}, [{ starts_at: '2099-11-18T09:00:00-03:00', hours: 0 }],
   [{ starts_at: '2099-11-18T09:00:00-03:00', hours: '2' }],
   [{ starts_at: 'not-a-date', hours: 2 }],
+  [{ starts_at: '2099-02-30T09:00:00-03:00', hours: 2 }],
+  [{ starts_at: '2099-11-18T09:00:00', hours: 2 }],
   [{ starts_at: '2099-11-18T09:00:00-03:00', hours: Number.MAX_SAFE_INTEGER }]]) {
   responses.instructor_requests = { data: [{ meetings: invalid }], error: null };
   await assert.rejects(() => getStudentOccupiedSlots(studentId),
@@ -98,6 +108,8 @@ for (const invalid of [
   { starts_at: '2099-11-17T09:00:00-03:00', minutes: 0 },
   { starts_at: '2099-11-17T09:00:00-03:00', minutes: '120' },
   { starts_at: 'not-a-date', minutes: 120 },
+  { starts_at: '2099-02-30T09:00:00-03:00', minutes: 120 },
+  { starts_at: '2099-11-17T09:00:00', minutes: 120 },
   null,
 ]) {
   responses.booking_meetings = { data: [invalid], error: null };
