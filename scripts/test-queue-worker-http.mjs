@@ -12,7 +12,7 @@ const compiled = ts.transpileModule(source, {
 }).outputText;
 
 const TOKEN = 'test-only-token-with-at-least-thirty-two-characters';
-const URL = 'https://example.invalid';
+const SUPABASE_URL = 'https://example.invalid';
 const makeQuery = (rows, error = null) => ({
   select() { return this; },
   eq() { return this; },
@@ -41,7 +41,7 @@ async function invoke({ enabled = 'true', authorization = 'Bearer ' + TOKEN,
   const env = {
     QUEUE_WORKER_ENABLED: enabled,
     QUEUE_WORKER_TOKEN: TOKEN,
-    NEXT_PUBLIC_SUPABASE_URL: URL,
+    NEXT_PUBLIC_SUPABASE_URL: SUPABASE_URL,
     SUPABASE_SECRET_KEY: secret,
   };
   const module = { exports: {} };
@@ -49,7 +49,7 @@ async function invoke({ enabled = 'true', authorization = 'Bearer ' + TOKEN,
     if (id === 'server-only') return {};
     if (id === 'node:crypto') return { createHash, timingSafeEqual };
     if (id === '@supabase/supabase-js') return { createClient: (url, key) => {
-      assert.equal(url, URL);
+      assert.equal(url, SUPABASE_URL);
       assert.equal(key, secret);
       return db;
     } };
