@@ -64,5 +64,11 @@ export function hasExactMeetingAllocation(hours: readonly number[], expectedHour
 
 /** A multi-encounter booking allows only one encounter per local calendar day. */
 export function hasRepeatedMeetingDay(dates: readonly string[]): boolean {
-  return dates.some((date, index) => !/^\d{4}-\d{2}-\d{2}$/.test(date) || dates.indexOf(date) !== index);
+  return dates.some((date, index) => {
+    if (!/^\\d{4}-\\d{2}-\\d{2}$/.test(date)) return true;
+    const [year, month, day] = date.split('-').map(Number);
+    if (!year || year < 100 || month < 1 || month > 12 || day < 1 ||
+        day > new Date(Date.UTC(year, month, 0)).getUTCDate()) return true;
+    return dates.indexOf(date) !== index;
+  });
 }
