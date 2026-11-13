@@ -1,7 +1,7 @@
 import 'server-only';
 
 import { createSupabaseServerClient } from './supabase/server';
-import type { StudentTimeSlot } from './student-schedule';
+import { parseAbsoluteSlotTime, type StudentTimeSlot } from './student-schedule';
 
 /** RLS and explicit ownership apply to both reads. No nested PostgREST relationships. */
 export async function getStudentOccupiedSlots(studentId: string): Promise<StudentTimeSlot[]> {
@@ -23,7 +23,7 @@ export async function getStudentOccupiedSlots(studentId: string): Promise<Studen
   if (requests.data.some((request) => !Array.isArray(request.meetings)
     || request.meetings.some((meeting) => !meeting
       || typeof meeting.starts_at !== 'string'
-      || !Number.isFinite(Date.parse(meeting.starts_at))
+      || !Number.isFinite(parseAbsoluteSlotTime(meeting.starts_at))
       || !Number.isSafeInteger(meeting.hours) || meeting.hours <= 0
       || !Number.isSafeInteger(meeting.hours * 60)))) {
     console.error('[student.schedule.requests]', { code: 'INVALID_MEETINGS' });
@@ -49,7 +49,7 @@ export async function getStudentOccupiedSlots(studentId: string): Promise<Studen
   }
   if (meetings.data.some((meeting) => !meeting
     || typeof meeting.starts_at !== 'string'
-    || !Number.isFinite(Date.parse(meeting.starts_at))
+    || !Number.isFinite(parseAbsoluteSlotTime(meeting.starts_at))
     || !Number.isSafeInteger(meeting.minutes) || meeting.minutes <= 0)) {
     console.error('[student.schedule.meetings]', { code: 'INVALID_MEETING_SLOT' });
     throw new Error('Não foi possível conferir os encontros da sua agenda. Tente novamente.');
