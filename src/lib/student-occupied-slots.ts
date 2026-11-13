@@ -25,7 +25,7 @@ export async function getStudentOccupiedSlots(studentId: string): Promise<Studen
     .in('status', ['scheduled', 'in_progress'])
     .returns<{ starts_at: string; minutes: number }[]>() : { data: [], error: null };
   if (meetings.error || !Array.isArray(meetings.data)) {
-    console.error('[student.schedule.meetings]', { code: meetings.error.code });
+    console.error('[student.schedule.meetings]', { code: meetings.error?.code ?? 'NULL_RESULT' });
     throw new Error('Não foi possível conferir os encontros da sua agenda. Tente novamente.');
   }
   return [
