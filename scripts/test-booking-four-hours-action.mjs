@@ -15,11 +15,13 @@ vm.runInNewContext(transpile(readFileSync(new URL('../src/lib/student-schedule.t
 
 const calls = [];
 let occupied = [];
+let rpcError = null;
+let viewerRole = 'student';
 const requestId = '22222222-2222-4222-8222-222222222222';
 const beachId = '11111111-1111-4111-8111-111111111111';
 const db = { async rpc(name, args) {
   calls.push({ name, args });
-  return { data: requestId, error: null };
+  return { data: requestId, error: rpcError };
 } };
 const deps = {
   'next/cache': { revalidatePath() {} },
@@ -28,6 +30,7 @@ const deps = {
   zod: requireNode('zod'),
   '@/lib/auth': { async requireRole(roles) {
     assert.deepEqual(Array.from(roles), ['student']);
+    if (viewerRole !== 'student') throw new Error('Unauthorized');
     return { id: 'test-student', role: 'student' };
   } },
   '@/lib/dates': { lessonDate() { return '2026-11-13'; } },
@@ -98,5 +101,31 @@ occupied = [{ startsAt: '2026-11-20T09:30:00-03:00', minutes: 60 }];
 result = await create({}, form());
 assert.match(result.error, /já tem uma aula ou uma busca/);
 assert.equal(calls.length, 1);
+
+// Negative cases that must not reach the privileged queue RPC.
+occupied = [];
+for (const updates of [
+  { meetings: JSON.stringify([{ ...meetings[0], hours: 3 }, meetings[1]]) },
+  { meetings: JSON.stringify([{ ...meetings[0], start: '25:00' }, meetings[1]]) },
+  { meetings: JSON.stringify([{ ...meetings[0], date: '2026-11-01' }, meetings[1]]) },
+  { preferredInstructorId: 'invalid-uuid' },
+]) {
+  result = await create({}, form(updates));
+  assert.ok(result.error, 'Invalid booking must fail before RPC');
+}
+assert.equal(calls.length, 1);
+
+// Privileged RPC rejection must not redirect or report success.
+rpcError = { code: 'TEST_ERROR', message: 'Database rejected booking' };
+result = await create({}, form());
+assert.ok(result.error);
+assert.equal(calls.length, 2);
+rpcError = null;
+
+// An instructor cannot submit a student reservation, even with a valid form.
+viewerRole = 'instructor';
+await assert.rejects(() => create({}, form()), /Unauthorized/);
+assert.equal(calls.length, 2);
+console.log('PASS: booking negative cases (invalid hours/time/date/instructor, RPC error, role guard)');
 
 console.log('PASS: real student booking action validates 4h/2 dates, hours, civil days and occupied slots before queue RPC (isolated mocks)');
