@@ -2,7 +2,7 @@ import 'server-only';
 
 import { createHash, timingSafeEqual } from 'node:crypto';
 import { createClient } from '@supabase/supabase-js';
-import { NextRequest, NextResponse } from 'next/server';
+import { NextResponse, type NextRequest } from 'next/server';
 
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
@@ -16,14 +16,17 @@ function authorized(provided: string | null, expected: string): boolean {
 
 /** Disabled until the queue expiry procedure is independently homologated. */
 export async function POST(request: NextRequest) {
+  // eslint-disable-next-line no-restricted-syntax -- server-only opt-in switch
   if (process.env.QUEUE_WORKER_ENABLED !== 'true') {
     return NextResponse.json({ error: 'Not enabled' }, { status: 503 });
   }
+  // eslint-disable-next-line no-restricted-syntax -- server-only bearer token
   const token = process.env.QUEUE_WORKER_TOKEN ?? '';
   if (!authorized(request.headers.get('authorization'), token)) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
   }
   const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
+  // eslint-disable-next-line no-restricted-syntax -- server-only secret, never browser bundled
   const secret = process.env.SUPABASE_SECRET_KEY;
   if (!url || !secret) return NextResponse.json({ error: 'Not configured' }, { status: 503 });
 
