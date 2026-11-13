@@ -133,3 +133,6 @@ await import('./test-checkout-sandbox.mjs');
 
 // Exercise the actual worker POST handler with isolated backend mocks.
 await import('./test-queue-worker-http.mjs');
+
+// Isolated server-action regression for the instructor half of the 4h/2-meeting flow.
+await import('./test-instructor-meeting-actions.mjs');
