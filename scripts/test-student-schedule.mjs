@@ -144,3 +144,5 @@ await import('./test-booking-four-hours-action.mjs');
 await import('./test-meeting-change-actions.mjs');
 
 await import('./test-student-occupied-slots.mjs');
+
+await import('./test-queue-maintenance-route.mjs');
