@@ -80,4 +80,14 @@ for (const invalid of [null, {}, [{ starts_at: '2099-11-18T09:00:00-03:00', hour
     'Malformed active queue requests must fail closed with an actionable error');
 }
 responses.instructor_requests = originalRequests;
+const originalBookings = responses.bookings;
+for (const invalidTimestamp of [null, 'not-a-date', '']) {
+  responses.bookings = { data: [
+    { id: 'bad-hold', status: 'awaiting_payment', created_at: invalidTimestamp },
+  ], error: null };
+  await assert.rejects(() => getStudentOccupiedSlots(studentId),
+    /Não foi possível conferir sua agenda/,
+    'Malformed pending booking timestamp must not silently free a reserved slot');
+}
+responses.bookings = originalBookings;
 console.log('PASS: occupied student schedule reads ownership, filters stale bookings, includes active requests and fails closed on all three query errors');
