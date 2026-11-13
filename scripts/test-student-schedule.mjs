@@ -109,3 +109,6 @@ const instructorActions = readFileSync(new URL('../src/app/actions/instructor.ts
 assert.match(instructorActions, /rpc\('start_ordered_meeting'/);
 assert.doesNotMatch(instructorActions, /rpc\('start_meeting'/, 'No legacy start fallback is allowed');
 console.log('PASS: instructor start action requires ordered meeting RPC');
+
+// Keep the isolated checkout contract covered by the existing CI regression entrypoint.
+await import('./test-checkout-sandbox.mjs');
