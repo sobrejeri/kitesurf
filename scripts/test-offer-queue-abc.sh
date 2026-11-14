@@ -15,7 +15,7 @@ begin
   execute 'set local role authenticated';
   update public.instructors set languages=array['Português'] where id=auth.uid();
   perform public.set_my_beaches(array(select id from public.beaches where slug='prea'));
-  perform public.set_my_tax_id(concat('390','533','447','05'));
+  perform public.set_my_tax_id(concat('843','927','516','19'));
   execute 'reset role';
 end $$;
 insert into public.instructor_documents(instructor_id,kind,storage_path,original_name,status)
