@@ -126,6 +126,20 @@ begin
    raise exception 'Expiry retry extended or altered student choice deadline'; end if;
  if (select status from public.meeting_change_requests where id=v_change)<>'expired' then
    raise exception 'Expiry retry changed terminal request status'; end if;
+ -- Accepted change history must remain visible to its student owner,
+ -- and invisible to a different student even after the meeting date moves.
+ perform set_config('request.jwt.claim.sub','00000000-0000-0000-0000-0000000000b2',true);
+ execute 'set local role authenticated';
+ select count(*) into v_visible from public.meeting_change_requests
+   where booking_id=v_booking and status='accepted';
+ if v_visible<>1 then raise exception 'Booking owner cannot read accepted change'; end if;
+ execute 'reset role';
+ perform set_config('request.jwt.claim.sub','00000000-0000-0000-0000-0000000000b1',true);
+ execute 'set local role authenticated';
+ select count(*) into v_visible from public.meeting_change_requests
+   where booking_id=v_booking and status='accepted';
+ if v_visible<>0 then raise exception 'IDOR: other student can read accepted change'; end if;
+ execute 'reset role';
  -- After approval, the authorized instructor and student may inspect the
  -- decision, while an unrelated instructor must not read the request via RLS.
  perform set_config('request.jwt.claim.sub','00000000-0000-0000-0000-0000000000a1',true);
