@@ -85,6 +85,12 @@ begin
    raise exception 'Rescheduling changed sale or contracted hours'; end if;
  if (select status from public.meeting_change_requests where id=v_change)<>'accepted' then
    raise exception 'Change status not accepted'; end if;
+ -- An accepted postponement must update the existing meeting, never add
+ -- a second lesson or consume extra contracted hours.
+ if (select count(*) from public.booking_meetings where booking_id=v_booking)<>1 then
+   raise exception 'Accepted postponement duplicated or removed the booked meeting'; end if;
+ if (select coalesce(sum(minutes),0) from public.booking_meetings where booking_id=v_booking)<>120 then
+   raise exception 'Accepted postponement changed the purchased meeting minutes'; end if;
  -- Simulate an unanswered 12-hour request in disposable PostgreSQL only.
  -- Expiry opens the student's choice window but must not cancel the sale.
  insert into public.meeting_change_requests(
