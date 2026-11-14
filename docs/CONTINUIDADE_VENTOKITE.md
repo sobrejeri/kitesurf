@@ -515,3 +515,12 @@ O projeto possui um **avaliador independente preparado, não necessariamente con
 - Render último `live` confirmado: `6096ef1f1f8874394a4f116579ffd16e82a0add3` (deploy `dep-dbsbdep5efls73ejdn1g`). Supabase projeto `qadkqjfmmnxvovyyhqxw` lista somente migrations 39–42; Protege 3B fechado. **PR #254 não integrada nem publicada**.
 - Retomar: conferir CI da #254; corrigir teste se falhar; caso aprovado, confirmar QA skipped, integrar por procedimento normal e verificar SHA live. Depois implementar/testar cenário autenticado 4h/2 encontros e fila concorrente com fixtures e usuários de teste; nunca usar dados reais nem ativar checkout.
 - Contagem conservadora desta rodada: 3 resultados verificáveis — auditoria de Render/migrations, PR de regressão SQL, registro do handoff em issues #93/#103/#105. 0/18 frentes integralmente homologadas.
+
+
+## Handoff 2026-11-14 — PR #255
+
+- Prioridade P0 #90–#94/#103: E2E autenticado 4h/2 encontros ainda **não executado**; faltam sessões autorizadas de aluno/instrutor e reserva de teste isolada verificável. Não confundir regressões SQL com E2E.
+- PR #254 integrada, CI aprovado, Render **live** no SHA `768749c8` (deploy `dep-dbscv468bjmc73eecpi0`). Supabase kitesurf registra somente migrations 39–42; Protege 3B permanece fechado.
+- PR #255, branch `test/p0-four-hour-partial-balance-20261114`: regressão SQL transacional de 4h contratadas/210min entregues/30min de saldo; aguarda CI, merge e deploy. Nenhuma migration ou pagamento executado.
+- Claude QA documentado como desativado; confirmar status efetivo do job antes de integrar.
+- Retomada: verificar CI da PR #255 e corrigir eventuais falhas; integrar somente com critérios atendidos, confirmar SHA live e construir cenário autenticado 4h/2 encontros ou testes automatizados equivalentes sem afetar reservas reais. Issues #93, #103 e #105 atualizadas.
