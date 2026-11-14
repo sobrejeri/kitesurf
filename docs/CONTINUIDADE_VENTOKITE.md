@@ -499,3 +499,11 @@ O projeto possui um **avaliador independente preparado, não necessariamente con
 - 0/18 tópicos integralmente homologados. O CI de banco isolado não substitui sessões reais Aluno/Instrutor: reservar 4h em dois encontros, aceitar, validar PIN, registrar presença/minutos/habilidades, consultar evolução como Aluno.
 - Supabase correto `qadkqjfmmnxvovyyhqxw` mantém migrations reais 39–42; não executar antigas 01–38, nem abrir Protege 3B ou cobrança real.
 - Próximo: verificar CI da regressão e deploy de #247, integrar somente com CI verde e Claude QA operacional quando ativo; depois focar o E2E #90–#94/#103 e agendador offline #92 com fixtures seguras.
+
+## Handoff 14/11/2026 — atomicidade de reagendamento rejeitado
+
+- PR #248 CI 43620130375 `success`, Claude QA 43620130446 `skipped`, merge `a389ab2a29363a4acea8b712ac49ca3b686de284`; Render deploy `dep-dbs9p8m8bjmc73eafvr0` confirmado `live` (17:40:44Z).
+- PR #249 commit `ac585bab0f4d11e3b182c6d1af328dea2685eca4`: amplia regressão SQL autenticada e descartável para garantir que rejeição por inversão de ordem não altera nenhum dos dois encontros, os 240 minutos ou reserva confirmada. CI run 43625317425 aguardando; Claude QA run 43625317410 `skipped`. Não fazer merge sem CI verde.
+- Supabase correto `qadkqjfmmnxvovyyhqxw`: ledger somente migrations 39–42; nenhuma DML/DDL executada. Checkout e Protege 3B OFF.
+- E2E navegador de Aluno→4h/2 encontros→Instrutor→PIN/presença/minutos/evolução→Aluno ainda não executado por falta de sessões/fixtures de teste autenticadas e isoladas. Não afirmar homologação integral: 0/18.
+- Próxima execução: acompanhar CI #249, corrigir falha se houver, integrar somente após verde e checar Render LIVE; depois priorizar teste de 90min registrados + 30min de saldo/reposição sem duplicação e autenticação E2E. Não criar PR somente documental.
