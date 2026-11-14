@@ -7,11 +7,11 @@ set -euo pipefail
 psql -X -h "$PG_TEST_SOCKET" -p "$PG_TEST_PORT" -U postgres -d postgres -v ON_ERROR_STOP=1 <<'SQL'
 -- Create the third fictional instructor in the throwaway DB.
 insert into auth.users(id,email,raw_user_meta_data) values
- ('00000000-0000-0000-0000-0000000000a3','queue-third@test.invalid',
+ ('00000000-0000-0000-0000-0000000000a4','queue-third@test.invalid',
  '{"full_name":"Instrutor Fictício C","role":"instructor"}');
 do $$
 begin
-  perform set_config('request.jwt.claim.sub','00000000-0000-0000-0000-0000000000a3',true);
+  perform set_config('request.jwt.claim.sub','00000000-0000-0000-0000-0000000000a4',true);
   execute 'set local role authenticated';
   update public.instructors set languages=array['Português'] where id=auth.uid();
   perform public.set_my_beaches(array(select id from public.beaches where slug='prea'));
@@ -19,14 +19,14 @@ begin
   execute 'reset role';
 end $$;
 insert into public.instructor_documents(instructor_id,kind,storage_path,original_name,status)
-select '00000000-0000-0000-0000-0000000000a3'::uuid,k.kind,
+select '00000000-0000-0000-0000-0000000000a4'::uuid,k.kind,
  'queue-test/'||k.kind||'.pdf',k.kind||'.pdf','approved'
 from (values ('identity'),('certification')) k(kind);
 do $$
 begin
   perform set_config('request.jwt.claim.sub','00000000-0000-0000-0000-00000000000a',true);
   execute 'set local role authenticated';
-  perform public.set_instructor_status('00000000-0000-0000-0000-0000000000a3','approved','Fixture descartável');
+  perform public.set_instructor_status('00000000-0000-0000-0000-0000000000a4','approved','Fixture descartável');
   execute 'reset role';
 end $$;
 
@@ -55,7 +55,7 @@ begin
       jsonb_build_array(jsonb_build_object('starts_at',st,'hours',2)))
     and public.instructor_can_attend('00000000-0000-0000-0000-0000000000a2',
       jsonb_build_array(jsonb_build_object('starts_at',st,'hours',2)))
-    and public.instructor_can_attend('00000000-0000-0000-0000-0000000000a3',
+    and public.instructor_can_attend('00000000-0000-0000-0000-0000000000a4',
       jsonb_build_array(jsonb_build_object('starts_at',st,'hours',2)))
   order by st limit 1;
   if v_st is null then raise exception 'Fixture: no common eligible slot for three instructors'; end if;
