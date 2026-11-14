@@ -36,3 +36,6 @@ PG_TEST_SOCKET="$DATA" PG_TEST_PORT="$PORT" bash "$ROOT/scripts/test-booking-two
 
 # A declines, B expires, C accepts in the same disposable database.
 PG_TEST_SOCKET="$DATA" PG_TEST_PORT="$PORT" bash "$ROOT/scripts/test-offer-queue-abc.sh"
+
+# Authorized postponement and cross-account denial in throwaway PostgreSQL.
+PG_TEST_SOCKET="$DATA" PG_TEST_PORT="$PORT" bash "$ROOT/scripts/test-meeting-change-auth.sh"
