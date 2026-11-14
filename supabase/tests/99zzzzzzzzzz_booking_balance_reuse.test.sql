@@ -208,5 +208,16 @@ BEGIN
   ASSERT EXISTS(SELECT 1 FROM public.app_notifications
     WHERE recipient_id=v_student AND title='Pedido de reposição expirado'),
     'The student is told the request lapsed';
-END $$;
+  -- D. Four paid hours with only 210 delivered must retain exactly 30 minutes.
+  -- This is an isolated SQL regression, NOT authenticated browser E2E.
+  v_bid:=pg_temp.short_booking(v_admin,v_instructor,v_student,v_beach,4,210);
+  ASSERT (SELECT status FROM public.bookings WHERE id=v_bid)='confirmed',
+    'Four-hour booking must remain open with thirty minutes undelivered';
+  ASSERT (SELECT sum(done_minutes) FROM public.booking_meetings WHERE booking_id=v_bid)=210,
+    'Four-hour partial lesson must record 210 minutes once';
+  PERFORM pg_temp.act_as(v_student);
+  ASSERT public.booking_balance_minutes(v_bid)=30,
+    'Four-hour booking must retain exactly 30 paid minutes';
+  PERFORM pg_temp.reset();
+END $;
 ROLLBACK;
