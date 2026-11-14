@@ -97,6 +97,18 @@ begin
     where booking_id=v_id and position=1;
   select id into strict v_m2 from public.booking_meetings
     where booking_id=v_id and position=2;
+  -- Verify that the assigned instructor can read both meetings and that an
+  -- unrelated instructor cannot discover their IDs or scheduled dates via RLS.
+  perform set_config('request.jwt.claim.sub','00000000-0000-0000-0000-0000000000a1',true);
+  execute 'set local role authenticated';
+  select count(*) into v_count from public.booking_meetings where booking_id=v_id;
+  if v_count<>2 then raise exception 'Assigned instructor cannot read both meetings'; end if;
+  execute 'reset role';
+  perform set_config('request.jwt.claim.sub','00000000-0000-0000-0000-0000000000a2',true);
+  execute 'set local role authenticated';
+  select count(*) into v_count from public.booking_meetings where booking_id=v_id;
+  if v_count<>0 then raise exception 'IDOR: unrelated instructor sees scheduled meetings'; end if;
+  execute 'reset role';
   -- Student and an unrelated instructor must never start or record lessons.
   perform set_config('request.jwt.claim.sub','00000000-0000-0000-0000-0000000000b2',true);
   execute 'set local role authenticated';
@@ -158,6 +170,14 @@ begin
   exception when invalid_parameter_value then null; end;
   perform public.record_meeting(v_m2,115,'Water start e primeiros bordos');
   execute 'reset role';
+  -- The aggregate alone is insufficient: each lesson must retain its own
+  -- instructor-entered note and exact completed minutes after both writes.
+  if not exists (select 1 from public.booking_meetings
+    where id=v_m1 and done_minutes=110 and note='Controle e segurança: janela de vento')
+    or not exists (select 1 from public.booking_meetings
+    where id=v_m2 and done_minutes=115 and note='Water start e primeiros bordos') then
+    raise exception 'Per-meeting instructor progress was lost or overwritten';
+  end if;
   if (select sum(done_minutes) from public.booking_meetings where booking_id=v_id)<>225 then
     raise exception 'Expected 225 actual teaching minutes across both meetings'; end if;
   perform set_config('request.jwt.claim.sub','00000000-0000-0000-0000-0000000000b2',true);
