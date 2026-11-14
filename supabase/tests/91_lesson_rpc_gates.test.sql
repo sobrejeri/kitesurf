@@ -11,6 +11,15 @@ BEGIN
     'Authenticated client must not bypass ordered start';
   ASSERT NOT has_function_privilege('authenticated','public.record_meeting(uuid,integer,text)','EXECUTE'),
     'Authenticated client must not bypass mandatory skill recording';
+  ASSERT NOT has_function_privilege('anon','public.start_meeting(uuid,text)','EXECUTE'),
+    'Anonymous client must not start lessons through internal helper';
+  ASSERT NOT has_function_privilege('anon','public.record_meeting(uuid,integer,text)','EXECUTE'),
+    'Anonymous client must not record lessons through internal helper';
+  ASSERT NOT has_function_privilege('anon','public.start_ordered_meeting(uuid,text)','EXECUTE'),
+    'Anonymous client must not use ordered lesson entry point';
+  ASSERT NOT has_function_privilege('anon',
+    'public.record_meeting_with_skills(uuid,integer,integer[],integer[])','EXECUTE'),
+    'Anonymous client must not use skill-aware completion entry point';
   ASSERT has_function_privilege('authenticated','public.start_ordered_meeting(uuid,text)','EXECUTE'),
     'Ordered start must remain callable';
   ASSERT has_function_privilege('authenticated',
@@ -36,6 +45,22 @@ BEGIN
   EXCEPTION WHEN insufficient_privilege THEN NULL;
   END;
 END $test$;
+RESET ROLE;
+SET ROLE anon;
+DO $anonymous$
+BEGIN
+  BEGIN
+    PERFORM public.start_ordered_meeting('00000000-0000-0000-0000-000000000000', '0000');
+    RAISE EXCEPTION 'Anonymous ordered start unexpectedly executed';
+  EXCEPTION WHEN insufficient_privilege THEN NULL;
+  END;
+  BEGIN
+    PERFORM public.record_meeting_with_skills(
+      '00000000-0000-0000-0000-000000000000',0,ARRAY[]::integer[],ARRAY[]::integer[]);
+    RAISE EXCEPTION 'Anonymous skill completion unexpectedly executed';
+  EXCEPTION WHEN insufficient_privilege THEN NULL;
+  END;
+END $anonymous$;
 RESET ROLE;
 ROLLBACK;
 DO $restored$
