@@ -174,7 +174,7 @@ end $$;
 do $$
 declare
  v_beach uuid; v_first timestamptz; v_second timestamptz;
- v_booking uuid;
+ v_booking uuid; v_first_meeting uuid; v_change_four uuid; v_third timestamptz;
 begin
  select id into strict v_beach from public.beaches where slug='jeri';
  with slots as (
@@ -215,6 +215,40 @@ begin
  or not exists(select 1 from public.booking_meetings
    where booking_id=v_booking and starts_at=v_second and minutes=120) then
    raise exception '4h booking changed one of the two scheduled meeting slots'; end if;
+ -- Postpone just the first encounter of this 4h purchase, keeping the
+ -- second encounter unchanged and preserving exactly 240 contracted minutes.
+ select id into strict v_first_meeting from public.booking_meetings
+   where booking_id=v_booking and starts_at=v_first;
+ with slots as (
+   select (date_trunc('day',now() at time zone 'America/Fortaleza')
+     +make_interval(days=>d,hours=>h)) at time zone 'America/Fortaleza' st
+     from generate_series(5,40) d cross join generate_series(8,15) h
+ )
+ select st into v_third from slots where st>v_second+interval '2 days'
+   and public.instructor_can_attend('00000000-0000-0000-0000-0000000000a1',
+     jsonb_build_array(jsonb_build_object('starts_at',st,'hours',2)))
+ order by st limit 1;
+ if v_third is null then raise exception 'No eligible 4h postponement slot'; end if;
+ perform set_config('request.jwt.claim.sub','00000000-0000-0000-0000-0000000000b2',true);
+ execute 'set local role authenticated';
+ v_change_four:=public.request_meeting_change(v_first_meeting,v_third,
+   'Safe postponement of first 4h encounter');
+ execute 'reset role';
+ perform set_config('request.jwt.claim.sub','00000000-0000-0000-0000-0000000000a1',true);
+ execute 'set local role authenticated';
+ perform public.respond_meeting_change(v_change_four,true);
+ execute 'reset role';
+ if (select status from public.meeting_change_requests where id=v_change_four)<>'accepted'
+ or not exists(select 1 from public.booking_meetings
+   where id=v_first_meeting and starts_at=v_third and minutes=120)
+ or not exists(select 1 from public.booking_meetings
+   where booking_id=v_booking and starts_at=v_second and minutes=120)
+ or (select count(*) from public.booking_meetings where booking_id=v_booking)<>2
+ or (select coalesce(sum(minutes),0) from public.booking_meetings
+     where booking_id=v_booking)<>240
+ or not exists(select 1 from public.bookings
+     where id=v_booking and status='confirmed' and total_hours=4) then
+   raise exception '4h postponement altered other encounter, status or purchased minutes'; end if;
  -- The authenticated booking owner must see both purchased meetings,
  -- while an unrelated student cannot inspect either meeting or the booking.
  perform set_config('request.jwt.claim.sub','00000000-0000-0000-0000-0000000000b2',true);
