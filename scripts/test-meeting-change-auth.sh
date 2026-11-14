@@ -8,6 +8,7 @@ do $$
 declare
  v_beach uuid; v_old timestamptz; v_new timestamptz;
  v_booking uuid; v_meeting uuid; v_change uuid;
+
 begin
  select id into strict v_beach from public.beaches where slug='jeri';
  with slots as (
@@ -30,6 +31,20 @@ begin
  perform public.confirm_test_payment(v_booking);
  execute 'reset role';
  select id into strict v_meeting from public.booking_meetings where booking_id=v_booking;
+ -- Move only the disposable fixture's meeting inside the 72-hour window.
+ -- Restore the original future date before the authorized postponement flow.
+ update public.booking_meetings set starts_at=now()+interval '48 hours' where id=v_meeting;
+ perform set_config('request.jwt.claim.sub','00000000-0000-0000-0000-0000000000b2',true);
+ execute 'set local role authenticated';
+ begin
+   perform public.request_meeting_change(v_meeting,v_new,
+     'Safety reason for postponement');
+   raise exception 'SECURITY: meeting changed with less than 72h notice';
+ exception when invalid_parameter_value then null; end;
+ execute 'reset role';
+ if exists(select 1 from public.meeting_change_requests where meeting_id=v_meeting) then
+   raise exception 'Invalid 72h change request persisted'; end if;
+ update public.booking_meetings set starts_at=v_old where id=v_meeting;
  -- A different student cannot request a change.
  perform set_config('request.jwt.claim.sub','00000000-0000-0000-0000-0000000000b1',true);
  execute 'set local role authenticated';

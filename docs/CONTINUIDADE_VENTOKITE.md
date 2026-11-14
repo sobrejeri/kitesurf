@@ -451,3 +451,9 @@ O projeto possui um **avaliador independente preparado, não necessariamente con
 - PR #233 adiciona regressão isolada de reagendamento: aluno autenticado reserva e confirma aula fictícia, impede acesso de outro aluno, impede antecipação, exige aceite do instrutor designado, preserva reserva/horas. Aguardar CI e QA; não integrar sem verde.
 - Supabase real somente migrations 39–42, a correção SQL #231 não está aplicada. Não tocar nas buscas/ofertas reais vencidas, nem ativar cron. E2E navegador real de 4h/2 encontros ainda sem sessões autorizadas acessíveis, 0/18 homologados.
 - Retomar: conferir CI #233 e corrigir falhas; merge só se verde; verificar deploy LIVE de #232 e #233 separadamente; depois validar prazos de 72h/12h, conflitos e cancelamento em banco descartável. Protege 3B e dinheiro real fechados.
+
+## 14/11/2026 01h24 BRT — cutoff 72h e continuidade
+- PR #233 integrada SHA `ac181fd0da73f129053047d7cc97ac70ec7c7346`, CI `43556293356` SUCCESS, Claude QA SKIPPED. Reagendamento autenticado isolado aprovado, incluindo bloqueio de antecipação e de acesso cruzado; Render #233 deploy `dep-dbru4du417fc73etiba0` ainda aguardava confirmação LIVE. PR #232 SHA `f1fc3bef90b78610c25f84edbcf378a7ea466399` LIVE deploy `dep-dbru3ce7bikc73ef4ot0`.
+- PR #234 acrescenta fixture separada de aula confirmada com menos de 72h para provar rejeição de solicitação de reagendamento e ausência de pedido persistido. Aguardar CI/QA antes de merge; corrigir falhas no teste sem tocar banco real.
+- Banco Supabase real continua com ledger 39–42; migration #231 nova ainda não aplicada. E2E navegador 4h/2 encontros e fila real seguem pendentes por falta de sessões de teste autorizadas e isolamento de dados. 0/18 homologados. Não ativar dinheiro real, cron nem Protege 3B.
+- Próximo: verificar CI #234, merge somente verde, Render SHA LIVE; ampliar testes de prazo 12h/decisão do aluno e conflito concorrente, preservar reserva. Registrar na issue #105.
