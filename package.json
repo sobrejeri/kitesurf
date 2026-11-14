@@ -15,7 +15,9 @@
     "start": "next start",
     "typecheck": "tsc --noEmit",
     "lint": "eslint src",
-    "clean": "rm -rf .next *.tsbuildinfo"
+    "clean": "rm -rf .next *.tsbuildinfo",
+    "test:offer-worker": "node scripts/test-offer-expiry-worker.mjs",
+    "prebuild": "node scripts/test-offer-expiry-worker.mjs"
   },
   "dependencies": {
     "@supabase/ssr": "0.12.7",
