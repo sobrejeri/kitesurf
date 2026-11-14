@@ -1,7 +1,8 @@
 -- Disposable PostgreSQL only. The review patch is intentionally NOT a migration.
 -- scripts/test-db.sh runs this after the normal seeded business-rule suite.
 \set ON_ERROR_STOP on
--- This changes grants only in the disposable database created by scripts/test-db.sh.
+-- Roll back the proposed grants so later regression tests can exercise legacy helpers.
+BEGIN;
 \ir ../../security-review/lesson-rpc-gates.proposed.sql
 
 DO $test$
@@ -36,4 +37,5 @@ BEGIN
   END;
 END $test$;
 RESET ROLE;
+ROLLBACK;
 SELECT 'PASS: legacy lesson helper RPCs denied; validated wrappers retain grants' AS result;
