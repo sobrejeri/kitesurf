@@ -46,7 +46,7 @@ export async function POST(request: NextRequest) {
   const candidates = [
     ...(expiredOffers ?? []).map((offer) => ({ id: offer.request_id, deadline: offer.expires_at })),
     ...(expiredRequests ?? []).map((entry) => ({ id: entry.id, deadline: entry.expires_at })),
-  ].filter((candidate) => typeof candidate.id === 'string' && candidate.id.length > 0);
+  ].filter((candidate) => typeof candidate.id === 'string' && /^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(candidate.id));
   candidates.sort((a, b) => String(a.deadline).localeCompare(String(b.deadline)) || a.id.localeCompare(b.id));
   const ids = [...new Set(candidates.map((candidate) => candidate.id))].slice(0, 10);
 
