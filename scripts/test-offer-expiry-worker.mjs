@@ -6,6 +6,7 @@ const config = readFileSync('src/lib/offer-worker-env.ts', 'utf8');
 for (const guard of [
   'offerWorkerEnv()', '!config.apply', 'config.secret', 'config.serviceRoleKey',
   'timingSafeEqual', '.slice(0, 10)', 'advance_instructor_offer', "mode: 'preview'",
+  ".order('expires_at', { ascending: true })", 'candidates.sort(', 'new Set(candidates.map(',
 ]) assert.ok(code.includes(guard), 'missing safety guard: ' + guard);
 for (const name of [
   'VENTO_OFFER_WORKER_ENABLED', 'VENTO_OFFER_WORKER_APPLY',
