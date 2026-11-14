@@ -47,7 +47,7 @@ export async function POST(request: NextRequest) {
     ...(expiredOffers ?? []).map((offer) => ({ id: offer.request_id, deadline: offer.expires_at })),
     ...(expiredRequests ?? []).map((entry) => ({ id: entry.id, deadline: entry.expires_at })),
   ].filter((candidate) => typeof candidate.id === 'string' && candidate.id.length > 0);
-  candidates.sort((a, b) => a.deadline.localeCompare(b.deadline) || a.id.localeCompare(b.id));
+  candidates.sort((a, b) => String(a.deadline).localeCompare(String(b.deadline)) || a.id.localeCompare(b.id));
   const ids = [...new Set(candidates.map((candidate) => candidate.id))].slice(0, 10);
 
   // Preview is the default even with the worker enabled. Only explicitly
