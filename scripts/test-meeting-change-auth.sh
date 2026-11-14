@@ -169,4 +169,52 @@ begin
  execute 'reset role';
  raise notice 'PASS: authorized postponement and 12h expiry choice window preserve confirmed booking';
 end $$;
+-- Independently verify the core 4-hour purchase shape: two distinct 2-hour
+-- meetings, one confirmed booking, and no accidental duplication of minutes.
+do $$
+declare
+ v_beach uuid; v_first timestamptz; v_second timestamptz;
+ v_booking uuid;
+begin
+ select id into strict v_beach from public.beaches where slug='jeri';
+ with slots as (
+   select (date_trunc('day',now() at time zone 'America/Fortaleza')
+     +make_interval(days=>d,hours=>h)) at time zone 'America/Fortaleza' st,
+     d from generate_series(5,25) d cross join generate_series(8,15) h
+ ), eligible as (
+   select st,d from slots where public.instructor_can_attend(
+     '00000000-0000-0000-0000-0000000000a1',
+     jsonb_build_array(jsonb_build_object('starts_at',st,'hours',2)))
+ )
+ select a.st,b.st into v_first,v_second from eligible a
+ join eligible b on b.d>=a.d+2
+ where public.instructor_can_attend(
+   '00000000-0000-0000-0000-0000000000a1',
+   jsonb_build_array(jsonb_build_object('starts_at',a.st,'hours',2),
+                           jsonb_build_object('starts_at',b.st,'hours',2)))
+ order by a.st,b.st limit 1;
+ if v_first is null or v_second is null then
+   raise exception 'No eligible 4h/2-meeting fixture dates'; end if;
+ perform set_config('request.jwt.claim.sub','00000000-0000-0000-0000-0000000000b2',true);
+ execute 'set local role authenticated';
+ v_booking:=public.create_booking(v_beach,'first_time','Português',
+   jsonb_build_array(jsonb_build_object('starts_at',v_first,'hours',2),
+                     jsonb_build_object('starts_at',v_second,'hours',2)));
+ perform public.confirm_test_payment(v_booking);
+ execute 'reset role';
+ if not exists(select 1 from public.bookings
+   where id=v_booking and status='confirmed' and total_hours=4) then
+   raise exception '4h booking not confirmed with correct contracted hours'; end if;
+ if (select count(*) from public.booking_meetings where booking_id=v_booking)<>2 then
+   raise exception '4h booking did not preserve exactly two meetings'; end if;
+ if (select coalesce(sum(minutes),0) from public.booking_meetings
+     where booking_id=v_booking)<>240 then
+   raise exception '4h booking did not preserve 240 purchased minutes'; end if;
+ if not exists(select 1 from public.booking_meetings
+   where booking_id=v_booking and starts_at=v_first and minutes=120)
+ or not exists(select 1 from public.booking_meetings
+   where booking_id=v_booking and starts_at=v_second and minutes=120) then
+   raise exception '4h booking changed one of the two scheduled meeting slots'; end if;
+ raise notice 'PASS: confirmed 4h booking has two 120-minute meetings';
+end $$;
 SQL
