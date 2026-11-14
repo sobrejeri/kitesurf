@@ -8,6 +8,7 @@ do $$
 declare
  v_beach uuid; v_old timestamptz; v_new timestamptz;
  v_booking uuid; v_meeting uuid; v_change uuid;
+ v_choice timestamptz; v_visible integer;
 
 begin
  select id into strict v_beach from public.beaches where slug='jeri';
@@ -103,6 +104,27 @@ begin
  if not exists(select 1 from public.bookings where id=v_booking
    and status='confirmed' and instructor_id='00000000-0000-0000-0000-0000000000a1') then
    raise exception 'Expired change unexpectedly reassigned or cancelled booking'; end if;
+ -- Retried expiry jobs must not extend the decision deadline or change the sale.
+ select choice_expires_at into strict v_choice
+   from public.meeting_change_requests where id=v_change;
+ perform public.expire_meeting_change_requests();
+ if (select choice_expires_at from public.meeting_change_requests where id=v_change)
+    is distinct from v_choice then
+   raise exception 'Expiry retry extended or altered student choice deadline'; end if;
+ if (select status from public.meeting_change_requests where id=v_change)<>'expired' then
+   raise exception 'Expiry retry changed terminal request status'; end if;
+ -- The student owning the booking may read their decision deadline, but a
+ -- different authenticated student must not discover it through RLS.
+ perform set_config('request.jwt.claim.sub','00000000-0000-0000-0000-0000000000b2',true);
+ execute 'set local role authenticated';
+ select count(*) into v_visible from public.meeting_change_requests where id=v_change;
+ if v_visible<>1 then raise exception 'Owner cannot read expired choice'; end if;
+ execute 'reset role';
+ perform set_config('request.jwt.claim.sub','00000000-0000-0000-0000-0000000000b1',true);
+ execute 'set local role authenticated';
+ select count(*) into v_visible from public.meeting_change_requests where id=v_change;
+ if v_visible<>0 then raise exception 'IDOR: other student can read expired choice'; end if;
+ execute 'reset role';
  raise notice 'PASS: authorized postponement and 12h expiry choice window preserve confirmed booking';
 end $$;
 SQL
