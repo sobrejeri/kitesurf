@@ -50,6 +50,17 @@ SET ROLE anon;
 DO $anonymous$
 BEGIN
   BEGIN
+    PERFORM public.start_meeting('00000000-0000-0000-0000-000000000000', '0000');
+    RAISE EXCEPTION 'Anonymous internal start unexpectedly executed';
+  EXCEPTION WHEN insufficient_privilege THEN NULL;
+  END;
+  BEGIN
+    PERFORM public.record_meeting('00000000-0000-0000-0000-000000000000',0,'');
+    RAISE EXCEPTION 'Anonymous internal completion unexpectedly executed';
+  EXCEPTION WHEN insufficient_privilege THEN NULL;
+  END;
+BEGIN
+  BEGIN
     PERFORM public.start_ordered_meeting('00000000-0000-0000-0000-000000000000', '0000');
     RAISE EXCEPTION 'Anonymous ordered start unexpectedly executed';
   EXCEPTION WHEN insufficient_privilege THEN NULL;
