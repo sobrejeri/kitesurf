@@ -79,5 +79,10 @@ BEGIN
     'Disposable test must restore legacy start privilege for later suites';
   ASSERT has_function_privilege('authenticated','public.record_meeting(uuid,integer,text)','EXECUTE'),
     'Disposable test must restore legacy record privilege for later suites';
+  ASSERT has_function_privilege('authenticated','public.start_ordered_meeting(uuid,text)','EXECUTE'),
+    'Rollback must preserve authenticated ordered-start access';
+  ASSERT has_function_privilege('authenticated',
+    'public.record_meeting_with_skills(uuid,integer,integer[],integer[])','EXECUTE'),
+    'Rollback must preserve authenticated skill-recording access';
 END $restored$;
 SELECT 'PASS: legacy lesson helper RPCs denied; validated wrappers retain grants' AS result;
