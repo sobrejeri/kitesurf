@@ -95,10 +95,12 @@ fi
 losing_student='b2'
 if [[ "$winning_student" == 'b2' ]]; then losing_student='b1'; fi
 loser_bookings="$("${PSQL[@]}" -c "
-select count(*) from public.bookings
-where student_id='00000000-0000-0000-0000-0000000000$losing_student'::uuid
-  and beach_id='$beach'::uuid
-  and instructor_id='00000000-0000-0000-0000-0000000000a1'::uuid;")"
+select count(distinct b.id) from public.bookings b
+join public.booking_meetings m on m.booking_id=b.id
+where b.student_id='00000000-0000-0000-0000-0000000000$losing_student'::uuid
+  and b.beach_id='$beach'::uuid
+  and b.instructor_id='00000000-0000-0000-0000-0000000000a1'::uuid
+  and m.starts_at in ('$slot'::timestamptz, '$slot2'::timestamptz);")"
 if [[ "$loser_bookings" != '0' ]]; then
   echo "Concurrency regression: losing student retained $loser_bookings bookings" >&2
   exit 1
