@@ -108,6 +108,14 @@ begin
     perform public.record_meeting(v_m1,10,'unauthorized student progress');
     raise exception 'SECURITY: student recorded instructor minutes';
   exception when no_data_found or insufficient_privilege or invalid_parameter_value then null; end;
+  -- Defense in depth: an authenticated student must not bypass the RPC by
+  -- updating progress columns directly, even on a meeting they can read.
+  begin
+    update public.booking_meetings set done_minutes=120, note='forged student progress'
+      where id=v_m1;
+    get diagnostics v_count = row_count;
+    if v_count<>0 then raise exception 'SECURITY: student directly changed meeting progress'; end if;
+  exception when insufficient_privilege then null; end;
   execute 'reset role';
   perform set_config('request.jwt.claim.sub','00000000-0000-0000-0000-0000000000a2',true);
   execute 'set local role authenticated';
@@ -119,6 +127,12 @@ begin
     perform public.record_meeting(v_m1,10,'unauthorized instructor progress');
     raise exception 'SECURITY: unrelated instructor recorded minutes';
   exception when no_data_found or insufficient_privilege or invalid_parameter_value then null; end;
+  begin
+    update public.booking_meetings set done_minutes=120, note='forged other instructor progress'
+      where id=v_m1;
+    get diagnostics v_count = row_count;
+    if v_count<>0 then raise exception 'SECURITY: unrelated instructor directly changed progress'; end if;
+  exception when insufficient_privilege then null; end;
   execute 'reset role';
   perform set_config('request.jwt.claim.sub','00000000-0000-0000-0000-0000000000a1',true);
   execute 'set local role authenticated';
@@ -138,6 +152,10 @@ begin
     raise exception 'SECURITY: invalid PIN accepted for second meeting';
   exception when invalid_parameter_value then null; end;
   perform public.start_meeting(v_m2,v_pin);
+  begin
+    perform public.record_meeting(v_m2,121,'invalid second meeting overrun');
+    raise exception 'SECURITY: instructor recorded 121 minutes for second 120-minute encounter';
+  exception when invalid_parameter_value then null; end;
   perform public.record_meeting(v_m2,115,'Water start e primeiros bordos');
   execute 'reset role';
   if (select sum(done_minutes) from public.booking_meetings where booking_id=v_id)<>225 then
