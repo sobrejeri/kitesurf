@@ -45,6 +45,32 @@ BEGIN
   EXCEPTION WHEN insufficient_privilege THEN NULL;
   END;
 END $test$;
+-- Exercise the validated entry points as authenticated. An unknown meeting must
+-- fail in business logic, not because the wrapper lost EXECUTE permission.
+DO $wrapper_access$
+DECLARE
+  v_failed boolean;
+BEGIN
+  v_failed := false;
+  BEGIN
+    PERFORM public.start_ordered_meeting('00000000-0000-0000-0000-000000000000', '0000');
+  EXCEPTION WHEN OTHERS THEN
+    ASSERT SQLSTATE <> '42501', 'Ordered wrapper rejected authenticated EXECUTE';
+    v_failed := true;
+  END;
+  ASSERT v_failed, 'Unknown meeting must not be started';
+
+  v_failed := false;
+  BEGIN
+    PERFORM public.record_meeting_with_skills(
+      '00000000-0000-0000-0000-000000000000', 30,
+      ARRAY[]::integer[], ARRAY[]::integer[]);
+  EXCEPTION WHEN OTHERS THEN
+    ASSERT SQLSTATE <> '42501', 'Skills wrapper rejected authenticated EXECUTE';
+    v_failed := true;
+  END;
+  ASSERT v_failed, 'Unknown meeting must not be completed';
+END $wrapper_access$;
 RESET ROLE;
 SET ROLE anon;
 DO $anonymous$
