@@ -2,15 +2,15 @@ import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 
 const code = readFileSync('src/app/api/internal/expire-offers/route.ts', 'utf8');
+const config = readFileSync('src/lib/offer-worker-env.ts', 'utf8');
 for (const guard of [
-  "VENTO_OFFER_WORKER_ENABLED !== 'true'",
-  "VENTO_OFFER_WORKER_APPLY !== 'true'",
-  "VENTO_OFFER_WORKER_SECRET",
-  "timingSafeEqual",
-  "SUPABASE_SERVICE_ROLE_KEY",
-  ".slice(0, 10)",
-  "advance_instructor_offer",
-  "mode: 'preview'",
-]) assert.ok(code.includes(guard), `missing safety guard: ${guard}`);
-assert.ok(!code.includes("export async function GET"), 'runner must not expose GET mutation');
+  'offerWorkerEnv()', '!config.apply', 'config.secret', 'config.serviceRoleKey',
+  'timingSafeEqual', '.slice(0, 10)', 'advance_instructor_offer', "mode: 'preview'",
+]) assert.ok(code.includes(guard), 'missing safety guard: ' + guard);
+for (const name of [
+  'VENTO_OFFER_WORKER_ENABLED', 'VENTO_OFFER_WORKER_APPLY',
+  'VENTO_OFFER_WORKER_SECRET', 'SUPABASE_SERVICE_ROLE_KEY',
+]) assert.ok(config.includes(name), 'missing server-only env: ' + name);
+assert.ok(config.includes("import 'server-only'"));
+assert.ok(!code.includes('export async function GET'));
 console.log('Offer expiry worker safety checks passed (static only; no live calls).');
