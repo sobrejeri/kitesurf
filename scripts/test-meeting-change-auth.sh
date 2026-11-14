@@ -215,6 +215,22 @@ begin
  or not exists(select 1 from public.booking_meetings
    where booking_id=v_booking and starts_at=v_second and minutes=120) then
    raise exception '4h booking changed one of the two scheduled meeting slots'; end if;
+ -- The authenticated booking owner must see both purchased meetings,
+ -- while an unrelated student cannot inspect either meeting or the booking.
+ perform set_config('request.jwt.claim.sub','00000000-0000-0000-0000-0000000000b2',true);
+ execute 'set local role authenticated';
+ if (select count(*) from public.bookings where id=v_booking)<>1 then
+   raise exception 'Student owner cannot read confirmed 4h booking'; end if;
+ if (select count(*) from public.booking_meetings where booking_id=v_booking)<>2 then
+   raise exception 'Student owner cannot read both purchased meetings'; end if;
+ execute 'reset role';
+ perform set_config('request.jwt.claim.sub','00000000-0000-0000-0000-0000000000b1',true);
+ execute 'set local role authenticated';
+ if exists(select 1 from public.bookings where id=v_booking) then
+   raise exception 'IDOR: unrelated student can read 4h booking'; end if;
+ if exists(select 1 from public.booking_meetings where booking_id=v_booking) then
+   raise exception 'IDOR: unrelated student can read 4h meetings'; end if;
+ execute 'reset role';
  raise notice 'PASS: confirmed 4h booking has two 120-minute meetings';
 end $$;
 SQL
