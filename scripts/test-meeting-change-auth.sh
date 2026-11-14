@@ -215,10 +215,11 @@ begin
  or not exists(select 1 from public.booking_meetings
    where booking_id=v_booking and starts_at=v_second and minutes=120) then
    raise exception '4h booking changed one of the two scheduled meeting slots'; end if;
- -- Postpone just the first encounter of this 4h purchase, keeping the
- -- second encounter unchanged and preserving exactly 240 contracted minutes.
+ -- Postpone only the SECOND encounter of this 4h purchase, keeping the
+ -- first encounter unchanged and preserving exactly 240 contracted minutes.
+ -- Moving the first encounter after the second violates chronological order.
  select id into strict v_first_meeting from public.booking_meetings
-   where booking_id=v_booking and starts_at=v_first;
+   where booking_id=v_booking and starts_at=v_second;
  with slots as (
    select (date_trunc('day',now() at time zone 'America/Fortaleza')
      +make_interval(days=>d,hours=>h)) at time zone 'America/Fortaleza' st
@@ -232,7 +233,7 @@ begin
  perform set_config('request.jwt.claim.sub','00000000-0000-0000-0000-0000000000b2',true);
  execute 'set local role authenticated';
  v_change_four:=public.request_meeting_change(v_first_meeting,v_third,
-   'Safe postponement of first 4h encounter');
+   'Safe postponement of second 4h encounter');
  execute 'reset role';
  perform set_config('request.jwt.claim.sub','00000000-0000-0000-0000-0000000000a1',true);
  execute 'set local role authenticated';
@@ -242,7 +243,7 @@ begin
  or not exists(select 1 from public.booking_meetings
    where id=v_first_meeting and starts_at=v_third and minutes=120)
  or not exists(select 1 from public.booking_meetings
-   where booking_id=v_booking and starts_at=v_second and minutes=120)
+   where booking_id=v_booking and starts_at=v_first and minutes=120)
  or (select count(*) from public.booking_meetings where booking_id=v_booking)<>2
  or (select coalesce(sum(minutes),0) from public.booking_meetings
      where booking_id=v_booking)<>240
