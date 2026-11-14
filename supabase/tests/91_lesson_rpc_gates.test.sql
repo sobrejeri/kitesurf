@@ -38,4 +38,11 @@ BEGIN
 END $test$;
 RESET ROLE;
 ROLLBACK;
+DO $restored$
+BEGIN
+  ASSERT has_function_privilege('authenticated','public.start_meeting(uuid,text)','EXECUTE'),
+    'Disposable test must restore legacy start privilege for later suites';
+  ASSERT has_function_privilege('authenticated','public.record_meeting(uuid,integer,text)','EXECUTE'),
+    'Disposable test must restore legacy record privilege for later suites';
+END $restored$;
 SELECT 'PASS: legacy lesson helper RPCs denied; validated wrappers retain grants' AS result;
