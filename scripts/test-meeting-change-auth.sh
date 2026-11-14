@@ -8,6 +8,7 @@ do $$
 declare
  v_beach uuid; v_old timestamptz; v_new timestamptz;
  v_booking uuid; v_meeting uuid; v_change uuid;
+ v_soon timestamptz; v_soon_booking uuid; v_soon_meeting uuid;
 begin
  select id into strict v_beach from public.beaches where slug='jeri';
  with slots as (
@@ -30,6 +31,35 @@ begin
  perform public.confirm_test_payment(v_booking);
  execute 'reset role';
  select id into strict v_meeting from public.booking_meetings where booking_id=v_booking;
+ -- Separate near-term lesson: changing within 72 hours must be rejected.
+ with slots as (
+   select (date_trunc('day',now() at time zone 'America/Fortaleza')
+     +make_interval(days=>d,hours=>h)) at time zone 'America/Fortaleza' st
+   from generate_series(1,2) d cross join generate_series(8,15) h
+ )
+ select st into v_soon from slots
+ where st>now()+interval '2 hours' and st<now()+interval '72 hours'
+   and public.instructor_can_attend('00000000-0000-0000-0000-0000000000a1',
+     jsonb_build_array(jsonb_build_object('starts_at',st,'hours',1)))
+ order by st limit 1;
+ if v_soon is null then raise exception 'Fixture: no available lesson within 72 hours'; end if;
+ perform set_config('request.jwt.claim.sub','00000000-0000-0000-0000-0000000000b2',true);
+ execute 'set local role authenticated';
+ v_soon_booking:=public.create_booking(v_beach,'first_time','Português',
+   jsonb_build_array(jsonb_build_object('starts_at',v_soon,'hours',1)));
+ perform public.confirm_test_payment(v_soon_booking);
+ execute 'reset role';
+ select id into strict v_soon_meeting from public.booking_meetings where booking_id=v_soon_booking;
+ perform set_config('request.jwt.claim.sub','00000000-0000-0000-0000-0000000000b2',true);
+ execute 'set local role authenticated';
+ begin
+   perform public.request_meeting_change(v_soon_meeting,v_soon+interval '5 days',
+     'Safety reason for postponement');
+   raise exception 'SECURITY: meeting changed with less than 72h notice';
+ exception when invalid_parameter_value then null; end;
+ execute 'reset role';
+ if exists(select 1 from public.meeting_change_requests where meeting_id=v_soon_meeting) then
+   raise exception 'Invalid 72h change request persisted'; end if;
  -- A different student cannot request a change.
  perform set_config('request.jwt.claim.sub','00000000-0000-0000-0000-0000000000b1',true);
  execute 'set local role authenticated';
