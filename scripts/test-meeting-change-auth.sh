@@ -84,6 +84,25 @@ begin
    raise exception 'Rescheduling changed sale or contracted hours'; end if;
  if (select status from public.meeting_change_requests where id=v_change)<>'accepted' then
    raise exception 'Change status not accepted'; end if;
- raise notice 'PASS: authorized postponement; no earlier date or cross-account approval; booking preserved';
+ -- Simulate an unanswered 12-hour request in disposable PostgreSQL only.
+ -- Expiry opens the student's choice window but must not cancel the sale.
+ insert into public.meeting_change_requests(
+   booking_id,meeting_id,requester_id,responder_id,
+   original_starts_at,proposed_starts_at,reason,expires_at
+ ) values (
+   v_booking,v_meeting,'00000000-0000-0000-0000-0000000000b2',
+   '00000000-0000-0000-0000-0000000000a1',
+   v_new,v_new+interval '3 days','Unanswered safety postponement',
+   now()-interval '1 minute'
+ ) returning id into v_change;
+ perform public.expire_meeting_change_requests();
+ if not exists(select 1 from public.meeting_change_requests
+   where id=v_change and status='expired' and choice_expires_at>now()+interval '11 hours'
+     and choice_expires_at<=now()+interval '12 hours 1 minute') then
+   raise exception 'Expired change did not open the 12-hour student choice window'; end if;
+ if not exists(select 1 from public.bookings where id=v_booking
+   and status='confirmed' and instructor_id='00000000-0000-0000-0000-0000000000a1') then
+   raise exception 'Expired change unexpectedly reassigned or cancelled booking'; end if;
+ raise notice 'PASS: authorized postponement and 12h expiry choice window preserve confirmed booking';
 end $$;
 SQL
