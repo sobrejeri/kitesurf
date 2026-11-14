@@ -32,16 +32,23 @@ export async function POST(request: NextRequest) {
   // Only candidates with expired offers or expired requests are advanced.
   // A fixed cap limits the impact of a mistakenly enabled worker.
   const now = new Date().toISOString();
+  // Sort by deadline before applying the cap. Without stable ordering, a
+  // repeatedly failing request could starve older pending offers indefinitely.
+  // The database RPC still owns concurrency locks and idempotent transitions.
   const { data: expiredOffers, error: offerError } = await db.from('instructor_offers')
-    .select('request_id').in('status', ['offered', 'suggested']).lte('expires_at', now).limit(20);
+    .select('request_id,expires_at').in('status', ['offered', 'suggested'])
+    .lte('expires_at', now).order('expires_at', { ascending: true }).limit(20);
   if (offerError) return NextResponse.json({ error: 'offer_query_failed' }, { status: 503 });
   const { data: expiredRequests, error: requestError } = await db.from('instructor_requests')
-    .select('id').eq('status', 'searching').lte('expires_at', now).limit(20);
+    .select('id,expires_at').eq('status', 'searching')
+    .lte('expires_at', now).order('expires_at', { ascending: true }).limit(20);
   if (requestError) return NextResponse.json({ error: 'request_query_failed' }, { status: 503 });
-  const ids = [...new Set([
-    ...(expiredOffers ?? []).map((offer) => offer.request_id as string),
-    ...(expiredRequests ?? []).map((entry) => entry.id as string),
-  ])].slice(0, 10);
+  const candidates = [
+    ...(expiredOffers ?? []).map((offer) => ({ id: offer.request_id, deadline: offer.expires_at })),
+    ...(expiredRequests ?? []).map((entry) => ({ id: entry.id, deadline: entry.expires_at })),
+  ].filter((candidate) => typeof candidate.id === 'string' && candidate.id.length > 0);
+  candidates.sort((a, b) => a.deadline.localeCompare(b.deadline) || a.id.localeCompare(b.id));
+  const ids = [...new Set(candidates.map((candidate) => candidate.id))].slice(0, 10);
 
   // Preview is the default even with the worker enabled. Only explicitly
   // configured live mode mutates offers; never enable without a test fixture.
