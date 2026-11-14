@@ -12,26 +12,29 @@ trap 'rm -rf "$scratch"' EXIT
 # Avoid hardcoded +N-day assumptions, weekly schedules, and prior fixtures.
 beach="$("${PSQL[@]}" -c "select id from public.beaches where slug='jeri'")"
 [[ "$beach" =~ ^[0-9a-f-]{36}$ ]] || { echo "Missing isolated Jeri beach" >&2; exit 1; }
-slot="$("${PSQL[@]}" -c "
+slots="$("${PSQL[@]}" -c "
 with slots as (
   select (date_trunc('day', now() at time zone 'America/Fortaleza')
     + make_interval(days=>d, hours=>h)) at time zone 'America/Fortaleza' as st
   from generate_series(2, 20) d cross join generate_series(8, 16) h
+), eligible as (
+  select st, (st at time zone 'America/Fortaleza')::date as local_day
+  from slots
+  where public.instructor_can_attend(
+    '00000000-0000-0000-0000-0000000000a1'::uuid,
+    jsonb_build_array(jsonb_build_object('starts_at',st,'hours',2)))
 )
-select st::text from slots
-where exists (
-  select 1 from public.instructors i
-  join public.instructor_beaches ib on ib.instructor_id=i.id
-  where i.id='00000000-0000-0000-0000-0000000000a1'::uuid
-    and i.status='approved' and ib.beach_id='$beach'::uuid
-    and 'Português'=any(i.languages)
-    and public.instructor_can_attend(i.id,
-      jsonb_build_array(jsonb_build_object('starts_at',st,'hours',2)))
-)
-order by st limit 1")"
-if [[ ! "$slot" =~ ^[0-9]{4}-[0-9]{2}-[0-9]{2} ]]; then
-  echo "Fixture invalid: no eligible Rafael/Jeri slot in next 20 days" >&2
-  "${PSQL[@]}" -c "select id,status,languages,queue_position from public.instructors where id='00000000-0000-0000-0000-0000000000a1'::uuid" >&2
+select a.st::text || '|' || b.st::text
+from eligible a join eligible b on b.local_day>a.local_day
+where public.instructor_can_attend(
+  '00000000-0000-0000-0000-0000000000a1'::uuid,
+  jsonb_build_array(
+    jsonb_build_object('starts_at',a.st,'hours',2),
+    jsonb_build_object('starts_at',b.st,'hours',2)))
+order by a.st,b.st limit 1")"
+IFS='|' read -r slot slot2 <<< "$slots"
+if [[ ! "$slot" =~ ^[0-9]{4}-[0-9]{2}-[0-9]{2} ]] || [[ ! "$slot2" =~ ^[0-9]{4}-[0-9]{2}-[0-9]{2} ]]; then
+  echo "Fixture invalid: no eligible two-day pair for Rafael/Jeri" >&2
   exit 1
 fi
 
@@ -40,7 +43,8 @@ for entry in 'b1' 'b2'; do
 set role authenticated;
 select set_config('request.jwt.claim.sub', '00000000-0000-0000-0000-0000000000$entry', false);
 select public.create_booking('$beach'::uuid, 'first_time', 'Português',
-  jsonb_build_array(jsonb_build_object('starts_at', '$slot', 'hours', 2)));
+  jsonb_build_array(jsonb_build_object('starts_at', '$slot', 'hours', 2),
+    jsonb_build_object('starts_at', '$slot2', 'hours', 2)));
 SQL
 done
 
@@ -63,10 +67,10 @@ select count(*) from public.booking_meetings m
 join public.bookings b on b.id=m.booking_id
 where b.beach_id='$beach'::uuid
   and b.instructor_id='00000000-0000-0000-0000-0000000000a1'::uuid
-  and m.starts_at='$slot'::timestamptz
+  and m.starts_at in ('$slot'::timestamptz, '$slot2'::timestamptz)
   and m.minutes=120;")"
-if [[ "$count" != "1" ]]; then
-  echo "Concurrency regression: expected exactly one persisted instructor meeting, got $count" >&2
+if [[ "$count" != "2" ]]; then
+  echo "Concurrency regression: expected exactly two meetings from one winning booking, got $count" >&2
   exit 1
 fi
-echo "PASS: two simultaneous authenticated bookings produced one accepted meeting"
+echo "PASS: two simultaneous authenticated bookings produced one accepted two-day booking"
