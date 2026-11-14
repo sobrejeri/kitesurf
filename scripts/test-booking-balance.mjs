@@ -15,6 +15,36 @@ const balanceCases = [
     expected: 30,
   },
   {
+    name: '4h split into two meetings with first 90 of 120 delivered leaves 30 minutes unallocated',
+    booking: { total_hours: 4, booking_meetings: [meeting('done', 120, 90), meeting('scheduled', 120)] },
+    expected: 30,
+  },
+  {
+    name: '90 delivered and 30 make-up scheduled reserves the remaining balance',
+    booking: { total_hours: 2, booking_meetings: [meeting('done', 120, 90), meeting('scheduled', 30)] },
+    expected: 0,
+  },
+  {
+    name: '90 delivered and 30 make-up in progress cannot be booked again',
+    booking: { total_hours: 2, booking_meetings: [meeting('done', 120, 90), meeting('in_progress', 30)] },
+    expected: 0,
+  },
+  {
+    name: '90 delivered plus 30 recorded completes exactly 120 without extra billing',
+    booking: { total_hours: 2, booking_meetings: [meeting('done', 120, 90), meeting('done', 30, 30)] },
+    expected: 0,
+  },
+  {
+    name: 'cancelled 30-minute make-up returns 30 to balance',
+    booking: { total_hours: 2, booking_meetings: [meeting('done', 120, 90), meeting('cancelled', 30)] },
+    expected: 30,
+  },
+  {
+    name: '4h in two meetings remains fully allocated before either meeting',
+    booking: { total_hours: 4, booking_meetings: [meeting('scheduled', 120), meeting('scheduled', 120)] },
+    expected: 0,
+  },
+  {
     name: 'scheduled minutes are still allocated, not balance',
     booking: { total_hours: 2, booking_meetings: [meeting('done', 60, 45), meeting('scheduled', 60)] },
     expected: 15,
@@ -54,6 +84,21 @@ const finishedCases = [
   {
     name: 'confirmed with a balance is NOT finished',
     booking: { status: 'confirmed', total_hours: 2, booking_meetings: [meeting('done', 120, 90)] },
+    expected: false,
+  },
+  {
+    name: 'confirmed 90 delivered and 30 make-up scheduled is NOT finished',
+    booking: { status: 'confirmed', total_hours: 2, booking_meetings: [meeting('done', 120, 90), meeting('scheduled', 30)] },
+    expected: false,
+  },
+  {
+    name: 'confirmed 90 delivered and 30 make-up recorded IS finished',
+    booking: { status: 'confirmed', total_hours: 2, booking_meetings: [meeting('done', 120, 90), meeting('done', 30, 30)] },
+    expected: true,
+  },
+  {
+    name: 'confirmed 90 delivered and cancelled make-up is NOT finished',
+    booking: { status: 'confirmed', total_hours: 2, booking_meetings: [meeting('done', 120, 90), meeting('cancelled', 30)] },
     expected: false,
   },
   {
