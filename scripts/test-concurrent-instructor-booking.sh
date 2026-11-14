@@ -73,4 +73,36 @@ if [[ "$count" != "2" ]]; then
   echo "Concurrency regression: expected exactly two meetings from one winning booking, got $count" >&2
   exit 1
 fi
+# A successful RPC alone is insufficient: assert one booking, the expected
+# student owner, exactly 4 purchased hours, and both requested meeting dates.
+# This also catches an orphaned/partial losing reservation after a race.
+winning_student='b1'
+if [[ "$status2" -eq 0 ]]; then winning_student='b2'; fi
+persisted="$("${PSQL[@]}" -c "
+select count(*)::text || '|' || coalesce(sum(b.total_hours),0)::text || '|' ||
+  count(distinct m.starts_at)::text || '|' || count(distinct b.id)::text
+from public.bookings b
+join public.booking_meetings m on m.booking_id=b.id
+where b.beach_id='$beach'::uuid
+  and b.instructor_id='00000000-0000-0000-0000-0000000000a1'::uuid
+  and b.student_id='00000000-0000-0000-0000-0000000000$winning_student'::uuid
+  and m.starts_at in ('$slot'::timestamptz, '$slot2'::timestamptz);")"
+# sum(total_hours) counts one booking per meeting (4+4=8).
+if [[ "$persisted" != '2|8|2|1' ]]; then
+  echo "Concurrency regression: invalid winning booking/meeting shape: $persisted" >&2
+  exit 1
+fi
+losing_student='b2'
+if [[ "$winning_student" == 'b2' ]]; then losing_student='b1'; fi
+loser_bookings="$("${PSQL[@]}" -c "
+select count(distinct b.id) from public.bookings b
+join public.booking_meetings m on m.booking_id=b.id
+where b.student_id='00000000-0000-0000-0000-0000000000$losing_student'::uuid
+  and b.beach_id='$beach'::uuid
+  and b.instructor_id='00000000-0000-0000-0000-0000000000a1'::uuid
+  and m.starts_at in ('$slot'::timestamptz, '$slot2'::timestamptz);")"
+if [[ "$loser_bookings" != '0' ]]; then
+  echo "Concurrency regression: losing student retained $loser_bookings bookings" >&2
+  exit 1
+fi
 echo "PASS: two simultaneous authenticated bookings produced one accepted two-day booking"
