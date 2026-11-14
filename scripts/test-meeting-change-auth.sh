@@ -104,6 +104,13 @@ begin
  if not exists(select 1 from public.bookings where id=v_booking
    and status='confirmed' and instructor_id='00000000-0000-0000-0000-0000000000a1') then
    raise exception 'Expired change unexpectedly reassigned or cancelled booking'; end if;
+ -- An expired proposal must not silently move or consume the purchased lesson.
+ if not exists(select 1 from public.booking_meetings
+   where id=v_meeting and booking_id=v_booking and starts_at=v_new
+     and minutes=120) then
+   raise exception 'Expired change modified meeting date, owner or purchased minutes'; end if;
+ if (select count(*) from public.booking_meetings where booking_id=v_booking)<>1 then
+   raise exception 'Expired change duplicated or removed a booked meeting'; end if;
  -- Retried expiry jobs must not extend the decision deadline or change the sale.
  select choice_expires_at into strict v_choice
    from public.meeting_change_requests where id=v_change;
