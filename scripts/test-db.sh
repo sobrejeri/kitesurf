@@ -33,3 +33,6 @@ PG_TEST_SOCKET="$DATA" PG_TEST_PORT="$PORT" bash "$ROOT/scripts/test-concurrent-
 
 # Validate the core student flow: four scheduled hours split across two days.
 PG_TEST_SOCKET="$DATA" PG_TEST_PORT="$PORT" bash "$ROOT/scripts/test-booking-two-meetings.sh"
+
+# A declines, B expires, C accepts in the same disposable database.
+PG_TEST_SOCKET="$DATA" PG_TEST_PORT="$PORT" bash "$ROOT/scripts/test-offer-queue-abc.sh"
