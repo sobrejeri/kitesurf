@@ -1,5 +1,6 @@
 import { createClient } from '@supabase/supabase-js';
 import { NextResponse, type NextRequest } from 'next/server';
+import { offerWorkerEnv } from '@/lib/offer-worker-env';
 
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
@@ -11,9 +12,10 @@ export const dynamic = 'force-dynamic';
  */
 export async function POST(request: NextRequest) {
   const disabled = () => NextResponse.json({ error: 'not_enabled' }, { status: 503 });
-  if (process.env.VENTO_OFFER_WORKER_ENABLED !== 'true') return disabled();
-  const secret = process.env.VENTO_OFFER_WORKER_SECRET;
-  const key = process.env.SUPABASE_SERVICE_ROLE_KEY;
+  const config = offerWorkerEnv();
+  if (!config.enabled) return disabled();
+  const secret = config.secret;
+  const key = config.serviceRoleKey;
   const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
   if (!secret || secret.length < 32 || !key || !url) return disabled();
 
@@ -43,7 +45,7 @@ export async function POST(request: NextRequest) {
 
   // Preview is the default even with the worker enabled. Only explicitly
   // configured live mode mutates offers; never enable without a test fixture.
-  if (process.env.VENTO_OFFER_WORKER_APPLY !== 'true') {
+  if (!config.apply) {
     return NextResponse.json({ mode: 'preview', candidates: ids.length });
   }
   let advanced = 0;
