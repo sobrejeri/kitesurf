@@ -15,3 +15,12 @@ for (const name of [
 assert.ok(config.includes("import 'server-only'"));
 assert.ok(!code.includes('export async function GET'));
 console.log('Offer expiry worker safety checks passed (static only; no live calls).');
+
+// Exercise the exact identifier predicate used before privileged RPC calls.
+const idPattern = code.match(/\.filter\(\(candidate\) =>[^\n]+(\/\^\[0-9a-f\].+?\/i)\.test\(candidate\.id\)\)/)?.[1];
+assert.ok(idPattern, 'worker must validate UUID syntax before privileged RPC');
+const isUuid = new Function('return ' + idPattern)();
+assert.equal(isUuid.test('00000000-0000-4000-8000-000000000001'), true);
+for (const invalid of ['', 'not-a-uuid', '../../other', '00000000-0000-0000-0000-000000000001']) {
+  assert.equal(isUuid.test(invalid), false, 'invalid request ID accepted: ' + invalid);
+}
