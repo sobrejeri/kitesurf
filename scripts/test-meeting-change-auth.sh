@@ -215,6 +215,26 @@ begin
  or not exists(select 1 from public.booking_meetings
    where booking_id=v_booking and starts_at=v_second and minutes=120) then
    raise exception '4h booking changed one of the two scheduled meeting slots'; end if;
+ -- Regression: the first encounter cannot be moved beyond the second.
+ -- This is an intentional product rule, not a broken scheduling fixture.
+ select id into strict v_first_meeting from public.booking_meetings
+   where booking_id=v_booking and starts_at=v_first;
+ perform set_config('request.jwt.claim.sub','00000000-0000-0000-0000-0000000000b2',true);
+ execute 'set local role authenticated';
+ begin
+   perform public.request_meeting_change(v_first_meeting,
+     v_second+interval '3 days', 'Invalid reverse-order postponement');
+   raise exception 'SECURITY: reversed encounter order accepted';
+ exception when others then
+   if sqlerrm <> 'New meeting time changes booking order' then raise; end if;
+ end;
+ execute 'reset role';
+ if exists(select 1 from public.meeting_change_requests
+   where meeting_id=v_first_meeting) then
+   raise exception 'Rejected reverse-order change was persisted'; end if;
+ if not exists(select 1 from public.booking_meetings
+   where id=v_first_meeting and starts_at=v_first and minutes=120) then
+   raise exception 'Rejected reverse-order request changed first encounter'; end if;
  -- Postpone only the SECOND encounter of this 4h purchase, keeping the
  -- first encounter unchanged and preserving exactly 240 contracted minutes.
  -- Moving the first encounter after the second violates chronological order.
