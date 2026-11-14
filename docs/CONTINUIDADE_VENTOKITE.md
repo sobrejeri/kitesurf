@@ -490,3 +490,12 @@ O projeto possui um **avaliador independente preparado, não necessariamente con
 - PR #247 adiciona regressão em `scripts/test-meeting-change-auth.sh`: aluno autenticado solicita adiamento do primeiro encontro de uma compra 4h/2 encontros, instrutor atribuído aceita, segundo encontro não muda, total permanece 240 minutos e reserva confirmada. PostgreSQL descartável; conferir CI no HEAD mais recente e Claude QA (historicamente SKIPPED) antes do merge.
 - P0 de homologação ainda bloqueado por ausência de sessões autenticadas de teste acessíveis de Aluno e Instrutor no navegador e fixture de reserva isolada. Não alterar reservas reais. 0/18 frentes homologadas. Protege 3B e checkout real OFF.
 - Retomar: CI #247, corrigir se necessário, merge só verde, verificar Render LIVE; depois priorizar presença/minutos/evolução de ambos encontros com fixture descartável, e obter evidência E2E de papéis reais quando ambiente autorizado disponível. Não ativar worker/fila real nem aplicar migrations 01–38.
+
+## Handoff 14/11/2026 — ordem dos encontros e prioridade E2E
+
+- PR #247 teve CI verde (run 43615908964), Claude QA `skipped`, squash merge SHA `294dab9be10f7ea790797150a94378fed7d9eef4`; aguardar confirmação Render `live` do mesmo SHA.
+- O teste de reagendamento de 4h foi corrigido para adiar o **segundo** encontro; mover o primeiro para depois do segundo deve ser rejeitado pela regra de ordenação.
+- Branch `test/vento-four-hour-order-guard-20261114`: regressão adicional garante rejeição da inversão cronológica sem criar solicitação ou alterar encontro; PR e CI pendentes neste handoff.
+- 0/18 tópicos integralmente homologados. O CI de banco isolado não substitui sessões reais Aluno/Instrutor: reservar 4h em dois encontros, aceitar, validar PIN, registrar presença/minutos/habilidades, consultar evolução como Aluno.
+- Supabase correto `qadkqjfmmnxvovyyhqxw` mantém migrations reais 39–42; não executar antigas 01–38, nem abrir Protege 3B ou cobrança real.
+- Próximo: verificar CI da regressão e deploy de #247, integrar somente com CI verde e Claude QA operacional quando ativo; depois focar o E2E #90–#94/#103 e agendador offline #92 com fixtures seguras.
