@@ -20,7 +20,7 @@ console.log('Offer expiry worker safety checks passed (static only; no live call
 const idPattern = code.match(/\.filter\(\(candidate\) =>[^\n]+(\/\^\[0-9a-f\].+?\/i)\.test\(candidate\.id\)\)/)?.[1];
 assert.ok(idPattern, 'worker must validate UUID syntax before privileged RPC');
 const isUuid = new Function('return ' + idPattern)();
-assert.equal(isUuid('00000000-0000-4000-8000-000000000001'), true);
+assert.equal(isUuid.test('00000000-0000-4000-8000-000000000001'), true);
 for (const invalid of ['', 'not-a-uuid', '../../other', '00000000-0000-0000-0000-000000000001']) {
-  assert.equal(isUuid(invalid), false, 'invalid request ID accepted: ' + invalid);
+  assert.equal(isUuid.test(invalid), false, 'invalid request ID accepted: ' + invalid);
 }
