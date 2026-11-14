@@ -15,8 +15,8 @@ const balanceCases = [
     expected: 30,
   },
   {
-    name: '120 contracted, 90 delivered leaves exactly 30 minutes to make up',
-    booking: { total_hours: 2, booking_meetings: [meeting('done', 120, 90)] },
+    name: '4h split into two meetings with first 90 of 120 delivered leaves 30 minutes unallocated',
+    booking: { total_hours: 4, booking_meetings: [meeting('done', 120, 90), meeting('scheduled', 120)] },
     expected: 30,
   },
   {
