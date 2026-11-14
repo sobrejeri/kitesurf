@@ -59,7 +59,6 @@ BEGIN
     RAISE EXCEPTION 'Anonymous internal completion unexpectedly executed';
   EXCEPTION WHEN insufficient_privilege THEN NULL;
   END;
-BEGIN
   BEGIN
     PERFORM public.start_ordered_meeting('00000000-0000-0000-0000-000000000000', '0000');
     RAISE EXCEPTION 'Anonymous ordered start unexpectedly executed';
