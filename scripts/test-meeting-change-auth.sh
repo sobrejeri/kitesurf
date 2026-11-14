@@ -235,6 +235,17 @@ begin
  if not exists(select 1 from public.booking_meetings
    where id=v_first_meeting and starts_at=v_first and minutes=120) then
    raise exception 'Rejected reverse-order request changed first encounter'; end if;
+ -- A rejected proposal must be atomic across the entire purchased booking:
+ -- no other meeting moves, no purchased minutes disappear, and no status flips.
+ if (select count(*) from public.booking_meetings where booking_id=v_booking)<>2
+ or (select coalesce(sum(minutes),0) from public.booking_meetings
+       where booking_id=v_booking)<>240
+ or not exists(select 1 from public.booking_meetings
+       where booking_id=v_booking and starts_at=v_second and minutes=120)
+ or not exists(select 1 from public.bookings
+       where id=v_booking and status='confirmed' and total_hours=4) then
+   raise exception 'Rejected reverse-order request mutated the 4h purchase'; end if;
+ raise notice 'PASS: invalid order change leaves both encounters and 240 minutes intact';
  -- Postpone only the SECOND encounter of this 4h purchase, keeping the
  -- first encounter unchanged and preserving exactly 240 contracted minutes.
  -- Moving the first encounter after the second violates chronological order.
