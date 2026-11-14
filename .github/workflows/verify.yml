@@ -69,6 +69,8 @@ jobs:
         run: node scripts/test-student-subpage-header-clearance.mjs
       - name: Test student multi-booking and history separation
         run: node --experimental-strip-types scripts/test-booking-cycle.mjs
+      - name: Test booking minute balance and make-up regressions
+        run: node --experimental-strip-types scripts/test-booking-balance.mjs
       - name: Verify Vento student desktop layout and booking overlap protection
         run: node scripts/test-student-desktop.mjs
       - name: Test student schedule conflicts and evolution destinations
