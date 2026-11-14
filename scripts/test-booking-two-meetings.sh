@@ -104,6 +104,10 @@ begin
     perform public.start_meeting(v_m1,v_pin);
     raise exception 'SECURITY: student started instructor meeting';
   exception when no_data_found or insufficient_privilege then null; end;
+  begin
+    perform public.record_meeting(v_m1,10,'unauthorized student progress');
+    raise exception 'SECURITY: student recorded instructor minutes';
+  exception when no_data_found or insufficient_privilege or invalid_parameter_value then null; end;
   execute 'reset role';
   perform set_config('request.jwt.claim.sub','00000000-0000-0000-0000-0000000000a2',true);
   execute 'set local role authenticated';
@@ -111,6 +115,10 @@ begin
     perform public.start_meeting(v_m1,v_pin);
     raise exception 'SECURITY: unrelated instructor started meeting';
   exception when no_data_found or insufficient_privilege then null; end;
+  begin
+    perform public.record_meeting(v_m1,10,'unauthorized instructor progress');
+    raise exception 'SECURITY: unrelated instructor recorded minutes';
+  exception when no_data_found or insufficient_privilege or invalid_parameter_value then null; end;
   execute 'reset role';
   perform set_config('request.jwt.claim.sub','00000000-0000-0000-0000-0000000000a1',true);
   execute 'set local role authenticated';
