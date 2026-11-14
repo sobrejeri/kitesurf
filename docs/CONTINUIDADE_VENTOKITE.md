@@ -474,3 +474,12 @@ O projeto possui um **avaliador independente preparado, não necessariamente con
 - PR #236 integrada SHA `0d4766b9bc546e7db9c1e40dfa4b33ab0f711c29` após CI `43560914365` SUCCESS (incluindo SQL descartável); Claude QA `43560914354` SKIPPED, não houve revisão independente. Render #236 requer confirmação LIVE.
 - Próxima PR de teste modifica `scripts/test-concurrent-instructor-booking.sh`: duas sessões autenticadas concorrentes solicitam a **mesma reserva de 4h em dois dias**; apenas uma pode persistir, com exatamente dois encontros no instrutor. Usa slots realmente elegíveis e PostgreSQL descartável, sem acessar banco real. Aguardar CI/Claude QA antes de merge.
 - Banco real só migrations 39–42, migration #231 não aplicada. E2E autenticado navegador ainda não realizado; 0/18 homologados. Nenhuma reserva real/cron/checkout/Protege 3B alterado.
+
+## Handoff 14/11/2026 — prioridade E2E 4h/2 encontros
+
+- Supabase real `qadkqjfmmnxvovyyhqxw` consultado em modo leitura: migrations registradas 39 `20261110001348`, 40 `20261110001427`, 41 `20261110003527`, 42 `20261110012944`. Sem aplicar migrações, sem desbloquear Protege 3B.
+- PR #243: CI success (run 43607998568), Claude QA skipped, merge `9c4d0efa`, deploy Render `dep-dbs7hik9v7es73bj80p0` confirmado LIVE.
+- PR #244: CI success (run 43608333644), Claude QA skipped, merge `344468813dab963d66b3490e6b73f11e527e8a25`; deploy `dep-dbs7kks9v7es73bjb8vg` ainda update_in_progress na última consulta, **não declarar live sem nova verificação**.
+- PR #245: teste PostgreSQL isolado da visibilidade dos dois encontros pelo instrutor designado e invisibilidade ao instrutor alheio, head inicial `41930fedd9a2c7ed7866823eae0db6aa5cd541f6`; após esta edição de documentação, conferir CI do novo head, corrigir qualquer falha e integrar somente se SUCCESS. Claude QA está SKIPPED, não fez revisão independente.
+- **Pendência P0:** nenhum E2E autenticado real Aluno → 4h/2 encontros → Instrutor aceita → presença/minutos/evolução → Aluno confere. Exige sessões de teste autorizadas e fixtures isoladas, incluindo instrutor atribuível, sem manipular reservas reais. Os testes SQL com fixtures descartáveis não substituem E2E. Homologação permanece **0/18**.
+- Próxima execução: verificar CI/QA #245, integrar se aprovado, conferir Render SHA LIVE, testar fluxo de aceite e evolução com fixtures descartáveis, depois concorrência/fila/reagendamento. Checkout real e Protege 3B continuam OFF.

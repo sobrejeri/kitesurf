@@ -231,6 +231,18 @@ begin
  if exists(select 1 from public.booking_meetings where booking_id=v_booking) then
    raise exception 'IDOR: unrelated student can read 4h meetings'; end if;
  execute 'reset role';
+ -- Assigned instructor can inspect the purchased meeting schedule;
+ -- a different instructor cannot inspect either meeting.
+ perform set_config('request.jwt.claim.sub','00000000-0000-0000-0000-0000000000a1',true);
+ execute 'set local role authenticated';
+ if (select count(*) from public.booking_meetings where booking_id=v_booking)<>2 then
+   raise exception 'Assigned instructor cannot see both 4h meetings'; end if;
+ execute 'reset role';
+ perform set_config('request.jwt.claim.sub','00000000-0000-0000-0000-0000000000a2',true);
+ execute 'set local role authenticated';
+ if exists(select 1 from public.booking_meetings where booking_id=v_booking) then
+   raise exception 'IDOR: unrelated instructor can see 4h meetings'; end if;
+ execute 'reset role';
  raise notice 'PASS: confirmed 4h booking has two 120-minute meetings';
 end $$;
 SQL
