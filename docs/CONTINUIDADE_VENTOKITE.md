@@ -507,3 +507,11 @@ O projeto possui um **avaliador independente preparado, não necessariamente con
 - Supabase correto `qadkqjfmmnxvovyyhqxw`: ledger somente migrations 39–42; nenhuma DML/DDL executada. Checkout e Protege 3B OFF.
 - E2E navegador de Aluno→4h/2 encontros→Instrutor→PIN/presença/minutos/evolução→Aluno ainda não executado por falta de sessões/fixtures de teste autenticadas e isoladas. Não afirmar homologação integral: 0/18.
 - Próxima execução: acompanhar CI #249, corrigir falha se houver, integrar somente após verde e checar Render LIVE; depois priorizar teste de 90min registrados + 30min de saldo/reposição sem duplicação e autenticação E2E. Não criar PR somente documental.
+
+## Handoff P0 — 14/11/2026, PR #254
+
+- Prioridade absoluta: #90–#94 e #103; primeiro E2E autenticado Aluno 4h/2 encontros → aceite Instrutor → PIN/minutos/habilidades → conferência Aluno. **Não realizado**: faltam sessões de teste autorizadas acessíveis e evidência de ambiente E2E. Não chamar SQL isolado de homologação real.
+- PR [#254](https://github.com/sobrejeri/kitesurf/pull/254), commit `d9732c569e1bcab284231689929d51301fd1142b`: regressão SQL de replay de conclusão de reposição 90+30 minutos; garante que uma repetição não eleve os minutos além de 120 nem reabra reserva. CI [#43636601524](https://github.com/sobrejeri/kitesurf/actions/runs/43636601524) **em andamento** na última consulta; Claude QA [#43636601563](https://github.com/sobrejeri/kitesurf/actions/runs/43636601563) **skipped** — sem revisão independente.
+- Render último `live` confirmado: `6096ef1f1f8874394a4f116579ffd16e82a0add3` (deploy `dep-dbsbdep5efls73ejdn1g`). Supabase projeto `qadkqjfmmnxvovyyhqxw` lista somente migrations 39–42; Protege 3B fechado. **PR #254 não integrada nem publicada**.
+- Retomar: conferir CI da #254; corrigir teste se falhar; caso aprovado, confirmar QA skipped, integrar por procedimento normal e verificar SHA live. Depois implementar/testar cenário autenticado 4h/2 encontros e fila concorrente com fixtures e usuários de teste; nunca usar dados reais nem ativar checkout.
+- Contagem conservadora desta rodada: 3 resultados verificáveis — auditoria de Render/migrations, PR de regressão SQL, registro do handoff em issues #93/#103/#105. 0/18 frentes integralmente homologadas.

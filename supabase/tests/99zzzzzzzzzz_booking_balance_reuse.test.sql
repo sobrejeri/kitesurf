@@ -152,6 +152,21 @@ BEGIN
     'Full delivery completes the booking';
   ASSERT (SELECT sum(done_minutes) FROM public.booking_meetings WHERE booking_id=v_bid)=120,
     'All contracted minutes are recorded';
+  -- Replaying a completed meeting must never double-count paid minutes.
+  -- The legacy helper is used by this regression suite until its callers
+  -- are migrated to record_meeting_with_skills.
+  PERFORM pg_temp.act_as(v_instructor);
+  BEGIN
+    PERFORM public.record_meeting(v_mid,30,'duplicate completion attempt');
+    RAISE EXCEPTION 'A completed make-up was recorded twice';
+  EXCEPTION
+    WHEN invalid_parameter_value OR object_not_in_prerequisite_state THEN NULL;
+  END;
+  PERFORM pg_temp.reset();
+  ASSERT (SELECT sum(done_minutes) FROM public.booking_meetings WHERE booking_id=v_bid)=120,
+    'Duplicate completion must not increase recorded minutes';
+  ASSERT (SELECT status FROM public.bookings WHERE id=v_bid)='completed',
+    'Duplicate completion must not reopen a completed booking';
 
   -- =====================================================================
   -- B. The student may close a leftover balance instead of rescheduling.
