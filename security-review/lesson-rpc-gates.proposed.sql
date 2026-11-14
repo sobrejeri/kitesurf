@@ -3,7 +3,7 @@
 -- Observed 2026-11-14 in kitesurf Supabase: all four functions SECURITY DEFINER.
 -- Verify all application RPC call sites and execute on disposable PostgreSQL first.
 -- Do not install as a numbered migration until migration baseline is reconciled.
-BEGIN;
+-- Transaction ownership belongs to the caller (the isolated test wraps in BEGIN/ROLLBACK).
 
 -- The client must use start_ordered_meeting, not its less restrictive helper.
 -- The client must use record_meeting_with_skills, not its less restrictive helper.
@@ -32,8 +32,6 @@ BEGIN
   END IF;
 END
 $guard$;
-COMMIT;
-
 -- Pending before deployment:
 -- 1. Confirm SECURITY DEFINER wrappers still call helpers after REVOKE.
 -- 2. Run authenticated tests: direct helper calls denied (42501);
