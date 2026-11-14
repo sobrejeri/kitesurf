@@ -219,5 +219,13 @@ BEGIN
   ASSERT public.booking_balance_minutes(v_bid)=30,
     'Four-hour booking must retain exactly 30 paid minutes';
   PERFORM pg_temp.reset();
+  -- The same paid balance must not be disclosed to a different student.
+  PERFORM pg_temp.act_as(v_other_student);
+  BEGIN
+    PERFORM public.booking_balance_minutes(v_bid);
+    RAISE EXCEPTION 'Another student read the four-hour booking balance';
+  EXCEPTION WHEN sqlstate '42501' OR sqlstate 'P0002' THEN NULL;
+  END;
+  PERFORM pg_temp.reset();
 END $;
 ROLLBACK;
