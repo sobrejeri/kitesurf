@@ -40,7 +40,7 @@ export async function recordMeeting(_prev: ActionState, form: FormData): Promise
   await requireRole(['instructor']);
   const parsed = Record.safeParse({
     meetingId: form.get('meetingId'),
-    doneMinutes: form.get('doneMinutes'),
+    doneMinutes: typeof form.get('doneMinutes') === 'string' && String(form.get('doneMinutes')).trim() !== '' ? form.get('doneMinutes') : null,
     note: form.get('note') ?? '',
   });
   if (!parsed.success) return { error: 'Confira os minutos realizados.' };
@@ -119,7 +119,7 @@ export async function recordMeetingWithSkills(_prev: ActionState, form: FormData
     doneMinutes: z.coerce.number().int().min(0).max(480),
   }).safeParse({
     meetingId: form.get('meetingId'),
-    doneMinutes: form.get('doneMinutes'),
+    doneMinutes: typeof form.get('doneMinutes') === 'string' && String(form.get('doneMinutes')).trim() !== '' ? form.get('doneMinutes') : null,
   });
   if (!parsed.success) return { error: 'Confira os minutos realizados.' };
 
