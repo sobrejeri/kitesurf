@@ -1,3 +1,6 @@
+import Link from 'next/link';
+
+import { INSTRUCTOR_TABS, SectionTabs } from '@/components/business/company-kit';
 import { DataTable, DemoBanner, LinkBadge, PageHead, pageHref } from '@/components/business/kit';
 import { Badge, Note } from '@/components/ui';
 import { formatBps } from '@/lib/format';
@@ -14,9 +17,10 @@ export default async function BusinessInstructorsPage({ searchParams }: { search
     <>
       <DemoBanner />
       <PageHead title="Instrutores vinculados" subtitle="Um instrutor pode atuar em várias unidades e escolas, com uma única agenda." />
+      <SectionTabs label="Seções de instrutores" tabs={INSTRUCTOR_TABS} active="/admin/business/instrutores" query={scopeQuery(scope)} />
       <DataTable rows={instructorsInScope(scope)} page={page} pageSize={5} hrefForPage={(p) => pageHref('/admin/business/instrutores', keep, p)} empty="Nenhum instrutor vinculado neste filtro."
         columns={[
-          { key: 'n', header: 'Instrutor', cell: (i) => i.name },
+          { key: 'n', header: 'Instrutor', cell: (i) => <Link href={`/admin/business/instrutores/${i.id}`} className="font-semibold text-brand">{i.name}</Link> },
           { key: 's', header: 'Vínculo', cell: (i) => <LinkBadge status={i.status} /> },
           { key: 'u', header: 'Unidades', cell: (i) => i.unitIds.map(unitName).join(', ') },
           { key: 'c', header: 'Comissão', cell: (i) => formatBps(i.commissionBps), className: 'tabular' },
