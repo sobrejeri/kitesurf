@@ -5,9 +5,13 @@ export interface BusinessNavItem { group: string; label: string; href: string; i
 /** Only screens that exist are listed; each next block adds its own entries here. */
 export const BUSINESS_NAV: readonly BusinessNavItem[] = [
   { group: 'Visão', label: 'Dashboard', href: '/admin/business', icon: 'chart', tab: true },
+  { group: 'Empresa', label: 'Perfil da empresa', href: '/admin/business/empresa', icon: 'settings' },
+  { group: 'Empresa', label: 'Visão consolidada', href: '/admin/business/consolidado', icon: 'chart' },
   { group: 'Empresa', label: 'Unidades', href: '/admin/business/unidades', icon: 'pin', tab: true },
   { group: 'Pessoas', label: 'Funcionários', href: '/admin/business/funcionarios', icon: 'users', tab: true },
   { group: 'Pessoas', label: 'Permissões', href: '/admin/business/permissoes', icon: 'shield' },
+  { group: 'Pessoas', label: 'Cargos', href: '/admin/business/cargos', icon: 'users' },
+  { group: 'Pessoas', label: 'Auditoria', href: '/admin/business/auditoria', icon: 'list' },
   { group: 'Pessoas', label: 'Instrutores', href: '/admin/business/instrutores', icon: 'kite' },
   { group: 'Operação', label: 'Agenda', href: '/admin/business/agenda', icon: 'calendar', tab: true },
   { group: 'Operação', label: 'Reservas presenciais', href: '/admin/business/reservas', icon: 'book' },

@@ -1,3 +1,6 @@
+import Link from 'next/link';
+
+import { STAFF_TABS, SectionTabs } from '@/components/business/company-kit';
 import { DataTable, DemoBanner, PageHead, RoleBadge, pageHref } from '@/components/business/kit';
 import { Button, inputClass } from '@/components/ui';
 import { employeesInScope, parseScope, scopeQuery, unitName, unitsInScope } from '@/lib/business/rules';
@@ -19,6 +22,7 @@ export default async function EmployeesPage({ searchParams }: { searchParams: Pr
     <>
       <DemoBanner />
       <PageHead title="Funcionários" subtitle="Cada pessoa pode ter um cargo diferente em cada unidade." />
+      <SectionTabs label="Seções da equipe" tabs={STAFF_TABS} active="/admin/business/funcionarios" query={scopeQuery(scope)} />
       <form method="get" className="mb-3 flex gap-2" role="search">
         {scope.unidade ? <input type="hidden" name="unidade" value={scope.unidade} /> : scope.cidade ? <input type="hidden" name="cidade" value={scope.cidade} /> : null}
         <label className="sr-only" htmlFor="q">Buscar funcionário</label>
@@ -28,7 +32,7 @@ export default async function EmployeesPage({ searchParams }: { searchParams: Pr
       <DataTable rows={rows} page={page} pageSize={5} hrefForPage={(p) => pageHref('/admin/business/funcionarios', keep, p)}
         empty={q ? 'Nenhum funcionário encontrado para essa busca.' : 'Nenhum funcionário neste filtro.'}
         columns={[
-          { key: 'n', header: 'Funcionário', cell: (e) => <span>{e.name}<span className="block text-[12px] font-normal text-muted">{e.email}</span></span> },
+          { key: 'n', header: 'Funcionário', cell: (e) => <span><Link href={`/admin/business/funcionarios/${e.id}`} className="font-semibold text-brand">{e.name}</Link><span className="block text-[12px] font-normal text-muted">{e.email}</span></span> },
           { key: 'u', header: 'Unidades e cargos', cell: (e) => (
             <span className="flex flex-wrap justify-end gap-1.5 lg:justify-start">
               {e.assignments.filter((a) => inScope(a.unitId)).map((a) => (

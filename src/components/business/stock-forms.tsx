@@ -9,10 +9,10 @@ import type { Condition } from '@/lib/business/demo';
 import { formatMoney } from '@/lib/format';
 
 const NOTE = 'Gravação desativada na demonstração: ela será ligada quando as tabelas do Business forem aprovadas.';
-type Option = readonly [string, string];
-interface FieldSpec { k: string; label: string; kind: 'text' | 'select'; options?: readonly Option[]; ph?: string; wide?: boolean; mode?: 'numeric' | 'decimal' }
+export type Option = readonly [string, string];
+export interface FieldSpec { k: string; label: string; kind: 'text' | 'select'; options?: readonly Option[]; ph?: string; wide?: boolean; mode?: 'numeric' | 'decimal' }
 
-function Form({ fields, init, validate, submitLabel, hint, extra }: { fields: readonly FieldSpec[]; init: Record<string, string>; validate: (v: Record<string, string>) => Record<string, string>; submitLabel: string; hint?: (v: Record<string, string>) => React.ReactNode; extra?: (v: Record<string, string>) => string }) {
+export function Form({ fields, init, validate, submitLabel, hint, extra }: { fields: readonly FieldSpec[]; init: Record<string, string>; validate: (v: Record<string, string>) => Record<string, string>; submitLabel: string; hint?: (v: Record<string, string>) => React.ReactNode; extra?: (v: Record<string, string>) => string }) {
   const [v, setV] = useState(init); const [e, setE] = useState<Record<string, string>>({}); const [done, setDone] = useState(false);
   const set = (k: string) => (x: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => { setDone(false); setV({ ...v, [k]: x.target.value }); };
   return (
@@ -37,7 +37,7 @@ function Form({ fields, init, validate, submitLabel, hint, extra }: { fields: re
 }
 
 /** Feeds the generic form's string map to a validator that expects its own named fields. */
-function adapt<T extends Record<string, string>>(fn: (i: T) => Record<string, string>, keys: readonly (keyof T & string)[]) {
+export function adapt<T extends Record<string, string>>(fn: (i: T) => Record<string, string>, keys: readonly (keyof T & string)[]) {
   return (v: Record<string, string>) => fn(Object.fromEntries(keys.map((k) => [k, v[k] ?? ''])) as T);
 }
 
