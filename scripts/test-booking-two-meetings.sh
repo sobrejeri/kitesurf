@@ -186,6 +186,16 @@ begin
     where booking_id=v_id and done_minutes>0 and note is not null;
   if v_count<>2 then
     raise exception 'Student cannot see progress/minutes for both encounters'; end if;
+  -- Check the exact per-encounter evolution visible through student RLS.
+  -- A count of two rows alone would miss swapped or overwritten notes.
+  select count(*) into v_count from public.booking_meetings
+    where booking_id=v_id and (
+      (id=v_m1 and done_minutes=110 and note='Controle e segurança: janela de vento')
+      or (id=v_m2 and done_minutes=115 and note='Water start e primeiros bordos')
+    );
+  if v_count<>2 then
+    raise exception 'Student-visible evolution does not match both instructor records';
+  end if;
   -- Assert the actual student-facing aggregate, not merely the row count.
   select coalesce(sum(done_minutes),0) into v_count
     from public.booking_meetings where booking_id=v_id;
