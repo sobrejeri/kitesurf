@@ -97,7 +97,8 @@ for (const input of [
 assert.equal(calls.length, beforeInvalid, 'Invalid evolution must not reach privileged RPC');
 
 // A malformed meeting ID or presence code must never reach the ordered start RPC.
-// Empty minutes must not coerce to zero and silently close a lesson.\nconst beforeInvalidStart = calls.length;
+// Empty minutes must not coerce to zero and silently close a lesson.
+const beforeInvalidStart = calls.length;
 for (const input of [
   { meetingId: 'not-a-uuid', presenceCode: '1234' },
   { meetingId: secondMeetingId, presenceCode: '12ab' },
