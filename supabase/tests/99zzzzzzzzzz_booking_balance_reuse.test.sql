@@ -227,5 +227,5 @@ BEGIN
   EXCEPTION WHEN sqlstate '42501' OR sqlstate 'P0002' THEN NULL;
   END;
   PERFORM pg_temp.reset();
-END $;
+END $$;
 ROLLBACK;
