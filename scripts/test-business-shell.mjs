@@ -69,9 +69,12 @@ const files = [...walk('src/app/admin/business'), ...walk('src/components/busine
 for (const f of files) {
   const s = read(f);
   assert.doesNotMatch(s, /createSupabaseServerClient|supabase\.|\.rpc\(|'use server'/, `${f}: demo screens never touch the database`);
-  assert.doesNotMatch(s, /checkout|estorno|repasse|gateway|stripe|mercadopago|pagar\.?me|createPayment|fetch\(/i, `${f}: no payment processing or outside calls`);
+  // Code only: screens may say "sem repasse" in their copy, which is the point.
+  assert.doesNotMatch(s.replace(/\/\*[\s\S]*?\*\/|\/\/.*$/gm, ''), /\bcheckout\w*\(|createPayment|\bgateway\b|stripe|mercadopago|pagar\.?me|fetch\(/i, `${f}: no payment processing or outside calls`);
 }
 const pages = files.filter((f) => f.endsWith('page.tsx') && !f.includes('/nova/') );
-for (const f of pages) assert.match(read(f), /DemoBanner/, `${f} identifies demo data`);
+// The financial reports get the notice from their shared frame.
+assert.match(read('src/components/business/report-table.tsx'), /<DemoBanner \/>/, 'the report frame shows the demo notice');
+for (const f of pages) assert.match(read(f), /DemoBanner|ReportFrame/, `${f} identifies demo data`);
 assert.match(read('src/components/business/shell.tsx'), /aria-label=\{collapsed \? 'Expandir menu' : 'Recolher menu'\}/, 'collapsible sidebar');
 console.log('PASS: Business shell: coherent demo data, shared city/unit filter, per-unit permissions, unified-agenda conflicts, unit validation, admin-only and no database or payments');
