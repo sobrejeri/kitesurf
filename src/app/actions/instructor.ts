@@ -32,7 +32,7 @@ export async function startMeeting(_prev: ActionState, form: FormData): Promise<
 
 const Record = z.strictObject({
   meetingId: z.uuid(),
-  doneMinutes: z.coerce.number().int().min(0).max(480),
+  doneMinutes: z.preprocess(value => value == null || (typeof value === 'string' && value.trim() === '') ? NaN : value, z.coerce.number().int().min(0).max(480)),
   note: z.string().max(1000),
 });
 
@@ -40,7 +40,7 @@ export async function recordMeeting(_prev: ActionState, form: FormData): Promise
   await requireRole(['instructor']);
   const parsed = Record.safeParse({
     meetingId: form.get('meetingId'),
-    doneMinutes: typeof form.get('doneMinutes') === 'string' && String(form.get('doneMinutes')).trim() !== '' ? form.get('doneMinutes') : null,
+    doneMinutes: form.get('doneMinutes'),
     note: form.get('note') ?? '',
   });
   if (!parsed.success) return { error: 'Confira os minutos realizados.' };
@@ -116,10 +116,10 @@ export async function recordMeetingWithSkills(_prev: ActionState, form: FormData
   await requireRole(['instructor']);
   const parsed = z.strictObject({
     meetingId: z.uuid(),
-    doneMinutes: z.coerce.number().int().min(0).max(480),
+    doneMinutes: z.preprocess(value => value == null || (typeof value === 'string' && value.trim() === '') ? NaN : value, z.coerce.number().int().min(0).max(480)),
   }).safeParse({
     meetingId: form.get('meetingId'),
-    doneMinutes: typeof form.get('doneMinutes') === 'string' && String(form.get('doneMinutes')).trim() !== '' ? form.get('doneMinutes') : null,
+    doneMinutes: form.get('doneMinutes'),
   });
   if (!parsed.success) return { error: 'Confira os minutos realizados.' };
 
