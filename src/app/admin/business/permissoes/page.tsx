@@ -1,5 +1,6 @@
 import { Fragment } from 'react';
 
+import { STAFF_TABS, SectionTabs } from '@/components/business/company-kit';
 import { Icon } from '@/components/icon';
 import { DemoBanner, PageHead, RoleBadge } from '@/components/business/kit';
 import { Note } from '@/components/ui';
@@ -13,6 +14,7 @@ export default function PermissionsPage() {
     <>
       <DemoBanner />
       <PageHead title="Matriz de permissões" subtitle="O que cada cargo pode fazer. As permissões valem por unidade." />
+      <SectionTabs label="Seções da equipe" tabs={STAFF_TABS} active="/admin/business/permissoes" />
       <div className="grid gap-4 lg:hidden">
         {groups.map((g) => (
           <section key={g} aria-label={g}>

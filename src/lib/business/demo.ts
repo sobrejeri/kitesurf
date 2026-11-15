@@ -368,3 +368,25 @@ export const CAMPAIGNS: readonly Campaign[] = [
   { id: 'cp-2', name: 'Kit praia', description: 'Camiseta, boné e óculos da escola.', refIds: ['p-cam', 'p-bon', 'p-oc'], untilOffset: 60, active: true },
   { id: 'cp-3', name: 'Alta temporada passada', description: 'Campanha encerrada.', refIds: ['s-int'], untilOffset: -15, active: false },
 ];
+
+// ---- Blocos 1 e 2 (restante): empresa, equipe e auditoria (demonstrativo) ----
+export const COMPANY_PROFILE = { legalName: 'Ventos do Norte Escola de Kitesurf Ltda', tradeName: 'Ventos do Norte Kite School', cnpj: '11222333000181', ownerName: 'Marcos Almeida', email: 'contato@ventosdonorte.example', phone: '88999990000', city: 'Cruz', sinceOffset: -400 };
+/** Per-unit exceptions on top of the role: the same person can have more or less than the role in one unit. */
+export interface PermissionOverride { employeeId: string; unitId: string; grant: string[]; revoke: string[] }
+export const PERMISSION_OVERRIDES: readonly PermissionOverride[] = [
+  { employeeId: 'f-2', unitId: 'u-prea', grant: ['cash.close'], revoke: [] },
+  { employeeId: 'f-3', unitId: 'u-jeri-lagoa', grant: [], revoke: ['agenda.edit'] },
+];
+export type AuditAction = 'staff.invite' | 'perm.change' | 'link.add' | 'link.remove' | 'unit.edit' | 'cash.close' | 'role.edit';
+export const AUDIT_LABEL: Record<AuditAction, string> = { 'staff.invite': 'Convite de funcionário', 'perm.change': 'Permissão alterada', 'link.add': 'Vínculo criado', 'link.remove': 'Vínculo removido', 'unit.edit': 'Unidade editada', 'cash.close': 'Caixa fechado', 'role.edit': 'Cargo editado' };
+/** Append-only: entries are never edited or removed. Minutes ago, newest first. */
+export interface AuditEntry { id: string; actorId: string; action: AuditAction; unitId?: string; target: string; minutesAgo: number; detail: string }
+export const AUDIT_LOG: readonly AuditEntry[] = [
+  { id: 'au-1', actorId: 'f-1', action: 'perm.change', unitId: 'u-prea', target: 'Paula Reis', minutesAgo: 35, detail: 'Concedeu “Fechar caixa” em Preá Beach.' },
+  { id: 'au-2', actorId: 'f-4', action: 'cash.close', unitId: 'u-jeri-centro', target: 'Caixa de ontem', minutesAgo: 600, detail: 'Fechamento diário confirmado com diferença de R$ 0,00.' },
+  { id: 'au-3', actorId: 'f-1', action: 'link.add', unitId: 'u-jeri-lagoa', target: 'Tiago Nogueira', minutesAgo: 1500, detail: 'Vinculado como Atendente.' },
+  { id: 'au-4', actorId: 'f-2', action: 'unit.edit', unitId: 'u-prea', target: 'Preá Beach', detail: 'Horário de fechamento passou de 16:00 para 17:00.', minutesAgo: 2900 },
+  { id: 'au-5', actorId: 'f-1', action: 'staff.invite', target: 'Rafaela Costa', minutesAgo: 8000, detail: 'Convite enviado por e-mail.' },
+  { id: 'au-6', actorId: 'f-1', action: 'perm.change', unitId: 'u-jeri-lagoa', target: 'Diego Furtado', minutesAgo: 9800, detail: 'Retirou “Criar e mover aulas” em Jeri Lagoa do Paraíso.' },
+  { id: 'au-7', actorId: 'f-3', action: 'link.remove', unitId: 'u-jeri-centro', target: 'Bruno Alves', minutesAgo: 14000, detail: 'Vínculo encerrado a pedido do funcionário.' },
+];
