@@ -192,6 +192,12 @@ begin
   if v_count<>225 then
     raise exception 'Student-visible completed minutes mismatch: expected 225, got %',v_count;
   end if;
+  -- The student-facing balance RPC must reflect 225/240 delivered minutes.
+  -- This is a separate contract from raw meeting-row visibility.
+  select public.booking_balance_minutes(v_id) into v_count;
+  if v_count is distinct from 15 then
+    raise exception 'Student balance RPC expected 15 remaining minutes, got %',v_count;
+  end if;
   execute 'reset role';
   perform set_config('request.jwt.claim.sub','00000000-0000-0000-0000-0000000000b1',true);
   execute 'set local role authenticated';
