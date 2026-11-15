@@ -84,7 +84,7 @@ assert.match(route, /viewer\.role !== 'admin' \|\| !viewer\.secondFactor\) retur
 const walk = (d) => readdirSync(d).flatMap((n) => { const p = join(d, n); return statSync(p).isDirectory() ? walk(p) : [p]; });
 for (const f of [...walk(base), 'src/lib/business/finance.ts', 'src/components/business/payment-form.tsx'].filter((x) => /\.tsx?$/.test(x))) {
   const code = read(f).replace(/\/\*[\s\S]*?\*\/|\/\/.*$/gm, '');
-  assert.doesNotMatch(code, /transfer\(|createPayment|stripe|mercadopago|fetch\(|splitPayment/i, `${f}: the platform never moves the school's money`);
+  assert.doesNotMatch(code, /\btransfer\(|createPayment|stripe|mercadopago|fetch\(|splitPayment/i, `${f}: the platform never moves the school's money`);
 }
 assert.match(read(`${base}/pagamentos/page.tsx`), /O VentoKite só registra/); assert.match(read(`${base}/comissoes/page.tsx`), /nunca transfere dinheiro/);
 console.log('PASS: Business finance: integer commissions with frozen rates, balances and partial external payments, period closing, reports that add up, admin-only export, no money movement');

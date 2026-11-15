@@ -226,3 +226,66 @@ export const EXTERNAL_PAYMENTS: readonly ExternalPayment[] = [
   { id: 'xp-2', instructorId: 'i-2', cents: 10000, dayOffset: -2, method: 'pix', reference: 'PIX-C3D4', confirmed: false },
   { id: 'xp-3', instructorId: 'i-1', cents: 15000, dayOffset: -1, method: 'ted', reference: 'TED-9921', confirmed: false },
 ];
+
+// ---- Bloco 9: estoque e aluguéis (demonstrativo) ----
+export interface Product { id: string; sku: string; name: string; category: string; priceCents: number; minStock: number }
+export type StockMovementType = 'in' | 'sale' | 'adjust' | 'transfer_out' | 'transfer_in';
+/** The ledger is the source of truth: stock of a product in a unit is the sum of its movements. */
+export interface StockMovement { id: string; productId: string; unitId: string; type: StockMovementType; qty: number; dayOffset: number; note: string; transferId?: string }
+export const PRODUCTS: readonly Product[] = [
+  { id: 'p-cam', sku: 'CAM-VK', name: 'Camiseta VentoKite', category: 'Vestuário', priceCents: 6000, minStock: 5 },
+  { id: 'p-pro', sku: 'PRO-50', name: 'Protetor solar FPS 50', category: 'Cuidados', priceCents: 3500, minStock: 6 },
+  { id: 'p-bon', sku: 'BON-VK', name: 'Boné VentoKite', category: 'Vestuário', priceCents: 4500, minStock: 3 },
+  { id: 'p-oc', sku: 'OCL-01', name: 'Óculos de sol', category: 'Acessórios', priceCents: 9000, minStock: 3 },
+  { id: 'p-bol', sku: 'BOL-ST', name: 'Bolsa estanque', category: 'Acessórios', priceCents: 12000, minStock: 2 },
+];
+export const STOCK_MOVEMENTS: readonly StockMovement[] = [
+  { id: 'sm-1', productId: 'p-cam', unitId: 'u-prea', type: 'in', qty: 20, dayOffset: -20, note: 'Estoque inicial' },
+  { id: 'sm-2', productId: 'p-cam', unitId: 'u-jeri-centro', type: 'in', qty: 15, dayOffset: -20, note: 'Estoque inicial' },
+  { id: 'sm-3', productId: 'p-cam', unitId: 'u-jeri-lagoa', type: 'in', qty: 5, dayOffset: -20, note: 'Estoque inicial' },
+  { id: 'sm-4', productId: 'p-cam', unitId: 'u-prea', type: 'sale', qty: -3, dayOffset: -5, note: 'Vendas do balcão' },
+  { id: 'sm-5', productId: 'p-cam', unitId: 'u-jeri-centro', type: 'sale', qty: -4, dayOffset: -4, note: 'Vendas do balcão' },
+  { id: 'sm-6', productId: 'p-cam', unitId: 'u-jeri-centro', type: 'transfer_out', qty: -3, dayOffset: -2, note: 'Para Jeri Lagoa', transferId: 'tr-1' },
+  { id: 'sm-7', productId: 'p-cam', unitId: 'u-jeri-lagoa', type: 'transfer_in', qty: 3, dayOffset: -2, note: 'De Jeri Centro', transferId: 'tr-1' },
+  { id: 'sm-8', productId: 'p-pro', unitId: 'u-prea', type: 'in', qty: 30, dayOffset: -20, note: 'Estoque inicial' },
+  { id: 'sm-9', productId: 'p-pro', unitId: 'u-jeri-centro', type: 'in', qty: 20, dayOffset: -20, note: 'Estoque inicial' },
+  { id: 'sm-10', productId: 'p-pro', unitId: 'u-jeri-lagoa', type: 'in', qty: 4, dayOffset: -20, note: 'Estoque inicial' },
+  { id: 'sm-11', productId: 'p-pro', unitId: 'u-prea', type: 'sale', qty: -5, dayOffset: -3, note: 'Vendas do balcão' },
+  { id: 'sm-12', productId: 'p-bon', unitId: 'u-prea', type: 'in', qty: 10, dayOffset: -20, note: 'Estoque inicial' },
+  { id: 'sm-13', productId: 'p-bon', unitId: 'u-jeri-centro', type: 'in', qty: 10, dayOffset: -20, note: 'Estoque inicial' },
+  { id: 'sm-14', productId: 'p-oc', unitId: 'u-prea', type: 'in', qty: 8, dayOffset: -20, note: 'Estoque inicial' },
+  { id: 'sm-15', productId: 'p-oc', unitId: 'u-jeri-centro', type: 'in', qty: 6, dayOffset: -20, note: 'Estoque inicial' },
+  { id: 'sm-16', productId: 'p-oc', unitId: 'u-jeri-lagoa', type: 'in', qty: 2, dayOffset: -20, note: 'Estoque inicial' },
+  { id: 'sm-17', productId: 'p-bol', unitId: 'u-prea', type: 'in', qty: 5, dayOffset: -20, note: 'Estoque inicial' },
+  { id: 'sm-18', productId: 'p-bol', unitId: 'u-prea', type: 'adjust', qty: -1, dayOffset: -1, note: 'Quebra na contagem' },
+];
+export type EquipmentType = 'prancha' | 'pipa' | 'trapezio' | 'colete' | 'capacete';
+export type Condition = 'novo' | 'bom' | 'regular' | 'ruim';
+export interface Equipment { id: string; code: string; type: EquipmentType; label: string; unitId: string; condition: Condition; retired: boolean }
+export const EQUIPMENT: readonly Equipment[] = [
+  { id: 'eq-1', code: 'PR-01', type: 'prancha', label: 'Prancha twin tip 138', unitId: 'u-prea', condition: 'bom', retired: false },
+  { id: 'eq-2', code: 'PR-02', type: 'prancha', label: 'Prancha twin tip 140', unitId: 'u-prea', condition: 'regular', retired: false },
+  { id: 'eq-3', code: 'PI-01', type: 'pipa', label: 'Pipa 9 m', unitId: 'u-prea', condition: 'bom', retired: false },
+  { id: 'eq-4', code: 'PI-02', type: 'pipa', label: 'Pipa 12 m', unitId: 'u-prea', condition: 'novo', retired: false },
+  { id: 'eq-5', code: 'TR-01', type: 'trapezio', label: 'Trapézio M', unitId: 'u-prea', condition: 'bom', retired: false },
+  { id: 'eq-6', code: 'PR-03', type: 'prancha', label: 'Prancha twin tip 136', unitId: 'u-jeri-centro', condition: 'bom', retired: false },
+  { id: 'eq-7', code: 'PI-03', type: 'pipa', label: 'Pipa 9 m', unitId: 'u-jeri-centro', condition: 'regular', retired: false },
+  { id: 'eq-8', code: 'CO-01', type: 'colete', label: 'Colete de impacto G', unitId: 'u-jeri-centro', condition: 'bom', retired: false },
+  { id: 'eq-9', code: 'PI-04', type: 'pipa', label: 'Pipa 7 m', unitId: 'u-jeri-lagoa', condition: 'bom', retired: false },
+  { id: 'eq-10', code: 'PR-04', type: 'prancha', label: 'Prancha twin tip 138', unitId: 'u-jeri-lagoa', condition: 'ruim', retired: false },
+  { id: 'eq-11', code: 'CA-09', type: 'capacete', label: 'Capacete M (aposentado)', unitId: 'u-prea', condition: 'ruim', retired: true },
+];
+export interface Rental { id: string; equipmentId: string; customer: string; dayOffset: number; start: string; hours: number; priceCents: number; conditionOut: Condition; returned?: { dayOffset: number; condition: Condition; note: string } }
+export const RENTALS: readonly Rental[] = [
+  { id: 'rt-1', equipmentId: 'eq-1', customer: 'Cliente Demo A', dayOffset: 0, start: '09:00', hours: 2, priceCents: 8000, conditionOut: 'bom' },
+  { id: 'rt-2', equipmentId: 'eq-7', customer: 'Cliente Demo B', dayOffset: 0, start: '14:00', hours: 3, priceCents: 24000, conditionOut: 'regular' },
+  { id: 'rt-3', equipmentId: 'eq-5', customer: 'Cliente Demo C', dayOffset: -1, start: '10:00', hours: 2, priceCents: 5000, conditionOut: 'bom', returned: { dayOffset: -1, condition: 'bom', note: '' } },
+  { id: 'rt-4', equipmentId: 'eq-2', customer: 'Cliente Demo D', dayOffset: -2, start: '15:00', hours: 1, priceCents: 4000, conditionOut: 'regular', returned: { dayOffset: -2, condition: 'regular', note: '' } },
+  { id: 'rt-5', equipmentId: 'eq-10', customer: 'Cliente Demo E', dayOffset: -3, start: '08:00', hours: 2, priceCents: 8000, conditionOut: 'regular', returned: { dayOffset: -3, condition: 'ruim', note: 'Quilha quebrada' } },
+];
+/** An equipment is in maintenance exactly while it has an open ticket. */
+export interface MaintenanceTicket { id: string; equipmentId: string; openedOffset: number; description: string; costCents: number | null; status: 'open' | 'done' }
+export const MAINTENANCE: readonly MaintenanceTicket[] = [
+  { id: 'mt-1', equipmentId: 'eq-10', openedOffset: -3, description: 'Quilha quebrada, devolvida em estado ruim', costCents: null, status: 'open' },
+  { id: 'mt-2', equipmentId: 'eq-3', openedOffset: -8, description: 'Troca de bexiga', costCents: 18000, status: 'done' },
+];
