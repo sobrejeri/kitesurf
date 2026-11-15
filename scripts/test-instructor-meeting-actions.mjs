@@ -147,7 +147,21 @@ for (const unauthorized of ['student', 'admin', 'affiliate']) {
 role = 'instructor';
 assert.equal(calls.length, beforeWrongRole, 'Unauthorized roles must not reach either privileged RPC');
 
-// All instructor mutations must propagate database denial without claiming success.\nrpcError = { code: '42501', message: 'permission denied for meeting' };\nfor (const action of [\n  () => startMeeting({}, form({ meetingId, presenceCode: '1234' })),\n  () => recordMeeting({}, form({ meetingId, doneMinutes: '120', note: '' })),\n  () => recordMeetingWithSkills({}, skills(120)),\n]) {\n  const previousCalls = calls.length;\n  result = await action();\n  assert.ok(result.error, 'Database permission denial must be visible to the instructor');\n  assert.equal(result.ok, undefined, 'Denied database mutation cannot be reported as success');\n  assert.equal(calls.length, previousCalls + 1);\n}\n\nrpcError = { code: 'TEST_ERROR', message: 'Database rejected meeting' };
+// All instructor mutations must propagate database denial without claiming success.
+rpcError = { code: '42501', message: 'permission denied for meeting' };
+for (const action of [
+  () => startMeeting({}, form({ meetingId, presenceCode: '1234' })),
+  () => recordMeeting({}, form({ meetingId, doneMinutes: '120', note: '' })),
+  () => recordMeetingWithSkills({}, skills(120)),
+]) {
+  const previousCalls = calls.length;
+  result = await action();
+  assert.ok(result.error, 'Database permission denial must be visible to the instructor');
+  assert.equal(result.ok, undefined, 'Denied database mutation cannot be reported as success');
+  assert.equal(calls.length, previousCalls + 1);
+}
+
+rpcError = { code: 'TEST_ERROR', message: 'Database rejected meeting' };
 result = await recordMeetingWithSkills({}, skills(120));
 assert.ok(result.error);
 rpcError = null;
