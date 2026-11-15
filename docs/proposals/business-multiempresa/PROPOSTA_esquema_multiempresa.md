@@ -1,0 +1,101 @@
+# VentoKite Business: proposta de esquema multiempresa (para revisão)
+
+**Situação:** rascunho para revisão. Nada foi aplicado e nada está em `supabase/migrations`. O SQL está em `PROPOSTA_fase1_empresa_equipe_instrutores.sql` e foi validado num PostgreSQL descartável (ver "Como foi validado").
+
+Hoje todo o módulo Business é demonstrativo (`src/lib/business/demo.ts`). Este documento propõe o banco que o torna real, **em fases**, começando pelas telas dos blocos 1, 2 e 3 (empresa, equipe e instrutores). As regras já existem em funções puras testadas (`rules.ts`, `company.ts`, `instructors.ts`…), então trocar o demonstrativo pelo banco não muda as telas.
+
+## O que não muda
+
+- Dinheiro em centavos inteiros; percentuais em pontos-base; datas no fuso de Fortaleza.
+- Toda escrita por função `SECURITY DEFINER` que confere papel e dono; as tabelas não dão INSERT, UPDATE nem DELETE ao cliente.
+- RLS em todas as tabelas. Ler por id não é permissão.
+- Administrador da plataforma nunca nasce de cadastro, convite ou vínculo.
+- Auditoria append-only. App só com `NEXT_PUBLIC_*`; nada de `service_role`.
+- Migration aplicada não se edita: a fase 1 seria a próxima migration (número a definir na hora de aplicar).
+- Não toca em reservas, preços, filas, pagamentos, checkout, migrations 39–42 nem no Protege 3B.
+
+## Decisões que preciso de você
+
+Cada uma tem a minha recomendação. Se concordar com todas, basta dizer "aprovado".
+
+1. **Como alguém entra no Business.** Recomendo **vínculo (`company_members`), sem novo papel global**. A conta continua aluno, instrutor ou afiliado; ter acesso ao Business vem de ser dono ou membro ativo de uma empresa. Assim não mexemos no enum `app_role` e nunca existe caminho para "virar admin".
+2. **Aprovação.** A empresa nasce **pendente** e só opera depois que o Admin (com segundo fator) aprova, com motivo, registrado na auditoria. Recomendo manter, igual ao que fazemos com instrutores e afiliados (CNPJ conferido na aprovação).
+3. **Proprietário.** É `companies.owner_id`, definido só na criação. O cargo "Proprietário" **não existe como valor atribuível** (o enum `company_role` só tem gerente, financeiro e atendente), então convite ou vínculo não conseguem criá-lo nem por engano. Troca de proprietário fica fora desta fase e seria um fluxo do Admin.
+4. **Cargos.** Fase 1 usa os quatro cargos iniciais (as permissões saem de uma tabela somente leitura) mais exceções por pessoa e unidade. **Cargos personalizados** (a tela "Cargos" já tem o formulário) ficam para uma fase seguinte. Recomendo adiar para não crescer a superfície de segurança agora.
+5. **Quem pode conceder permissão.** Quem tem `perm.edit` numa unidade pode conceder permissões **não sensíveis** nessa unidade (inclusive a si mesmo, sem ganho real, pois só vale o que o cargo já permitiria ou o que é comum). **Permissões sensíveis só o Proprietário concede.** Se preferir que só o Proprietário conceda qualquer coisa, é uma linha a mudar.
+6. **Leitura pela administração.** O Admin com segundo fator **lê** as tabelas das empresas (suporte, auditoria) e nunca escreve nelas, a não ser pela aprovação da empresa. Recomendo manter. Alternativa: nenhuma leitura de dados de empresa pelo Admin.
+7. **Convite por e-mail.** O convidado responde pela própria conta e o e-mail da conta precisa ser igual ao do convite (minúsculas). Isso só é seguro se o projeto exigir **e-mail confirmado** antes de criar sessão (configuração do Supabase). Preciso que você confirme que essa opção está ligada.
+8. **Expiração de convites.** Convite vence em 14 dias; a função de aceite já recusa vencidos. Marcar como "expirado" no banco exige uma rotina agendada, a mesma pendência do `pg_cron` que já está na lista (solicitações de troca e de saldo). Recomendo decidir as duas juntas.
+9. **Instrutor e escola.** O vínculo do instrutor com a escola é uma tabela própria; **suspender ali não altera `instructors.status`** nem outras escolas (testado). A fila única do VentoKite continua global.
+
+## O que a fase 1 cria
+
+Tabelas (todas com RLS, só leitura para o cliente): `companies`, `company_units`, `company_members`, `company_member_units`, `company_member_overrides`, `company_invitations`, `company_invitation_units`, `company_instructor_links`, `company_instructor_units`, `company_instructor_rates`, `company_audit_logs`, mais o catálogo `company_permissions` e `company_role_permissions`.
+
+Funções de escrita (únicas portas): `create_company`, `admin_set_company_status`, `create_unit`, `update_unit`, `invite_staff`, `invite_instructor`, `accept_company_invitation`, `decline_company_invitation`, `set_member_unit_role`, `set_member_override`, `set_instructor_link_status`, `set_instructor_rate`.
+
+Funções internas sem EXECUTE para o cliente: `company_audit`, `require_company_permission`.
+
+### Mapa das telas atuais para o banco
+
+| Tela (demonstrativa) | Banco |
+|---|---|
+| Cadastro de empresa (1) | `create_company` (CNPJ numérico e alfanumérico validado; pendente) |
+| Perfil e configurações (2) | leitura de `companies`; troca de CNPJ/proprietário só pelo Admin |
+| Unidades (4–6) | `create_unit`, `update_unit`; desativar só o Proprietário |
+| Seleção de cidade e unidade (7), visão consolidada (8) | `company_unit_ids()`: cada pessoa só enxerga as unidades em que está ligada |
+| Funcionários, convite, perfil, vínculos (9–11, 14) | `invite_staff`, `accept_company_invitation`, `set_member_unit_role` |
+| Matriz e exceções (12–13) | catálogo + `company_member_overrides` via `set_member_override` |
+| Auditoria (15) | `company_audit_logs`, lida só com `perm.edit` (ou Admin) |
+| Instrutores, convidar, aceitar/recusar (16–18) | `invite_instructor`, `accept/decline_company_invitation` |
+| Comissão individual (20) | `set_instructor_rate`: versão nova a partir de hoje, índice único por dia, trigger impede UPDATE/DELETE |
+| Suspensão de vínculo | `set_instructor_link_status` (só o vínculo) |
+
+## Garantias testadas
+
+O teste (`PROPOSTA_fase1.test.sql`, 15 cenários mais checagens de catálogo) cobre, entre outras:
+
+- Empresa de outra escola não vê unidades, equipe, convites, vínculos, comissões nem auditoria, e não consegue alterar nada.
+- Atendente vê só a unidade em que trabalha; o mesmo gerente é atendente em outra unidade e perde as permissões lá.
+- Convite não concede Proprietário, não aceita unidade de outra empresa, não duplica pendente, só o convidado responde, e o Admin da plataforma não entra em empresa.
+- Permissão sensível só o Proprietário concede; exceção por unidade não vaza para outra.
+- Comissão: segunda alteração no mesmo dia recusada, faixa 10% a 90%, versões nunca editadas nem apagadas.
+- Cliente sem INSERT/UPDATE/DELETE; `anon` sem leitura; auditoria não pode ser forjada, editada nem apagada (nem por superusuário); a auditoria nunca guarda CNPJ.
+- Toda tabela nova tem RLS e toda função definer tem `search_path` fixo.
+- Admin sem segundo fator não aprova nem lê.
+
+## Como foi validado
+
+```bash
+runuser -u nobody -- env PG_BIN=/usr/lib/postgresql/16/bin bash docs/proposals/business-multiempresa/rodar-teste.sh
+```
+
+Aplica **todas** as migrations reais num PostgreSQL descartável, depois o rascunho, depois o teste. Também fiz **teste de mutação**: enfraqueci de propósito quatro regras (visibilidade de unidades, suspensão que também pausa o instrutor, auditoria sem trigger, permissão sensível sem dono) e o teste falhou em cada uma; com o original, passa.
+
+## Fases seguintes (esboço, sem SQL ainda)
+
+Cada fase repete o padrão obrigatório: coluna `company_id` (e `unit_id` quando for da unidade), política que cruza com `company_unit_ids()`, escrita só por função, teste de isolamento entre empresas e teste de mutação.
+
+2. **Serviços e preços por unidade; reservas presenciais.** Versões de preço por unidade (nova versão, nunca edição); reserva com valores congelados e calculados no banco; divisão por subtração (comissão uma vez, líquido por diferença, com CHECK de soma); conflito de agenda único por instrutor entre unidades e empresas.
+   *Disponibilidade unificada sem vazar dados:* uma função definer devolve a outra empresa apenas intervalos "ocupado" (início e fim), nunca cliente, serviço ou unidade.
+3. **Estoque e aluguéis.** Razão de movimentações (saldo é soma, nunca negativo, por CHECK ou trigger); transferência como duas linhas na mesma transação; equipamento com situação derivada.
+4. **Caixa e fechamento.** Sessões, movimentos e fechamentos; arquivos Excel/PDF em bucket privado do Storage com política por empresa; Pix e cartão só como registro externo.
+5. **Lojinha e afiliados da empresa.** Pedidos e cupons sem pagamento simulado; percentual de afiliado versionado (já com `rateAt` testado); comissão nunca "paga".
+6. **Financeiro.** Lançamentos, a pagar/receber e pagamentos externos aos instrutores, com confirmação de recebimento pelo instrutor (precisa da tela do instrutor, hoje pendente).
+
+## Plano para aplicar (quando você aprovar)
+
+1. Você aprova as decisões 1 a 9.
+2. Eu movo o SQL para `supabase/migrations` com o próximo número e rodo `scripts/test-db.sh` completo (e o teste de catálogo).
+3. Abro PR de migration separado do front, em draft, sem aplicar.
+4. Você revisa e cola o SQL no editor do Supabase (como nas migrations 47 e 48), **primeiro num projeto de teste**.
+5. Só depois a primeira tela (Unidades) troca `demo.ts` pela consulta, atrás de uma flag, mantendo o aviso de demonstração nas outras.
+
+**Reversão** da fase 1 (antes de haver dados): apagar as funções e tabelas na ordem inversa da criação e os tipos `company_*`. Depois de haver dados, a reversão exige exportar antes; não recomendo reverter com dados reais.
+
+## Limites desta proposta
+
+- É só banco. Não há tela real ligada, e e-mails de convite não são enviados (falta o envio).
+- Políticas chamam funções por linha; para volumes grandes valem índices e medição. Com a escala atual não é problema, e eu mediria antes da fase 2.
+- Não resolve pagamento de comissões, impressão térmica nem armazenamento de comprovantes: continuam decisões suas.
+- Não foi aplicada em projeto Supabase real; a validação é em PostgreSQL local com o mesmo stub usado nos testes do repositório.
