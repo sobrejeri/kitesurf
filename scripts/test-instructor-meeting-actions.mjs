@@ -10,6 +10,7 @@ const compiled = ts.transpileModule(source, {
   compilerOptions: { module: ts.ModuleKind.CommonJS, target: ts.ScriptTarget.ES2022 },
 }).outputText;
 const meetingId = '11111111-1111-4111-8111-111111111111';
+const secondMeetingId = '22222222-2222-4222-8222-222222222222';
 const calls = [];
 let role = 'instructor';
 let rpcError = null;
@@ -19,7 +20,7 @@ const dependencies = {
   'next/cache': { revalidatePath() {} },
   zod: requireNode('zod'),
   '@/lib/auth': { async requireRole(roles) {
-    assert.ok(roles.includes(role), 'Only expected roles may invoke meeting actions');
+    if (!roles.includes(role)) throw new Error('Unauthorized role');
     return { id: 'instructor-test', role };
   } },
   '@/lib/supabase/server': { async createSupabaseServerClient() { return db; } },
@@ -88,6 +89,34 @@ assert.equal(calls.at(-1).args.p_meeting_id, meetingId);
 assert.equal(calls.at(-1).args.p_done_minutes, 120);
 assert.deepEqual(Array.from(calls.at(-1).args.p_practiced_steps), [1]);
 assert.deepEqual(Array.from(calls.at(-1).args.p_mastered_steps), [2]);
+
+// Second encounter in the same four-hour package must preserve its own identity.
+// The instructor's form must never silently re-record the first encounter.
+const firstMeetingWrites = calls.filter(call => call.name === 'record_meeting_with_skills').length;
+result = await startMeeting({}, form({ meetingId: secondMeetingId, presenceCode: '5678' }));
+assert.ok(result.ok);
+assert.equal(calls.at(-1).name, 'start_ordered_meeting');
+assert.equal(calls.at(-1).args.p_meeting_id, secondMeetingId);
+result = await recordMeetingWithSkills({}, skills(120, {
+  meetingId: secondMeetingId, step1: 'mastered', step2: 'none', step3: 'practiced',
+}));
+assert.ok(result.ok);
+assert.equal(calls.at(-1).name, 'record_meeting_with_skills');
+assert.equal(calls.at(-1).args.p_meeting_id, secondMeetingId);
+assert.equal(calls.at(-1).args.p_done_minutes, 120);
+assert.deepEqual(Array.from(calls.at(-1).args.p_practiced_steps), [3]);
+assert.deepEqual(Array.from(calls.at(-1).args.p_mastered_steps), [1]);
+assert.equal(calls.filter(call => call.name === 'record_meeting_with_skills').length, firstMeetingWrites + 1);
+
+// A student or admin must never be able to invoke instructor-only privileged RPCs.
+const beforeWrongRole = calls.length;
+for (const unauthorized of ['student', 'admin']) {
+  role = unauthorized;
+  await assert.rejects(() => startMeeting({}, form({ meetingId, presenceCode: '1234' })), /Unauthorized role/);
+  await assert.rejects(() => recordMeetingWithSkills({}, skills(120)), /Unauthorized role/);
+}
+role = 'instructor';
+assert.equal(calls.length, beforeWrongRole, 'Unauthorized roles must not reach either privileged RPC');
 
 rpcError = { code: 'TEST_ERROR', message: 'Database rejected meeting' };
 result = await recordMeetingWithSkills({}, skills(120));
