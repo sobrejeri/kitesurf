@@ -17,12 +17,20 @@ const calls = [];
 let occupied = [];
 let occupiedError = false;
 let rpcError = null;
+let preferredRpcMissing = false;
+let legacyRpcError = null;
+let rpcResult;
 let viewerRole = 'student';
 const requestId = '22222222-2222-4222-8222-222222222222';
+rpcResult = requestId;
 const beachId = '11111111-1111-4111-8111-111111111111';
 const db = { async rpc(name, args) {
   calls.push({ name, args });
-  return { data: requestId, error: rpcError };
+  if (preferredRpcMissing && name === 'create_instructor_request_with_preference') {
+    return { data: null, error: { code: 'PGRST202', message: 'Missing preference RPC' } };
+  }
+  if (name === 'create_instructor_request') return { data: rpcResult, error: legacyRpcError };
+  return { data: rpcResult, error: rpcError };
 } };
 const deps = {
   'next/cache': { revalidatePath() {} },
@@ -130,10 +138,55 @@ assert.ok(result.error);
 assert.equal(calls.length, 2);
 rpcError = null;
 
+// Missing preference wrapper may use only the legacy QUEUE RPC, never a direct booking.
+preferredRpcMissing = true;
+const beforeLegacy = calls.length;
+try {
+  await create({}, form());
+  assert.fail('Legacy queue success must redirect');
+} catch (error) {
+  assert.equal(error.message, 'REDIRECT:/aluno/solicitacao/' + requestId);
+}
+assert.deepEqual(calls.slice(beforeLegacy).map(call => call.name), [
+  'create_instructor_request_with_preference', 'create_instructor_request',
+]);
+assert.deepEqual(Array.from(calls.at(-1).args.p_meetings, m => ({ starts_at: m.starts_at, hours: m.hours })), [
+  { starts_at: '2026-11-20T09:00:00-03:00', hours: 2 },
+  { starts_at: '2026-11-22T09:00:00-03:00', hours: 2 },
+]);
+
+// A preferred instructor must NEVER be silently ignored by legacy fallback.
+const beforePreferred = calls.length;
+result = await create({}, form({ preferredInstructorId: '33333333-3333-4333-8333-333333333333' }));
+assert.match(result.error, /mesmo instrutor depende da atualização/);
+assert.equal(calls.length, beforePreferred + 1);
+assert.equal(calls.at(-1).name, 'create_instructor_request_with_preference');
+
+// Legacy queue failures and malformed IDs fail closed, with no success redirect.
+legacyRpcError = { code: 'TEST_ERROR', message: 'Legacy queue rejected' };
+result = await create({}, form());
+assert.ok(result.error);
+legacyRpcError = null;
+rpcResult = 'not-a-request-uuid';
+result = await create({}, form());
+assert.match(result.error, /Não foi possível abrir a reserva/);
+rpcResult = requestId;
+preferredRpcMissing = false;
+
+// A present preference RPC must not fall back on an ordinary database error.
+const beforeOrdinaryError = calls.length;
+rpcError = { code: '42501', message: 'permission denied' };
+result = await create({}, form());
+assert.ok(result.error);
+assert.deepEqual(calls.slice(beforeOrdinaryError).map(call => call.name), [
+  'create_instructor_request_with_preference',
+]);
+rpcError = null;
+
 // An instructor cannot submit a student reservation, even with a valid form.
 viewerRole = 'instructor';
 await assert.rejects(() => create({}, form()), /Unauthorized/);
-assert.equal(calls.length, 2);
+assert.equal(calls.length, beforeOrdinaryError + 1);
 console.log('PASS: booking negative cases (invalid hours/time/date/instructor, RPC error, role guard)');
 
 console.log('PASS: real student booking action validates 4h/2 dates, hours, civil days and occupied slots before queue RPC (isolated mocks)');
