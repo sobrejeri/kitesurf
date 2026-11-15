@@ -99,3 +99,23 @@ Conclusão: pronto para revisão / há problemas (liste)
 ```
 
 Devolva este relatório a quem continua o desenvolvimento. Ele não deve conter chaves, senhas nem dados pessoais de clientes.
+
+
+---
+
+# Fase 2 (só depois da fase 1 aplicada e validada)
+
+Migration: `supabase/migrations/20261115130000_business_services_bookings.sql` (PR da fase 2). Verificação: `docs/proposals/business-multiempresa/VERIFICACAO_fase2_somente_leitura.sql`. Mesma regra: projeto de **teste** primeiro.
+
+**Atenção, esta fase muda uma função do fluxo digital:** `public.instructor_can_attend` passa a considerar também as reservas presenciais confirmadas (um bloco a mais; o resto é idêntico). Por isso o passo de snapshot abaixo e o bloco [6] e [7] da verificação importam.
+
+1. **Snapshot antes** (a mesma consulta da seção A) e, além dela, guarde o hash da função:
+   ```sql
+   select md5(pg_get_functiondef('public.instructor_can_attend(uuid,jsonb)'::regprocedure)) as hash_funcao_antes;
+   ```
+2. Aplicar a migration inteira, de uma vez. ESPERADO: "Success. No rows returned".
+3. **Snapshot depois:** `perfis` e `reservas` **iguais**; `tabelas_public` +6; `funcoes_public` +15; `politicas_public` +6. O hash da função **muda** (esperado, é a única mudança no fluxo digital).
+4. Rodar `VERIFICACAO_fase2_somente_leitura.sql` bloco a bloco. Esperado: [1] 6 tabelas com RLS; [2] 0 linhas; [3] 15 linhas (14 definer + `company_bookings_frozen`); [4] 0; [5] 4 linhas, todas `false`; [6] definer `t`, volatilidade `s`, `exec_authenticated = f`, `exec_anon = f`; [7] `true`; [8] 3 gatilhos; [9] 3 restrições; [10] 0, 0, 0; [11] erro de permissão no primeiro e `0` no segundo.
+5. Relatório: o mesmo modelo da fase 1, com os campos extras `hash_funcao_antes`, `hash_funcao_depois` e o resultado do bloco [6] e [7].
+
+Se a verificação falhar no [6] (a função perdeu `security definer`, ficou `volatile` ou ganhou EXECUTE para usuários), é grave: **não prossiga**, relate. A reversão `REVERSAO_fase2.sql` restaura a função original e só serve sem dados reais.
