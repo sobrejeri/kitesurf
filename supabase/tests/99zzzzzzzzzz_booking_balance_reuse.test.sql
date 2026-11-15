@@ -234,8 +234,8 @@ BEGIN
   v_bid:=public.create_admin_test_booking(v_instructor,
     '00000000-0000-0000-0000-0000000000f3',v_beach,
     jsonb_build_array(
-      jsonb_build_object('starts_at',to_char((((now() AT TIME ZONE 'America/Fortaleza')::date+75)::timestamp+interval '9 hours'),'YYYY-MM-DD"T"HH24:MI:SS')||'-03:00','hours',2),
-      jsonb_build_object('starts_at',to_char((((now() AT TIME ZONE 'America/Fortaleza')::date+76)::timestamp+interval '9 hours'),'YYYY-MM-DD"T"HH24:MI:SS')||'-03:00','hours',2)));
+      jsonb_build_object('starts_at',to_char((((now() AT TIME ZONE 'America/Fortaleza')::date+58)::timestamp+interval '9 hours'),'YYYY-MM-DD"T"HH24:MI:SS')||'-03:00','hours',2),
+      jsonb_build_object('starts_at',to_char((((now() AT TIME ZONE 'America/Fortaleza')::date+59)::timestamp+interval '9 hours'),'YYYY-MM-DD"T"HH24:MI:SS')||'-03:00','hours',2)));
   PERFORM pg_temp.reset();
   ASSERT (SELECT count(*) FROM public.booking_meetings WHERE booking_id=v_bid)=2,
     'Four paid hours must create exactly two meetings';
