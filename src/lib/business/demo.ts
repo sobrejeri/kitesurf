@@ -177,3 +177,52 @@ export const PRINT_PURPOSES: readonly { id: PrintPurpose; label: string }[] = [
   { id: 'closing', label: 'Fechamento de caixa' }, { id: 'sale', label: 'Vendas' }, { id: 'booking', label: 'Reservas' }, { id: 'rental', label: 'Aluguéis' },
   { id: 'bleed', label: 'Sangrias' }, { id: 'supply', label: 'Suprimentos' }, { id: 'external_payment', label: 'Pagamentos externos registrados' },
 ];
+
+// ---- Bloco 7: financeiro (demonstrativo) ----
+export interface FinEntry { id: string; unitId: string; kind: 'revenue' | 'expense'; category: string; cents: number; dayOffset: number; employeeId: string; note: string }
+export const FIN_ENTRIES: readonly FinEntry[] = [
+  { id: 'fe-1', unitId: 'u-prea', kind: 'revenue', category: 'Aulas', cents: 52000, dayOffset: -1, employeeId: 'f-2', note: 'Aulas do dia' },
+  { id: 'fe-2', unitId: 'u-jeri-centro', kind: 'revenue', category: 'Aulas', cents: 56000, dayOffset: -1, employeeId: 'f-3', note: 'Aulas do dia' },
+  { id: 'fe-3', unitId: 'u-prea', kind: 'revenue', category: 'Aluguel de equipamentos', cents: 16000, dayOffset: -2, employeeId: 'f-5', note: 'Pranchas e trapézios' },
+  { id: 'fe-4', unitId: 'u-jeri-lagoa', kind: 'revenue', category: 'Aulas', cents: 30000, dayOffset: -3, employeeId: 'f-6', note: 'Aula iniciante' },
+  { id: 'fe-5', unitId: 'u-jeri-centro', kind: 'revenue', category: 'Loja', cents: 24000, dayOffset: -4, employeeId: 'f-3', note: 'Camisetas e protetor' },
+  { id: 'fe-6', unitId: 'u-prea', kind: 'revenue', category: 'Aulas', cents: 78000, dayOffset: -5, employeeId: 'f-2', note: 'Aulas do dia' },
+  { id: 'fe-7', unitId: 'u-prea', kind: 'revenue', category: 'Aulas', cents: 26000, dayOffset: 0, employeeId: 'f-5', note: 'Aula iniciante' },
+  { id: 'fx-1', unitId: 'u-prea', kind: 'expense', category: 'Manutenção', cents: 12000, dayOffset: -2, employeeId: 'f-2', note: 'Reparo de pipa' },
+  { id: 'fx-2', unitId: 'u-jeri-centro', kind: 'expense', category: 'Marketing', cents: 20000, dayOffset: -3, employeeId: 'f-3', note: 'Anúncio local' },
+  { id: 'fx-3', unitId: 'u-jeri-lagoa', kind: 'expense', category: 'Aluguel do espaço', cents: 45000, dayOffset: -6, employeeId: 'f-3', note: 'Deck da lagoa' },
+  { id: 'fx-4', unitId: 'u-prea', kind: 'expense', category: 'Água e energia', cents: 18000, dayOffset: -1, employeeId: 'f-2', note: 'Conta do mês' },
+  { id: 'fx-5', unitId: 'u-jeri-centro', kind: 'expense', category: 'Alimentação', cents: 3000, dayOffset: -1, employeeId: 'f-3', note: 'Gelo e lanche da equipe' },
+];
+export interface Receivable { id: string; unitId: string; party: string; dueOffset: number; cents: number; receivedCents: number }
+export const RECEIVABLES: readonly Receivable[] = [
+  { id: 'rc-1', unitId: 'u-jeri-centro', party: 'Hotel Dunas (pacote de hóspedes)', dueOffset: 5, cents: 90000, receivedCents: 0 },
+  { id: 'rc-2', unitId: 'u-prea', party: 'Pousada Vila Kite', dueOffset: -3, cents: 150000, receivedCents: 60000 },
+  { id: 'rc-3', unitId: 'u-jeri-lagoa', party: 'Agência Mar Azul', dueOffset: -10, cents: 80000, receivedCents: 80000 },
+];
+export interface Payable { id: string; unitId: string; party: string; dueOffset: number; cents: number; paidCents: number }
+export const PAYABLES: readonly Payable[] = [
+  { id: 'pg-1', unitId: 'u-prea', party: 'Oficina do Vento', dueOffset: 2, cents: 12000, paidCents: 0 },
+  { id: 'pg-2', unitId: 'u-jeri-centro', party: 'Marketing Local', dueOffset: -2, cents: 20000, paidCents: 20000 },
+  { id: 'pg-3', unitId: 'u-jeri-lagoa', party: 'Locação do espaço', dueOffset: 10, cents: 45000, paidCents: 15000 },
+];
+/** The percentage is frozen on each lesson: changing an instructor's rate later never rewrites old lessons. */
+export interface CommissionItem { id: string; instructorId: string; unitId: string; lesson: string; dayOffset: number; baseCents: number; commissionBps: number }
+export const COMMISSION_ITEMS: readonly CommissionItem[] = [
+  { id: 'ci-1', instructorId: 'i-1', unitId: 'u-prea', lesson: 'Aula iniciante', dayOffset: -6, baseCents: 26000, commissionBps: 6000 },
+  { id: 'ci-2', instructorId: 'i-1', unitId: 'u-jeri-centro', lesson: 'Aula iniciante', dayOffset: -4, baseCents: 28000, commissionBps: 6000 },
+  { id: 'ci-3', instructorId: 'i-1', unitId: 'u-prea', lesson: 'Aula iniciante', dayOffset: -1, baseCents: 26000, commissionBps: 6000 },
+  { id: 'ci-4', instructorId: 'i-2', unitId: 'u-jeri-centro', lesson: 'Aula iniciante', dayOffset: -5, baseCents: 28000, commissionBps: 5500 },
+  { id: 'ci-5', instructorId: 'i-2', unitId: 'u-jeri-lagoa', lesson: 'Aula iniciante', dayOffset: -3, baseCents: 30000, commissionBps: 5500 },
+  { id: 'ci-6', instructorId: 'i-2', unitId: 'u-jeri-centro', lesson: 'Aula intermediária', dayOffset: -1, baseCents: 15000, commissionBps: 5500 },
+  { id: 'ci-7', instructorId: 'i-3', unitId: 'u-prea', lesson: 'Aula iniciante', dayOffset: -9, baseCents: 26000, commissionBps: 5500 },
+  { id: 'ci-8', instructorId: 'i-3', unitId: 'u-prea', lesson: 'Aula avançada', dayOffset: -3, baseCents: 34000, commissionBps: 6000 },
+];
+export type ExternalMethod = 'pix' | 'ted' | 'cash';
+/** Paid by the school outside VentoKite. The platform only records it; the instructor confirms receipt. */
+export interface ExternalPayment { id: string; instructorId: string; cents: number; dayOffset: number; method: ExternalMethod; reference: string; confirmed: boolean }
+export const EXTERNAL_PAYMENTS: readonly ExternalPayment[] = [
+  { id: 'xp-1', instructorId: 'i-1', cents: 20000, dayOffset: -3, method: 'pix', reference: 'PIX-A1B2', confirmed: true },
+  { id: 'xp-2', instructorId: 'i-2', cents: 10000, dayOffset: -2, method: 'pix', reference: 'PIX-C3D4', confirmed: false },
+  { id: 'xp-3', instructorId: 'i-1', cents: 15000, dayOffset: -1, method: 'ted', reference: 'TED-9921', confirmed: false },
+];
