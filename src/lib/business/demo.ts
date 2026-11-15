@@ -121,3 +121,18 @@ export const PACKAGES: readonly PackageOffer[] = [
   { id: 'p-1', name: 'Pacote 5 aulas iniciante', serviceId: 's-ini', lessons: 5, priceCents: 120000, validDays: 90 },
   { id: 'p-2', name: 'Pacote 3 aulas intermediárias', serviceId: 's-int', lessons: 3, priceCents: 42000, validDays: 60 },
 ];
+
+// ---- Bloco 10: reservas presenciais (demonstrativo) ----
+export type ExternalStatus = 'confirmed' | 'done' | 'cancelled';
+/** Booked at the counter. The "PRE-" code marks the origin: no platform fee applies. */
+export interface ExternalBooking {
+  id: string; code: string; unitId: string; serviceId: string; instructorId: string;
+  dayOffset: number; start: string; minutes: number; customer: string; priceCents: number; status: ExternalStatus;
+}
+export const EXTERNAL_BOOKINGS: readonly ExternalBooking[] = [
+  { id: 'e-1', code: 'PRE-0001', unitId: 'u-jeri-centro', serviceId: 's-ini', instructorId: 'i-2', dayOffset: 2, start: '09:00', minutes: 120, customer: 'Cliente Demo A', priceCents: 28000, status: 'confirmed' },
+  { id: 'e-2', code: 'PRE-0002', unitId: 'u-prea', serviceId: 's-int', instructorId: 'i-3', dayOffset: 1, start: '10:00', minutes: 60, customer: 'Cliente Demo B', priceCents: 15000, status: 'confirmed' },
+  { id: 'e-3', code: 'PRE-0003', unitId: 'u-jeri-lagoa', serviceId: 's-ini', instructorId: 'i-2', dayOffset: 3, start: '09:00', minutes: 120, customer: 'Cliente Demo C', priceCents: 30000, status: 'confirmed' },
+  { id: 'e-4', code: 'PRE-0004', unitId: 'u-prea', serviceId: 's-ini', instructorId: 'i-1', dayOffset: -1, start: '15:00', minutes: 120, customer: 'Cliente Demo D', priceCents: 26000, status: 'done' },
+  { id: 'e-5', code: 'PRE-0005', unitId: 'u-jeri-centro', serviceId: 's-int', instructorId: 'i-2', dayOffset: 1, start: '14:00', minutes: 60, customer: 'Cliente Demo E', priceCents: 16500, status: 'cancelled' },
+];
