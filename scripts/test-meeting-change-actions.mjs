@@ -72,9 +72,10 @@ result = await respondMeetingChange({}, form({ requestId, bookingId, decision: '
 assert.ok(result.ok);
 assert.equal(calls.at(-1).args.p_accept, false);
 
+const beforeInvalidDecision = calls.length;
 result = await respondMeetingChange({}, form({ requestId, bookingId, decision: 'invalid' }));
 assert.ok(result.error);
-assert.equal(calls.at(-1).args.p_accept, false);
+assert.equal(calls.length, beforeInvalidDecision, 'Malformed decision must never call privileged RPC');
 
 result = await resolveStudentChange({}, form({ requestId, bookingId, choice: 'replace' }));
 assert.ok(result.ok);
