@@ -16,7 +16,7 @@ slots="$("${PSQL[@]}" -c "
 with slots as (
   select (date_trunc('day', now() at time zone 'America/Fortaleza')
     + make_interval(days=>d, hours=>h)) at time zone 'America/Fortaleza' as st
-  from generate_series(2, 20) d cross join generate_series(8, 16) h
+  from generate_series(2, ${RACE_DAYS:-90}) d cross join generate_series(8, 16) h
 ), eligible as (
   select st, (st at time zone 'America/Fortaleza')::date as local_day
   from slots
