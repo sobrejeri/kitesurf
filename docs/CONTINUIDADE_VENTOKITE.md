@@ -560,3 +560,9 @@ O projeto possui um **avaliador independente preparado, não necessariamente con
 - PR #259 aberta na branch `test/p0-postlesson-instructor-isolation-20261115`, acrescentando teste SQL de isolamento do instrutor não atribuído **após** os dois registros de evolução; verificar CI do HEAD atualizado e Claude QA antes de integrar.
 - Supabase VentoKite: migrations 39–42 presentes, sem nova aplicação; Protege 3B fechado. Não alterar reservas reais ou pagamentos.
 - E2E autenticado completo ainda não comprovado: faltam sessões isoladas Aluno/Instrutor, reserva de teste acessível e execução em navegador. Próxima sequência: CI #259 → merge se aprovado → SHA live → E2E → conflitos/fila/reagendamento.
+
+## VentoKite Business — primeira entrega visual (15/11/2026)
+
+- Rotas `/admin/business/*` (preview, só Admin com código do autenticador): dashboard, unidades (lista, nova, detalhes), funcionários, matriz de permissões, instrutores vinculados e agenda empresarial, com shell próprio (sidebar recolhível, seletor de cidade/unidade na URL, notificações, navegação mobile).
+- **Tudo demonstrativo**: não há tabelas de empresa no banco, nenhuma tela do Business lê ou grava dados reais, e não há pagamentos. Dados em `src/lib/business/demo.ts`; regras puras em `rules.ts` (filtro, permissão por unidade, conflito de agenda única, validação de unidade). Teste: `scripts/test-business-shell.mjs`.
+- Próximo passo exige decisão: esquema multiempresa (empresas, unidades, vínculos, permissões por unidade, RLS) em migration revisada antes de trocar o demo por dados reais. Não aplicar nada em produção sem autorização.
