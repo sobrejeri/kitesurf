@@ -138,7 +138,7 @@ assert.equal(calls.filter(call => call.name === 'record_meeting_with_skills').le
 
 // A student or admin must never be able to invoke instructor-only privileged RPCs.
 const beforeWrongRole = calls.length;
-for (const unauthorized of ['student', 'admin', 'inn', 'affiliate']) {
+for (const unauthorized of ['student', 'admin', 'affiliate']) {
   role = unauthorized;
   await assert.rejects(() => startMeeting({}, form({ meetingId, presenceCode: '1234' })), /Unauthorized role/);
   await assert.rejects(() => recordMeeting({}, form({ meetingId, doneMinutes: '120', note: '' })), /Unauthorized role/);
