@@ -325,3 +325,46 @@ export const SHOP_ORDERS: readonly ShopOrder[] = [
   { id: 'o-5', number: 'VK-1037', customer: 'Larissa Neri', phone: '88999995555', origin: 'balcao', status: 'cancelled', createdOffset: -6, items: [
     { id: 'a', kind: 'product', productId: 'p-oc', unitId: 'u-prea', qty: 1 }] },
 ];
+
+// ---- Bloco 8: afiliados da empresa (demonstrativo) ----
+export type AffiliateKind = 'pousada' | 'loja' | 'influenciador';
+export interface CompanyAffiliate { id: string; name: string; kind: AffiliateKind; city: string; status: 'active' | 'suspended'; sinceOffset: number; code: string; couponCode?: string }
+export interface AffiliateRequest { id: string; name: string; kind: AffiliateKind; city: string; message: string; createdOffset: number; status: 'pending' | 'approved' | 'declined'; reason?: string }
+/** Percentages are versions: a change adds a row effective from its day and never rewrites earlier sales. */
+export interface RateVersion { id: string; scope: string; bps: number; fromOffset: number }
+export interface AffiliateSale { id: string; affiliateId: string; order: string; unitId: string; refId: string; baseCents: number; dayOffset: number; via: 'link' | 'coupon'; code: string; status: 'pending' | 'eligible' | 'cancelled' | 'refunded'; refundedCents: number }
+export interface Campaign { id: string; name: string; description: string; refIds: string[]; untilOffset: number; active: boolean }
+
+export const COMPANY_AFFILIATES: readonly CompanyAffiliate[] = [
+  { id: 'a-1', name: 'Pousada Brisa Mar', kind: 'pousada', city: 'Cruz', status: 'active', sinceOffset: -120, code: 'BRISA' },
+  { id: 'a-2', name: 'Loja do Kite', kind: 'loja', city: 'Jijoca de Jericoacoara', status: 'active', sinceOffset: -90, code: 'LOJAKITE', couponCode: 'KITE10' },
+  { id: 'a-3', name: 'Bia Kite', kind: 'influenciador', city: 'Cruz', status: 'active', sinceOffset: -40, code: 'BIAKITE', couponCode: 'BIA5' },
+  { id: 'a-4', name: 'Hotel Dunas', kind: 'pousada', city: 'Jijoca de Jericoacoara', status: 'suspended', sinceOffset: -200, code: 'DUNAS' },
+];
+export const AFFILIATE_REQUESTS: readonly AffiliateRequest[] = [
+  { id: 'r-1', name: 'Pousada Vento Sul', kind: 'pousada', city: 'Cruz', message: 'Hóspedes pedem aulas toda semana. Queremos indicar a escola.', createdOffset: -1, status: 'pending' },
+  { id: 'r-2', name: 'Guia Local Jeri', kind: 'influenciador', city: 'Jijoca de Jericoacoara', message: 'Passeios diários, posso divulgar aulas e aluguel.', createdOffset: -3, status: 'pending' },
+  { id: 'r-3', name: 'Loja Praia Dez', kind: 'loja', city: 'Camocim', message: 'Quero vender produtos da escola.', createdOffset: -20, status: 'declined', reason: 'Fora da área de atendimento da escola.' },
+  { id: 'r-4', name: 'Hotel Duna Azul', kind: 'pousada', city: 'Cruz', message: 'Parceria para hóspedes.', createdOffset: -45, status: 'approved' },
+];
+export const RATE_VERSIONS: readonly RateVersion[] = [
+  { id: 'rv-1', scope: 'default', bps: 1000, fromOffset: -365 },
+  { id: 'rv-2', scope: 's-ini', bps: 1200, fromOffset: -60 },
+  { id: 'rv-3', scope: 's-ini', bps: 1500, fromOffset: -10 },
+  { id: 'rv-4', scope: 'p-cam', bps: 800, fromOffset: -90 },
+];
+export const AFFILIATE_SALES: readonly AffiliateSale[] = [
+  { id: 'as-1', affiliateId: 'a-1', order: 'VK-1011', unitId: 'u-prea', refId: 's-ini', baseCents: 26000, dayOffset: -12, via: 'link', code: 'BRISA', status: 'eligible', refundedCents: 0 },
+  { id: 'as-2', affiliateId: 'a-1', order: 'VK-1024', unitId: 'u-prea', refId: 's-ini', baseCents: 26000, dayOffset: -5, via: 'link', code: 'BRISA', status: 'eligible', refundedCents: 0 },
+  { id: 'as-3', affiliateId: 'a-2', order: 'VK-1027', unitId: 'u-prea', refId: 'p-cam', baseCents: 12000, dayOffset: -4, via: 'coupon', code: 'KITE10', status: 'eligible', refundedCents: 0 },
+  { id: 'as-4', affiliateId: 'a-2', order: 'VK-1031', unitId: 'u-prea', refId: 'p-pro', baseCents: 7000, dayOffset: -3, via: 'coupon', code: 'KITE10', status: 'eligible', refundedCents: 3500 },
+  { id: 'as-5', affiliateId: 'a-1', order: 'VK-1033', unitId: 'u-jeri-centro', refId: 's-int', baseCents: 15000, dayOffset: -2, via: 'link', code: 'BRISA', status: 'cancelled', refundedCents: 0 },
+  { id: 'as-6', affiliateId: 'a-3', order: 'VK-1042', unitId: 'u-prea', refId: 's-ava', baseCents: 34000, dayOffset: -1, via: 'link', code: 'BIAKITE', status: 'pending', refundedCents: 0 },
+  { id: 'as-7', affiliateId: 'a-3', order: 'VK-1019', unitId: 'u-jeri-centro', refId: 's-ini', baseCents: 28000, dayOffset: -8, via: 'coupon', code: 'BIA5', status: 'refunded', refundedCents: 28000 },
+];
+export const AFFILIATE_SELECTIONS: Readonly<Record<string, readonly string[]>> = { 'a-1': ['s-ini', 's-int', 'shop'], 'a-2': ['p-cam', 'p-pro', 'p-bon'], 'a-3': ['s-ini', 's-ava'], 'a-4': ['s-ini'] };
+export const CAMPAIGNS: readonly Campaign[] = [
+  { id: 'cp-1', name: 'Verão em Preá', description: 'Aula iniciante e protetor solar para hóspedes de Preá.', refIds: ['s-ini', 'p-pro'], untilOffset: 30, active: true },
+  { id: 'cp-2', name: 'Kit praia', description: 'Camiseta, boné e óculos da escola.', refIds: ['p-cam', 'p-bon', 'p-oc'], untilOffset: 60, active: true },
+  { id: 'cp-3', name: 'Alta temporada passada', description: 'Campanha encerrada.', refIds: ['s-int'], untilOffset: -15, active: false },
+];
