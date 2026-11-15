@@ -141,6 +141,7 @@ const beforeWrongRole = calls.length;
 for (const unauthorized of ['student', 'admin']) {
   role = unauthorized;
   await assert.rejects(() => startMeeting({}, form({ meetingId, presenceCode: '1234' })), /Unauthorized role/);
+  await assert.rejects(() => recordMeeting({}, form({ meetingId, doneMinutes: '120', note: '' })), /Unauthorized role/);
   await assert.rejects(() => recordMeetingWithSkills({}, skills(120)), /Unauthorized role/);
 }
 role = 'instructor';
