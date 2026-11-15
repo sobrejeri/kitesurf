@@ -534,3 +534,10 @@ O projeto possui um **avaliador independente preparado, não necessariamente con
 - Não integrar PR #255 sem CI aprovado. Após merge, conferir novo SHA LIVE no Render.
 - P0 E2E real pendente: sessões autorizadas Aluno e Instrutor e reserva de teste isolada para 4h em dois encontros, aceite, presença, minutos, evolução e leitura do Aluno. Teste SQL de saldo parcial não prova esse cenário.
 - Retomar issues #90–#94 e #103; priorizar código/testes sobre documentação e painéis/checkout.
+
+## Handoff P0 — 15/11/2026, PR #256
+
+- CI inicial run `43671969968` falhou por `END $;` em `supabase/tests/99zzzzzzzzzz_booking_balance_reuse.test.sql`. Correção `END $$;` enviada no commit `40e508cb7c60f50a5c3774965e52beaba2282dbd` na branch `test/p0-two-meeting-four-hour-20261115`.
+- Verificar CI **do HEAD após este handoff**; não integrar PR #256 sem sucesso e conferir Claude QA (documentado desativado/skipped). A regressão cobre 4h/2 encontros e saldo de 240 minutos somente em SQL isolado, não prova aceite, presença, habilidades ou UI real.
+- Render LIVE confirmado: `0ad170f2c174570119e6d19250fc3ae29d53355a` deploy `dep-dbsia1nf3r2c73ef8fsg`; banco Supabase VentoKite `qadkqjfmmnxvovyyhqxw` lista migrations 39–42. Não aplicar 01–38, nem abrir Protege 3B ou pagamentos.
+- Dependência E2E: sessões autorizadas de Aluno e Instrutor e reserva isolada acessível. Prioridade #90–#94/#103: aceite → PIN/presença → minutos/habilidades/evolução → leitura do Aluno. Após CI, integrar e verificar SHA LIVE; se falhar corrigir e repetir. 0/18 frentes integralmente homologadas.
