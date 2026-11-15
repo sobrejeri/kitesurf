@@ -75,6 +75,8 @@ for (const f of files) {
 const pages = files.filter((f) => f.endsWith('page.tsx') && !f.includes('/nova/') );
 // The financial reports get the notice from their shared frame.
 assert.match(read('src/components/business/report-table.tsx'), /<DemoBanner \/>/, 'the report frame shows the demo notice');
-for (const f of pages) assert.match(read(f), /DemoBanner|ReportFrame/, `${f} identifies demo data`);
+// The storefront preview pages get it from their shared layout, which must carry it.
+assert.match(read('src/app/admin/business/lojinha/vitrine/layout.tsx'), /<DemoBanner \/>/, 'the storefront layout shows the demo notice');
+for (const f of pages) assert.match(f.includes('/lojinha/vitrine/') ? read('src/app/admin/business/lojinha/vitrine/layout.tsx') : read(f), /DemoBanner|ReportFrame/, `${f} identifies demo data`);
 assert.match(read('src/components/business/shell.tsx'), /aria-label=\{collapsed \? 'Expandir menu' : 'Recolher menu'\}/, 'collapsible sidebar');
 console.log('PASS: Business shell: coherent demo data, shared city/unit filter, per-unit permissions, unified-agenda conflicts, unit validation, admin-only and no database or payments');
