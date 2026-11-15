@@ -1,6 +1,6 @@
 # VentoKite Business: proposta de esquema multiempresa (para revisão)
 
-**Situação:** rascunho para revisão. Nada foi aplicado e nada está em `supabase/migrations`. O SQL está em `PROPOSTA_fase1_empresa_equipe_instrutores.sql` e foi validado num PostgreSQL descartável (ver "Como foi validado").
+**Situação:** decisões 1 a 9 aprovadas pelo responsável em 15/11/2026 (a 7, e-mail confirmado no Supabase, segue **a confirmar**). O SQL foi promovido para `supabase/migrations/20261115120000_business_company_core.sql` em PR draft e **não foi aplicado em nenhum projeto Supabase**. A reversão está em `REVERSAO_fase1.sql`. O SQL está em `PROPOSTA_fase1_empresa_equipe_instrutores.sql` e foi validado num PostgreSQL descartável (ver "Como foi validado").
 
 Hoje todo o módulo Business é demonstrativo (`src/lib/business/demo.ts`). Este documento propõe o banco que o torna real, **em fases**, começando pelas telas dos blocos 1, 2 e 3 (empresa, equipe e instrutores). As regras já existem em funções puras testadas (`rules.ts`, `company.ts`, `instructors.ts`…), então trocar o demonstrativo pelo banco não muda as telas.
 
