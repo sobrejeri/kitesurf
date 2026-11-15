@@ -541,3 +541,13 @@ O projeto possui um **avaliador independente preparado, não necessariamente con
 - Verificar CI **do HEAD após este handoff**; não integrar PR #256 sem sucesso e conferir Claude QA (documentado desativado/skipped). A regressão cobre 4h/2 encontros e saldo de 240 minutos somente em SQL isolado, não prova aceite, presença, habilidades ou UI real.
 - Render LIVE confirmado: `0ad170f2c174570119e6d19250fc3ae29d53355a` deploy `dep-dbsia1nf3r2c73ef8fsg`; banco Supabase VentoKite `qadkqjfmmnxvovyyhqxw` lista migrations 39–42. Não aplicar 01–38, nem abrir Protege 3B ou pagamentos.
 - Dependência E2E: sessões autorizadas de Aluno e Instrutor e reserva isolada acessível. Prioridade #90–#94/#103: aceite → PIN/presença → minutos/habilidades/evolução → leitura do Aluno. Após CI, integrar e verificar SHA LIVE; se falhar corrigir e repetir. 0/18 frentes integralmente homologadas.
+
+
+### Retomada P0 — 15/11/2026, 05h (Fortaleza)
+- Render **live**: deploy `dep-dbslnv95efls73etkr5g`, SHA `a46e0605b123abf45695e0b2d352dc6798fcbc10` (PR #256), finalizado em 15/11/2026 07:17 UTC.
+- Supabase projeto **qadkqjfmmnxvovyyhqxw**: migrations reais 39–42; nenhuma migração aplicada nesta rodada; Protege 3B permanece fechado.
+- PR [#257](https://github.com/sobrejeri/kitesurf/pull/257): teste no PostgreSQL descartável para a RPC `booking_balance_minutes` retornar 15 minutos ao aluno após dois encontros com 225/240 minutos registrados, e NULL a outro aluno. Commits de teste `78d8d3c` e `19635de`. **Não declarar aprovado antes do CI do HEAD.**
+- GitHub Actions do commit de teste: [verify #43693474315](https://github.com/sobrejeri/kitesurf/actions/runs/43693474315) iniciado; [Claude QA #43693474306](https://github.com/sobrejeri/kitesurf/actions/runs/43693474306) job `independent-review` **skipped**, não revisou.
+- **Retomar:** verificar CI do HEAD atualizado desta PR, corrigir qualquer falha, confirmar QA no HEAD, integrar somente se CI aprovado; confirmar SHA live após merge. Depois implementar/testar próximo bloqueio P0 de aceite/presença/evolução, sem depender de painel ou checkout.
+- **E2E real não executado:** faltam sessões autenticadas isoladas de Aluno e Instrutor, reserva de teste autorizada e navegador de homologação. O teste SQL com `set local role authenticated` não comprova interação na interface nem aceite e competências. Fila A→B→C exige três instrutores de teste para E2E real.
+- **Sem mutação de produção:** nenhuma reserva real, pagamento, migration ou dado Supabase alterado. Homologação integral segue 0/18.
