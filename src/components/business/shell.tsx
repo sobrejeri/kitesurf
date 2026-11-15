@@ -100,7 +100,7 @@ export function BusinessShell({ children, person }: { children: React.ReactNode;
 
   return (
     <div className="theme-pro flex min-h-dvh bg-canvas text-ink">
-      <aside aria-label="Menu do Business" className={`vk-chrome hidden shrink-0 flex-col transition-[width] duration-200 lg:sticky lg:top-0 lg:flex lg:h-dvh ${collapsed ? 'lg:w-[76px]' : 'lg:w-[248px]'}`}>
+      <aside aria-label="Menu do Business" className={`print:!hidden vk-chrome hidden shrink-0 flex-col transition-[width] duration-200 lg:sticky lg:top-0 lg:flex lg:h-dvh ${collapsed ? 'lg:w-[76px]' : 'lg:w-[248px]'}`}>
         <div className={`flex h-16 items-center ${collapsed ? 'justify-center' : 'justify-between px-4'}`}>
           {collapsed ? null : <Logo size="sm" />}
           <button type="button" onClick={toggle} aria-label={collapsed ? 'Expandir menu' : 'Recolher menu'} aria-pressed={collapsed}
@@ -131,7 +131,7 @@ export function BusinessShell({ children, person }: { children: React.ReactNode;
       </aside>
 
       <div className="flex min-w-0 flex-1 flex-col">
-        <header className="sticky top-0 z-40 flex min-h-16 flex-wrap items-center gap-x-3 gap-y-2 border-b border-line bg-chrome px-3 py-2 sm:flex-nowrap sm:px-5">
+        <header className="print:hidden sticky top-0 z-40 flex min-h-16 flex-wrap items-center gap-x-3 gap-y-2 border-b border-line bg-chrome px-3 py-2 sm:flex-nowrap sm:px-5">
           <span className="vk-chrome shrink-0 rounded-[12px] px-2.5 py-1 lg:hidden"><Logo size="sm" /></span>
           <span className="ml-auto sm:hidden" />
           <div className="order-last w-full sm:order-none sm:w-auto sm:min-w-0 sm:flex-1"><ScopeSelector /></div>
@@ -141,7 +141,7 @@ export function BusinessShell({ children, person }: { children: React.ReactNode;
         <main className="mx-auto w-full max-w-[1280px] flex-1 px-3 pb-28 pt-5 sm:px-5 lg:pb-10">{children}</main>
       </div>
 
-      <nav aria-label="Navegação do Business" className="fixed inset-x-0 bottom-0 z-40 border-t border-line bg-surface pb-[env(safe-area-inset-bottom)] lg:hidden">
+      <nav aria-label="Navegação do Business" className="print:hidden fixed inset-x-0 bottom-0 z-40 border-t border-line bg-surface pb-[env(safe-area-inset-bottom)] lg:hidden">
         <ul className="mx-auto grid max-w-lg grid-cols-5">
           {tabs.map((i) => {
             const on = isActive(pathname, i.href);
