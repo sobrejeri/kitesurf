@@ -39,12 +39,20 @@ function form(fields) {
   const values = new Map(Object.entries(fields));
   return { get(name) { return values.has(name) ? values.get(name) : null; } };
 }
-const { startMeeting, recordMeetingWithSkills } = module.exports;
+const { startMeeting, recordMeeting, recordMeetingWithSkills } = module.exports;
 
 // First meeting: invalid presence code never reaches the database.
 let result = await startMeeting({}, form({ meetingId, presenceCode: '12' }));
 assert.ok(result.error);
 assert.equal(calls.length, 0);
+
+// Legacy minutes-only form must also reject blank and missing values.
+for (const doneMinutes of ['', '   ', null]) {
+  const before = calls.length;
+  result = await recordMeeting({}, form({ meetingId, doneMinutes, note: '' }));
+  assert.ok(result.error);
+  assert.equal(calls.length, before, 'Empty minutes must not reach record_meeting');
+}
 
 // Valid presence calls ONLY the ordered RPC (never legacy start_meeting).
 result = await startMeeting({}, form({ meetingId, presenceCode: '1234' }));
