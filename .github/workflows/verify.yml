@@ -63,6 +63,8 @@ jobs:
         run: node --experimental-strip-types scripts/test-business-finance.mjs
       - name: Verify Business stock, rentals and maintenance
         run: node --experimental-strip-types scripts/test-business-stock.mjs
+      - name: Verify Business shop, cart, coupons and per-unit orders
+        run: node --experimental-strip-types scripts/test-business-shop.mjs
       - name: Verify workspace phone header fits the logo and area label
         run: node scripts/test-workspace-mobile-header-fit.mjs
       - name: Verify accessible shared fields and bounded progress meters

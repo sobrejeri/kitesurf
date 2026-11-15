@@ -289,3 +289,39 @@ export const MAINTENANCE: readonly MaintenanceTicket[] = [
   { id: 'mt-1', equipmentId: 'eq-10', openedOffset: -3, description: 'Quilha quebrada, devolvida em estado ruim', costCents: null, status: 'open' },
   { id: 'mt-2', equipmentId: 'eq-3', openedOffset: -8, description: 'Troca de bexiga', costCents: 18000, status: 'done' },
 ];
+
+// ---- Bloco 5: lojinha da escola (demonstrativo) ----
+export type ShopOrigin = 'vitrine' | 'qr' | 'instagram' | 'afiliado' | 'balcao';
+export const ORIGIN_LABEL: Record<ShopOrigin, string> = { vitrine: 'Vitrine da escola', qr: 'QR Code', instagram: 'Instagram', afiliado: 'Afiliado', balcao: 'Balcão' };
+export type ShopOrderStatus = 'received' | 'confirmed' | 'ready' | 'delivered' | 'cancelled';
+/** The cart stores choices only. Prices, stock and availability are always looked up again from the catalog. */
+export type CartItem =
+  | { id: string; kind: 'lesson'; serviceId: string; unitId: string; instructorId: string; dayOffset: number; start: string; people: number }
+  | { id: string; kind: 'product'; productId: string; unitId: string; qty: number }
+  | { id: string; kind: 'rental'; type: EquipmentType; unitId: string; hours: number; qty: number };
+export interface ShopOrder { id: string; number: string; customer: string; phone: string; origin: ShopOrigin; status: ShopOrderStatus; createdOffset: number; couponCode?: string; items: CartItem[] }
+export interface Coupon { id: string; code: string; kind: 'percent' | 'fixed'; value: number; minCents: number; unitIds: string[]; untilOffset: number; maxUses: number; used: number; active: boolean }
+export interface StoreSettings { name: string; slogan: string; whatsapp: string; accent: 'azul' | 'preto' | 'cinza'; published: boolean }
+
+export const STORE: StoreSettings = { name: 'Ventos do Norte Kite School', slogan: 'Aulas e equipamentos em Preá e Jericoacoara', whatsapp: '88999990000', accent: 'azul', published: false };
+export const COUPONS: readonly Coupon[] = [
+  { id: 'c-1', code: 'VENTO10', kind: 'percent', value: 1000, minCents: 0, unitIds: [], untilOffset: 60, maxUses: 100, used: 12, active: true },
+  { id: 'c-2', code: 'PREA20', kind: 'fixed', value: 2000, minCents: 15000, unitIds: ['u-prea'], untilOffset: 30, maxUses: 20, used: 20, active: true },
+  { id: 'c-3', code: 'VERAO', kind: 'percent', value: 1500, minCents: 20000, unitIds: [], untilOffset: -5, maxUses: 50, used: 8, active: true },
+  { id: 'c-4', code: 'PAUSADO', kind: 'fixed', value: 1000, minCents: 0, unitIds: [], untilOffset: 90, maxUses: 10, used: 0, active: false },
+];
+export const SHOP_ORDERS: readonly ShopOrder[] = [
+  { id: 'o-1', number: 'VK-1041', customer: 'Camila Duarte', phone: '88999991111', origin: 'vitrine', status: 'received', createdOffset: 0, couponCode: 'VENTO10', items: [
+    { id: 'a', kind: 'lesson', serviceId: 's-ini', unitId: 'u-prea', instructorId: 'i-1', dayOffset: 2, start: '08:00', people: 1 },
+    { id: 'b', kind: 'product', productId: 'p-cam', unitId: 'u-prea', qty: 1 }] },
+  { id: 'o-2', number: 'VK-1040', customer: 'Bruno Alves', phone: '88999992222', origin: 'instagram', status: 'confirmed', createdOffset: -1, items: [
+    { id: 'a', kind: 'lesson', serviceId: 's-ini', unitId: 'u-jeri-centro', instructorId: 'i-2', dayOffset: 3, start: '09:00', people: 2 },
+    { id: 'b', kind: 'rental', type: 'colete', unitId: 'u-jeri-centro', hours: 2, qty: 1 }] },
+  { id: 'o-3', number: 'VK-1039', customer: 'Helena Prado', phone: '88999993333', origin: 'afiliado', status: 'ready', createdOffset: -2, items: [
+    { id: 'a', kind: 'product', productId: 'p-pro', unitId: 'u-prea', qty: 2 },
+    { id: 'b', kind: 'product', productId: 'p-bon', unitId: 'u-jeri-centro', qty: 1 }] },
+  { id: 'o-4', number: 'VK-1038', customer: 'Diego Moura', phone: '88999994444', origin: 'qr', status: 'delivered', createdOffset: -4, items: [
+    { id: 'a', kind: 'rental', type: 'prancha', unitId: 'u-prea', hours: 3, qty: 1 }] },
+  { id: 'o-5', number: 'VK-1037', customer: 'Larissa Neri', phone: '88999995555', origin: 'balcao', status: 'cancelled', createdOffset: -6, items: [
+    { id: 'a', kind: 'product', productId: 'p-oc', unitId: 'u-prea', qty: 1 }] },
+];
