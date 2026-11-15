@@ -219,6 +219,17 @@ begin
     raise exception 'IDOR: another student reads booking balance via RPC';
   end if;
   execute 'reset role';
+  -- Re-check the unrelated instructor AFTER both progress records exist.
+  -- Pre-lesson RLS checks alone do not prove that notes and actual minutes
+  -- remain private after the instructor has completed both encounters.
+  perform set_config('request.jwt.claim.sub','00000000-0000-0000-0000-0000000000a2',true);
+  execute 'set local role authenticated';
+  select count(*) into v_count from public.booking_meetings
+    where booking_id=v_id and (done_minutes>0 or note is not null);
+  if v_count<>0 then
+    raise exception 'IDOR: unrelated instructor reads completed lesson progress';
+  end if;
+  execute 'reset role';
   raise notice 'PASS: 4h booking confirmed, instructor recorded 2 encounters, student reads 225 completed minutes and progress';
   raise notice 'PASS: RLS isolates both meetings; server price snapshot matches 4h';
   raise notice 'PASS: authenticated student booking 4h in two days persisted as 2x120 minutes';

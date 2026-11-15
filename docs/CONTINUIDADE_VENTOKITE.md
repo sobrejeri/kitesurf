@@ -551,3 +551,12 @@ O projeto possui um **avaliador independente preparado, não necessariamente con
 - **Retomar:** verificar CI do HEAD atualizado desta PR, corrigir qualquer falha, confirmar QA no HEAD, integrar somente se CI aprovado; confirmar SHA live após merge. Depois implementar/testar próximo bloqueio P0 de aceite/presença/evolução, sem depender de painel ou checkout.
 - **E2E real não executado:** faltam sessões autenticadas isoladas de Aluno e Instrutor, reserva de teste autorizada e navegador de homologação. O teste SQL com `set local role authenticated` não comprova interação na interface nem aceite e competências. Fila A→B→C exige três instrutores de teste para E2E real.
 - **Sem mutação de produção:** nenhuma reserva real, pagamento, migration ou dado Supabase alterado. Homologação integral segue 0/18.
+
+
+### Retomada P0 — 15/11/2026 07:15 BRT
+
+- PR #258 integrada com CI `43698665258` aprovado, Claude QA `43698665292` skipped (não revisou); merge `267448bf9bbb3da0af0b3faff5941413a2ea320c`.
+- Render iniciou deploy `dep-dbsoch2jnfac73cgf390` desse SHA; na consulta estava `build_in_progress`, **não confirmado live**.
+- PR #259 aberta na branch `test/p0-postlesson-instructor-isolation-20261115`, acrescentando teste SQL de isolamento do instrutor não atribuído **após** os dois registros de evolução; verificar CI do HEAD atualizado e Claude QA antes de integrar.
+- Supabase VentoKite: migrations 39–42 presentes, sem nova aplicação; Protege 3B fechado. Não alterar reservas reais ou pagamentos.
+- E2E autenticado completo ainda não comprovado: faltam sessões isoladas Aluno/Instrutor, reserva de teste acessível e execução em navegador. Próxima sequência: CI #259 → merge se aprovado → SHA live → E2E → conflitos/fila/reagendamento.
