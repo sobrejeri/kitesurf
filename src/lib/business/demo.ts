@@ -136,3 +136,44 @@ export const EXTERNAL_BOOKINGS: readonly ExternalBooking[] = [
   { id: 'e-4', code: 'PRE-0004', unitId: 'u-prea', serviceId: 's-ini', instructorId: 'i-1', dayOffset: -1, start: '15:00', minutes: 120, customer: 'Cliente Demo D', priceCents: 26000, status: 'done' },
   { id: 'e-5', code: 'PRE-0005', unitId: 'u-jeri-centro', serviceId: 's-int', instructorId: 'i-2', dayOffset: 1, start: '14:00', minutes: 60, customer: 'Cliente Demo E', priceCents: 16500, status: 'cancelled' },
 ];
+
+// ---- Bloco 6: caixa e fechamento (demonstrativo) ----
+export type MovementKind = 'sale' | 'supply' | 'bleed' | 'expense';
+/** External methods are recorded only: the platform never charges or transfers anything here. */
+export type PaymentMethod = 'cash' | 'pix_external' | 'card_external';
+export interface CashMovement { id: string; sessionId: string; kind: MovementKind; method?: PaymentMethod; cents: number; note: string; time: string }
+export interface CashSession {
+  id: string; unitId: string; operator: string; dayOffset: number; openingCents: number;
+  closing?: { countedCents: number; reason: string };
+}
+export const CASH_SESSIONS: readonly CashSession[] = [
+  { id: 'cs-1', unitId: 'u-prea', operator: 'Paula Reis', dayOffset: 0, openingCents: 20000 },
+  { id: 'cs-2', unitId: 'u-jeri-centro', operator: 'Diego Furtado', dayOffset: -1, openingCents: 15000, closing: { countedCents: 19500, reason: 'Troco entregue sem registro' } },
+  { id: 'cs-3', unitId: 'u-prea', operator: 'Rafaela Costa', dayOffset: -2, openingCents: 20000, closing: { countedCents: 8000, reason: '' } },
+];
+export const CASH_MOVEMENTS: readonly CashMovement[] = [
+  { id: 'm-1', sessionId: 'cs-1', kind: 'sale', method: 'cash', cents: 15000, note: 'Aula intermediária PRE-0002', time: '08:40' },
+  { id: 'm-2', sessionId: 'cs-1', kind: 'sale', method: 'pix_external', cents: 26000, note: 'Aula iniciante, Pix recebido na conta da escola', time: '09:10' },
+  { id: 'm-3', sessionId: 'cs-1', kind: 'supply', method: 'cash', cents: 5000, note: 'Reforço de troco', time: '09:30' },
+  { id: 'm-4', sessionId: 'cs-1', kind: 'bleed', method: 'cash', cents: 30000, note: 'Depósito para o cofre', time: '11:00' },
+  { id: 'm-5', sessionId: 'cs-1', kind: 'expense', method: 'cash', cents: 2500, note: 'Água para os alunos', time: '11:20' },
+  { id: 'm-6', sessionId: 'cs-2', kind: 'sale', method: 'cash', cents: 28000, note: 'Aula iniciante', time: '09:05' },
+  { id: 'm-7', sessionId: 'cs-2', kind: 'sale', method: 'card_external', cents: 28000, note: 'Aula iniciante, maquininha da escola', time: '10:15' },
+  { id: 'm-8', sessionId: 'cs-2', kind: 'expense', method: 'cash', cents: 3000, note: 'Gelo e lanche da equipe', time: '12:00' },
+  { id: 'm-9', sessionId: 'cs-2', kind: 'bleed', method: 'cash', cents: 20000, note: 'Retirada do gerente', time: '16:30' },
+  { id: 'm-10', sessionId: 'cs-3', kind: 'sale', method: 'cash', cents: 30000, note: 'Aula iniciante', time: '09:20' },
+  { id: 'm-11', sessionId: 'cs-3', kind: 'expense', method: 'cash', cents: 2000, note: 'Material de limpeza', time: '13:00' },
+  { id: 'm-12', sessionId: 'cs-3', kind: 'bleed', method: 'cash', cents: 40000, note: 'Depósito para o cofre', time: '17:00' },
+];
+
+export type ClosingMode = 'daily' | 'shift' | 'manual';
+export const CLOSING_MODES: readonly { id: ClosingMode; label: string; hint: string }[] = [
+  { id: 'daily', label: 'Fechamento diário', hint: 'Um caixa por dia, conferido ao fim do expediente.' },
+  { id: 'shift', label: 'Fechamento por turno', hint: 'Cada turno abre e fecha o seu caixa.' },
+  { id: 'manual', label: 'Fechamento manual', hint: 'O gerente decide quando fechar.' },
+];
+export type PrintPurpose = 'closing' | 'sale' | 'booking' | 'rental' | 'bleed' | 'supply' | 'external_payment';
+export const PRINT_PURPOSES: readonly { id: PrintPurpose; label: string }[] = [
+  { id: 'closing', label: 'Fechamento de caixa' }, { id: 'sale', label: 'Vendas' }, { id: 'booking', label: 'Reservas' }, { id: 'rental', label: 'Aluguéis' },
+  { id: 'bleed', label: 'Sangrias' }, { id: 'supply', label: 'Suprimentos' }, { id: 'external_payment', label: 'Pagamentos externos registrados' },
+];

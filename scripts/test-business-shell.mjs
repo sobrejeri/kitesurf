@@ -69,7 +69,7 @@ const files = [...walk('src/app/admin/business'), ...walk('src/components/busine
 for (const f of files) {
   const s = read(f);
   assert.doesNotMatch(s, /createSupabaseServerClient|supabase\.|\.rpc\(|'use server'/, `${f}: demo screens never touch the database`);
-  assert.doesNotMatch(s, /pix|checkout|estorno|repasse/i, `${f}: no payment features`);
+  assert.doesNotMatch(s, /checkout|estorno|repasse|gateway|stripe|mercadopago|pagar\.?me|createPayment|fetch\(/i, `${f}: no payment processing or outside calls`);
 }
 const pages = files.filter((f) => f.endsWith('page.tsx') && !f.includes('/nova/') );
 for (const f of pages) assert.match(read(f), /DemoBanner/, `${f} identifies demo data`);
