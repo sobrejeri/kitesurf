@@ -39,12 +39,20 @@ function form(fields) {
   const values = new Map(Object.entries(fields));
   return { get(name) { return values.has(name) ? values.get(name) : null; } };
 }
-const { startMeeting, recordMeetingWithSkills } = module.exports;
+const { startMeeting, recordMeeting, recordMeetingWithSkills } = module.exports;
 
 // First meeting: invalid presence code never reaches the database.
 let result = await startMeeting({}, form({ meetingId, presenceCode: '12' }));
 assert.ok(result.error);
 assert.equal(calls.length, 0);
+
+// Legacy minutes-only form must also reject blank and missing values.
+for (const doneMinutes of ['', '   ', null]) {
+  const before = calls.length;
+  result = await recordMeeting({}, form({ meetingId, doneMinutes, note: '' }));
+  assert.ok(result.error);
+  assert.equal(calls.length, before, 'Empty minutes must not reach record_meeting');
+}
 
 // Valid presence calls ONLY the ordered RPC (never legacy start_meeting).
 result = await startMeeting({}, form({ meetingId, presenceCode: '1234' }));
@@ -73,6 +81,9 @@ for (const input of [
   skills(120, { step3: 'invalid' }),
   skills(120, { step1: 'none', step2: 'none' }),
   skills(0),
+  skills(120, { doneMinutes: '' }),
+  skills(120, { doneMinutes: '   ' }),
+  skills(120, { doneMinutes: null }),
   skills(481),
   skills(-1),
   skills(120, { meetingId: 'not-a-uuid' }),
@@ -86,6 +97,7 @@ for (const input of [
 assert.equal(calls.length, beforeInvalid, 'Invalid evolution must not reach privileged RPC');
 
 // A malformed meeting ID or presence code must never reach the ordered start RPC.
+// Empty minutes must not coerce to zero and silently close a lesson.
 const beforeInvalidStart = calls.length;
 for (const input of [
   { meetingId: 'not-a-uuid', presenceCode: '1234' },
