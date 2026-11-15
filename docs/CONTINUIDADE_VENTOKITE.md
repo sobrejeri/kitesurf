@@ -524,3 +524,13 @@ O projeto possui um **avaliador independente preparado, não necessariamente con
 - PR #255, branch `test/p0-four-hour-partial-balance-20261114`: regressão SQL transacional de 4h contratadas/210min entregues/30min de saldo; aguarda CI, merge e deploy. Nenhuma migration ou pagamento executado.
 - Claude QA documentado como desativado; confirmar status efetivo do job antes de integrar.
 - Retomada: verificar CI da PR #255 e corrigir eventuais falhas; integrar somente com critérios atendidos, confirmar SHA live e construir cenário autenticado 4h/2 encontros ou testes automatizados equivalentes sem afetar reservas reais. Issues #93, #103 e #105 atualizadas.
+
+## Handoff P0 — 14/11/2026, PR #255
+
+- CI do commit `22ee843f` falhou no teste SQL `99zzzzzzzzzz_booking_balance_reuse.test.sql:231`: `DO $$` terminava incorretamente com `END $;`.
+- Correção de código/teste no commit `0b694035`: fechamento `END $$;`, sem migração ou alteração de produção.
+- Verificar CI do novo HEAD, incluindo SQL; Claude QA estava `skipped` por integração desativada, portanto **não revisou**.
+- Render último LIVE verificado: `768749c8` / `dep-dbscv468bjmc73eecpi0`; Supabase kitesurf somente migrations 39–42; Protege 3B fechado.
+- Não integrar PR #255 sem CI aprovado. Após merge, conferir novo SHA LIVE no Render.
+- P0 E2E real pendente: sessões autorizadas Aluno e Instrutor e reserva de teste isolada para 4h em dois encontros, aceite, presença, minutos, evolução e leitura do Aluno. Teste SQL de saldo parcial não prova esse cenário.
+- Retomar issues #90–#94 e #103; priorizar código/testes sobre documentação e painéis/checkout.
