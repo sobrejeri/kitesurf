@@ -95,3 +95,29 @@ export const NOTIFICATIONS = [
   { id: 'n-1', text: 'Convite enviado a Larissa Moura aguarda resposta.', href: '/admin/business/instrutores' },
   { id: 'n-2', text: 'Conflito de agenda detectado entre unidades.', href: '/admin/business/agenda' },
 ] as const;
+
+// ---- Bloco 4: serviços e preços (demonstrativo) ----
+export interface Service { id: string; name: string; minutes: number; capacity: number; baseCents: number; description: string }
+/** A service is registered once and enabled per unit, with its own price, instructors, days and place. */
+export interface UnitService { serviceId: string; unitId: string; priceCents: number | null; instructorIds: string[]; weekdays: number[]; place: string }
+export interface PackageOffer { id: string; name: string; serviceId: string; lessons: number; priceCents: number; validDays: number }
+
+export const SERVICES: readonly Service[] = [
+  { id: 's-ini', name: 'Aula iniciante', minutes: 120, capacity: 2, baseCents: 26000, description: 'Primeiro contato: segurança, vento e controle da pipa.' },
+  { id: 's-int', name: 'Aula intermediária', minutes: 60, capacity: 2, baseCents: 15000, description: 'Body drag, partida na prancha e direção.' },
+  { id: 's-ava', name: 'Aula avançada', minutes: 120, capacity: 1, baseCents: 34000, description: 'Bordejos, saltos e manobras, individual.' },
+];
+
+export const UNIT_SERVICES: readonly UnitService[] = [
+  { serviceId: 's-ini', unitId: 'u-prea', priceCents: null, instructorIds: ['i-1', 'i-3'], weekdays: [1, 2, 3, 4, 5, 6], place: 'Praia do Preá, ponto 2' },
+  { serviceId: 's-ini', unitId: 'u-jeri-centro', priceCents: 28000, instructorIds: ['i-1', 'i-2'], weekdays: [0, 1, 2, 3, 4, 5, 6], place: 'Praia de Jericoacoara, em frente ao Pôr do Sol' },
+  { serviceId: 's-ini', unitId: 'u-jeri-lagoa', priceCents: 30000, instructorIds: ['i-2'], weekdays: [3, 4, 5, 6], place: 'Lagoa do Paraíso, deck principal' },
+  { serviceId: 's-int', unitId: 'u-prea', priceCents: null, instructorIds: ['i-1', 'i-3'], weekdays: [1, 2, 3, 4, 5, 6], place: 'Praia do Preá, ponto 2' },
+  { serviceId: 's-int', unitId: 'u-jeri-centro', priceCents: 16500, instructorIds: ['i-2'], weekdays: [1, 2, 3, 4, 5], place: 'Praia de Jericoacoara, em frente ao Pôr do Sol' },
+  { serviceId: 's-ava', unitId: 'u-prea', priceCents: 36000, instructorIds: ['i-3'], weekdays: [2, 4, 6], place: 'Praia do Preá, ponto 3' },
+];
+
+export const PACKAGES: readonly PackageOffer[] = [
+  { id: 'p-1', name: 'Pacote 5 aulas iniciante', serviceId: 's-ini', lessons: 5, priceCents: 120000, validDays: 90 },
+  { id: 'p-2', name: 'Pacote 3 aulas intermediárias', serviceId: 's-int', lessons: 3, priceCents: 42000, validDays: 60 },
+];
