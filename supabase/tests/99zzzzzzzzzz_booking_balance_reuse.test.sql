@@ -255,5 +255,5 @@ BEGIN
   ASSERT public.booking_balance_minutes(v_bid)=0,
     'Student sees no remaining minutes after both meetings';
   PERFORM pg_temp.reset();
-END $;
+END $$;
 ROLLBACK;
