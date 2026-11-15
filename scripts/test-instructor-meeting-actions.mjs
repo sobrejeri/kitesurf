@@ -73,6 +73,9 @@ for (const input of [
   skills(120, { step3: 'invalid' }),
   skills(120, { step1: 'none', step2: 'none' }),
   skills(0),
+  skills(120, { doneMinutes: '' }),
+  skills(120, { doneMinutes: '   ' }),
+  skills(120, { doneMinutes: null }),
   skills(481),
   skills(-1),
   skills(120, { meetingId: 'not-a-uuid' }),
@@ -86,7 +89,7 @@ for (const input of [
 assert.equal(calls.length, beforeInvalid, 'Invalid evolution must not reach privileged RPC');
 
 // A malformed meeting ID or presence code must never reach the ordered start RPC.
-const beforeInvalidStart = calls.length;
+// Empty minutes must not coerce to zero and silently close a lesson.\nconst beforeInvalidStart = calls.length;
 for (const input of [
   { meetingId: 'not-a-uuid', presenceCode: '1234' },
   { meetingId: secondMeetingId, presenceCode: '12ab' },
