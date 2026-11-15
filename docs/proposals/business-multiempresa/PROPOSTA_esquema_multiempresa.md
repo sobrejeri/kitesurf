@@ -99,3 +99,20 @@ Cada fase repete o padrão obrigatório: coluna `company_id` (e `unit_id` quando
 - Políticas chamam funções por linha; para volumes grandes valem índices e medição. Com a escala atual não é problema, e eu mediria antes da fase 2.
 - Não resolve pagamento de comissões, impressão térmica nem armazenamento de comprovantes: continuam decisões suas.
 - Não foi aplicada em projeto Supabase real; a validação é em PostgreSQL local com o mesmo stub usado nos testes do repositório.
+
+
+## Fase 2 (serviços, preços e reservas presenciais): decisões novas
+
+Migration: `supabase/migrations/20261115130000_business_services_bookings.sql`, testes em `supabase/tests/99zzzzzzzzzzzzzz_business_services_bookings.test.sql`, reversão em `REVERSAO_fase2.sql`.
+
+**O que cria:** serviços (duração, capacidade), preços em **versões** por unidade (nova linha, nunca edição), serviço por unidade (dias, local, instrutores), pacotes e reservas presenciais com **valor congelado**, mais as funções de escrita e a consulta de "ocupado".
+
+**Decisões que preciso de você (recomendo aprovar as três):**
+
+10. **Agenda única de verdade.** O banco já tem a agenda do instrutor (horário semanal, bloqueios, buffer e reservas digitais), mas só enxerga as **digitais**. Para o instrutor nunca estar em dois lugares, a reserva presencial precisa entrar nela, e a função `instructor_can_attend` (usada pelo fluxo digital) ganha **um bloco**: reservas presenciais confirmadas de **qualquer empresa** ocupam o horário. É a única alteração no fluxo digital. Provas: o teste novo, a suíte completa `scripts/test-db.sh` (inclui as corridas de reservas simultâneas) e a função restaurada bit a bit pela reversão (mesmo hash da versão original).
+11. **Outra empresa só vê "ocupado".** `instructor_busy_intervals` devolve apenas início e fim, de qualquer origem, e só para quem tem vínculo ativo com o instrutor. A recusa de agenda usa sempre a mesma mensagem, que não revela de quem é o horário (testado, inclusive com mutação).
+12. **Reserva presencial não cobra nada.** Registra o atendimento com preço, comissão e repasse congelados (comissão calculada uma vez, repasse por subtração, CHECK de soma); o recebimento continua fora do VentoKite, como já está nas telas.
+
+**Garantias testadas:** valores saem do banco (cliente só escolhe unidade, serviço, instrutor e horário); preço ou comissão novos valem só para reservas novas; conflito entre unidades, entre empresas e com o fluxo digital; horário semanal, bloqueios, dias do serviço e horário da unidade; remarcar mantém os valores, cancelar exige motivo e libera o horário; reserva encerrada não muda; isolamento total entre empresas. Seis mutações deliberadas foram detectadas.
+
+**Limites:** o instrutor ainda não lê as próprias reservas presenciais (precisa de uma consulta sem o telefone do cliente, fica para a tela do instrutor); pacote não tem venda nem saldo ainda (fase de lojinha); duração em múltiplos de 15 minutos, enquanto o fluxo digital trabalha em horas.
