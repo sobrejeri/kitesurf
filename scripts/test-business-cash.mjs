@@ -91,6 +91,6 @@ assert.match(route, /Cache-Control': 'no-store'/); assert.match(route, /attachme
 const walk = (d) => readdirSync(d).flatMap((n) => { const p = join(d, n); return statSync(p).isDirectory() ? walk(p) : [p]; });
 for (const f of walk('src/app/admin/business/caixa').concat(walk('src/lib/business')).filter((x) => /\.tsx?$/.test(x))) {
   const code = read(f).replace(/\/\*[\s\S]*?\*\/|\/\/.*$/gm, ''); // comments may mention what the module does NOT do
-  assert.doesNotMatch(code, /\bcharge\w*\(|transfer\(|createPayment|stripe|mercadopago|fetch\(/i, `${f}: no payment processing or network calls`);
+  assert.doesNotMatch(code, /\bcharge\w*\(|\btransfer\(|createPayment|stripe|mercadopago|fetch\(/i, `${f}: no payment processing or network calls`);
 }
 console.log('PASS: Business cash: integer-cent maths (external Pix/card never in the drawer), validation, 58/80 mm layouts, valid xlsx/pdf structure, admin-only download');

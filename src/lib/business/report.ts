@@ -74,3 +74,27 @@ export function financePdfLines(scope: Scope, days: number): string[] {
     'Pagamentos aos instrutores são feitos pela escola, fora do VentoKite.',
   ];
 }
+
+// ---- Stock report ----
+import { EQUIPMENT, PRODUCTS, RENTALS } from './demo.ts';
+import { CONDITION_LABEL, STATUS_LABEL, TYPE_LABEL, equipmentInScope, equipmentStatus, productStock, stockUnits } from './stock.ts';
+
+export function stockSheetRows(scope: Scope): Cell[][] {
+  const units = stockUnits(scope); const name = (id: string) => UNITS.find((u) => u.id === id)?.name ?? id;
+  return [
+    [{ bold: 'Estoque (demonstração)' }], [],
+    [{ bold: 'Produto' }, { bold: 'Código' }, ...units.map((u) => ({ bold: name(u) }))],
+    ...PRODUCTS.map((p): Cell[] => [p.name, p.sku, ...units.map((u) => String(productStock(p.id, u)))]), [],
+    [{ bold: 'Equipamentos' }], [{ bold: 'Código' }, { bold: 'Tipo' }, { bold: 'Unidade' }, { bold: 'Estado' }, { bold: 'Situação' }],
+    ...equipmentInScope(scope).map((q): Cell[] => [q.code, TYPE_LABEL[q.type], name(q.unitId), CONDITION_LABEL[q.condition], STATUS_LABEL[equipmentStatus(q)]]), [],
+    ['Aluguéis em andamento', String(RENTALS.filter((r) => !r.returned && equipmentInScope(scope).some((q) => q.id === r.equipmentId)).length)],
+  ];
+}
+export function stockPdfLines(scope: Scope): string[] {
+  const units = stockUnits(scope); const name = (id: string) => UNITS.find((u) => u.id === id)?.name ?? id;
+  return [
+    'VENTOKITE BUSINESS - ESTOQUE (DEMONSTRAÇÃO)', '', 'PRODUTOS POR UNIDADE', `${'Produto'.padEnd(26)} ${units.map((u) => name(u).slice(0, 12).padStart(13)).join('')}`,
+    ...PRODUCTS.map((p) => `${p.name.slice(0, 26).padEnd(26)} ${units.map((u) => String(productStock(p.id, u)).padStart(13)).join('')}`), '', 'EQUIPAMENTOS',
+    ...equipmentInScope(scope).map((q) => `${q.code.padEnd(7)} ${TYPE_LABEL[q.type].padEnd(10)} ${name(q.unitId).slice(0, 18).padEnd(18)} ${CONDITION_LABEL[q.condition].padEnd(8)} ${STATUS_LABEL[equipmentStatus(q)]}`),
+  ].concat(EQUIPMENT.length === 0 ? ['Sem equipamentos.'] : []);
+}
