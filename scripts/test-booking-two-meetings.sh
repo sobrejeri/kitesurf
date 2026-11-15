@@ -229,7 +229,38 @@ begin
   if v_count<>0 then
     raise exception 'IDOR: unrelated instructor reads completed lesson progress';
   end if;
+  -- Completed progress must remain immutable to non-assigned actors, not
+  -- merely hidden by SELECT policies. Test direct writes after completion.
+  begin
+    update public.booking_meetings
+       set done_minutes=0, note='forged post-lesson update'
+     where id=v_m1;
+    get diagnostics v_count = row_count;
+    if v_count<>0 then
+      raise exception 'SECURITY: unrelated instructor changed completed progress';
+    end if;
+  exception when insufficient_privilege then null; end;
   execute 'reset role';
+  perform set_config('request.jwt.claim.sub','00000000-0000-0000-0000-0000000000b2',true);
+  execute 'set local role authenticated';
+  begin
+    update public.booking_meetings
+       set done_minutes=0, note='forged student post-lesson update'
+     where id=v_m2;
+    get diagnostics v_count = row_count;
+    if v_count<>0 then
+      raise exception 'SECURITY: student changed completed instructor progress';
+    end if;
+  exception when insufficient_privilege then null; end;
+  execute 'reset role';
+  -- Verify both original records survived unauthorized write attempts.
+  if not exists (select 1 from public.booking_meetings
+    where id=v_m1 and done_minutes=110 and note='Controle e segurança: janela de vento')
+    or not exists (select 1 from public.booking_meetings
+    where id=v_m2 and done_minutes=115 and note='Water start e primeiros bordos') then
+    raise exception 'SECURITY: post-lesson write changed persisted evolution';
+  end if;
+  raise notice 'PASS: student and unrelated instructor cannot modify completed progress';
   raise notice 'PASS: 4h booking confirmed, instructor recorded 2 encounters, student reads 225 completed minutes and progress';
   raise notice 'PASS: RLS isolates both meetings; server price snapshot matches 4h';
   raise notice 'PASS: authenticated student booking 4h in two days persisted as 2x120 minutes';
