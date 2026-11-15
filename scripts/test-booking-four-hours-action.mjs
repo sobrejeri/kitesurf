@@ -19,9 +19,10 @@ let occupiedError = false;
 let rpcError = null;
 let preferredRpcMissing = false;
 let legacyRpcError = null;
-let rpcResult = requestId;
+let rpcResult;
 let viewerRole = 'student';
 const requestId = '22222222-2222-4222-8222-222222222222';
+rpcResult = requestId;
 const beachId = '11111111-1111-4111-8111-111111111111';
 const db = { async rpc(name, args) {
   calls.push({ name, args });
