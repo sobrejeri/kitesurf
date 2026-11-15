@@ -221,11 +221,10 @@ BEGIN
   PERFORM pg_temp.reset();
   -- The same paid balance must not be disclosed to a different student.
   PERFORM pg_temp.act_as(v_other_student);
-  BEGIN
-    PERFORM public.booking_balance_minutes(v_bid);
-    RAISE EXCEPTION 'Another student read the four-hour booking balance';
-  EXCEPTION WHEN sqlstate '42501' OR sqlstate 'P0002' THEN NULL;
-  END;
+  -- This SECURITY DEFINER SQL RPC hides unauthorized bookings with no row,
+  -- returning NULL rather than throwing an authorization exception.
+  ASSERT public.booking_balance_minutes(v_bid) IS NULL,
+    'Another student must not see the four-hour booking balance';
   PERFORM pg_temp.reset();
 END $$;
 ROLLBACK;
