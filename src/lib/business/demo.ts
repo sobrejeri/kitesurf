@@ -390,3 +390,48 @@ export const AUDIT_LOG: readonly AuditEntry[] = [
   { id: 'au-6', actorId: 'f-1', action: 'perm.change', unitId: 'u-jeri-lagoa', target: 'Diego Furtado', minutesAgo: 9800, detail: 'Retirou “Criar e mover aulas” em Jeri Lagoa do Paraíso.' },
   { id: 'au-7', actorId: 'f-3', action: 'link.remove', unitId: 'u-jeri-centro', target: 'Bruno Alves', minutesAgo: 14000, detail: 'Vínculo encerrado a pedido do funcionário.' },
 ];
+
+// ---- Bloco 3 (restante): instrutores, disponibilidade, distribuição e desempenho (demonstrativo) ----
+export interface Invitation { id: string; name: string; email: string; unitIds: string[]; commissionBps: number; createdOffset: number; status: 'pending' | 'accepted' | 'declined' | 'expired' }
+export const INVITATIONS: readonly Invitation[] = [
+  { id: 'inv-1', name: 'Larissa Moura', email: 'larissa@instrutores.example', unitIds: ['u-jeri-lagoa'], commissionBps: 5500, createdOffset: -2, status: 'pending' },
+  { id: 'inv-2', name: 'Caio Ferraz', email: 'caio@instrutores.example', unitIds: ['u-prea', 'u-jeri-centro'], commissionBps: 5800, createdOffset: -6, status: 'pending' },
+  { id: 'inv-3', name: 'Heitor Brandão', email: 'heitor@instrutores.example', unitIds: ['u-prea'], commissionBps: 5000, createdOffset: -40, status: 'expired' },
+  { id: 'inv-4', name: 'Bruno Teixeira', email: 'bruno@instrutores.example', unitIds: ['u-prea'], commissionBps: 6000, createdOffset: -200, status: 'accepted' },
+];
+/** The instructor's own weekly windows: one calendar for every school and unit. */
+export interface AvailabilityWindow { instructorId: string; weekday: number; from: string; to: string }
+export const AVAILABILITY: readonly AvailabilityWindow[] = [
+  ...[1, 2, 3, 4, 5, 6].map((weekday) => ({ instructorId: 'i-1', weekday, from: '07:00', to: '17:00' })),
+  ...[1, 2, 3, 4, 5].map((weekday) => ({ instructorId: 'i-2', weekday, from: '08:00', to: '16:00' })), { instructorId: 'i-2', weekday: 6, from: '08:00', to: '12:00' },
+  ...[2, 4, 6].map((weekday) => ({ instructorId: 'i-3', weekday, from: '08:00', to: '14:00' })),
+];
+/** Time taken by ANOTHER company: only "occupied" is known, never the booking itself. */
+export interface OtherBusy { instructorId: string; dayOffset: number; start: string; minutes: number }
+export const OTHER_BUSY: readonly OtherBusy[] = [{ instructorId: 'i-1', dayOffset: 1, start: '11:00', minutes: 60 }, { instructorId: 'i-2', dayOffset: 2, start: '09:00', minutes: 120 }];
+/** Individual commission is versioned like any rate: a change counts from its day on, never back. */
+export interface InstructorRateVersion { id: string; instructorId: string; unitId: string; bps: number; fromOffset: number }
+export const INSTRUCTOR_RATE_VERSIONS: readonly InstructorRateVersion[] = [
+  { id: 'ir-1', instructorId: 'i-1', unitId: 'all', bps: 5500, fromOffset: -300 }, { id: 'ir-2', instructorId: 'i-1', unitId: 'all', bps: 6000, fromOffset: -60 }, { id: 'ir-3', instructorId: 'i-1', unitId: 'u-jeri-centro', bps: 6500, fromOffset: -20 },
+  { id: 'ir-4', instructorId: 'i-2', unitId: 'all', bps: 5500, fromOffset: -200 }, { id: 'ir-5', instructorId: 'i-3', unitId: 'all', bps: 6000, fromOffset: -100 },
+];
+export interface LessonRequest { id: string; unitId: string; serviceId: string; dayOffset: number; start: string; customer: string }
+export const LESSON_REQUESTS: readonly LessonRequest[] = [
+  { id: 'rq-1', unitId: 'u-prea', serviceId: 's-ini', dayOffset: 1, start: '12:00', customer: 'Camila Duarte' },
+  { id: 'rq-2', unitId: 'u-jeri-centro', serviceId: 's-int', dayOffset: 2, start: '14:00', customer: 'Bruno Alves' },
+  { id: 'rq-3', unitId: 'u-jeri-lagoa', serviceId: 's-ini', dayOffset: 3, start: '08:00', customer: 'Helena Prado' },
+];
+export type HistoryStatus = 'done' | 'cancelled' | 'no_show';
+export interface HistoryLesson { id: string; unitId: string; instructorId: string; serviceId: string; dayOffset: number; start: string; status: HistoryStatus; commissionBps: number }
+export const LESSON_HISTORY: readonly HistoryLesson[] = [
+  { id: 'h-1', unitId: 'u-prea', instructorId: 'i-1', serviceId: 's-ini', dayOffset: -1, start: '09:00', status: 'done', commissionBps: 6000 },
+  { id: 'h-2', unitId: 'u-prea', instructorId: 'i-1', serviceId: 's-ini', dayOffset: -3, start: '09:00', status: 'done', commissionBps: 6000 },
+  { id: 'h-3', unitId: 'u-jeri-centro', instructorId: 'i-1', serviceId: 's-ini', dayOffset: -4, start: '10:00', status: 'done', commissionBps: 6500 },
+  { id: 'h-4', unitId: 'u-prea', instructorId: 'i-1', serviceId: 's-int', dayOffset: -6, start: '15:00', status: 'cancelled', commissionBps: 6000 },
+  { id: 'h-5', unitId: 'u-jeri-centro', instructorId: 'i-2', serviceId: 's-ini', dayOffset: -2, start: '09:00', status: 'done', commissionBps: 5500 },
+  { id: 'h-6', unitId: 'u-jeri-lagoa', instructorId: 'i-2', serviceId: 's-ini', dayOffset: -5, start: '09:00', status: 'no_show', commissionBps: 5500 },
+  { id: 'h-7', unitId: 'u-jeri-centro', instructorId: 'i-2', serviceId: 's-int', dayOffset: -8, start: '11:00', status: 'done', commissionBps: 5500 },
+  { id: 'h-8', unitId: 'u-prea', instructorId: 'i-3', serviceId: 's-ava', dayOffset: -2, start: '08:00', status: 'done', commissionBps: 6000 },
+  { id: 'h-9', unitId: 'u-prea', instructorId: 'i-3', serviceId: 's-ini', dayOffset: -9, start: '08:00', status: 'done', commissionBps: 6000 },
+  { id: 'h-10', unitId: 'u-prea', instructorId: 'i-3', serviceId: 's-ini', dayOffset: -12, start: '10:00', status: 'cancelled', commissionBps: 6000 },
+];

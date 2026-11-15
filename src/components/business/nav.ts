@@ -13,6 +13,8 @@ export const BUSINESS_NAV: readonly BusinessNavItem[] = [
   { group: 'Pessoas', label: 'Cargos', href: '/admin/business/cargos', icon: 'users' },
   { group: 'Pessoas', label: 'Auditoria', href: '/admin/business/auditoria', icon: 'list' },
   { group: 'Pessoas', label: 'Instrutores', href: '/admin/business/instrutores', icon: 'kite' },
+  { group: 'Pessoas', label: 'Disponibilidade', href: '/admin/business/instrutores/disponibilidade', icon: 'clock' },
+  { group: 'Pessoas', label: 'Desempenho', href: '/admin/business/instrutores/desempenho', icon: 'chart' },
   { group: 'Operação', label: 'Agenda', href: '/admin/business/agenda', icon: 'calendar', tab: true },
   { group: 'Operação', label: 'Reservas presenciais', href: '/admin/business/reservas', icon: 'book' },
   { group: 'Caixa', label: 'Caixa', href: '/admin/business/caixa', icon: 'wallet' },

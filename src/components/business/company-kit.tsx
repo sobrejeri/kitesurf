@@ -17,3 +17,7 @@ export const STAFF_TABS: readonly TabDef[] = [
 export const COMPANY_TABS: readonly TabDef[] = [
   { href: `${S}/empresa`, label: 'Perfil' }, { href: `${S}/consolidado`, label: 'Visão consolidada' }, { href: `${S}/empresa/cadastro`, label: 'Cadastro de empresa' },
 ];
+export const INSTRUCTOR_TABS: readonly TabDef[] = [
+  { href: `${S}/instrutores`, label: 'Vinculados' }, { href: `${S}/instrutores/convidar`, label: 'Convidar' }, { href: `${S}/instrutores/vinculo`, label: 'Responder convite' }, { href: `${S}/instrutores/disponibilidade`, label: 'Disponibilidade' },
+  { href: `${S}/instrutores/distribuicao`, label: 'Distribuição' }, { href: `${S}/instrutores/fila`, label: 'Fila interna' }, { href: `${S}/instrutores/historico`, label: 'Histórico' }, { href: `${S}/instrutores/desempenho`, label: 'Desempenho' },
+];
