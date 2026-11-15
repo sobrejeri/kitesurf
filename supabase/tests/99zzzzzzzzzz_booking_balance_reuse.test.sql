@@ -226,5 +226,34 @@ BEGIN
   ASSERT public.booking_balance_minutes(v_bid) IS NULL,
     'Another student must not see the four-hour booking balance';
   PERFORM pg_temp.reset();
+  -- E. Two distinct meetings account for a four-hour booking exactly once.
+  -- Admin-only test fixture; does not simulate instructor offer acceptance or UI.
+  INSERT INTO auth.users(id,email,raw_user_meta_data) VALUES
+    ('00000000-0000-0000-0000-0000000000f3','two-meetings@test.invalid','{"full_name":"Aluno Dois Encontros"}');
+  PERFORM pg_temp.act_as(v_admin);
+  v_bid:=public.create_admin_test_booking(v_instructor,
+    '00000000-0000-0000-0000-0000000000f3',v_beach,
+    jsonb_build_array(
+      jsonb_build_object('starts_at',to_char((((now() AT TIME ZONE 'America/Fortaleza')::date+45)::timestamp+interval '9 hours'),'YYYY-MM-DD"T"HH24:MI:SS')||'-03:00','hours',2),
+      jsonb_build_object('starts_at',to_char((((now() AT TIME ZONE 'America/Fortaleza')::date+46)::timestamp+interval '9 hours'),'YYYY-MM-DD"T"HH24:MI:SS')||'-03:00','hours',2)));
+  PERFORM pg_temp.reset();
+  ASSERT (SELECT count(*) FROM public.booking_meetings WHERE booking_id=v_bid)=2,
+    'Four paid hours must create exactly two meetings';
+  SELECT presence_code INTO v_pin FROM public.bookings WHERE id=v_bid;
+  FOR v_mid IN SELECT id FROM public.booking_meetings WHERE booking_id=v_bid ORDER BY starts_at,id LOOP
+    UPDATE public.booking_meetings SET starts_at=now()-interval '2 hours' WHERE id=v_mid;
+    PERFORM pg_temp.act_as(v_instructor);
+    PERFORM public.start_ordered_meeting(v_mid,v_pin);
+    PERFORM public.record_meeting(v_mid,120,'two-meeting four-hour regression');
+    PERFORM pg_temp.reset();
+  END LOOP;
+  ASSERT (SELECT sum(done_minutes) FROM public.booking_meetings WHERE booking_id=v_bid)=240,
+    'Two meetings must record exactly 240 minutes';
+  ASSERT (SELECT status FROM public.bookings WHERE id=v_bid)='completed',
+    'Booking completes after both meetings';
+  PERFORM pg_temp.act_as('00000000-0000-0000-0000-0000000000f3');
+  ASSERT public.booking_balance_minutes(v_bid)=0,
+    'Student sees no remaining minutes after both meetings';
+  PERFORM pg_temp.reset();
 END $$;
 ROLLBACK;
