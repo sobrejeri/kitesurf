@@ -8,7 +8,7 @@ const source = readFileSync(new URL('../src/app/api/internal/queue-maintenance/r
 const compiled = ts.transpileModule(source, { compilerOptions: {
   module: ts.ModuleKind.CommonJS, target: ts.ScriptTarget.ES2022,
 }}).outputText;
-const environment = { QUEUE_WORKER_ENABLED: 'false', QUEUE_WORKER_TOKEN: 'x'.repeat(48),
+const environment = { QUEUE_WORKER_ENABLED: 'false', QUEUE_WORKER_TOKEN: 'x'.repeat(48), QUEUE_WORKER_ACTIVATED_AT: '2026-11-13T11:00:00Z',
   NEXT_PUBLIC_SUPABASE_URL: 'https://test.invalid', SUPABASE_SECRET_KEY: 'test-only' };
 const queries = [];
 const rpcCalls = [];
@@ -23,6 +23,7 @@ const db = {
       select(...a) { ops.push(['select', ...a]); return q; },
       eq(...a) { ops.push(['eq', ...a]); return q; },
       lte(...a) { ops.push(['lte', ...a]); return q; },
+      gte(...a) { ops.push(['gte', ...a]); return q; },
       gt(...a) { ops.push(['gt', ...a]); return q; },
       order(...a) { ops.push(['order', ...a]); return q; },
       limit(...a) { ops.push(['limit', ...a]); queries.push(ops); return Promise.resolve(ops.some(x => x[0] === 'lte') ? expired : active); },
@@ -54,6 +55,19 @@ let response = await POST(valid);
 assert.equal(response.status, 503, 'Worker disabled by default');
 assert.equal(queries.length, 0);
 environment.QUEUE_WORKER_ENABLED = 'true';
+delete environment.QUEUE_WORKER_ACTIVATED_AT;
+response = await POST(valid);
+assert.equal(response.status, 503, 'Activation timestamp required before processing legacy requests');
+assert.equal(queries.length, 0);
+environment.QUEUE_WORKER_ACTIVATED_AT = 'not-a-date';
+response = await POST(valid);
+assert.equal(response.status, 503, 'Malformed activation timestamp must fail closed');
+assert.equal(queries.length, 0);
+environment.QUEUE_WORKER_ACTIVATED_AT = '2999-01-01T00:00:00Z';
+response = await POST(valid);
+assert.equal(response.status, 503, 'Future activation must fail closed');
+assert.equal(queries.length, 0);
+environment.QUEUE_WORKER_ACTIVATED_AT = '2026-11-13T11:00:00Z';
 response = await POST(request('Bearer wrong'));
 assert.equal(response.status, 401);
 assert.equal(queries.length, 0);
@@ -62,6 +76,7 @@ assert.equal(response.status, 200);
 assert.deepEqual(rpcCalls, ['a', 'b', 'c'], 'Deduplicate across both batches');
 assert.equal(response.body.processed, 3);
 assert.ok(queries.every(q => q.some(x => x[0] === 'limit' && x[1] === 20)));
+assert.ok(queries.every(q => q.some(x => x[0] === 'gte' && x[1] === 'created_at' && x[2] === environment.QUEUE_WORKER_ACTIVATED_AT)), 'Both queries must exclude legacy requests');
 assert.ok(queries.every(q => q.some(x => x[0] === 'eq' && x[1] === 'status' && x[2] === 'searching')));
 rpcCalls.length = 0;
 expired = { data: null, error: null };
