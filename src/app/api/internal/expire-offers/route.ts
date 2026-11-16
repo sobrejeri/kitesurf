@@ -6,9 +6,8 @@ export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
 
 /**
- * Offline offer expiry runner. Deployment is deliberately inert until BOTH
- * VENTO_OFFER_WORKER_ENABLED=true and VENTO_OFFER_WORKER_SECRET are configured.
- * Do not enable against existing production offers before a reviewed dry run.
+ * Offline offer expiry runner. Requires an explicit activation cutoff before
+ * selecting candidates. Preview remains the default.
  */
 export async function POST(request: NextRequest) {
   const disabled = () => NextResponse.json({ error: 'not_enabled' }, { status: 503 });
@@ -28,24 +27,34 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: 'unauthorized' }, { status: 401 });
   }
 
+  const nowMs = Date.now();
+  const activationMs = Date.parse(config.activatedAt ?? '');
+  if (!Number.isFinite(activationMs) || activationMs > nowMs) {
+    return NextResponse.json({ error: 'activation_not_configured' }, { status: 503 });
+  }
+  const activatedAt = new Date(activationMs).toISOString();
   const db = createClient(url, key, { auth: { autoRefreshToken: false, persistSession: false } });
   // Only candidates with expired offers or expired requests are advanced.
   // A fixed cap limits the impact of a mistakenly enabled worker.
-  const now = new Date().toISOString();
+  const now = new Date(nowMs).toISOString();
   // Sort by deadline before applying the cap. Without stable ordering, a
   // repeatedly failing request could starve older pending offers indefinitely.
   // The database RPC still owns concurrency locks and idempotent transitions.
+  // Compare the owning request's age, even if an old request got a new offer.
   const { data: expiredOffers, error: offerError } = await db.from('instructor_offers')
-    .select('request_id,expires_at').in('status', ['offered', 'suggested'])
+    .select('request_id,expires_at,instructor_requests!inner(created_at)')
+    .in('status', ['offered', 'suggested'])
+    .gte('instructor_requests.created_at', activatedAt)
     .lte('expires_at', now).order('expires_at', { ascending: true }).limit(20);
-  if (offerError) return NextResponse.json({ error: 'offer_query_failed' }, { status: 503 });
+  if (offerError || !Array.isArray(expiredOffers)) return NextResponse.json({ error: 'offer_query_failed' }, { status: 503 });
   const { data: expiredRequests, error: requestError } = await db.from('instructor_requests')
     .select('id,expires_at').eq('status', 'searching')
+    .gte('created_at', activatedAt)
     .lte('expires_at', now).order('expires_at', { ascending: true }).limit(20);
-  if (requestError) return NextResponse.json({ error: 'request_query_failed' }, { status: 503 });
+  if (requestError || !Array.isArray(expiredRequests)) return NextResponse.json({ error: 'request_query_failed' }, { status: 503 });
   const candidates = [
-    ...(expiredOffers ?? []).map((offer) => ({ id: offer.request_id, deadline: offer.expires_at })),
-    ...(expiredRequests ?? []).map((entry) => ({ id: entry.id, deadline: entry.expires_at })),
+    ...expiredOffers.map((offer) => ({ id: offer.request_id, deadline: offer.expires_at })),
+    ...expiredRequests.map((entry) => ({ id: entry.id, deadline: entry.expires_at })),
   ].filter((candidate) => typeof candidate.id === 'string' && /^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(candidate.id));
   candidates.sort((a, b) => String(a.deadline).localeCompare(String(b.deadline)) || a.id.localeCompare(b.id));
   const ids = [...new Set(candidates.map((candidate) => candidate.id))].slice(0, 10);

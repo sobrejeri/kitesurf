@@ -44,7 +44,7 @@ vm.runInNewContext(compiled, {
     if (id === 'server-only') return {};
     if (id === 'node:crypto') return { createHash, timingSafeEqual };
     if (id === '@supabase/supabase-js') return { createClient() { return db; } };
-    if (id === 'next/server') return { NextResponse: { json(body, { status }) { return { body, status }; } } };
+    if (id === 'next/server') return { NextResponse: { json(body, { status = 200 } = {}) { return { body, status }; } } };
     throw new Error('Unexpected import: ' + id);
   },
 });
@@ -94,3 +94,82 @@ response = await POST(valid);
 assert.equal(response.status, 503, 'RPC failures must be reported');
 assert.equal(response.body.failed, 1);
 console.log('PASS: queue worker disabled, authorized, bounded, deduplicated and fail-closed on selection/RPC errors');
+
+const alternativeSource = readFileSync(new URL('../src/app/api/internal/expire-offers/route.ts', import.meta.url), 'utf8');
+const alternativeCode = ts.transpileModule(alternativeSource, { compilerOptions: {
+  module: ts.ModuleKind.CommonJS, target: ts.ScriptTarget.ES2022,
+}}).outputText;
+const cutoff = '2026-11-13T11:00:00Z';
+const config = { enabled: true, apply: false, secret: 'a'.repeat(48), serviceRoleKey: 'test-only' };
+const legacyId = '00000000-0000-4000-8000-000000000001';
+const eligibleId = '00000000-0000-4000-8000-000000000002';
+const old = '2026-11-13T10:00:00Z';
+const recent = '2026-11-13T12:00:00Z';
+const alternativeCalls = [];
+let alternativeReads = 0;
+let nullOffers = false;
+const alternativeDb = {
+  from(table) {
+    alternativeReads++;
+    let minCreated;
+    let joined = false;
+    const q = {
+      select(columns) { joined = columns.includes('instructor_requests!inner(created_at)'); return q; },
+      in() { return q; }, eq() { return q; }, lte() { return q; }, order() { return q; },
+      gte(field, value) {
+        assert.equal(field, table === 'instructor_offers' ? 'instructor_requests.created_at' : 'created_at');
+        minCreated = Date.parse(value);
+        return q;
+      },
+      limit() {
+        if (table === 'instructor_offers') assert.ok(joined, 'Filter on the originating request, not the offer age');
+        if (table === 'instructor_offers' && nullOffers) return { data: null, error: null };
+        const data = [[legacyId, old], [eligibleId, recent]]
+          .filter(([, created]) => minCreated === undefined || Date.parse(created) >= minCreated)
+          .map(([id]) => table === 'instructor_offers'
+            ? { request_id: id, expires_at: recent }
+            : { id, expires_at: recent });
+        return { data, error: null };
+      },
+    };
+    return q;
+  },
+  async rpc(name, args) {
+    assert.equal(name, 'advance_instructor_offer');
+    alternativeCalls.push(args.p_request_id);
+    return { error: null };
+  },
+};
+const alternativeModule = { exports: {} };
+vm.runInNewContext(alternativeCode, {
+  module: alternativeModule, exports: alternativeModule.exports, process: { env: environment }, Date,
+  require(id) {
+    if (id === 'node:crypto') return { createHash, timingSafeEqual };
+    if (id === '@supabase/supabase-js') return { createClient: () => alternativeDb };
+    if (id === '@/lib/offer-worker-env') return { offerWorkerEnv: () => config };
+    if (id === 'next/server') return { NextResponse: { json(body, { status = 200 } = {}) { return { body, status }; } } };
+    throw new Error('Unexpected import: ' + id);
+  },
+});
+const alternatePost = alternativeModule.exports.POST;
+const alternativeValid = request('Bearer ' + config.secret);
+for (const date of [undefined, 'bad-date', '2999-01-01T00:00:00Z']) {
+  config.activatedAt = date;
+  response = await alternatePost(alternativeValid);
+  assert.equal(response.status, 503);
+}
+assert.equal(alternativeReads, 0, 'No database calls before a valid cutoff is configured');
+config.activatedAt = cutoff;
+response = await alternatePost(alternativeValid);
+assert.equal(response.status, 200);
+assert.equal(response.body.candidates, 1);
+assert.equal(alternativeCalls.length, 0, 'Preview does not run any mutation');
+config.apply = true;
+response = await alternatePost(alternativeValid);
+assert.equal(response.status, 200);
+assert.deepEqual(alternativeCalls, [eligibleId], 'Old requests are excluded from both data sources');
+nullOffers = true;
+response = await alternatePost(alternativeValid);
+assert.equal(response.status, 503);
+assert.deepEqual(alternativeCalls, [eligibleId], 'An incomplete batch must not mutate');
+console.log('PASS: alternate expiry route respects the activation cutoff in preview and apply');
