@@ -165,3 +165,33 @@ Migration: `supabase/migrations/20261115160000_business_shop_affiliates.sql`, te
 **Garantias testadas:** preços só do catálogo (valores enviados no item são ignorados); divisão do desconto exata, inclusive com resto; cada unidade vê só os seus itens; limite de usos do cupom com 20 pedidos simultâneos (exatamente 5 passam); pedido e itens congelados; estorno não diminui; afiliado lê as próprias vendas **sem nome nem telefone do cliente** e não lê a tabela de pedidos; afiliado não se aprova nem a empresa escolhe por ele; isolamento entre empresas. Doze mutações no teste de banco e duas na corrida detectadas (duas delas só depois de eu reforçar os testes).
 
 **Limites:** sem vitrine pública; sem ligação automática entre pedido entregue e venda no caixa (a escola registra a venda no caixa); pacotes ainda sem venda.
+
+
+## Fase 6 (financeiro e pagamentos externos aos instrutores)
+
+Migration: `supabase/migrations/20261115170000_business_finance.sql`, teste `supabase/tests/99zzzzzzzzzzzzzzzzzz_business_finance.test.sql`, `scripts/test-business-finance-race.sh` (concorrência real), `REVERSAO_fase6.sql` e `VERIFICACAO_fase6_somente_leitura.sql`. Depende das fases 1 a 5. **Não altera nenhuma função nem tabela anterior.** É a última fase do plano.
+
+**Decisões novas (recomendo aprovar):**
+
+26. **Pagamento ao instrutor é só registro.** A escola paga fora do VentoKite (Pix, TED ou dinheiro) e registra aqui valor, forma, referência e data. Nada é transferido nem repassado pela plataforma. O devido é a soma das comissões **congeladas** das reservas presenciais **concluídas**; um registro nunca passa do saldo (provado com 20 registros simultâneos).
+27. **O instrutor confirma o recebimento** com a própria conta, uma vez. A escola não confirma por ele. Registro errado ainda não confirmado é **anulado com motivo** (fica no histórico e deixa de contar); confirmado não muda. Isso fecha, no banco, a pendência "tela do instrutor para confirmar recebimento": falta só a tela.
+28. **Lançamentos append-only.** Receita e despesa manuais não são editadas nem apagadas; corrigir é estornar (lançamento inverso, uma vez, com motivo).
+29. **Contas a receber e a pagar.** Baixas parciais que nunca passam do valor; conta com baixa não é cancelada; situação (paga, parcial, vencida, aberta, cancelada) é calculada.
+30. **Quem mexe.** `finance.edit` (nova, sensível) só para o cargo Financeiro e o Proprietário; `finance.reports` (gerente e financeiro) continua só leitura. O resumo por período devolve só as unidades em que a pessoa vê relatórios.
+
+**Garantias testadas:** pagamento nunca acima do devido (função e gatilho, inclusive por inserção direta); só aulas concluídas contam; só o instrutor confirma; outro instrutor não vê nem confirma; anulação libera o saldo sem apagar; lançamentos e baixas imutáveis; estorno uma vez; resumo por unidade conferido com os valores do caixa (fase 4), dos lançamentos e das comissões; atendente e instrutor não veem o financeiro da empresa; isolamento entre empresas. Treze mutações no teste de banco e duas na corrida, todas detectadas.
+
+**Limites:** o resumo ainda não inclui a comissão de afiliados (ela é por pedido, não por unidade; aparece nas telas de afiliados); os relatórios em Excel e PDF continuam gerados pelo app a partir destas consultas; comprovante em anexo (arquivo) do pagamento ao instrutor não está nesta fase, só a referência em texto.
+
+## Situação geral do banco do Business
+
+| Fase | Migration | PR | Conteúdo |
+|---|---|---|---|
+| 1 | `20261115120000_business_company_core` | #275 | Empresas, unidades, equipe, convites, instrutores, auditoria |
+| 2 | `20261115130000_business_services_bookings` | #284 | Serviços, preços, reservas presenciais, agenda única (muda `instructor_can_attend`) |
+| 3 | `20261115140000_business_stock_rentals` | #287 | Estoque, equipamentos, aluguéis, manutenção |
+| 4 | `20261115150000_business_cash` | #289 | Caixa, fechamento, arquivos privados |
+| 5 | `20261115160000_business_shop_affiliates` | #290 | Lojinha, cupons, pedidos, afiliados |
+| 6 | `20261115170000_business_finance` | (este) | Financeiro, pagamentos externos aos instrutores |
+
+Todas **não aplicadas**, em PRs draft empilhados nessa ordem. Antes delas: **#283** (correção do duplo agendamento de instrutor, defeito já presente na produção). Para aplicar: `ROTEIRO_CHATGPT_APLICAR_E_TESTAR.md`, fase por fase, primeiro em projeto de teste. Pendências humanas: e-mail confirmado no Supabase (decisão 7), `pg_cron`, e a decisão de abrir ou não uma vitrine pública (decisão 21).

@@ -155,3 +155,14 @@ Migration: `supabase/migrations/20261115160000_business_shop_affiliates.sql`. Ve
 1. **Snapshot antes** (seção A). 2. Aplicar a migration inteira de uma vez.
 3. **Snapshot depois:** `perfis` e `reservas` **iguais**; `tabelas_public` +11; `funcoes_public` +21; `politicas_public` +11.
 4. Rodar `VERIFICACAO_fase5_somente_leitura.sql`. Esperado: [1] 11 tabelas com RLS; [2] 0; [3] 21 linhas (18 `definer`, 3 `false`); [4] 0; [5] 2 linhas `false`; [6] cinco situações, **sem "paid"**; [7] `false`; [8] 4 gatilhos; [9] 7 restrições; [10] 5 permissões, `shop.manage` e `affil.manage` sensíveis; [11] 0, 0, 0; [12] erro de permissão no primeiro e `0` no segundo.
+
+
+---
+
+# Fase 6 (só depois das fases 1 a 5 aplicadas e validadas)
+
+Migration: `supabase/migrations/20261115170000_business_finance.sql`. Verificação: `VERIFICACAO_fase6_somente_leitura.sql`. Projeto de **teste** primeiro. Não altera função existente.
+
+1. **Snapshot antes** (seção A). 2. Aplicar a migration inteira de uma vez.
+3. **Snapshot depois:** `perfis` e `reservas` **iguais**; `tabelas_public` +4; `funcoes_public` +18; `politicas_public` +4.
+4. Rodar `VERIFICACAO_fase6_somente_leitura.sql`. Esperado: [1] 4 tabelas com RLS; [2] 0; [3] 18 linhas (15 `definer`, 3 `false`); [4] 0; [5] 2 linhas `false`; [6] 8 gatilhos; [7] 4 restrições; [8] só pix, ted e cash; [9] `finance.edit` sensível com 1 cargo; [10] 0, 0, 0; [11] erro de permissão no primeiro e `0` no segundo.
