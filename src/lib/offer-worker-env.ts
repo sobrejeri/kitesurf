@@ -7,6 +7,8 @@ export function offerWorkerEnv() {
     enabled: process.env.VENTO_OFFER_WORKER_ENABLED === 'true',
     // eslint-disable-next-line no-restricted-syntax -- server-only worker apply gate
     apply: process.env.VENTO_OFFER_WORKER_APPLY === 'true',
+    // eslint-disable-next-line no-restricted-syntax -- server-only activation cutoff
+    activatedAt: process.env.QUEUE_WORKER_ACTIVATED_AT,
     // eslint-disable-next-line no-restricted-syntax -- server-only bearer secret
     secret: process.env.VENTO_OFFER_WORKER_SECRET,
     // eslint-disable-next-line no-restricted-syntax -- server-only Supabase service key
