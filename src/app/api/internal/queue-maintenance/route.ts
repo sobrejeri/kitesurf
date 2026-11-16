@@ -32,6 +32,7 @@ export async function POST(request: NextRequest) {
 
   // Never sweep pre-activation requests: historical offers require manual triage.
   // The timestamp must be explicitly configured before enabling this worker.
+  // eslint-disable-next-line no-restricted-syntax -- server-only activation cutoff, never browser bundled
   const activatedAt = process.env.QUEUE_WORKER_ACTIVATED_AT ?? '';
   const activationMs = Date.parse(activatedAt);
   const nowMs = Date.now();
