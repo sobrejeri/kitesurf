@@ -32,7 +32,7 @@ export async function startMeeting(_prev: ActionState, form: FormData): Promise<
 
 const Record = z.strictObject({
   meetingId: z.uuid(),
-  doneMinutes: z.preprocess(value => value == null || (typeof value === 'string' && value.trim() === '') ? NaN : value, z.coerce.number().int().min(0).max(480)),
+  doneMinutes: z.string().regex(/^(?:0|[1-9][0-9]{0,2})$/).transform(Number).pipe(z.number().int().min(0).max(480)),
   note: z.string().max(1000),
 });
 
@@ -116,7 +116,7 @@ export async function recordMeetingWithSkills(_prev: ActionState, form: FormData
   await requireRole(['instructor']);
   const parsed = z.strictObject({
     meetingId: z.uuid(),
-    doneMinutes: z.preprocess(value => value == null || (typeof value === 'string' && value.trim() === '') ? NaN : value, z.coerce.number().int().min(0).max(480)),
+    doneMinutes: z.string().regex(/^(?:0|[1-9][0-9]{0,2})$/).transform(Number).pipe(z.number().int().min(0).max(480)),
   }).safeParse({
     meetingId: form.get('meetingId'),
     doneMinutes: form.get('doneMinutes'),
