@@ -560,3 +560,11 @@ O projeto possui um **avaliador independente preparado, não necessariamente con
 - PR #259 aberta na branch `test/p0-postlesson-instructor-isolation-20261115`, acrescentando teste SQL de isolamento do instrutor não atribuído **após** os dois registros de evolução; verificar CI do HEAD atualizado e Claude QA antes de integrar.
 - Supabase VentoKite: migrations 39–42 presentes, sem nova aplicação; Protege 3B fechado. Não alterar reservas reais ou pagamentos.
 - E2E autenticado completo ainda não comprovado: faltam sessões isoladas Aluno/Instrutor, reserva de teste acessível e execução em navegador. Próxima sequência: CI #259 → merge se aprovado → SHA live → E2E → conflitos/fila/reagendamento.
+
+
+### Handoff P0 — 15/11/2026 19h BRT, PR #285
+- PR #285 (`test/p0-instructor-rpc-failclosed-20261115`): testes isolados de falha fechada por permissão negada nas ações de presença, registro legado e evolução, e role affiliate sem permissão. HEAD inicial `c4f3cb0f`; verificar HEAD final, CI e Claude QA antes do merge.
+- Render LIVE antes da PR: SHA `6126a0e980601ec196885f02a04f142846193dfe`, deploy `dep-dbt23qu417fc7383rc50` (PR #282).
+- CI inicial #285: `43768377586` e Claude QA `43768377630` estavam em andamento. O Claude QA permanece documentado como desativado; job skipped não equivale a revisão.
+- E2E autenticado de 4h/2 encontros **não executado**: faltam sessões de teste isoladas de Aluno e Instrutor, reserva autorizada e navegador de homologação. 0/18 frentes homologadas.
+- Retomada: conferir CI do HEAD atualizado, corrigir falhas; integrar somente se aprovado, confirmar SHA Render LIVE e prosseguir com testes de conflitos/fila/reagendamento sem mutar reservas reais. Não alterar Supabase ou Protege 3B nem ativar checkout real.
