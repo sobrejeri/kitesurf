@@ -14,6 +14,12 @@
 -- revalidação. Assinatura, permissões, cálculos e mensagens não mudam. Não toca em pagamentos,
 -- fila de ofertas nem preços.
 begin;
+-- PostgreSQL cannot remove argument defaults with CREATE OR REPLACE FUNCTION.
+-- Drop only the exact six-argument overload, using RESTRICT (never CASCADE).
+-- The transaction rolls back if any dependent object prevents replacement.
+-- The legacy five-argument overload remains in place until the safe delegate
+-- migration later in this sequence.
+drop function if exists public.create_booking(uuid, public.lesson_level, text, jsonb, text, boolean) restrict;
 create or replace function public.create_booking(
   p_beach_id uuid,
   p_level public.lesson_level,
