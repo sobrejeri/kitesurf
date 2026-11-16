@@ -18,15 +18,15 @@ create function pg_temp.at(off integer, hhmm text) returns timestamptz language 
   select (((now() at time zone 'America/Fortaleza')::date + off + hhmm::time) at time zone 'America/Fortaleza');
 $$;
 
-insert into auth.users (id, email, raw_user_meta_data) values
-  ('00000000-0000-0000-0000-0000000f0001', 'o1@svc.example', '{"full_name":"Dona A","role":"student"}'),
-  ('00000000-0000-0000-0000-0000000f0002', 'o2@svc.example', '{"full_name":"Dono B","role":"student"}'),
-  ('00000000-0000-0000-0000-0000000f0003', 'mg@svc.example', '{"full_name":"Gerente","role":"student"}'),
-  ('00000000-0000-0000-0000-0000000f0004', 'fi@svc.example', '{"full_name":"Financeiro","role":"student"}'),
-  ('00000000-0000-0000-0000-0000000f0005', 'at@svc.example', '{"full_name":"Atendente","role":"student"}'),
-  ('00000000-0000-0000-0000-0000000f0006', 'ins@svc.example', '{"full_name":"Instrutor","role":"instructor"}'),
-  ('00000000-0000-0000-0000-0000000f0007', 'insb@svc.example', '{"full_name":"Instrutor Sem Vinculo","role":"instructor"}'),
-  ('00000000-0000-0000-0000-0000000f0008', 'adm@svc.example', '{"full_name":"Admin","role":"student"}');
+insert into auth.users (id, email, raw_user_meta_data, email_confirmed_at) values
+  ('00000000-0000-0000-0000-0000000f0001', 'o1@svc.example', '{"full_name":"Dona A","role":"student"}', now()),
+  ('00000000-0000-0000-0000-0000000f0002', 'o2@svc.example', '{"full_name":"Dono B","role":"student"}', now()),
+  ('00000000-0000-0000-0000-0000000f0003', 'mg@svc.example', '{"full_name":"Gerente","role":"student"}', now()),
+  ('00000000-0000-0000-0000-0000000f0004', 'fi@svc.example', '{"full_name":"Financeiro","role":"student"}', now()),
+  ('00000000-0000-0000-0000-0000000f0005', 'at@svc.example', '{"full_name":"Atendente","role":"student"}', now()),
+  ('00000000-0000-0000-0000-0000000f0006', 'ins@svc.example', '{"full_name":"Instrutor","role":"instructor"}', now()),
+  ('00000000-0000-0000-0000-0000000f0007', 'insb@svc.example', '{"full_name":"Instrutor Sem Vinculo","role":"instructor"}', now()),
+  ('00000000-0000-0000-0000-0000000f0008', 'adm@svc.example', '{"full_name":"Admin","role":"student"}', now());
 update public.profiles set role = 'admin' where id = '00000000-0000-0000-0000-0000000f0008';
 update public.instructors set status = 'approved', approved_at = now() where id in ('00000000-0000-0000-0000-0000000f0006', '00000000-0000-0000-0000-0000000f0007');
 

@@ -9,7 +9,7 @@
 --    função envia escolhas (itens, cupom, código do afiliado); preços, desconto, divisão por unidade
 --    e comissão saem do banco e ficam congelados.
 --  * Desconto do cupom: calculado uma vez sobre os itens das unidades cobertas, nunca maior que
---    eles, repartido por item com o resto no último (as partes somam exatamente o desconto).
+--    eles, repartido por item com o resto no último até o valor de cada item.
 --  * Itens de várias unidades: cada unidade enxerga só os seus itens (pedidos operacionais).
 --  * Comissão de afiliado: percentual vigente no dia do pedido, congelado por item; mudança de
 --    percentual é nova versão, sem efeito retroativo. Cancelamento zera; estorno reduz na
@@ -300,7 +300,7 @@ declare
   it jsonb; priced jsonb := '[]'::jsonb; final jsonb := '[]'::jsonb; entry jsonb;
   u public.company_units; p public.company_products; s public.company_services; c public.company_coupons; l public.company_affiliate_links;
   v_unit uuid; v_kind text; v_qty integer; v_price integer; v_line integer; v_hours integer; v_rate integer;
-  v_subtotal integer := 0; v_discount integer := 0; v_base integer := 0; v_left integer; v_share integer; v_last integer := -1; idx integer;
+  v_subtotal integer := 0; v_discount integer := 0; v_base integer := 0; v_left integer; v_share integer; v_remaining_base integer;
   v_has_units boolean := false; v_eligible boolean; v_bps integer; v_comm integer := 0; v_code text := upper(trim(coalesce(p_coupon_code, '')));
   oid uuid; phone text := regexp_replace(coalesce(p_phone, ''), '\D', '', 'g');
 begin
@@ -350,9 +350,9 @@ begin
     if c.until_date < today then raise exception 'Coupon expired' using errcode = '22023'; end if;
     if c.used >= c.max_uses then raise exception 'Coupon reached its limit' using errcode = '22023'; end if;
     v_has_units := exists (select 1 from public.company_coupon_units where coupon_id = c.id);
-    for entry, idx in select value, (ordinality - 1)::integer from jsonb_array_elements(priced) with ordinality loop
+    for entry in select value from jsonb_array_elements(priced) loop
       if not v_has_units or exists (select 1 from public.company_coupon_units where coupon_id = c.id and unit_id = (entry ->> 'unit_id')::uuid) then
-        v_base := v_base + (entry ->> 'line')::integer; v_last := idx;
+        v_base := v_base + (entry ->> 'line')::integer;
       end if;
     end loop;
     if v_base = 0 then raise exception 'Coupon does not cover these units' using errcode = '22023'; end if;
@@ -368,13 +368,16 @@ begin
     select * into l from public.company_affiliate_links where id = c.affiliate_link_id and status = 'active';
   end if;
 
-  -- Desconto por item (o último coberto fica com o resto) e percentual do afiliado congelado por item.
+  -- O último item coberto recebe o resto. Se faltar margem nele, as linhas anteriores
+  -- absorvem apenas o excedente, sem que nenhum desconto passe do valor do item.
   v_left := v_discount;
-  for entry, idx in select value, (ordinality - 1)::integer from jsonb_array_elements(priced) with ordinality loop
+  v_remaining_base := v_base;
+  for entry in select value from jsonb_array_elements(priced) with ordinality order by ordinality loop
     v_line := (entry ->> 'line')::integer; v_share := 0;
     v_eligible := v_discount > 0 and (not v_has_units or exists (select 1 from public.company_coupon_units where coupon_id = c.id and unit_id = (entry ->> 'unit_id')::uuid));
     if v_eligible then
-      v_share := case when idx = v_last then v_left else (v_discount::bigint * v_line / v_base)::integer end;
+      v_remaining_base := v_remaining_base - v_line;
+      v_share := greatest((v_discount::bigint * v_line / v_base)::integer, v_left - v_remaining_base);
       v_left := v_left - v_share;
     end if;
     v_bps := case when l.id is null then 0 else coalesce(public.company_affiliate_rate_bps(p_company, (entry ->> 'ref')::uuid, today), 0) end;

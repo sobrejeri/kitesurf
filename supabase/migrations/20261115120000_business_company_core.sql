@@ -179,7 +179,7 @@ create trigger company_instructor_rates_append_only before update or delete on p
 -- ---------------------------------------------------------------------------
 create function public.auth_email() returns text
 language sql stable security definer set search_path = '' as $$
-  select lower(email) from auth.users where id = auth.uid();
+  select lower(email) from auth.users where id = auth.uid() and email_confirmed_at is not null;
 $$;
 
 create function public.company_has_permission(p_unit uuid, p_permission text) returns boolean
@@ -346,7 +346,7 @@ declare uid uuid := auth.uid(); inv public.company_invitations; r public.app_rol
 begin
   if uid is null then raise exception 'Sign in required' using errcode = '28000'; end if;
   select * into inv from public.company_invitations where id = p_id for update;
-  if not found or inv.status <> 'pending' or inv.email <> public.auth_email() then raise exception 'Invitation not available' using errcode = '42501'; end if;
+  if not found or inv.status <> 'pending' or inv.email is distinct from public.auth_email() then raise exception 'Invitation not available' using errcode = '42501'; end if;
   if inv.expires_at < now() then update public.company_invitations set status = 'expired' where id = p_id; return; end if;
   select role into r from public.profiles where id = uid;
   if r = 'admin' then raise exception 'Not allowed for this account' using errcode = '42501'; end if;
@@ -377,7 +377,7 @@ language plpgsql security definer set search_path = '' as $$
 declare inv public.company_invitations;
 begin
   select * into inv from public.company_invitations where id = p_id for update;
-  if not found or inv.status <> 'pending' or inv.email <> public.auth_email() then raise exception 'Invitation not available' using errcode = '42501'; end if;
+  if not found or inv.status <> 'pending' or inv.email is distinct from public.auth_email() then raise exception 'Invitation not available' using errcode = '42501'; end if;
   update public.company_invitations set status = 'declined' where id = p_id;
   perform public.company_audit(inv.company_id, null, inv.kind::text || '.declined', inv.email);
 end;
