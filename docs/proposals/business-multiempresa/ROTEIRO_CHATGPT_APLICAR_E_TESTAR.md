@@ -131,3 +131,16 @@ Migration: `supabase/migrations/20261115140000_business_stock_rentals.sql`. Veri
 3. **Snapshot depois:** `perfis` e `reservas` **iguais**; `tabelas_public` +7; `funcoes_public` +14; `politicas_public` +7.
 4. Rodar `VERIFICACAO_fase3_somente_leitura.sql` bloco a bloco. Esperado: [1] 7 tabelas com RLS; [2] 0 linhas; [3] 14 linhas (12 `definer`, 2 `false`); [4] 0; [5] 1 linha `false`; [6] 5 gatilhos; [7] 5 linhas; [8] `stock.adjust` sensível `true` com 1 cargo, `stock.edit` com 2, `stock.view` com 3; [9] 0 em tudo; [10] erro de permissão no primeiro e `0` no segundo.
 5. Relatório no mesmo modelo, marcando cada bloco.
+
+
+---
+
+# Fase 4 (só depois das fases 1, 2 e 3 aplicadas e validadas)
+
+Migration: `supabase/migrations/20261115150000_business_cash.sql`. Verificação: `VERIFICACAO_fase4_somente_leitura.sql`. Projeto de **teste** primeiro. Não altera função existente; **cria um bucket privado** (`vento-business-closings`) e duas políticas de Storage.
+
+1. **Snapshot antes** (seção A) e, além dele, guarde: `select count(*) from storage.buckets;` e `select count(*) from pg_policies where schemaname = 'storage';`.
+2. Aplicar a migration inteira de uma vez (esperado: "Success. No rows returned").
+3. **Snapshot depois:** `perfis` e `reservas` **iguais**; `tabelas_public` +4; `funcoes_public` +14; `politicas_public` +4; buckets +1; políticas do Storage +2.
+4. Rodar `VERIFICACAO_fase4_somente_leitura.sql` bloco a bloco. Esperado: [1] 4 tabelas com RLS; [2] 0; [3] 14 linhas (13 `definer`, 1 `false`); [4] 0; [5] 2 linhas `false`; [6] bucket `public = false`, limite 5242880, pdf e xlsx; [7] 2 políticas (SELECT e INSERT) só para `authenticated`, nenhuma de UPDATE ou DELETE; [8] 5 gatilhos; [9] 7 linhas; [10] 0, 0, 0; [11] erro de permissão no primeiro e `0` no segundo.
+5. Relatório no mesmo modelo. Se o [6] mostrar `public = true`, **pare**: os arquivos de fechamento ficariam públicos.
