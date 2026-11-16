@@ -568,3 +568,11 @@ O projeto possui um **avaliador independente preparado, não necessariamente con
 - CI inicial #285: `43768377586` e Claude QA `43768377630` estavam em andamento. O Claude QA permanece documentado como desativado; job skipped não equivale a revisão.
 - E2E autenticado de 4h/2 encontros **não executado**: faltam sessões de teste isoladas de Aluno e Instrutor, reserva autorizada e navegador de homologação. 0/18 frentes homologadas.
 - Retomada: conferir CI do HEAD atualizado, corrigir falhas; integrar somente se aprovado, confirmar SHA Render LIVE e prosseguir com testes de conflitos/fila/reagendamento sem mutar reservas reais. Não alterar Supabase ou Protege 3B nem ativar checkout real.
+
+
+## Handoff P0 — 16/11/2026, PR #288
+
+- **Feito em código/testes:** PR #288 adiciona corte obrigatório `QUEUE_WORKER_ACTIVATED_AT` ao endpoint `queue-maintenance` e testes para configuração ausente, inválida ou futura e filtro `created_at` nas duas consultas. Não ativa o worker.
+- **Estado ao registrar:** commit `864f55affb942c7b25e846263ce3cc07ec92491d`; CI `43853015438` em execução; Claude QA `43853015445` SKIPPED (sem revisão). PR aberta, sem merge/deploy.
+- **Produção comprovada:** Render LIVE `99e431b06d00fc8f1596cef5c3ec5057a190696a`; Supabase kitesurf `qadkqjfmmnxvovyyhqxw` lista migrations 39–42. Nenhuma migration ou dado real alterado nesta rodada.
+- **Retomar exatamente:** verificar CI #288, corrigir falhas antes de merge, verificar Claude QA novamente; depois homologar executor offline em dados descartáveis e scheduler sem custo; revisar PR #283 (draft) e corrida de agenda; E2E autenticado Aluno 4h/2 encontros → Instrutor → Aluno permanece obrigatório e não executado. Não habilitar worker nem Protege 3B até homologação.
