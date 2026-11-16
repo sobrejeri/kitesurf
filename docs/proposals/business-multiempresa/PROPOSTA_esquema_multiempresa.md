@@ -109,7 +109,7 @@ Migration: `supabase/migrations/20261115130000_business_services_bookings.sql`, 
 
 **Decisões que preciso de você (recomendo aprovar as três):**
 
-10. **Agenda única de verdade.** O banco já tem a agenda do instrutor (horário semanal, bloqueios, buffer e reservas digitais), mas só enxerga as **digitais**. Para o instrutor nunca estar em dois lugares, a reserva presencial precisa entrar nela, e a função `instructor_can_attend` (usada pelo fluxo digital) ganha **um bloco**: reservas presenciais confirmadas de **qualquer empresa** ocupam o horário. É a única alteração no fluxo digital. Provas: o teste novo, a suíte completa `scripts/test-db.sh` (inclui as corridas de reservas simultâneas) e a função restaurada bit a bit pela reversão (mesmo hash da versão original).
+10. **Agenda única de verdade.** O fluxo digital e o presencial reservam o horário e o buffer do mesmo instrutor em todas as unidades e empresas. A aula presencial só pode ser concluída a partir do fim contratado. A conclusão mantém o bloqueio pelo buffer, e o cancelamento libera o horário. O teste de agenda compartilhada cobre a janela em curso e os limites do buffer.
 11. **Outra empresa só vê "ocupado".** `instructor_busy_intervals` devolve apenas início e fim, de qualquer origem, e só para quem tem vínculo ativo com o instrutor. A recusa de agenda usa sempre a mesma mensagem, que não revela de quem é o horário (testado, inclusive com mutação).
 12. **Reserva presencial não cobra nada.** Registra o atendimento com preço, comissão e repasse congelados (comissão calculada uma vez, repasse por subtração, CHECK de soma); o recebimento continua fora do VentoKite, como já está nas telas.
 

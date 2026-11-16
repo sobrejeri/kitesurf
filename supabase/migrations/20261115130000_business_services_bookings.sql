@@ -106,7 +106,7 @@ create table public.company_external_bookings (
   constraint company_bookings_commission_matches_rate check (commission_cents = (price_cents::bigint * commission_bps / 10000)),
   constraint company_bookings_cancel_consistent check ((status = 'cancelled') = (cancelled_at is not null and cancel_reason is not null))
 );
-create index company_bookings_instructor_idx on public.company_external_bookings (instructor_id, starts_at) where status = 'confirmed';
+create index company_bookings_instructor_idx on public.company_external_bookings (instructor_id, starts_at) where status in ('confirmed', 'done');
 create index company_bookings_unit_idx on public.company_external_bookings (unit_id, starts_at desc);
 
 create function public.company_bookings_frozen() returns trigger
@@ -149,7 +149,8 @@ language sql stable security definer set search_path = '' as $$
 $$;
 
 -- Mesma regra do fluxo digital (instructor_can_attend), com minutos, e olhando TODAS as reservas
--- presenciais confirmadas de qualquer empresa. Devolve só sim ou não.
+-- presenciais confirmadas ou concluídas de qualquer empresa. Uma aula concluída
+-- ainda ocupa o intervalo contratado e seu buffer. Devolve só sim ou não.
 create function public.company_instructor_is_free(p_instructor uuid, p_start timestamptz, p_minutes integer, p_ignore uuid default null) returns boolean
 language plpgsql stable security definer set search_path = '' as $$
 declare en timestamptz := p_start + make_interval(mins => p_minutes); ls timestamp := p_start at time zone 'America/Fortaleza'; le timestamp := en at time zone 'America/Fortaleza';
@@ -164,7 +165,7 @@ begin
       where b.instructor_id = p_instructor and m.status <> 'cancelled'
         and (b.status = 'confirmed' or (b.status = 'awaiting_payment' and b.created_at >= now() - interval '10 minutes'))
         and tstzrange(m.starts_at - make_interval(mins => buff), m.starts_at + make_interval(mins => m.minutes + buff), '[)') && tstzrange(p_start, en, '[)')) then return false; end if;
-  if exists (select 1 from public.company_external_bookings e where e.instructor_id = p_instructor and e.status = 'confirmed' and e.id is distinct from p_ignore
+  if exists (select 1 from public.company_external_bookings e where e.instructor_id = p_instructor and e.status in ('confirmed', 'done') and e.id is distinct from p_ignore
       and tstzrange(e.starts_at - make_interval(mins => buff), e.starts_at + make_interval(mins => e.minutes + buff), '[)') && tstzrange(p_start, en, '[)')) then return false; end if;
   return true;
 end;
@@ -327,7 +328,9 @@ begin
   select * into b from public.company_external_bookings where id = p_booking for update;
   if not found then raise exception 'Booking not found' using errcode = 'P0002'; end if;
   perform public.require_company_permission(b.unit_id, 'agenda.edit');
-  if b.status <> 'confirmed' or b.starts_at > now() then raise exception 'Only a confirmed booking that has started is completed' using errcode = '55000'; end if;
+  if b.status <> 'confirmed' or b.starts_at + make_interval(mins => b.minutes) > now() then
+    raise exception 'Only a confirmed booking whose scheduled time has ended can be completed' using errcode = '55000';
+  end if;
   update public.company_external_bookings set status = 'done' where id = p_booking;
   perform public.company_audit(b.company_id, b.unit_id, 'booking.done', b.id::text);
 end;
@@ -349,7 +352,7 @@ begin
         and tstzrange(m.starts_at, m.starts_at + make_interval(mins => m.minutes), '[)') && tstzrange(p_from, p_to, '[)')
     union all
     select e.starts_at, e.starts_at + make_interval(mins => e.minutes) from public.company_external_bookings e
-      where e.instructor_id = p_instructor and e.status = 'confirmed' and tstzrange(e.starts_at, e.starts_at + make_interval(mins => e.minutes), '[)') && tstzrange(p_from, p_to, '[)')
+      where e.instructor_id = p_instructor and e.status in ('confirmed', 'done') and tstzrange(e.starts_at, e.starts_at + make_interval(mins => e.minutes), '[)') && tstzrange(p_from, p_to, '[)')
     union all
     select t.starts_at, t.ends_at from public.instructor_time_off t where t.instructor_id = p_instructor and tstzrange(t.starts_at, t.ends_at, '[)') && tstzrange(p_from, p_to, '[)')
     order by 1;
@@ -386,9 +389,9 @@ begin
       and tstzrange(m.starts_at - make_interval(mins => buff),
         m.starts_at + make_interval(mins => m.minutes + buff), '[)') && tstzrange(st, en, '[)'))
     then return false; end if;
-    -- NOVO (Business fase 2): reserva presencial confirmada de qualquer empresa ocupa o horário.
+    -- Business fase 2: o horário presencial e seu buffer continuam ocupados após a conclusão.
     if exists (select 1 from public.company_external_bookings e
-      where e.instructor_id = p_id and e.status = 'confirmed'
+      where e.instructor_id = p_id and e.status in ('confirmed', 'done')
       and tstzrange(e.starts_at - make_interval(mins => buff),
         e.starts_at + make_interval(mins => e.minutes + buff), '[)') && tstzrange(st, en, '[)'))
     then return false; end if;
