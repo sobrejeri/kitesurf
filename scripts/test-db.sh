@@ -39,3 +39,13 @@ PG_TEST_SOCKET="$DATA" PG_TEST_PORT="$PORT" bash "$ROOT/scripts/test-offer-queue
 
 # Authorized postponement and cross-account denial in throwaway PostgreSQL.
 PG_TEST_SOCKET="$DATA" PG_TEST_PORT="$PORT" bash "$ROOT/scripts/test-meeting-change-auth.sh"
+
+# The booking race is timing dependent: a single run catches a regression only some of the time.
+# Run it again, many times, at the very end (each round books the next free pair of days for the
+# same instructor with two simultaneous connections, so it must not run before the other flows
+# that look for free days).
+for round in $(seq 1 "${RACE_ROUNDS:-12}"); do
+  PG_TEST_SOCKET="$DATA" PG_TEST_PORT="$PORT" bash "$ROOT/scripts/test-concurrent-instructor-booking.sh" >/dev/null 2>"$DATA/race.err" \
+    || { echo "Concurrent booking race failed on round $round" >&2; cat "$DATA/race.err" >&2; exit 1; }
+done
+echo "PASS: ${RACE_ROUNDS:-12} repeated concurrent booking rounds, never two accepted bookings for one instructor and slot"
