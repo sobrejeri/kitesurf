@@ -144,3 +144,14 @@ Migration: `supabase/migrations/20261115150000_business_cash.sql`. Verificação
 3. **Snapshot depois:** `perfis` e `reservas` **iguais**; `tabelas_public` +4; `funcoes_public` +14; `politicas_public` +4; buckets +1; políticas do Storage +2.
 4. Rodar `VERIFICACAO_fase4_somente_leitura.sql` bloco a bloco. Esperado: [1] 4 tabelas com RLS; [2] 0; [3] 14 linhas (13 `definer`, 1 `false`); [4] 0; [5] 2 linhas `false`; [6] bucket `public = false`, limite 5242880, pdf e xlsx; [7] 2 políticas (SELECT e INSERT) só para `authenticated`, nenhuma de UPDATE ou DELETE; [8] 5 gatilhos; [9] 7 linhas; [10] 0, 0, 0; [11] erro de permissão no primeiro e `0` no segundo.
 5. Relatório no mesmo modelo. Se o [6] mostrar `public = true`, **pare**: os arquivos de fechamento ficariam públicos.
+
+
+---
+
+# Fase 5 (só depois das fases 1 a 4 aplicadas e validadas)
+
+Migration: `supabase/migrations/20261115160000_business_shop_affiliates.sql`. Verificação: `VERIFICACAO_fase5_somente_leitura.sql`. Projeto de **teste** primeiro. Não altera função existente.
+
+1. **Snapshot antes** (seção A). 2. Aplicar a migration inteira de uma vez.
+3. **Snapshot depois:** `perfis` e `reservas` **iguais**; `tabelas_public` +11; `funcoes_public` +21; `politicas_public` +11.
+4. Rodar `VERIFICACAO_fase5_somente_leitura.sql`. Esperado: [1] 11 tabelas com RLS; [2] 0; [3] 21 linhas (18 `definer`, 3 `false`); [4] 0; [5] 2 linhas `false`; [6] cinco situações, **sem "paid"**; [7] `false`; [8] 4 gatilhos; [9] 7 restrições; [10] 5 permissões, `shop.manage` e `affil.manage` sensíveis; [11] 0, 0, 0; [12] erro de permissão no primeiro e `0` no segundo.

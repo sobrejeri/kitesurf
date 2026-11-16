@@ -148,3 +148,20 @@ Migration: `supabase/migrations/20261115150000_business_cash.sql`, teste `supaba
 **Garantias testadas:** um caixa aberto por unidade (índice único e trava da unidade: 10 aberturas simultâneas abrem 1); movimento só em caixa aberto da mesma unidade; fechamento trava o caixa e calcula o esperado com todos os movimentos aceitos (suprimentos disputando o fechamento nunca ficaram fora do esperado); venda de produto sem estoque é recusada sem deixar movimento de caixa; reserva e aluguel recebidos uma vez; reserva cancelada ou de outra unidade recusada; movimentos e caixas fechados imutáveis; arquivos privados e imutáveis; isolamento entre empresas e por unidade. Dez mutações no teste de banco e duas na corrida, todas detectadas.
 
 **Limites:** a geração dos arquivos e o envio ao bucket ficam na tela (servidor com a sessão do usuário), a ligar quando o caixa real for conectado; não há estorno de venda (um estorno será um movimento próprio, numa fase seguinte, sem apagar nada); comprovante térmico segue como prévia.
+
+
+## Fase 5 (lojinha e afiliados da empresa)
+
+Migration: `supabase/migrations/20261115160000_business_shop_affiliates.sql`, teste `supabase/tests/99zzzzzzzzzzzzzzzzz_business_shop_affiliates.test.sql`, `scripts/test-business-coupon-race.sh` (concorrência real), `REVERSAO_fase5.sql` e `VERIFICACAO_fase5_somente_leitura.sql`. Depende das fases 1 a 4. **Não altera nenhuma função nem tabela anterior.**
+
+**Decisões novas (recomendo aprovar):**
+
+21. **Pedido é pedido, não pagamento, e quem registra é a equipe.** Nesta fase o pedido é criado por quem tem `shop.edit` na unidade (balcão, WhatsApp, Instagram, link de afiliado atendido pela escola). **Não há página pública nem cliente anônimo criando pedido**: abrir a vitrine ao público é uma decisão separada (expõe catálogo e criação de pedido a quem não tem conta) e ficaria numa fase própria. O pedido confere a disponibilidade na hora, mas **não reserva estoque nem agenda**: a escola atende pelos fluxos de reserva, caixa e aluguel.
+22. **Cupom.** Percentual (1% a 50%) ou fixo; validade, limite de usos, valor mínimo e unidades cobertas. O desconto é calculado uma vez sobre os itens cobertos, nunca maior que eles, e repartido por item com o resto no último. Pedido cancelado não devolve o uso do cupom.
+23. **Afiliado da empresa é o afiliado da plataforma.** Só um afiliado aprovado no VentoKite pede afiliação; a escola aprova ou recusa (recusar exige motivo). O código de divulgação é o código que o afiliado já tem. Suspender o vínculo na escola não altera o afiliado na plataforma nem as vendas já atribuídas.
+24. **Comissão de afiliado.** Percentual padrão e por serviço ou produto, em versões (0,5% a 30%); o percentual vigente fica congelado em cada item do pedido, calculado sobre o valor líquido do item (depois do cupom). Estados: prevista (antes da entrega), a pagar (entregue), cancelada, estornada. **Não existe "paga"**: o pagamento integrado continua desligado. Estorno registrado pela escola reduz a comissão na proporção.
+25. **Permissões.** `shop.view`, `shop.edit`, `shop.manage` (sensível: cupons, configuração, estorno), `affil.view`, `affil.manage` (sensível: aprovar, suspender, percentuais, campanhas).
+
+**Garantias testadas:** preços só do catálogo (valores enviados no item são ignorados); divisão do desconto exata, inclusive com resto; cada unidade vê só os seus itens; limite de usos do cupom com 20 pedidos simultâneos (exatamente 5 passam); pedido e itens congelados; estorno não diminui; afiliado lê as próprias vendas **sem nome nem telefone do cliente** e não lê a tabela de pedidos; afiliado não se aprova nem a empresa escolhe por ele; isolamento entre empresas. Doze mutações no teste de banco e duas na corrida detectadas (duas delas só depois de eu reforçar os testes).
+
+**Limites:** sem vitrine pública; sem ligação automática entre pedido entregue e venda no caixa (a escola registra a venda no caixa); pacotes ainda sem venda.
