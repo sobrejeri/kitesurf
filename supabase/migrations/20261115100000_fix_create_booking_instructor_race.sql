@@ -19,7 +19,7 @@ create or replace function public.create_booking(
   p_level public.lesson_level,
   p_language text,
   p_meetings jsonb,
-  p_partner_code text default null,
+  p_partner_code text,
   p_with_transport boolean
 ) returns uuid
 language plpgsql security definer set search_path = '' as $$
