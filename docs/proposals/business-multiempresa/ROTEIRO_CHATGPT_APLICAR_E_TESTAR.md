@@ -119,3 +119,15 @@ Migration: `supabase/migrations/20261115130000_business_services_bookings.sql` (
 5. Relatório: o mesmo modelo da fase 1, com os campos extras `hash_funcao_antes`, `hash_funcao_depois` e o resultado do bloco [6] e [7].
 
 Se a verificação falhar no [6] (a função perdeu `security definer`, ficou `volatile` ou ganhou EXECUTE para usuários), é grave: **não prossiga**, relate. A reversão `REVERSAO_fase2.sql` restaura a função original e só serve sem dados reais.
+
+
+---
+
+# Fase 3 (só depois das fases 1 e 2 aplicadas e validadas)
+
+Migration: `supabase/migrations/20261115140000_business_stock_rentals.sql`. Verificação: `VERIFICACAO_fase3_somente_leitura.sql`. Projeto de **teste** primeiro. Esta fase **não altera** nenhuma função existente (diferente da fase 2).
+
+1. **Snapshot antes** (consulta da seção A). 2. Aplicar a migration inteira de uma vez (esperado: "Success. No rows returned").
+3. **Snapshot depois:** `perfis` e `reservas` **iguais**; `tabelas_public` +7; `funcoes_public` +14; `politicas_public` +7.
+4. Rodar `VERIFICACAO_fase3_somente_leitura.sql` bloco a bloco. Esperado: [1] 7 tabelas com RLS; [2] 0 linhas; [3] 14 linhas (12 `definer`, 2 `false`); [4] 0; [5] 1 linha `false`; [6] 5 gatilhos; [7] 5 linhas; [8] `stock.adjust` sensível `true` com 1 cargo, `stock.edit` com 2, `stock.view` com 3; [9] 0 em tudo; [10] erro de permissão no primeiro e `0` no segundo.
+5. Relatório no mesmo modelo, marcando cada bloco.

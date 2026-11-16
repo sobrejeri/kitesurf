@@ -116,3 +116,18 @@ Migration: `supabase/migrations/20261115130000_business_services_bookings.sql`, 
 **Garantias testadas:** valores saem do banco (cliente só escolhe unidade, serviço, instrutor e horário); preço ou comissão novos valem só para reservas novas; conflito entre unidades, entre empresas e com o fluxo digital; horário semanal, bloqueios, dias do serviço e horário da unidade; remarcar mantém os valores, cancelar exige motivo e libera o horário; reserva encerrada não muda; isolamento total entre empresas. Seis mutações deliberadas foram detectadas.
 
 **Limites:** o instrutor ainda não lê as próprias reservas presenciais (precisa de uma consulta sem o telefone do cliente, fica para a tela do instrutor); pacote não tem venda nem saldo ainda (fase de lojinha); duração em múltiplos de 15 minutos, enquanto o fluxo digital trabalha em horas.
+
+
+## Fase 3 (estoque, equipamentos, aluguéis e manutenção)
+
+Migration: `supabase/migrations/20261115140000_business_stock_rentals.sql`, teste `supabase/tests/99zzzzzzzzzzzzzzz_business_stock_rentals.test.sql`, `scripts/test-business-stock-race.sh` (concorrência real), `REVERSAO_fase3.sql` e `VERIFICACAO_fase3_somente_leitura.sql`. Depende das fases 1 e 2. **Não altera nenhuma função nem tabela anterior**: só cria objetos e acrescenta 3 permissões ao catálogo.
+
+**Decisões novas (recomendo aprovar):**
+
+13. **Permissões de estoque.** `stock.view` (gerente, financeiro, atendente), `stock.edit` (gerente, atendente: vender, receber, transferir, alugar, devolver, abrir e fechar manutenção) e `stock.adjust` (só gerente e Proprietário; **sensível**: ajustar contagem, criar produto ou equipamento, definir tarifa, aposentar). Ajuste de contagem é a forma de esconder perda, por isso fica sensível. A matriz de permissões das telas precisa ganhar essas 3 linhas quando as telas forem ligadas.
+14. **Saldo por razão com trava.** O saldo fica numa tabela mantida por gatilho com `CHECK (qty >= 0)`; duas movimentações simultâneas se enfileiram na linha e a que deixaria o estoque negativo é recusada. Provado com 30 vendas simultâneas de 1 unidade contra saldo 10: exatamente 10 vendem.
+15. **Tarifa de aluguel por empresa e tipo, em versões**, como o preço de serviço: nova linha a partir de hoje, nunca edição; o aluguel congela hora vigente × horas. Hoje a tela usa uma tarifa fixa por tipo, que passaria a ser configurável.
+
+**Garantias testadas:** estoque nunca negativo e igual à soma do razão (razão append-only); transferência = duas linhas com o mesmo id, total conservado e atômica (recusada não move nada), inclusive transferências opostas (ordem de travas fixa); equipamento com situação **derivada** (aposentado > em manutenção > alugado > disponível); um aluguel ativo por equipamento (índice único); aluguel com preço congelado e devolução que só preenche o retorno, uma vez; devolução pior exige descrição e `ruim` abre manutenção; uma manutenção aberta por equipamento; não se aluga item aposentado, em manutenção ou já alugado; não se aposenta item alugado; isolamento total entre empresas e por unidade; cliente sem escrita direta. Nove mutações deliberadas detectadas, mais a corrida real.
+
+**Limites:** venda de produto no caixa (ligar a movimentação `sale` ao movimento de caixa) é da fase do caixa; aluguel não registra pagamento (continua fora do VentoKite); produto não tem edição de preço (o preço do produto muda numa fase de catálogo da lojinha); a tela atual de equipamento mostra um histórico que será lido do razão, aluguéis e chamados.
