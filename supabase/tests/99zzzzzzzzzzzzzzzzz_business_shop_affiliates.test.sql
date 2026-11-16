@@ -17,16 +17,16 @@ create function pg_temp.at(off integer, hhmm text) returns timestamptz language 
   select (((now() at time zone 'America/Fortaleza')::date + off + hhmm::time) at time zone 'America/Fortaleza');
 $$;
 
-insert into auth.users (id, email, raw_user_meta_data) values
-  ('00000000-0000-0000-0000-0000000c5001', 'o1@shop.example', '{"full_name":"Dona A","role":"student"}'),
-  ('00000000-0000-0000-0000-0000000c5002', 'o2@shop.example', '{"full_name":"Dono B","role":"student"}'),
-  ('00000000-0000-0000-0000-0000000c5003', 'mg@shop.example', '{"full_name":"Gerente","role":"student"}'),
-  ('00000000-0000-0000-0000-0000000c5004', 'fi@shop.example', '{"full_name":"Financeiro","role":"student"}'),
-  ('00000000-0000-0000-0000-0000000c5005', 'at@shop.example', '{"full_name":"Atendente","role":"student"}'),
-  ('00000000-0000-0000-0000-0000000c5006', 'ins@shop.example', '{"full_name":"Instrutor","role":"instructor"}'),
-  ('00000000-0000-0000-0000-0000000c5007', 'af1@shop.example', '{"full_name":"Pousada Brisa","role":"partner"}'),
-  ('00000000-0000-0000-0000-0000000c5008', 'adm@shop.example', '{"full_name":"Admin","role":"student"}'),
-  ('00000000-0000-0000-0000-0000000c5009', 'af2@shop.example', '{"full_name":"Loja Kite","role":"partner"}');
+insert into auth.users (id, email, raw_user_meta_data, email_confirmed_at) values
+  ('00000000-0000-0000-0000-0000000c5001', 'o1@shop.example', '{"full_name":"Dona A","role":"student"}', now()),
+  ('00000000-0000-0000-0000-0000000c5002', 'o2@shop.example', '{"full_name":"Dono B","role":"student"}', now()),
+  ('00000000-0000-0000-0000-0000000c5003', 'mg@shop.example', '{"full_name":"Gerente","role":"student"}', now()),
+  ('00000000-0000-0000-0000-0000000c5004', 'fi@shop.example', '{"full_name":"Financeiro","role":"student"}', now()),
+  ('00000000-0000-0000-0000-0000000c5005', 'at@shop.example', '{"full_name":"Atendente","role":"student"}', now()),
+  ('00000000-0000-0000-0000-0000000c5006', 'ins@shop.example', '{"full_name":"Instrutor","role":"instructor"}', now()),
+  ('00000000-0000-0000-0000-0000000c5007', 'af1@shop.example', '{"full_name":"Pousada Brisa","role":"partner"}', now()),
+  ('00000000-0000-0000-0000-0000000c5008', 'adm@shop.example', '{"full_name":"Admin","role":"student"}', now()),
+  ('00000000-0000-0000-0000-0000000c5009', 'af2@shop.example', '{"full_name":"Loja Kite","role":"partner"}', now());
 update public.profiles set role = 'admin' where id = '00000000-0000-0000-0000-0000000c5008';
 update public.instructors set status = 'approved', approved_at = now() where id = '00000000-0000-0000-0000-0000000c5006';
 insert into public.partners (owner_id, name, code, beach_id, status) values
@@ -38,7 +38,7 @@ declare
   o1 text := '00000000-0000-0000-0000-0000000c5001'; o2 text := '00000000-0000-0000-0000-0000000c5002'; mg text := '00000000-0000-0000-0000-0000000c5003';
   fi text := '00000000-0000-0000-0000-0000000c5004'; at_ text := '00000000-0000-0000-0000-0000000c5005'; ins text := '00000000-0000-0000-0000-0000000c5006';
   af1 text := '00000000-0000-0000-0000-0000000c5007'; af2 text := '00000000-0000-0000-0000-0000000c5009'; adm text := '00000000-0000-0000-0000-0000000c5008';
-  a uuid; b uuid; u1 uuid; u2 uuid; inv uuid; ilink uuid; svc uuid; p1 uuid; pb uuid; e1 uuid; req uuid; req2 uuid; alink uuid; cp uuid;
+  a uuid; b uuid; u1 uuid; u2 uuid; inv uuid; ilink uuid; svc uuid; p1 uuid; pb uuid; p_cent uuid; e1 uuid; req uuid; req2 uuid; alink uuid; cp uuid;
   od1 uuid; od2 uuid; od3 uuid; od4 uuid; od5 uuid; od6 uuid; r record; n int; k jsonb; today date := (now() at time zone 'America/Fortaleza')::date;
   item_p jsonb; item_l jsonb; item_r jsonb; n1 text; n4 text;
 begin
@@ -150,6 +150,19 @@ begin
   perform pg_temp.act_as(at_); od3 := public.create_order(a, 'Cliente Resto', '88999990007', 'balcao', jsonb_build_array(item_p, item_l, item_r), 'RESTO'); perform pg_temp.reset();
   assert (select array_agg(discount_cents order by id) from public.company_order_items where order_id = od3) = array[260, 565, 175], 'the remainder goes to the last covered item';
   assert (select discount_cents from public.company_orders where id = od3) = 1000 and (select sum(discount_cents) from public.company_order_items where order_id = od3) = 1000, 'never a cent lost';
+
+  -- 6c. Cupom de 299 centavos em três itens de 100: o último não pode receber 101.
+  perform pg_temp.act_as(o1);
+  p_cent := public.create_product(a, 'CUP-01', 'Item de teste', '', 100, 0);
+  perform public.record_stock_movement(u1, p_cent, 'in', 3, 'Estoque inicial');
+  perform public.create_coupon(a, 'QUASETOTAL', 'fixed', 299, 0, 30, 5);
+  perform pg_temp.reset();
+  perform pg_temp.act_as(at_);
+  k := jsonb_build_object('kind', 'product', 'unit_id', u1, 'product_id', p_cent, 'qty', 1);
+  od3 := public.create_order(a, 'Cliente Cupom', '88999990007', 'balcao', jsonb_build_array(k, k, k), 'QUASETOTAL');
+  perform pg_temp.reset();
+  assert (select array_agg(discount_cents order by id) from public.company_order_items where order_id = od3) = array[99, 100, 100], 'the excess remainder moves to the previous covered item';
+  assert (select total_cents from public.company_orders where id = od3) = 1, 'exact remainder on a nearly free order';
 
   -- 7. Várias unidades: cupom só cobre a unidade dele; cada unidade vê os seus itens.
   perform pg_temp.act_as(mg);

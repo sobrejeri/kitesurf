@@ -16,7 +16,7 @@ Q=(psql -X -h "$DATA" -p "$PORT" -U postgres -d postgres -v ON_ERROR_STOP=1 -Atq
 for m in "$ROOT"/supabase/migrations/*.sql; do "${Q[@]}" -1 -f "$m" >/dev/null 2>&1; done
 OWNER=00000000-0000-0000-0000-0000000c7001; ADMIN=00000000-0000-0000-0000-0000000c7002; INS=00000000-0000-0000-0000-0000000c7003
 "${Q[@]}" >/dev/null <<SQL
-insert into auth.users (id, email, raw_user_meta_data) values ('$OWNER', 'o@finrace.example', '{"role":"student"}'), ('$ADMIN', 'a@finrace.example', '{"role":"student"}'), ('$INS', 'i@finrace.example', '{"role":"instructor"}');
+insert into auth.users (id, email, raw_user_meta_data, email_confirmed_at) values ('$OWNER', 'o@finrace.example', '{"role":"student"}', now()), ('$ADMIN', 'a@finrace.example', '{"role":"student"}', now()), ('$INS', 'i@finrace.example', '{"role":"instructor"}', now());
 update public.profiles set role = 'admin' where id = '$ADMIN';
 update public.instructors set status = 'approved', approved_at = now() where id = '$INS';
 select set_config('request.jwt.claim.sub', '$OWNER', false); set role authenticated;

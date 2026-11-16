@@ -17,15 +17,15 @@ create function pg_temp.at(off integer, hhmm text) returns timestamptz language 
   select (((now() at time zone 'America/Fortaleza')::date + off + hhmm::time) at time zone 'America/Fortaleza');
 $$;
 
-insert into auth.users (id, email, raw_user_meta_data) values
-  ('00000000-0000-0000-0000-0000000d6001', 'o1@fin.example', '{"full_name":"Dona A","role":"student"}'),
-  ('00000000-0000-0000-0000-0000000d6002', 'o2@fin.example', '{"full_name":"Dono B","role":"student"}'),
-  ('00000000-0000-0000-0000-0000000d6003', 'mg@fin.example', '{"full_name":"Gerente","role":"student"}'),
-  ('00000000-0000-0000-0000-0000000d6004', 'fi@fin.example', '{"full_name":"Financeiro","role":"student"}'),
-  ('00000000-0000-0000-0000-0000000d6005', 'at@fin.example', '{"full_name":"Atendente","role":"student"}'),
-  ('00000000-0000-0000-0000-0000000d6006', 'ins@fin.example', '{"full_name":"Instrutor","role":"instructor"}'),
-  ('00000000-0000-0000-0000-0000000d6007', 'ins2@fin.example', '{"full_name":"Outro Instrutor","role":"instructor"}'),
-  ('00000000-0000-0000-0000-0000000d6008', 'adm@fin.example', '{"full_name":"Admin","role":"student"}');
+insert into auth.users (id, email, raw_user_meta_data, email_confirmed_at) values
+  ('00000000-0000-0000-0000-0000000d6001', 'o1@fin.example', '{"full_name":"Dona A","role":"student"}', now()),
+  ('00000000-0000-0000-0000-0000000d6002', 'o2@fin.example', '{"full_name":"Dono B","role":"student"}', now()),
+  ('00000000-0000-0000-0000-0000000d6003', 'mg@fin.example', '{"full_name":"Gerente","role":"student"}', now()),
+  ('00000000-0000-0000-0000-0000000d6004', 'fi@fin.example', '{"full_name":"Financeiro","role":"student"}', now()),
+  ('00000000-0000-0000-0000-0000000d6005', 'at@fin.example', '{"full_name":"Atendente","role":"student"}', now()),
+  ('00000000-0000-0000-0000-0000000d6006', 'ins@fin.example', '{"full_name":"Instrutor","role":"instructor"}', now()),
+  ('00000000-0000-0000-0000-0000000d6007', 'ins2@fin.example', '{"full_name":"Outro Instrutor","role":"instructor"}', now()),
+  ('00000000-0000-0000-0000-0000000d6008', 'adm@fin.example', '{"full_name":"Admin","role":"student"}', now());
 update public.profiles set role = 'admin' where id = '00000000-0000-0000-0000-0000000d6008';
 update public.instructors set status = 'approved', approved_at = now() where id in ('00000000-0000-0000-0000-0000000d6006', '00000000-0000-0000-0000-0000000d6007');
 
@@ -115,6 +115,14 @@ begin
 
   -- 3. Pagamento externo ao instrutor: nunca acima do devido (comissões congeladas das aulas concluídas).
   perform pg_temp.act_as(fi); begin perform public.record_instructor_payment(link, 1, 'pix', 'PIX-0'); raise exception 'paid before any lesson was done'; exception when check_violation then null; end; perform pg_temp.reset();
+  update public.company_external_bookings set starts_at = now() - interval '1 hour' where id = bk1;
+  perform pg_temp.act_as(at_);
+  begin perform public.complete_external_booking(bk1); raise exception 'completed a lesson before its scheduled end'; exception when object_not_in_prerequisite_state then null; end;
+  perform pg_temp.reset();
+  perform pg_temp.act_as(fi);
+  assert (select due_cents from public.instructor_balance(link)) = 0, 'an ongoing lesson does not create instructor earnings';
+  begin perform public.record_instructor_payment(link, 1, 'pix', 'PIX-EM-AULA'); raise exception 'paid an ongoing lesson'; exception when check_violation then null; end;
+  perform pg_temp.reset();
   update public.company_external_bookings set starts_at = now() - interval '3 hours' where id in (bk1, bk2);
   perform pg_temp.act_as(at_); perform public.complete_external_booking(bk1); perform public.complete_external_booking(bk2); perform pg_temp.reset();
   perform pg_temp.act_as(fi);

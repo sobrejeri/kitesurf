@@ -17,14 +17,14 @@ create function pg_temp.at(off integer, hhmm text) returns timestamptz language 
   select (((now() at time zone 'America/Fortaleza')::date + off + hhmm::time) at time zone 'America/Fortaleza');
 $$;
 
-insert into auth.users (id, email, raw_user_meta_data) values
-  ('00000000-0000-0000-0000-0000000b2001', 'o1@cx.example', '{"full_name":"Dona A","role":"student"}'),
-  ('00000000-0000-0000-0000-0000000b2002', 'o2@cx.example', '{"full_name":"Dono B","role":"student"}'),
-  ('00000000-0000-0000-0000-0000000b2003', 'mg@cx.example', '{"full_name":"Gerente","role":"student"}'),
-  ('00000000-0000-0000-0000-0000000b2004', 'fi@cx.example', '{"full_name":"Financeiro","role":"student"}'),
-  ('00000000-0000-0000-0000-0000000b2005', 'at@cx.example', '{"full_name":"Atendente","role":"student"}'),
-  ('00000000-0000-0000-0000-0000000b2006', 'ins@cx.example', '{"full_name":"Instrutor","role":"instructor"}'),
-  ('00000000-0000-0000-0000-0000000b2008', 'adm@cx.example', '{"full_name":"Admin","role":"student"}');
+insert into auth.users (id, email, raw_user_meta_data, email_confirmed_at) values
+  ('00000000-0000-0000-0000-0000000b2001', 'o1@cx.example', '{"full_name":"Dona A","role":"student"}', now()),
+  ('00000000-0000-0000-0000-0000000b2002', 'o2@cx.example', '{"full_name":"Dono B","role":"student"}', now()),
+  ('00000000-0000-0000-0000-0000000b2003', 'mg@cx.example', '{"full_name":"Gerente","role":"student"}', now()),
+  ('00000000-0000-0000-0000-0000000b2004', 'fi@cx.example', '{"full_name":"Financeiro","role":"student"}', now()),
+  ('00000000-0000-0000-0000-0000000b2005', 'at@cx.example', '{"full_name":"Atendente","role":"student"}', now()),
+  ('00000000-0000-0000-0000-0000000b2006', 'ins@cx.example', '{"full_name":"Instrutor","role":"instructor"}', now()),
+  ('00000000-0000-0000-0000-0000000b2008', 'adm@cx.example', '{"full_name":"Admin","role":"student"}', now());
 update public.profiles set role = 'admin' where id = '00000000-0000-0000-0000-0000000b2008';
 update public.instructors set status = 'approved', approved_at = now() where id = '00000000-0000-0000-0000-0000000b2006';
 

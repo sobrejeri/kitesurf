@@ -16,14 +16,15 @@ begin
 end $$;
 
 -- Fixtures (como superusuário). Uma conta administradora nunca nasce do cadastro: promovida à mão.
-insert into auth.users (id, email, raw_user_meta_data) values
-  ('00000000-0000-0000-0000-0000000e0001', 'own1@test.example', '{"full_name":"Dona A","role":"student"}'),
-  ('00000000-0000-0000-0000-0000000e0002', 'own2@test.example', '{"full_name":"Dono B","role":"student"}'),
-  ('00000000-0000-0000-0000-0000000e0003', 'mgr@test.example', '{"full_name":"Gerente","role":"student"}'),
-  ('00000000-0000-0000-0000-0000000e0004', 'att@test.example', '{"full_name":"Atendente","role":"student"}'),
-  ('00000000-0000-0000-0000-0000000e0005', 'ins@test.example', '{"full_name":"Instrutor","role":"instructor"}'),
-  ('00000000-0000-0000-0000-0000000e0006', 'ins2@test.example', '{"full_name":"Instrutor Pendente","role":"instructor"}'),
-  ('00000000-0000-0000-0000-0000000e0007', 'adm@test.example', '{"full_name":"Admin","role":"student"}');
+insert into auth.users (id, email, raw_user_meta_data, email_confirmed_at) values
+  ('00000000-0000-0000-0000-0000000e0001', 'own1@test.example', '{"full_name":"Dona A","role":"student"}', now()),
+  ('00000000-0000-0000-0000-0000000e0002', 'own2@test.example', '{"full_name":"Dono B","role":"student"}', now()),
+  ('00000000-0000-0000-0000-0000000e0003', 'mgr@test.example', '{"full_name":"Gerente","role":"student"}', now()),
+  ('00000000-0000-0000-0000-0000000e0004', 'att@test.example', '{"full_name":"Atendente","role":"student"}', now()),
+  ('00000000-0000-0000-0000-0000000e0005', 'ins@test.example', '{"full_name":"Instrutor","role":"instructor"}', now()),
+  ('00000000-0000-0000-0000-0000000e0006', 'ins2@test.example', '{"full_name":"Instrutor Pendente","role":"instructor"}', now()),
+  ('00000000-0000-0000-0000-0000000e0007', 'adm@test.example', '{"full_name":"Admin","role":"student"}', now()),
+  ('00000000-0000-0000-0000-0000000e0008', null, '{"full_name":"Conta só com telefone","role":"student"}', null);
 update public.profiles set role = 'admin' where id = '00000000-0000-0000-0000-0000000e0007';
 update public.instructors set status = 'approved', approved_at = now() where id = '00000000-0000-0000-0000-0000000e0005';
 
@@ -96,7 +97,25 @@ begin
   inv_a := public.invite_staff(a, 'att@test.example', jsonb_build_array(jsonb_build_object('unit_id', u2, 'role', 'attendant')));
   perform pg_temp.reset();
 
-  -- 5. Só o convidado responde, com o próprio e-mail; o administrador não entra na empresa.
+  -- 5. Só o convidado responde com o próprio e-mail confirmado; o administrador não entra na empresa.
+  perform pg_temp.act_as('00000000-0000-0000-0000-0000000e0008');
+  begin perform public.accept_company_invitation(inv_m); raise exception 'a session without email accepted';
+  exception when insufficient_privilege then null; end;
+  begin perform public.decline_company_invitation(inv_m); raise exception 'a session without email declined';
+  exception when insufficient_privilege then null; end;
+  perform pg_temp.reset();
+  update auth.users set email_confirmed_at = null where id = mgr::uuid;
+  perform pg_temp.act_as(mgr);
+  assert (select count(*) from public.company_invitations where id = inv_m) = 0, 'an unconfirmed email cannot see the invitation';
+  begin perform public.accept_company_invitation(inv_m); raise exception 'an unconfirmed account accepted';
+  exception when insufficient_privilege then null; end;
+  begin perform public.decline_company_invitation(inv_m); raise exception 'an unconfirmed account declined';
+  exception when insufficient_privilege then null; end;
+  perform pg_temp.reset();
+  assert (select status from public.company_invitations where id = inv_m) = 'pending', 'the rejected responses leave the invitation pending';
+  assert not exists (select 1 from public.company_members where company_id = a and user_id = mgr::uuid), 'no membership is created';
+  update auth.users set email_confirmed_at = now() where id = mgr::uuid;
+
   perform pg_temp.act_as(att);
   begin perform public.accept_company_invitation(inv_m); raise exception 'someone else accepted';
   exception when insufficient_privilege then null; end;

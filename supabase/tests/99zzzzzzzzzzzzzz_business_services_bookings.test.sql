@@ -18,15 +18,15 @@ create function pg_temp.at(off integer, hhmm text) returns timestamptz language 
   select (((now() at time zone 'America/Fortaleza')::date + off + hhmm::time) at time zone 'America/Fortaleza');
 $$;
 
-insert into auth.users (id, email, raw_user_meta_data) values
-  ('00000000-0000-0000-0000-0000000f0001', 'o1@svc.example', '{"full_name":"Dona A","role":"student"}'),
-  ('00000000-0000-0000-0000-0000000f0002', 'o2@svc.example', '{"full_name":"Dono B","role":"student"}'),
-  ('00000000-0000-0000-0000-0000000f0003', 'mg@svc.example', '{"full_name":"Gerente","role":"student"}'),
-  ('00000000-0000-0000-0000-0000000f0004', 'fi@svc.example', '{"full_name":"Financeiro","role":"student"}'),
-  ('00000000-0000-0000-0000-0000000f0005', 'at@svc.example', '{"full_name":"Atendente","role":"student"}'),
-  ('00000000-0000-0000-0000-0000000f0006', 'ins@svc.example', '{"full_name":"Instrutor","role":"instructor"}'),
-  ('00000000-0000-0000-0000-0000000f0007', 'insb@svc.example', '{"full_name":"Instrutor Sem Vinculo","role":"instructor"}'),
-  ('00000000-0000-0000-0000-0000000f0008', 'adm@svc.example', '{"full_name":"Admin","role":"student"}');
+insert into auth.users (id, email, raw_user_meta_data, email_confirmed_at) values
+  ('00000000-0000-0000-0000-0000000f0001', 'o1@svc.example', '{"full_name":"Dona A","role":"student"}', now()),
+  ('00000000-0000-0000-0000-0000000f0002', 'o2@svc.example', '{"full_name":"Dono B","role":"student"}', now()),
+  ('00000000-0000-0000-0000-0000000f0003', 'mg@svc.example', '{"full_name":"Gerente","role":"student"}', now()),
+  ('00000000-0000-0000-0000-0000000f0004', 'fi@svc.example', '{"full_name":"Financeiro","role":"student"}', now()),
+  ('00000000-0000-0000-0000-0000000f0005', 'at@svc.example', '{"full_name":"Atendente","role":"student"}', now()),
+  ('00000000-0000-0000-0000-0000000f0006', 'ins@svc.example', '{"full_name":"Instrutor","role":"instructor"}', now()),
+  ('00000000-0000-0000-0000-0000000f0007', 'insb@svc.example', '{"full_name":"Instrutor Sem Vinculo","role":"instructor"}', now()),
+  ('00000000-0000-0000-0000-0000000f0008', 'adm@svc.example', '{"full_name":"Admin","role":"student"}', now());
 update public.profiles set role = 'admin' where id = '00000000-0000-0000-0000-0000000f0008';
 update public.instructors set status = 'approved', approved_at = now() where id in ('00000000-0000-0000-0000-0000000f0006', '00000000-0000-0000-0000-0000000f0007');
 
@@ -162,15 +162,32 @@ begin
   begin perform public.complete_external_booking(b1); raise exception 'completed a future booking'; exception when object_not_in_prerequisite_state then null; end;
   perform pg_temp.reset();
   select * into r from public.company_external_bookings where id = b3; assert r.status = 'cancelled' and r.cancel_reason = 'Cliente desistiu' and r.price_cents = 26000, 'cancelled keeps its amounts';
-  update public.company_external_bookings set starts_at = now() - interval '3 hours' where id = b1;
+  update public.company_external_bookings set starts_at = now() - interval '1 hour' where id = b1;
+  perform pg_temp.act_as(at_);
+  begin perform public.complete_external_booking(b1); raise exception 'completed a booking during its scheduled window'; exception when object_not_in_prerequisite_state then null; end;
+  perform pg_temp.reset();
+  assert (select status from public.company_external_bookings where id = b1) = 'confirmed', 'a booking in progress remains confirmed';
+  update public.company_external_bookings set starts_at = now() - interval '2 hours' where id = b1;
   perform pg_temp.act_as(at_); perform public.complete_external_booking(b1); perform pg_temp.reset();
+  assert (select status from public.company_external_bookings where id = b1) = 'done', 'completion succeeds at the scheduled end';
   begin update public.company_external_bookings set status = 'confirmed' where id = b1; raise exception 'reopened a done booking'; exception when insufficient_privilege then null; end;
+
+  -- A conclusão não libera o buffer entre aulas no presencial ou no digital.
+  update public.company_external_bookings set starts_at = pg_temp.at(-2, '10:00') where id = b2;
+  perform pg_temp.act_as(mg); perform public.complete_external_booking(b2); perform pg_temp.reset();
+  perform pg_temp.act_as(ins); perform public.save_my_schedule(array[0,1,2,3,4,5,6], '07:00', '18:00', 30); perform pg_temp.reset();
+  assert not public.company_instructor_is_free(ins::uuid, pg_temp.at(-2, '12:15'), 60), 'an in-person lesson cannot start inside the buffer after a completed lesson';
+  assert not public.instructor_can_attend(ins::uuid, jsonb_build_array(jsonb_build_object('starts_at', pg_temp.at(-2, '12:15'), 'hours', 1))), 'the digital flow also respects that buffer';
+  assert public.company_instructor_is_free(ins::uuid, pg_temp.at(-2, '12:30'), 60), 'in-person availability resumes exactly at the end of the buffer';
+  assert public.instructor_can_attend(ins::uuid, jsonb_build_array(jsonb_build_object('starts_at', pg_temp.at(-2, '12:30'), 'hours', 1))), 'digital availability resumes exactly at the end of the buffer';
 
   -- 9. Isolamento entre empresas e privacidade da agenda.
   perform pg_temp.act_as(o2);
   assert (select count(*) from public.company_services where company_id = a) = 0 and (select count(*) from public.company_service_prices where service_id = s1) = 0
     and (select count(*) from public.company_unit_services where service_id = s1) = 0 and (select count(*) from public.company_external_bookings where company_id = a) = 0, 'B sees nothing of A';
   select count(*) into n from public.instructor_busy_intervals(ins::uuid, pg_temp.at(0, '00:00'), pg_temp.at(10, '00:00')); assert n >= 3, 'B sees the instructor as busy';
+  assert exists (select 1 from public.instructor_busy_intervals(ins::uuid, pg_temp.at(-2, '10:00'), pg_temp.at(-2, '12:00')) where starts_at = pg_temp.at(-2, '10:00') and ends_at = pg_temp.at(-2, '12:00')), 'the completed lesson stays in the historical busy intervals';
+  assert not exists (select 1 from public.instructor_busy_intervals(ins::uuid, pg_temp.at(-2, '12:30'), pg_temp.at(-2, '13:30'))), 'the completed lesson does not occupy later intervals';
   select to_jsonb(x) into k from public.instructor_busy_intervals(ins::uuid, pg_temp.at(0, '00:00'), pg_temp.at(10, '00:00')) x limit 1;
   assert (select array_agg(key order by key) from jsonb_object_keys(k) key) = array['ends_at', 'starts_at'], 'only start and end: no customer, service, unit, value or code';
   begin perform public.instructor_busy_intervals(insb::uuid, pg_temp.at(0, '00:00'), pg_temp.at(1, '00:00')); raise exception 'busy time of an instructor not linked'; exception when insufficient_privilege then null; end;
