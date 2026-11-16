@@ -15,8 +15,8 @@ begin
 
   -- The six-argument RPC must require an explicit transport flag. Otherwise
   -- PostgreSQL/PostgREST cannot resolve five-argument calls unambiguously.
-  if pg_get_function_arguments(v_six) ~* 'p_with_transport[^,]*default' then
-    raise exception 'Six-argument RPC default makes five-argument calls ambiguous';
+  if pg_get_function_arguments(v_six) ~* 'p_(partner_code|with_transport)[^,]*default' then
+    raise exception 'Six-argument RPC must not have trailing defaults: ambiguous overload or invalid signature';
   end if;
 
   six_def := pg_get_functiondef(v_six);
