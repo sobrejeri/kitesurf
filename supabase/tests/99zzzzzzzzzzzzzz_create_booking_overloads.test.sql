@@ -13,6 +13,12 @@ begin
     raise exception 'Both booking RPC overloads are required for client compatibility';
   end if;
 
+  -- The six-argument RPC must require an explicit transport flag. Otherwise
+  -- PostgreSQL/PostgREST cannot resolve five-argument calls unambiguously.
+  if pg_get_function_arguments(v_six) ~* 'p_with_transport[^,]*default' then
+    raise exception 'Six-argument RPC default makes five-argument calls ambiguous';
+  end if;
+
   six_def := pg_get_functiondef(v_six);
   five_def := pg_get_functiondef(v_five);
   if position('for update of i skip locked' in lower(six_def)) = 0
