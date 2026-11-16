@@ -47,7 +47,7 @@ assert.ok(result.error);
 assert.equal(calls.length, 0);
 
 // Legacy minutes-only form must also reject blank and missing values.
-for (const doneMinutes of ['', '   ', null]) {
+for (const doneMinutes of ['', '   ', null, '1e2', '0x10', '+120', '-0', '0120', '120.0', 'Infinity', 'NaN', ' 120', '120 ', '481']) {
   const before = calls.length;
   result = await recordMeeting({}, form({ meetingId, doneMinutes, note: '' }));
   assert.ok(result.error);
@@ -84,6 +84,7 @@ for (const input of [
   skills(120, { doneMinutes: '' }),
   skills(120, { doneMinutes: '   ' }),
   skills(120, { doneMinutes: null }),
+  ...['1e2', '0x10', '+120', '-0', '0120', '120.0', 'Infinity', 'NaN', ' 120', '120 '].map(doneMinutes => skills(120, { doneMinutes })),
   skills(481),
   skills(-1),
   skills(120, { meetingId: 'not-a-uuid' }),
