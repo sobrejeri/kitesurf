@@ -67,6 +67,8 @@ select count(*) from public.booking_meetings m
 join public.bookings b on b.id=m.booking_id
 where b.beach_id='$beach'::uuid
   and b.instructor_id='00000000-0000-0000-0000-0000000000a1'::uuid
+  and b.status in ('awaiting_payment', 'confirmed')
+  and m.status <> 'cancelled'
   and m.starts_at in ('$slot'::timestamptz, '$slot2'::timestamptz)
   and m.minutes=120;")"
 if [[ "$count" != "2" ]]; then
@@ -85,6 +87,8 @@ from public.bookings b
 join public.booking_meetings m on m.booking_id=b.id
 where b.beach_id='$beach'::uuid
   and b.instructor_id='00000000-0000-0000-0000-0000000000a1'::uuid
+  and b.status in ('awaiting_payment', 'confirmed')
+  and m.status <> 'cancelled'
   and b.student_id='00000000-0000-0000-0000-0000000000$winning_student'::uuid
   and m.starts_at in ('$slot'::timestamptz, '$slot2'::timestamptz);")"
 # sum(total_hours) counts one booking per meeting (4+4=8).
@@ -100,6 +104,8 @@ join public.booking_meetings m on m.booking_id=b.id
 where b.student_id='00000000-0000-0000-0000-0000000000$losing_student'::uuid
   and b.beach_id='$beach'::uuid
   and b.instructor_id='00000000-0000-0000-0000-0000000000a1'::uuid
+  and b.status in ('awaiting_payment', 'confirmed')
+  and m.status <> 'cancelled'
   and m.starts_at in ('$slot'::timestamptz, '$slot2'::timestamptz);")"
 if [[ "$loser_bookings" != '0' ]]; then
   echo "Concurrency regression: losing student retained $loser_bookings bookings" >&2
