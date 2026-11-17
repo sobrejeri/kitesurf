@@ -32,7 +32,7 @@ BEGIN
   END;
 
   EXECUTE 'RESET ROLE';
-  UPDATE public.booking_meetings SET starts_at=now()-interval '30 minutes'
+  UPDATE public.booking_meetings SET starts_at=now()-make_interval(mins => lesson.minutes + 30)
     WHERE id=lesson.id;
   PERFORM set_config('request.jwt.claim.sub',reservation.instructor_id::text,true);
   EXECUTE 'SET LOCAL ROLE authenticated';
