@@ -13,9 +13,6 @@ declare
   v_student uuid;
   v_booking_status text;
   v_booking_created timestamptz;
-  v_starts timestamptz;
-  v_minutes integer;
-  v_meeting_status text;
 begin
   select b.student_id, b.status::text, b.created_at
     into v_student, v_booking_status, v_booking_created
@@ -78,7 +75,8 @@ declare v_meeting record;
 begin
   if new.status::text = 'confirmed' and old.status::text <> 'confirmed' then
     for v_meeting in
-      select * from public.booking_meetings where booking_id = new.id
+      select id, starts_at, minutes from public.booking_meetings
+      where booking_id = new.id and status::text <> 'cancelled'
     loop
       perform public.guard_student_meeting_overlap_for_activation(
         new.student_id, v_meeting.id, v_meeting.starts_at, v_meeting.minutes
