@@ -13,6 +13,15 @@ begin
     raise exception 'Both booking RPC overloads are required for client compatibility';
   end if;
 
+  -- Inspect catalog defaults directly: formatting changes in pg_get_function_arguments
+  -- must not hide an ambiguous five-argument PostgREST call.
+  if (select pronargdefaults from pg_proc where oid = v_six) <> 0 then
+    raise exception 'Six-argument booking RPC must have zero argument defaults';
+  end if;
+  if (select pronargdefaults from pg_proc where oid = v_five) <> 1 then
+    raise exception 'Legacy five-argument RPC must keep exactly one optional partner code';
+  end if;
+
   -- The six-argument RPC must require an explicit transport flag. Otherwise
   -- PostgreSQL/PostgREST cannot resolve five-argument calls unambiguously.
   if pg_get_function_arguments(v_six) ~* 'p_(partner_code|with_transport)[^,]*default' then
