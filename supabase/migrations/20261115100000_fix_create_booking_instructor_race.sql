@@ -178,5 +178,12 @@ begin
 end;
 $$;
 
+-- DROP/CREATE resets function ACLs. Never expose the SECURITY DEFINER booking
+-- RPC to anonymous callers or PUBLIC after recreating it.
+revoke all on function public.create_booking(uuid, public.lesson_level, text, jsonb, text, boolean)
+  from public, anon;
+grant execute on function public.create_booking(uuid, public.lesson_level, text, jsonb, text, boolean)
+  to authenticated;
+
 notify pgrst, 'reload schema';
 commit;
