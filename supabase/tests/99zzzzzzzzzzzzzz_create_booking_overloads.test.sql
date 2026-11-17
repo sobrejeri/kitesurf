@@ -28,6 +28,18 @@ begin
     raise exception 'Six-argument RPC must not have trailing defaults: ambiguous overload or invalid signature';
   end if;
 
+  -- The fresh-snapshot recheck only prevents double booking if the helper
+  -- still checks committed meeting collisions and instructor time off.
+  if to_regprocedure('public.instructor_can_attend(uuid,jsonb)') is null then
+    raise exception 'Instructor availability helper missing';
+  end if;
+  if position('booking_meetings' in lower(pg_get_functiondef(
+       'public.instructor_can_attend(uuid,jsonb)'::regprocedure))) = 0
+     or position('instructor_time_off' in lower(pg_get_functiondef(
+       'public.instructor_can_attend(uuid,jsonb)'::regprocedure))) = 0 then
+    raise exception 'Post-lock availability helper must check booking collisions and time off';
+  end if;
+
   six_def := pg_get_functiondef(v_six);
   five_def := pg_get_functiondef(v_five);
   if position('for update of i skip locked' in lower(six_def)) = 0
