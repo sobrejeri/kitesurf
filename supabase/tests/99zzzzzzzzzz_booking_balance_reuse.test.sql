@@ -240,8 +240,14 @@ BEGIN
   ASSERT (SELECT count(*) FROM public.booking_meetings WHERE booking_id=v_bid)=2,
     'Four paid hours must create exactly two meetings';
   SELECT presence_code INTO v_pin FROM public.bookings WHERE id=v_bid;
+  -- Preserve chronological separation when replaying the two completed meetings:
+  -- each 120-minute lesson must not overlap the other under the student guard.
+  v_total:=0;
   FOR v_mid IN SELECT id FROM public.booking_meetings WHERE booking_id=v_bid ORDER BY starts_at,id LOOP
-    UPDATE public.booking_meetings SET starts_at=now()-interval '2 hours' WHERE id=v_mid;
+    UPDATE public.booking_meetings
+       SET starts_at=now() - interval '5 hours' + (v_total * interval '3 hours')
+     WHERE id=v_mid;
+    v_total:=v_total+1;
     PERFORM pg_temp.act_as(v_instructor);
     PERFORM public.start_ordered_meeting(v_mid,v_pin);
     PERFORM public.record_meeting(v_mid,120,'two-meeting four-hour regression');
