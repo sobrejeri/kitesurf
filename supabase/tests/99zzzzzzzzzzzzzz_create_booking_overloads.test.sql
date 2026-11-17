@@ -32,6 +32,13 @@ begin
   if (select prosecdef from pg_proc where oid = v_five) then
     raise exception 'Legacy delegate must not bypass permissions with SECURITY DEFINER';
   end if;
+  if has_function_privilege('anon', v_six, 'EXECUTE')
+     or has_function_privilege('PUBLIC', v_six, 'EXECUTE') then
+    raise exception 'Six-argument SECURITY DEFINER booking RPC must not be publicly executable';
+  end if;
+  if not has_function_privilege('authenticated', v_six, 'EXECUTE') then
+    raise exception 'Authenticated clients lost six-argument booking RPC access';
+  end if;
   if has_function_privilege('anon', v_five, 'EXECUTE') then
     raise exception 'Anonymous callers must not execute legacy booking RPC';
   end if;
