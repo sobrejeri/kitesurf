@@ -3,7 +3,8 @@
 Pré-requisito: projeto Supabase de TESTE com as fases 1 a 7 aplicadas (ver `docs/proposals/business-multiempresa/ROTEIRO_CHATGPT_APLICAR_E_TESTAR.md`) e a correção #283. Nunca produção.
 
 ## Preparar uma loja de teste
-1. Crie uma empresa com unidade ativa, um serviço com preço vigente, um instrutor vinculado, um produto com estoque e uma tarifa de aluguel com equipamento (telas do Business ou SQL).
+0. Atalho: crie 3 contas no painel (dono, instrutor, admin, e-mails confirmados), ajuste os e-mails no topo de `supabase/seed-teste/vitrine_escola_teste.sql` e rode no SQL Editor. Cria a escola, a unidade, o instrutor, serviço, produto, aluguel, cupom TESTE10 e já publica em `/escola/escola-teste-vitrine`. Validado num banco descartável (e recusa rodar duas vezes).
+1. Ou, manualmente, crie uma empresa com unidade ativa, um serviço com preço vigente, um instrutor vinculado, um produto com estoque e uma tarifa de aluguel com equipamento (telas do Business ou SQL).
 2. Publique como proprietário (ou gerente com `shop.manage`):
    `select public.set_store_public('<company_id>', 'escola-teste', true);` (executar com a sessão do proprietário).
 3. Abra `/escola` e `/escola/escola-teste`.
