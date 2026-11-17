@@ -55,3 +55,36 @@ begin
   end if;
   raise notice 'PASS: safe booking overload delegation and permissions';
 end $$;
+
+-- Parse/resolve the exact named-argument shapes used by RPC callers.
+-- PREPARE does not execute the SECURITY DEFINER function or create bookings.
+-- This checks PostgreSQL overload resolution; real PostgREST HTTP remains E2E.
+prepare vk_booking_four_args as
+  select public.create_booking(
+    p_beach_id => null::uuid,
+    p_level => null::public.lesson_level,
+    p_language => null::text,
+    p_meetings => null::jsonb
+  );
+deallocate vk_booking_four_args;
+
+prepare vk_booking_five_args as
+  select public.create_booking(
+    p_beach_id => null::uuid,
+    p_level => null::public.lesson_level,
+    p_language => null::text,
+    p_meetings => null::jsonb,
+    p_partner_code => null::text
+  );
+deallocate vk_booking_five_args;
+
+prepare vk_booking_six_args as
+  select public.create_booking(
+    p_beach_id => null::uuid,
+    p_level => null::public.lesson_level,
+    p_language => null::text,
+    p_meetings => null::jsonb,
+    p_partner_code => null::text,
+    p_with_transport => false
+  );
+deallocate vk_booking_six_args;
