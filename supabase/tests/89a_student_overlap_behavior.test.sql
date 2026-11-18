@@ -45,6 +45,31 @@ begin
     raise exception 'P0: rejected overlap modified the stored meeting';
   end if;
 
+  -- A second booking for the SAME student must also be rejected, even when
+  -- another approved instructor is free. This is the cross-booking regression
+  -- missing from the same-booking trigger test.
+  v_rejected := false;
+  perform pg_temp.act_as('00000000-0000-0000-0000-0000000000b1');
+  begin
+    perform public.create_booking(
+      (select id from public.beaches where slug = 'prea'),
+      'first_time', 'Português',
+      jsonb_build_array(jsonb_build_object('starts_at', v_start::text, 'hours', 2))
+    );
+  exception when exclusion_violation then
+    v_rejected := true;
+  end;
+  perform pg_temp.reset();
+  if not v_rejected then
+    raise exception 'P0: second booking accepted an overlapping student meeting';
+  end if;
+  if (select count(*) from public.booking_meetings m
+      join public.bookings b on b.id=m.booking_id
+      where b.student_id='00000000-0000-0000-0000-0000000000b1'::uuid
+        and m.starts_at=v_start and m.status::text <> 'cancelled') <> 1 then
+    raise exception 'P0: failed second booking left overlapping meeting data';
+  end if;
+
   -- Cancelled meetings are not active; editing their time must remain possible.
   update public.booking_meetings set status='cancelled' where id=v_second;
   update public.booking_meetings set starts_at=v_start where id=v_second;
