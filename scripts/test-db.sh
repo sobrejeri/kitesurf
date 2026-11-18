@@ -24,7 +24,11 @@ for migration in "$ROOT"/supabase/migrations/*.sql; do
   "${PSQL[@]}" -1 -f "$migration"
 done
 "${PSQL[@]}" -f "$ROOT/supabase/tests/10_rules.test.sql"
+# Run overlap regression while the two-meeting fixture from 10_rules is intact.
+# Later stateful SQL tests may cancel or reschedule that booking.
+"${PSQL[@]}" -f "$ROOT/supabase/tests/89a_student_overlap_behavior.test.sql"
 for testfile in "$ROOT"/supabase/tests/[2-9]*.test.sql; do
+  [ "$testfile" = "$ROOT/supabase/tests/89a_student_overlap_behavior.test.sql" ] && continue
   "${PSQL[@]}" -f "$testfile"
 done
 
