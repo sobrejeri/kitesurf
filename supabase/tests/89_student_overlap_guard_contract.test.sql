@@ -32,7 +32,7 @@ BEGIN
     SELECT 1 FROM pg_proc
     WHERE oid IN (v_guard, v_activation, v_helper)
       AND (NOT prosecdef OR proconfig IS NULL
-        OR NOT ('search_path=' = ANY(proconfig)))
+        OR NOT (proconfig && ARRAY['search_path=', 'search_path=""']::text[]))
   ) THEN
     RAISE EXCEPTION 'Student guard functions must use SECURITY DEFINER and empty search_path';
   END IF;
