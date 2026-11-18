@@ -606,3 +606,11 @@ O projeto possui um **avaliador independente preparado, não necessariamente con
 - CI `44214701001` iniciado; Claude QA `44214700246` SKIPPED (não revisou). **Não integrar** a PR #298 enquanto draft e sem validação de concorrência, deadlocks, #296 e E2E autenticado.
 - Render LIVE `4007b8fb`; Supabase kitesurf mantém somente migrations 39–42. Protege 3B fechado, checkout real desligado, sem alterações de dados.
 - **Retomada exata:** conferir CI `44214701001`; se falhar, examinar o passo SQL e corrigir a causa. Validar PRs #296/#298 juntas em PostgreSQL isolado, concorrência e chamadas PostgREST autenticadas; depois executar Aluno 4h/2 encontros → aceite Instrutor → presença/minutos/evolução → leitura Aluno, usando ambiente isolado e sessões autorizadas. Não confundir teste SQL simulado com E2E real. 0/18 homologados.
+
+
+## Handoff P0 — 18/11/2026 14h BRT, #90/#91
+
+- PR #298 recebeu commit `c39582712b8deac394c48341c655bebdee1dc479`: o teste `89a_student_overlap_behavior.test.sql` agora tenta criar **segunda reserva do mesmo aluno** no horário já confirmado, via RPC autenticada simulada, exigindo `23P01` e ausência de dados residuais. Complementa os casos anteriores dentro da mesma reserva. É teste SQL em fixture isolada, **não E2E HTTP autenticado**.
+- CI do novo HEAD ainda não confirmado no momento da escrita; não fazer merge antes de verificar sucesso, impacto da regressão conjunta #296/#298 e deadlocks. Claude QA configurado como não ativo no documento; verificar job efetivo antes de qualquer merge.
+- Render último live verificado `4007b8fb` (deploy `dep-dbtk7ep7lnhs73a391dg`); Supabase kitesurf migrations somente 39–42, nenhuma alteração nesta rodada. Protege 3B fechado; dinheiro real desligado.
+- Próximo: verificar CI do commit `c395827`, corrigir falhas; executar #296 e #298 juntas em PostgreSQL descartável; testar concorrência e transições de cancelamento/reagendamento; obter sessão autorizada de Aluno e Instrutor para E2E real 4h/2 encontros, presença/minutos/evolução e leitura pelo Aluno. 0/18 frentes homologadas.
