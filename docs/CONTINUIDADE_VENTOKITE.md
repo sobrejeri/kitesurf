@@ -597,3 +597,12 @@ O projeto possui um **avaliador independente preparado, não necessariamente con
 - #294 integrada em `44bcc03` após [CI aprovado](https://github.com/sobrejeri/kitesurf/actions/runs/43922526862) e [Claude QA pulado](https://github.com/sobrejeri/kitesurf/actions/runs/43922526907). Ver deploy `dep-dbtk5m0jo6nc7381ate0` no Render e evidência final em #105.
 - O endpoint alternativo `/api/internal/expire-offers` passa a exigir o mesmo corte de ativação e filtra pela criação da solicitação, inclusive ao selecionar uma oferta recente vinculada a uma solicitação antiga. A regressão cobre recusa antes de consultar o banco quando o corte não é válido, preview sem RPC, aplicação sem legado e seleção incompleta. Sem ativação do worker ou alteração de ofertas reais.
 - Retomar pelo CI e deploy da PR desta mudança. Homologar o filtro PostgREST e a progressão A→B→C com chamadas do agendador em instância de teste isolada. O cenário principal de 4h/2 encontros segue pendente de navegador autenticado, como descrito acima.
+
+
+## Handoff P0 — 17/11/2026, PR #298 (concorrência)
+
+- No CI `44206640905` da PR #298, o teste de corrida falhou na rodada 5: os dois alunos de fixture receberam `STUDENT_MEETING_CONFLICT` e `NO_INSTRUCTOR`. A seleção de slots considerava apenas o instrutor A1 e não as reservas ativas anteriores dos alunos b1/b2 com outros instrutores.
+- Commit `dddf0630` atualiza `scripts/test-concurrent-instructor-booking.sh` para exigir horário livre também para ambos os alunos, independentemente do instrutor, respeitando encontros não cancelados e reservas confirmadas ou pendentes recentes. Trata-se de correção de teste, **não** de homologação real.
+- CI `44214701001` iniciado; Claude QA `44214700246` SKIPPED (não revisou). **Não integrar** a PR #298 enquanto draft e sem validação de concorrência, deadlocks, #296 e E2E autenticado.
+- Render LIVE `4007b8fb`; Supabase kitesurf mantém somente migrations 39–42. Protege 3B fechado, checkout real desligado, sem alterações de dados.
+- **Retomada exata:** conferir CI `44214701001`; se falhar, examinar o passo SQL e corrigir a causa. Validar PRs #296/#298 juntas em PostgreSQL isolado, concorrência e chamadas PostgREST autenticadas; depois executar Aluno 4h/2 encontros → aceite Instrutor → presença/minutos/evolução → leitura Aluno, usando ambiente isolado e sessões autorizadas. Não confundir teste SQL simulado com E2E real. 0/18 homologados.
