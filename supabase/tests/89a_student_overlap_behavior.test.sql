@@ -11,6 +11,8 @@ declare
   v_start timestamptz;
   v_original timestamptz;
   v_rejected boolean := false;
+  v_bookings_before bigint;
+  v_meetings_before bigint;
 begin
   select b.id into v_booking
   from public.bookings b
@@ -49,6 +51,10 @@ begin
   -- another approved instructor is free. This is the cross-booking regression
   -- missing from the same-booking trigger test.
   v_rejected := false;
+  -- A failed booking RPC must not leave an orphan booking or meeting, even
+  -- if its exception is caught by this regression test.
+  select count(*) into v_bookings_before from public.bookings;
+  select count(*) into v_meetings_before from public.booking_meetings;
   perform set_config('request.jwt.claim.sub', '00000000-0000-0000-0000-0000000000b1', true);
   execute 'SET LOCAL ROLE authenticated';
   begin
@@ -63,6 +69,10 @@ begin
   execute 'RESET ROLE';
   if not v_rejected then
     raise exception 'P0: second booking accepted an overlapping student meeting';
+  end if;
+  if (select count(*) from public.bookings) <> v_bookings_before
+     or (select count(*) from public.booking_meetings) <> v_meetings_before then
+    raise exception 'P0: rejected second booking persisted orphan booking/meeting rows';
   end if;
   if (select count(*) from public.booking_meetings m
       join public.bookings b on b.id=m.booking_id
