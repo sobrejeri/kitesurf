@@ -49,7 +49,8 @@ begin
   -- another approved instructor is free. This is the cross-booking regression
   -- missing from the same-booking trigger test.
   v_rejected := false;
-  perform pg_temp.act_as('00000000-0000-0000-0000-0000000000b1');
+  perform set_config('request.jwt.claim.sub', '00000000-0000-0000-0000-0000000000b1', true);
+  execute 'SET LOCAL ROLE authenticated';
   begin
     perform public.create_booking(
       (select id from public.beaches where slug = 'prea'),
@@ -59,7 +60,7 @@ begin
   exception when exclusion_violation then
     v_rejected := true;
   end;
-  perform pg_temp.reset();
+  execute 'RESET ROLE';
   if not v_rejected then
     raise exception 'P0: second booking accepted an overlapping student meeting';
   end if;
