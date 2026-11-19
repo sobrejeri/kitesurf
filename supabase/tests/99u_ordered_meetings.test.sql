@@ -28,7 +28,7 @@ BEGIN
     PERFORM public.start_ordered_meeting(lesson.id,reservation.presence_code);
     RAISE EXCEPTION 'Future encounter started ahead of date';
   EXCEPTION WHEN sqlstate '55000' THEN
-    ASSERT SQLERRM='Meeting day has not arrived', 'Wrong future-day error';
+    ASSERT SQLERRM='Meeting start window has not opened', 'Wrong future-day error';
   END;
 
   EXECUTE 'RESET ROLE';
