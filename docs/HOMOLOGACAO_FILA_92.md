@@ -9,6 +9,8 @@ com o job do banco chamado direto. **Não foi executado** no projeto de teste: o
 - **Q11:** só existe **1 instrutor aprovado por praia** (e 1 aluno, 2 admins, 1 afiliado). O ensaio A→B→C precisa de **3** instrutores elegíveis na mesma praia: não dá para fazê-lo no projeto como está.
   Faça no **projeto isolado** (`docs/HOMOLOGACAO_PROJETO_ISOLADO.md`) ou crie 2 instrutores fictícios aprovados no projeto de teste, com a mesma praia e agenda aberta.
 - **Q8:** o `pg_cron` está **disponível (1.6.4) e não instalado**: o Passo 1 abaixo o instala.
+- **D7:** a `advance_instructor_offer` em produção está na **migration 14** (faltam `20261113000043` e `20261114002000`, instrutor preferido). O job funciona com ela (`scripts/test-prod-like-queue.sh`), mas o **comportamento para instrutor preferido** só vem com essas duas migrations; decida e ensaie isso no projeto isolado antes de agendar.
+- **Não agende o job no projeto atual** enquanto houver itens vencidos (Q7: 5 a 6 buscas e 4 a 5 ofertas): eles seriam processados na hora.
 
 ## Por que um job dentro do banco
 Hoje nada expira com o navegador fechado:

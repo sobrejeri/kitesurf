@@ -149,3 +149,21 @@ passaria a cair nessa versão antiga. Por isso o **delegado vem primeiro** (`202
 - **create_booking (5 args):** é a versão **anterior à migration 04**: sem `instructor_can_attend`, sem trava, sem cancelamento de holds vencidos e sem a regra da primeira contratação do afiliado. Será substituída pelo delegado.
 - **D1 `igual = false` em `accept_instructor_offer`, `confirm_test_payment`, `advance_instructor_offer`, `expire_balance_meeting_requests`:** o D1 compara o corpo **com comentários**, então pode ser só comentário/espaço. Para decidir, o **D7** compara o corpo **sem comentários e sem espaços** e diz **qual versão histórica** do repositório está em produção. `accept_instructor_offer` e `confirm_test_payment` são **substituídas** pela cadeia (`…120000` e `…20261120100000`); se o D7 mostrar uma versão **desconhecida**, não aplique essas duas até comparar o texto.
 - **Pendentes no repositório mas fora do ledger:** as migrations `20261111020000` (45) e `20261111080000` (46) (políticas e grants de repasse de afiliado), `20261113000043` e `20261114002000` (`advance_instructor_offer`, disponibilidade do instrutor preferido). A 47 e a 48 já estão efetivas (aplicadas à mão). O D7 mostra qual versão de `advance_instructor_offer` está em produção; o job de expiração chama essa função, então confirme a versão antes de agendá-lo.
+
+## D7 REAL (19/11/2026, 13:19, somente SELECT) e análise de impacto das migrations de instrutor preferido
+Todas as 8 funções foram **reconhecidas** (nenhuma `DESCONHECIDA`):
+| Função | Versão em produção |
+|---|---|
+| `create_booking` (6 args) | migration 10, **sem a revalidação #283** (`5e398abb…`) |
+| `accept_instructor_offer` | **última** (migration 11): a `…120000` parte da base certa |
+| `confirm_test_payment` | **última** (migration 10): a `…20261120100000` parte da base certa |
+| `request_meeting_change`, `respond_meeting_change`, `expire_meeting_change_requests`, `expire_balance_meeting_requests` | **última** |
+| `advance_instructor_offer` | **migration 14** (`07ba8bce…`), **não** a última: faltam `20261113000043` e `20261114002000` (instrutor preferido) |
+
+**Conclusão: nenhuma substituição da cadeia perde algo; todas partem do corpo que o repositório espera.** O único desvio é `advance_instructor_offer` estar numa versão mais antiga, e isso **não** é substituído pela #300/#303.
+
+**Impacto das duas migrations pendentes na #300 (testado):**
+- A #300 **não depende** delas. `…120000` copia `accept_instructor_offer` (que já é a versão certa), e o job (`…140000`) só **chama** `advance_instructor_offer` pelo nome e pela assinatura, que são iguais nas duas versões.
+- `scripts/test-prod-like-queue.sh` (novo, roda no `test-db.sh`) monta um banco **sem** essas duas migrations (confere o hash `07ba8bce…`) e roda os testes de fila (bordas, A→B→C, executor offline com 3 instrutores) e as janelas 12h+12h: **passam**.
+- O que elas mudam é o comportamento da fila **para instrutor preferido** (um preferido sem agenda ainda pode oferecer outra data). É uma decisão **separada**: aplicá-las no projeto isolado e rodar `supabase/tests/29_preferred_instructor_availability` e `91_preferred_instructor_availability` antes de qualquer aplicação no projeto atual. Não é pré-requisito da #300.
+- As migrations `20261111020000` (45) e `20261111080000` (46) (políticas e grants de repasse de afiliado) também estão fora do ledger; não afetam a #300 e precisam de conferência própria.
