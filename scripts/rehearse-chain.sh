@@ -72,6 +72,9 @@ step 20261120100000_confirm_payment_lock_order.sql \
 step 20261120110000_simulate_test_payment_canonical_lock_order.sql \
   "select position('Do NOT lock bookings' in pg_get_functiondef('public.simulate_test_payment(uuid,text,text)'::regprocedure)) > 0 and has_function_privilege('authenticated', 'public.simulate_test_payment(uuid,text,text)'::regprocedure, 'EXECUTE') and not has_function_privilege('anon', 'public.simulate_test_payment(uuid,text,text)'::regprocedure, 'EXECUTE')" \
   "pagamento simulado não trava a reserva antes da confirmação (ordem canônica de locks); permissões mantidas (só na #303)"
+step 20261120120000_meeting_start_24h_window.sql \
+  "select position('24 hours' in pg_get_functiondef('public.start_ordered_meeting(uuid,text)'::regprocedure)) > 0 and has_function_privilege('authenticated', 'public.start_ordered_meeting(uuid,text)'::regprocedure, 'EXECUTE') and not has_function_privilege('anon', 'public.start_ordered_meeting(uuid,text)'::regprocedure, 'EXECUTE')" \
+  "início do encontro liberado até 24h antes do horário (decisão do responsável); permissões mantidas (só na #303)"
 
 # ---- 2. conferência final (cada checagem separada; qualquer falso para) ----
 echo "== Conferência final"
