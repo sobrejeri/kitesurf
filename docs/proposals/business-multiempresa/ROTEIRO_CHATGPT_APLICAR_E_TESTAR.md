@@ -166,3 +166,11 @@ Migration: `supabase/migrations/20261115170000_business_finance.sql`. Verificaç
 1. **Snapshot antes** (seção A). 2. Aplicar a migration inteira de uma vez.
 3. **Snapshot depois:** `perfis` e `reservas` **iguais**; `tabelas_public` +4; `funcoes_public` +18; `politicas_public` +4.
 4. Rodar `VERIFICACAO_fase6_somente_leitura.sql`. Esperado: [1] 4 tabelas com RLS; [2] 0; [3] 18 linhas (15 `definer`, 3 `false`); [4] 0; [5] 2 linhas `false`; [6] 8 gatilhos; [7] 4 restrições; [8] só pix, ted e cash; [9] `finance.edit` sensível com 1 cargo; [10] 0, 0, 0; [11] erro de permissão no primeiro e `0` no segundo.
+
+## Fase 7 — Vitrine pública (aluno/visitante)
+
+Migration: `supabase/migrations/20261116100000_business_public_store.sql`. Verificação: `VERIFICACAO_fase7_somente_leitura.sql`. Reversão: `REVERSAO_fase7.sql` (recusa se já houver pedido público). **Projeto de teste primeiro.** ESTA FASE EXPÕE 6 FUNÇÕES AO ANÔNIMO.
+Altera `create_order` (agora um invólucro do núcleo `company_place_order`) e o gatilho `company_orders_frozen`; as suítes da fase 5 continuam passando.
+
+1. Snapshot antes (seção A). 2. Aplicar a migration inteira. 3. Rodar `VERIFICACAO_fase7_somente_leitura.sql`. Esperado: [1] 12 funções; [2] exatamente 6 (`cancel_public_order`, `create_public_order`, `get_public_order`, `public_free_slots`, `public_store_catalog`, `public_store_list`); [3] 0 linhas; [4] 4 linhas `false/false`; [5] colunas novas; [6] 0 lojas publicadas; [7] `3|10|60|300|10`; [8] `t|t`; [9] 0; [10] `0`, "Store not available", "permission denied for table company_orders", "permission denied for function create_order".
+4. Testes: `supabase/tests/99zzzzzzzzzzzzzzzzzzz_business_public_store.test.sql` e `scripts/test-business-public-order-race.sh` (20 pedidos simultâneos de um telefone: exatamente 3 aceitos).
