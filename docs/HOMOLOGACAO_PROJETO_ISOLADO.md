@@ -29,6 +29,14 @@ autenticadas sem arriscar esse projeto, use um projeto **novo e descartável**. 
 7. **Executar os roteiros:** `docs/HOMOLOGACAO_FILA_92.md` (A→B→C com navegadores fechados) e `docs/ROTEIRO_HOMOLOGACAO_FRENTES_89_93_103.md` (quatro perfis, VNT/reserva nova, dispositivos), registrando o bloco de evidência em cada issue.
 8. **Ao terminar:** `cron.unschedule(...)`, e pause ou apague o projeto.
 
+## Variante B: ensaio da atualização com uma CÓPIA do projeto existente (recomendada antes de aplicar em qualquer lugar)
+Reproduz o caminho real de atualização (ledger só com 39 a 42, migrations 01 a 38 aplicadas à mão, assinatura legada de 5 args):
+1. Faça o dump do projeto existente (comando no fim de `docs/HOMOLOGACAO_MIGRACOES_88.md`, seção Backup).
+2. Crie um projeto **novo e vazio**, restaure o dump nele (`pg_restore --no-owner -d "<URL do novo>" arquivo.dump`) e confira com `docs/CONSULTA_DERIVA_ANTES_DE_APLICAR.sql` que o estado é o mesmo do original.
+3. **Nesta variante NÃO use `supabase db push`** (o ledger copiado só tem 39 a 42 e a CLI tentaria reaplicar 01 a 38). Aplique **só** as migrations da ordem do roteiro #88, uma por vez, pelo SQL Editor, e confira a verificação de cada uma.
+4. Os dados copiados são os do projeto atual (contas fictícias de teste, segundo os registros das issues): confirme que não há dados pessoais reais antes de copiar.
+Na variante A (projeto vazio) o `supabase db push` é o caminho; na variante B nunca.
+
 ## Quem executa o E2E
 Sessões de Aluno, Instrutor e Admin são feitas por pessoas (ou por um navegador automatizado) com as contas do passo 4, em navegadores separados.
 O ambiente de automação do Claude **não** alcança `*.supabase.co` (`curl: (56) CONNECT tunnel failed, response 403`); se o responsável quiser que ele rode o app e um navegador automatizado
