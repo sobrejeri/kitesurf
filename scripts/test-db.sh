@@ -49,6 +49,9 @@ PG_TEST_SOCKET="$DATA" PG_TEST_PORT="$PORT" bash "$ROOT/scripts/test-offer-queue
 # A declines, B expires, C accepts in the same disposable database.
 PG_TEST_SOCKET="$DATA" PG_TEST_PORT="$PORT" bash "$ROOT/scripts/test-offer-queue-abc.sh"
 
+# #92: ensaio do executor offline (3 instrutores, sem sessão aberta) e mesmo estado para Aluno, Instrutor e Admin. Depende do instrutor C acima.
+PG_TEST_SOCKET="$DATA" PG_TEST_PORT="$PORT" bash "$ROOT/scripts/test-offer-offline-executor.sh"
+
 # Authorized postponement and cross-account denial in throwaway PostgreSQL.
 PG_TEST_SOCKET="$DATA" PG_TEST_PORT="$PORT" bash "$ROOT/scripts/test-meeting-change-auth.sh"
 
@@ -65,3 +68,6 @@ echo "PASS: ${RACE_ROUNDS:-12} repeated concurrent booking rounds, never two acc
 # P0 #90/#91: PRs #296 + #298 juntas. Dois alunos no mesmo horário (6 args vs 5 args) e um aluno pagando aulas
 # sobrepostas ao mesmo tempo. Roda por último: consome dias livres do instrutor de fixture.
 PG_TEST_SOCKET="$DATA" PG_TEST_PORT="$PORT" bash "$ROOT/scripts/test-p0-booking-concurrency.sh"
+
+# #88: caminho de atualização por cima de um ambiente com a migration original já aplicada + backup/restauração (clusters próprios).
+bash "$ROOT/scripts/test-migration-upgrade-path.sh"
