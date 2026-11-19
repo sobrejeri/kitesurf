@@ -38,7 +38,7 @@ before_defaults="$("${SA[@]}" -c "select pronargdefaults from pg_proc where oid 
 data_snapshot() { "$@" -c "select (select count(*) from public.bookings)||'/'||(select count(*) from public.booking_meetings)||'/'||(select count(*) from public.audit_logs)||'/'||(select count(*) from public.profiles)||'/'||coalesce((select md5(string_agg(id::text||status::text||total_cents::text||coalesce(instructor_id::text,''), ',' order by id)) from public.bookings),'-')||'/'||coalesce((select md5(string_agg(id::text||starts_at::text||minutes::text||status::text, ',' order by id)) from public.booking_meetings),'-')"; }
 before="$(data_snapshot "${SA[@]}")"
 # Como o projeto REAL: a assinatura LEGADA de 5 args ainda existe (a migration 04 a apagaria, mas o projeto nao a recebeu), SECURITY DEFINER,
-# sem a trava do instrutor, executavel por authenticated e nao por anon. A migration 20261116170000 precisa substitui-la (CREATE OR REPLACE
+# sem a trava do instrutor, executavel por authenticated e nao por anon. A migration 20261116160000 (delegado) precisa substitui-la (CREATE OR REPLACE
 # exige os mesmos nomes de parametros), nao apenas criar uma nova.
 "${QA[@]}" <<'SQL'
 create function public.create_booking(p_beach_id uuid, p_level public.lesson_level, p_language text, p_meetings jsonb, p_partner_code text default null)
@@ -47,7 +47,7 @@ revoke all on function public.create_booking(uuid, public.lesson_level, text, js
 grant execute on function public.create_booking(uuid, public.lesson_level, text, jsonb, text) to authenticated;
 SQL
 # Estado INTERMEDIARIO do projeto real (retorno do responsavel, 19/11): a funcao de 6 args tem a TRAVA do instrutor mas NAO tem a revalidacao depois da
-# trava. A migration 20261116160000 recria a funcao INTEIRA, entao precisa entregar o corpo completo mesmo partindo desse estado.
+# trava. A migration 20261116170000 (sem defaults) recria a funcao INTEIRA, entao precisa entregar o corpo completo mesmo partindo desse estado.
 "${QA[@]}" <<'SQL'
 do $$ declare d text;
 begin
@@ -66,6 +66,21 @@ assert_legacy="$("${SA[@]}" -c "select prosecdef::text || '/' || pronargdefaults
 nb="$("${SA[@]}" -c "select count(*) from public.bookings")"
 [ "$nb" -gt 0 ] || { echo "Fixture sem reservas: o teste de preservação de dados seria vazio" >&2; exit 1; }
 
+# Sonda de EXPOSICAO: uma chamada de 5 args POR NOME (como a API faria) nunca pode cair no corpo LEGADO antigo (que no projeto real nao checa agenda nem tem trava).
+# O fixture da legada levanta a mensagem "legacy path without instructor lock"; ver-la significa que o caminho antigo ficou alcancavel.
+legacy_probe() { # $1 = rotulo do ponto
+  out="$("${QA[@]}" -At 2>&1 <<'SQL'
+set role authenticated;
+select set_config('request.jwt.claim.sub', (select student_id::text from public.bookings limit 1), false);
+do $$ declare m text; begin
+  begin perform public.create_booking(p_beach_id => '00000000-0000-0000-0000-000000000000'::uuid, p_level => 'first_time'::public.lesson_level, p_language => 'x', p_meetings => '[]'::jsonb, p_partner_code => null::text);
+  exception when others then m := sqlerrm; end;
+  if m like '%legacy path without instructor lock%' then raise exception 'EXPOSTO'; end if;
+end $$;
+SQL
+)" || { echo "EXPOSTO ($1): uma chamada de 5 args por nome caiu na funcao legada antiga" >&2; echo "$out" >&2; exit 1; }
+}
+legacy_probe "estado inicial (antes de qualquer migration da cadeia)"
 # ---- 2. atualização por cima ----
 applied=0
 for m in "$ROOT"/supabase/migrations/*.sql; do
@@ -73,6 +88,7 @@ for m in "$ROOT"/supabase/migrations/*.sql; do
   [[ "$v" < "$CUT" ]] && continue
   "${QA[@]}" -1 -f "$m" >/dev/null || { echo "FALHA ao aplicar $(basename "$m") por cima do ambiente antigo" >&2; exit 1; }
   applied=$((applied + 1))
+  legacy_probe "depois de $(basename "$m")"
 done
 [ "$applied" -ge 4 ] || { echo "Esperava aplicar pelo menos 4 migrations novas, aplicou $applied" >&2; exit 1; }
 after="$(data_snapshot "${SA[@]}")"

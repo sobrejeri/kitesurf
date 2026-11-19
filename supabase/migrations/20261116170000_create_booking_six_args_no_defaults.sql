@@ -1,5 +1,9 @@
 -- P0 #91/#88 (ajuste da PR #296): a RPC create_booking de 6 argumentos nao pode ter DEFAULTS, senao uma chamada de
--- 5 argumentos fica ambigua entre as duas assinaturas (PGRST203) e a legada de 5 args (migration 20261116170000) nunca e usada.
+-- 5 argumentos fica ambigua entre as duas assinaturas (PGRST203) e o delegado de 5 args (migration 20261116160000) nunca e usado.
+--
+-- ORDEM (importante): roda DEPOIS do delegado 20261116160000. Hoje a ambiguidade dos defaults BLOQUEIA, por acidente, a funcao legada de 5 args
+-- (versao antiga, sem a checagem de agenda do instrutor e sem trava). Se os defaults saissem ANTES de a legada virar delegado, uma chamada de
+-- 5 argumentos passaria a cair nessa versao antiga. Com o delegado ja instalado, ela cai no delegado (que usa o caminho seguro de 6 args).
 --
 -- POR QUE UMA MIGRATION NOVA: este ajuste estava dentro de 20261115100000, que pode ja ter sido aplicada em algum ambiente.
 -- Migration aplicada nao se edita; por isso 20261115100000 volta a ser exatamente a original e o ajuste mora aqui.

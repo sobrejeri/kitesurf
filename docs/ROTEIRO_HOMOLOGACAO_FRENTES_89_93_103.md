@@ -3,7 +3,7 @@
 **Por que existe:** o ambiente de automação não alcança `*.supabase.co` (`curl: (56) CONNECT tunnel failed, response 403`), não tem contas de teste nem
 dispositivos. Os testes automatizados do repositório são **evidência técnica**; só a execução abaixo, com sessões reais, é **homologação**.
 Use **somente o projeto de teste** e **cobranças reais desativadas** (pagamento é o simulado). Migrations nesta ordem (ver `docs/HOMOLOGACAO_MIGRACOES_88.md`):
-`20261115100000` (se faltar), `20261116160000`, `20261116170000`, `20261117190000`, `20261119120000`, `20261119130000`, `20261119140000`.
+`20261116160000` (delegado), `20261116170000` (sem defaults), `20261117190000`, `20261119120000`, `20261119130000`, `20261119140000`.
 
 ## Como registrar a evidência (um bloco por cenário, na issue correspondente)
 ```

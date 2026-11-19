@@ -12,7 +12,7 @@ A #296 **editava** a migration `20261115100000_fix_create_booking_instructor_rac
 Para não depender dessa resposta:
 - `20261115100000` voltou a ser **exatamente** o arquivo da base (sem diferença no `git diff` contra `claude/cool-ride-x47z5c`);
 - o ajuste (tirar os `DEFAULT` da assinatura de 6 argumentos, com `DROP ... RESTRICT`) está na migration nova
-  `20261116160000_create_booking_six_args_no_defaults.sql`, que roda **depois** da original e **antes** do delegado legado `20261116170000`.
+  `20261116170000_create_booking_six_args_no_defaults.sql`, que roda **depois** da original **e depois** do delegado legado `20261116160000` (ver "Ordem segura" abaixo).
 Serve tanto onde a original já foi aplicada quanto onde ainda não foi.
 
 ## Passo 0: consultas SOMENTE LEITURA para decidir (rode no SQL Editor do projeto de teste)
@@ -49,15 +49,12 @@ where m1.status::text <> 'cancelled' and m2.status::text <> 'cancelled'
 -- 0.6 Duplo agendamento de INSTRUTOR já existente: docs/CONSULTA_duplo_agendamento_instrutor.sql (ESPERADO: 0 linhas).
 ```
 
-### Tabela de decisão (corrigida em 19/11 após o retorno completo do Passo 0 real)
-Em **qualquer** estado, o ponto de partida é `20261116160000`: ela faz `DROP … RESTRICT` e recria a função de 6 args **inteira** (trava do instrutor **e** revalidação depois da trava, sem `DEFAULT`),
-então entrega o corpo completo da #283 mesmo partindo de um estado intermediário. A `20261115100000` só é necessária num banco **novo** (ela já está na sequência normal) e **não** deve ser reaplicada num projeto existente.
-Estados possíveis, pela consulta 0.3 (`tem_trava_283`) e pela Q3 (`tem_revalidacao_283`):
-| `tem_trava_283` | `tem_revalidacao_283` | Significado | O que aplicar |
-|---|---|---|---|
-| false | false | #283 ausente | `20261116160000` em diante |
-| true | false | **intermediário (é o caso do projeto real, 19/11):** trava sem revalidação | `20261116160000` em diante; **antes**, comparar o texto da função atual com o do repositório (D6 de `docs/CONSULTA_DERIVA_ANTES_DE_APLICAR.sql`), porque o `DROP/CREATE` substitui tudo |
-| true | true | #283 completa (com 2 defaults) | `20261116160000` em diante (só tira os defaults) |
+### Tabela de decisão (corrigida em 19/11 após D1 a D6 reais)
+**Leitura correta do indicador:** a trava `for update of i skip locked` existe em `create_booking` **desde a migration 07**; ela **não** é específica da #283. O que identifica a #283 é a **revalidação** depois da trava (`tem_revalidacao_283`). Em qualquer estado, a `20261115100000` **não** se reaplica num projeto existente: a `20261116170000` faz `DROP … RESTRICT` e recria a função de 6 args **inteira** (trava **e** revalidação, sem `DEFAULT`), entregando o corpo completo da #283. A original só é necessária num banco **novo** (já está na sequência).
+| `tem_revalidacao_283` | Significado | O que aplicar |
+|---|---|---|
+| false | #283 ausente (**é o caso do projeto real**: a função é a da migration 10, sem a revalidação) | cadeia a partir de `20261116160000`; D7 confirma que nenhum ajuste manual será perdido |
+| true | #283 completa (com 2 defaults) | cadeia a partir de `20261116160000` (a `170000` só tira os defaults) |
 
 ## Backup antes de aplicar (obrigatório)
 Faça o backup pelo painel (Database > Backups) **ou** `pg_dump` da string de conexão do projeto de teste, e guarde o identificador/arquivo.
@@ -69,9 +66,9 @@ Cole **um arquivo por vez** no SQL Editor do **projeto de teste**, confira a ver
 
 | # | Arquivo | Verificação esperada logo depois |
 |---|---|---|
-| 1 | `20261115100000_fix_create_booking_instructor_race.sql` (só se 0.3 deu false/null) | `select position('for update of i skip locked' in lower(pg_get_functiondef('public.create_booking(uuid,public.lesson_level,text,jsonb,text,boolean)'::regprocedure))) > 0;` → `true` |
-| 2 | `20261116160000_create_booking_six_args_no_defaults.sql` | `select pronargdefaults from pg_proc where oid = 'public.create_booking(uuid,public.lesson_level,text,jsonb,text,boolean)'::regprocedure;` → `0` |
-| 3 | `20261116170000_create_booking_legacy_safe_delegate.sql` | a de 5 args: `defaults = 1`, `definer = false`; `select has_function_privilege('anon', 'public.create_booking(uuid,public.lesson_level,text,jsonb,text)'::regprocedure, 'EXECUTE');` → `false` |
+| 1 | `20261115100000_fix_create_booking_instructor_race.sql` (**NÃO neste projeto**: só em banco novo; ver tabela de decisão) | `select position('for update of i skip locked' in lower(pg_get_functiondef('public.create_booking(uuid,public.lesson_level,text,jsonb,text,boolean)'::regprocedure))) > 0;` → `true` |
+| 2 | `20261116160000_create_booking_legacy_safe_delegate.sql` | a de 5 args: `defaults = 1`, `definer = false` (e a de 6 args **ainda com 2 defaults**: normal neste passo); `select has_function_privilege('anon', 'public.create_booking(uuid,public.lesson_level,text,jsonb,text)'::regprocedure, 'EXECUTE');` → `false` |
+| 3 | `20261116170000_create_booking_six_args_no_defaults.sql` | `select pronargdefaults from pg_proc where oid = 'public.create_booking(uuid,public.lesson_level,text,jsonb,text,boolean)'::regprocedure;` → `0` |
 | 4 | `20261117190000_guard_student_meeting_overlap.sql` | as 2 linhas da consulta 0.4 (gatilhos) e `guarda_existe = true`; `has_function_privilege('authenticated', 'public.guard_student_meeting_overlap()'::regprocedure, 'EXECUTE')` → `false` |
 | 5 | `20261119120000_offer_accept_student_conflict.sql` | `select position('offer.student_conflict' in pg_get_functiondef('public.accept_instructor_offer(uuid)'::regprocedure)) > 0;` → `true` |
 | 6 | `20261119130000_meeting_change_student_conflict.sql` | `select position('student-meetings' in pg_get_functiondef('public.request_meeting_change(uuid,timestamptz,text)'::regprocedure)) > 0;` → `true` |
@@ -115,9 +112,9 @@ Projeto `qadkqjfmmnxvovyyhqxw`. **Primeiro retorno (12:26):** ledger só com `20
 **Retorno completo Q3 a Q11 (12:40), com uma CORREÇÃO:** a função de 6 args tem a **trava** mas **não tem a revalidação** depois dela (`tem_trava_283 = true`, `tem_revalidacao_283 = false`); a de 5 args não tem trava nem delega. Ou seja, a #283 está **incompleta (estado intermediário)** e a legada de 5 args é o caminho sem trava que a #296 fecha.
 Também: guardas ausentes (Q4), 0 conflitos de aluno (Q5) e de instrutor (Q6); **6 buscas e 5 ofertas vencidas** (Q7; a #92 registrou 4 e 3); `pg_cron` **disponível (1.6.4) mas não instalado** (Q8); 6 buckets de Storage, **todos privados** (Q9); as **14 sondas** das migrations 01 a 38 todas presentes (Q10); contas: 1 aluno, 1 instrutor, 2 admins, 1 afiliado, e **1 instrutor aprovado por praia** (Q11).
 
-**Decisão:** **NÃO reaplicar `20261115100000`.** Aplicar a partir de `20261116160000`, que recria `create_booking` de 6 args completa. Ordem para ESTE projeto, quando houver revisão e backup:
+**Decisão:** **NÃO reaplicar `20261115100000`.** A cadeia começa em `20261116160000` (delegado) e a `20261116170000` recria `create_booking` de 6 args completa. Ordem para ESTE projeto, quando houver revisão e backup:
 `20261116160000` → `20261116170000` → `20261117190000` → `20261119120000` → `20261119130000` → `20261119140000` → `20261120100000` (esta última só na #303), cada uma conferida pela verificação da tabela de ordem.
-**Antes** de `20261116160000`: rodar o **D6** (texto das funções) para comparar o corpo atual com o do repositório, porque o `DROP/CREATE` substitui tudo, inclusive qualquer ajuste manual que não esteja no repositório.
+**Antes** da cadeia: rodar o **D7** (hashes normalizados, que identificam a versão histórica de cada função) e conferir o resultado conforme "Resultado do D1 a D6 reais" abaixo.
 
 **Leituras que afetam o plano:**
 - **Q7:** ao agendar o job de expiração, as 6 buscas e 5 ofertas vencidas serão processadas na hora (expiram e a fila avança). Revise-as antes (consulta do Passo 0 de `docs/HOMOLOGACAO_FILA_92.md`).
@@ -128,9 +125,9 @@ Também: guardas ausentes (Q4), 0 conflitos de aluno (Q5) e de instrutor (Q6); *
 O projeto já divergiu do repositório uma vez: a assinatura legada de 5 args existe aqui e o repositório a apaga na migration 04. Como as migrations novas **substituem** funções
 (`CREATE OR REPLACE`), uma alteração manual anterior seria sobrescrita em silêncio. Rode `docs/CONSULTA_DERIVA_ANTES_DE_APLICAR.sql` (somente leitura, validado nos dois estados num banco descartável):
 - **D1:** `igual = true` em todas as linhas "substitui". Qualquer `false`: **não aplicar**, colar a saída na #88.
-- **D2:** a função legada de 5 args com `nomes_ok = true`, retorno `uuid`, `defaults = 1` (o `CREATE OR REPLACE` da `20261116170000` exige os mesmos nomes de parâmetros; se `nomes_ok = false` a migration falharia e a transação desfaria tudo).
-- **D3:** 0 dependentes (o `DROP … RESTRICT` da `20261116160000` falharia se houvesse). **D4:** `create_booking = 2`, demais `1`. **D5:** 0 linhas.
-O teste `scripts/test-migration-upgrade-path.sh` agora parte de um banco **com a assinatura legada de 5 args presente** (como o projeto real) e prova que a `20261116170000` a substitui por delegado `SECURITY INVOKER`.
+- **D2:** a função legada de 5 args com `nomes_ok = true`, retorno `uuid`, `defaults = 1` (o `CREATE OR REPLACE` da `20261116160000` exige os mesmos nomes de parâmetros; se `nomes_ok = false` a migration falharia e a transação desfaria tudo).
+- **D3:** 0 dependentes (o `DROP … RESTRICT` da `20261116170000` falharia se houvesse). **D4:** `create_booking = 2`, demais `1`. **D5:** 0 linhas.
+O teste `scripts/test-migration-upgrade-path.sh` agora parte de um banco **com a assinatura legada de 5 args presente** (como o projeto real) e prova que a `20261116160000` a substitui por delegado `SECURITY INVOKER`.
 
 ### Backup antes de aplicar (ainda não identificado)
 O painel só oferece backups automáticos em alguns planos. **Não presuma**: confira em Database > Backups. Se não houver backup utilizável, faça um manual **antes** de qualquer migration:
@@ -140,3 +137,15 @@ pg_dump "$DATABASE_URL" -Fc --no-owner -f kitesurf-antes-da-300-$(date +%Y%m%d).
 pg_restore --list kitesurf-antes-da-300-*.dump | head   # confere que o arquivo abre
 ```
 A restauração foi ensaiada em banco descartável (`scripts/test-migration-upgrade-path.sh`). Para ensaiar com os **dados reais**, restaure esse dump num projeto novo e aplique as migrations nele primeiro (variante B de `docs/HOMOLOGACAO_PROJETO_ISOLADO.md`).
+
+## Ordem segura entre o delegado (`…160000`) e a remoção dos defaults (`…170000`)
+Hoje os 2 `DEFAULT` da função de 6 args tornam **ambígua** (e portanto inalcançável pela API) uma chamada de 5 argumentos; isso protege, por acidente, a função **legada de 5 args**,
+que é uma versão antiga **sem** `instructor_can_attend` (agenda, bloqueios, pausas) e **sem** trava. Se os defaults saíssem **antes** de a legada virar delegado, uma chamada de 5 argumentos
+passaria a cair nessa versão antiga. Por isso o **delegado vem primeiro** (`20261116160000`) e só depois os defaults saem (`20261116170000`). O app não é afetado (ele sempre envia os 6 argumentos), mas a API é pública.
+
+## Resultado do D1 a D6 reais (19/11/2026, 12:56) e o que foi concluído
+- **D2 a D5 limpos:** a legada de 5 args tem `nomes_ok = true`, retorno `uuid`, 1 default (o `CREATE OR REPLACE` do delegado funciona); 0 dependentes; `create_booking = 2` e as demais funções `= 1`; nenhum nome conflitante.
+- **create_booking (6 args), texto lido linha a linha:** idêntico ao do repositório **exceto** pela falta da revalidação depois da trava (comentários à parte). Comprovado de forma mecânica: o hash normalizado da versão do repositório **menos o bloco de revalidação** é igual ao hash da versão da **migration 10** (`5e398afc…`), ou seja, produção está exatamente na versão da migration 10. **A `20261116170000` não perde nenhum ajuste manual.**
+- **create_booking (5 args):** é a versão **anterior à migration 04**: sem `instructor_can_attend`, sem trava, sem cancelamento de holds vencidos e sem a regra da primeira contratação do afiliado. Será substituída pelo delegado.
+- **D1 `igual = false` em `accept_instructor_offer`, `confirm_test_payment`, `advance_instructor_offer`, `expire_balance_meeting_requests`:** o D1 compara o corpo **com comentários**, então pode ser só comentário/espaço. Para decidir, o **D7** compara o corpo **sem comentários e sem espaços** e diz **qual versão histórica** do repositório está em produção. `accept_instructor_offer` e `confirm_test_payment` são **substituídas** pela cadeia (`…120000` e `…20261120100000`); se o D7 mostrar uma versão **desconhecida**, não aplique essas duas até comparar o texto.
+- **Pendentes no repositório mas fora do ledger:** as migrations `20261111020000` (45) e `20261111080000` (46) (políticas e grants de repasse de afiliado), `20261113000043` e `20261114002000` (`advance_instructor_offer`, disponibilidade do instrutor preferido). A 47 e a 48 já estão efetivas (aplicadas à mão). O D7 mostra qual versão de `advance_instructor_offer` está em produção; o job de expiração chama essa função, então confirme a versão antes de agendá-lo.

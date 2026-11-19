@@ -4,7 +4,9 @@
 -- Preserve the old RPC signature for existing clients, but delegate every booking
 -- to the single concurrency-safe implementation. No data or payment changes.
 --
--- IMPORTANT: deploy this migration only AFTER the 20261115100000 migration.
+-- IMPORTANT: needs the six-argument create_booking to exist (it does after 20261115100000 or in any environment that already has it).
+-- ORDER: this migration runs BEFORE 20261116170000 (which drops the six-argument defaults): while the defaults still exist a five-argument call is
+-- ambiguous and unreachable; once this delegate is in place, removing them sends five-argument calls to the delegate, never to the old legacy body.
 begin;
 
 create or replace function public.create_booking(
