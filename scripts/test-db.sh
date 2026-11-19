@@ -36,6 +36,7 @@ PG_TEST_SOCKET="$DATA" PG_TEST_PORT="$PORT" bash "$ROOT/scripts/test-booking-two
 
 # Cover the student-facing request/offer path through both lessons and balance.
 PG_TEST_SOCKET="$DATA" PG_TEST_PORT="$PORT" bash "$ROOT/scripts/test-request-queue-two-meetings.sh"
+PG_TEST_SOCKET="$DATA" PG_TEST_PORT="$PORT" PG_TEST_REQUEST_MODE=preferred bash "$ROOT/scripts/test-request-queue-two-meetings.sh"
 
 # A declines, B expires, C accepts in the same disposable database.
 PG_TEST_SOCKET="$DATA" PG_TEST_PORT="$PORT" bash "$ROOT/scripts/test-offer-queue-abc.sh"
