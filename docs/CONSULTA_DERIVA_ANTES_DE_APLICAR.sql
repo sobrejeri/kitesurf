@@ -1,7 +1,8 @@
 -- SOMENTE LEITURA. Confere se as funções que as migrations da #300/#303 vão SUBSTITUIR (CREATE OR REPLACE) estão, no projeto, iguais às do repositório.
 -- Motivo: este projeto recebeu as migrations 01 a 38 à mão e já divergiu do repositório uma vez (a assinatura legada de 5 args de create_booking
 -- existe aqui e o repositório a apaga na migration 04). Substituir uma função que foi alterada à mão sobrescreve a alteração em silêncio.
--- Como ler: bloco D1 => coluna `igual` deve ser true em todas as linhas marcadas "substitui". Qualquer false: NÃO aplique; cole a saída na issue #88.
+-- Como ler: bloco D1 => `igual` deve ser true nas linhas "substitui". ATENÇÃO: create_booking (6 args) JÁ SE SABE intermediário (trava sem revalidação, 19/11), então
+-- `igual = false` nela é esperado; para ela vale o D6 (texto). Para as demais, qualquer false: NÃO aplique; cole a saída na issue #88.
 -- O hash é md5 do CORPO (prosrc), estável entre versões do PostgreSQL. Esperados gerados de um banco construído pelas migrations < 20261116160000.
 
 -- D1 Corpo atual x esperado.
@@ -42,3 +43,9 @@ group by proname order by proname;
 -- D5 Nomes que as migrations novas vão CRIAR não podem existir já (CREATE FUNCTION sem OR REPLACE falharia). ESPERADO: 0 linhas.
 select proname from pg_proc where pronamespace = 'public'::regnamespace
   and proname in ('guard_student_meeting_overlap','guard_student_booking_activation','guard_student_meeting_overlap_for_activation','run_queue_expiry_job','run_expiry_jobs');
+
+-- D6 TEXTO das funções que serão recriadas (preciso do texto para comparar com o repositório linha a linha; o md5 do D1 só diz "diferente").
+--    Cole a saída COMPLETA na issue #88. Principalmente a de 6 args: ela está em estado intermediário (trava sem revalidação) e a 20261116160000
+--    a substitui por inteiro; se houver QUALQUER ajuste manual além disso, ele seria perdido.
+select p.oid::regprocedure::text as assinatura, pg_get_functiondef(p.oid) as definicao
+from pg_proc p where p.pronamespace = 'public'::regnamespace and p.proname = 'create_booking' order by 1;
