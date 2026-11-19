@@ -4,7 +4,10 @@
 set -euo pipefail
 : "${PG_TEST_SOCKET:?Disposable PostgreSQL socket required}"
 : "${PG_TEST_PORT:?Disposable PostgreSQL port required}"
-psql -X -h "$PG_TEST_SOCKET" -p "$PG_TEST_PORT" -U postgres -d postgres -v ON_ERROR_STOP=1 <<'SQL'
+psql -X -h "$PG_TEST_SOCKET" -p "$PG_TEST_PORT" -U postgres -d postgres -v ON_ERROR_STOP=1 -v request_mode="${PG_TEST_REQUEST_MODE:-generic}" <<'SQL'
+-- Keep both variants independent, with no persisted fixture bookings.
+begin;
+select set_config('vento.test_request_mode', :'request_mode', true);
 do $$
 declare
   v_beach uuid;
@@ -44,7 +47,14 @@ begin
                               jsonb_build_object('starts_at',v_second,'hours',2));
   perform set_config('request.jwt.claim.sub','00000000-0000-0000-0000-0000000000b2',true);
   execute 'set local role authenticated';
-  v_request:=public.create_instructor_request(v_beach,'first_time','Português',v_slots);
+  if current_setting('vento.test_request_mode') = 'preferred' then
+    -- Match the seven-argument RPC invoked by the student UI.
+    v_request:=public.create_instructor_request_with_preference(
+      v_beach,'first_time','Português',v_slots,null,false,
+      '00000000-0000-0000-0000-0000000000a1'::uuid);
+  else
+    v_request:=public.create_instructor_request(v_beach,'first_time','Português',v_slots);
+  end if;
   execute 'reset role';
   select id,instructor_id into strict v_offer,v_instructor
     from public.instructor_offers where request_id=v_request and status='offered';
@@ -125,5 +135,6 @@ begin
     raise exception 'SECURITY: queue lesson progress changed after student write';
   end if;
   raise notice 'PASS: request -> offer -> acceptance -> 4h/2 meetings -> 225 done -> 15 remaining';
-end $$;
+end $;
+rollback;
 SQL
