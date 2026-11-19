@@ -614,3 +614,10 @@ O projeto possui um **avaliador independente preparado, não necessariamente con
 - CI do novo HEAD ainda não confirmado no momento da escrita; não fazer merge antes de verificar sucesso, impacto da regressão conjunta #296/#298 e deadlocks. Claude QA configurado como não ativo no documento; verificar job efetivo antes de qualquer merge.
 - Render último live verificado `4007b8fb` (deploy `dep-dbtk7ep7lnhs73a391dg`); Supabase kitesurf migrations somente 39–42, nenhuma alteração nesta rodada. Protege 3B fechado; dinheiro real desligado.
 - Próximo: verificar CI do commit `c395827`, corrigir falhas; executar #296 e #298 juntas em PostgreSQL descartável; testar concorrência e transições de cancelamento/reagendamento; obter sessão autorizada de Aluno e Instrutor para E2E real 4h/2 encontros, presença/minutos/evolução e leitura pelo Aluno. 0/18 frentes homologadas.
+
+### Handoff P0 — 19/11/2026, PR #299: caminho preferencial da UI
+
+- CI do HEAD anterior `be57f789` aprovado (run `44470597093`). A PR #299 agora executa o fluxo genérico e a variante de sete argumentos `create_instructor_request_with_preference` usada pela interface, com instrutor preferido A1, no mesmo script e em transações isoladas com `ROLLBACK`.
+- Commits de implementação/teste: `31ea2467` e `20963bcb`. CI inicial do novo HEAD `44478067083` em execução ao registrar; Claude QA `44478067095` SKIPPED, **não revisou**. Este commit documental dispara nova checagem: validar o CI do HEAD final, não somente o anterior.
+- Sem merge ou deploy. Render live `4007b8fb` (`dep-dbtk7ep7lnhs73a391dg`), Supabase Kitesurf migrations 39–42, Protege 3B fechado. PRs #296/#298 continuam em draft.
+- **Retomada:** verificar CI da PR #299 no HEAD final; se falhar, investigar a RPC de preferência e fixtures, corrigir sem enfraquecer testes de RLS. Depois preparar ambiente isolado e sessões autorizadas Aluno/Instrutor, rodar E2E de 4h/2 encontros com aceite, presença, 110+115 minutos, evolução e leitura do aluno. SQL simulado não equivale a E2E. 0/18 tópicos homologados.
