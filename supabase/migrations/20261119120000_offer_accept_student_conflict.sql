@@ -47,6 +47,10 @@ begin
     update public.instructor_offers set status='expired',responded_at=now()
       where request_id=r.id and status in ('offered','suggested');
     update public.instructor_requests set status='cancelled' where id=r.id;
+    insert into public.app_notifications(recipient_id,category,title,body,href)
+      values(r.student_id,'booking','Busca de instrutor encerrada',
+        'Você já tem outro encontro nesse horário, por isso encerramos esta busca. Faça um novo pedido em outro horário.',
+        '/aluno/aulas');
     perform public.write_audit('offer.student_conflict','instructor_request',r.id::text,null,
       jsonb_build_object('offer',o.id,'reason','student already has an overlapping meeting'));
     return null;

@@ -134,6 +134,7 @@ begin
     execute 'reset role';
     assert got = 'ok', format('E5: aceite com conflito do aluno lancou erro cru (%s / %s) e deixou a oferta presa', got, coalesce(v_hint, '-'));
     assert v_ret is null, 'E5: aceite com conflito do aluno nao pode criar segunda reserva';
+    assert exists (select 1 from public.app_notifications where recipient_id = stu and title = 'Busca de instrutor encerrada' and created_at >= v_t0), 'E5: o aluno precisa ser avisado de que a busca foi encerrada';
     assert (select status from public.instructor_requests where id = v_req) <> 'searching' or not exists (select 1 from public.instructor_offers where request_id = v_req and status = 'offered' and id = v_offer),
       'E5: o pedido ficou preso com a oferta aberta';
     assert (select count(*) from public.booking_meetings m join public.bookings b on b.id = m.booking_id where b.student_id = stu and m.status::text <> 'cancelled' and b.status::text in ('confirmed','awaiting_payment')
