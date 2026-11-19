@@ -92,3 +92,16 @@ order by 1;   -- ESPERADO: anon = false em todas; autenticado = true em todas
 `95_storage_private_buckets`, `97_documents`, `99_admin_avatars`, `99y_student_booking_avatar` e `99zzzzzzzz_chat_features` exercitam buckets privados,
 documentos, fotos e anexos por papel. **Verificar no Supabase real** (consulta somente leitura): `select id, public from storage.buckets order by id;`
 (buckets de documentos, avatares e anexos de chat devem ter `public = false`) e `select policyname, cmd, roles from pg_policies where schemaname = 'storage' order by 1;`.
+
+## Resultado das consultas reais ao Supabase (19/11/2026, somente SELECT, via conector; PR #300, comentário do retorno)
+Projeto `qadkqjfmmnxvovyyhqxw`:
+- **Ledger** (`supabase_migrations.schema_migrations`): somente `20261110001348` (Protege 39), `20261110001427` (40), `20261110003527` (41, proteção segue registrada) e `20261110012944` (42).
+- **Catálogo:** `create_booking(uuid,lesson_level,text,jsonb,text)` com **1 default**, `create_booking(uuid,lesson_level,text,jsonb,text,boolean)` com **2 defaults**, ambas `SECURITY DEFINER`, `anon` sem EXECUTE e `authenticated` com EXECUTE;
+  `confirm_test_payment(uuid)` e `instructor_can_attend(uuid,jsonb)` com `anon` sem EXECUTE (esta última também sem EXECUTE para `authenticated`).
+
+**Leitura correta:**
+1. O ledger **não tem 01 a 38** (foram aplicadas à mão). Portanto "a `20261115100000` não consta no ledger" **não prova** que a trava da #283 esteja ausente. **A pergunta segue em aberto até o Q3** de
+   `docs/CONSULTAS_HOMOLOGACAO_SOMENTE_LEITURA.sql` (corpo da função: `tem_trava_283`). Pela tabela de decisão acima: `false` ⇒ aplicar a `20261115100000` primeiro; `true` ⇒ começar em `20261116160000`.
+2. A assinatura de 6 args **mantém 2 defaults** e a de 5 args existe: hoje uma chamada de 5 argumentos por nome (PostgREST) é **ambígua** (`PGRST203`). Isso é uma condição pré-existente que a `20261116160000` corrige; não foi introduzida por estas PRs.
+3. **Não aplicar nada neste projeto** sem conciliar (Q3, Q5, Q6) e revisar. **Não usar `supabase db push` aqui** (reaplicaria 01 a 38). A homologação autenticada deve ir para um projeto isolado: `docs/HOMOLOGACAO_PROJETO_ISOLADO.md`.
+4. Escopo v1 informado pelo responsável: **16 frentes** (sem laboratório 3D e sem checkout real). Os totais passam a ser dados sobre 16, não 18.
