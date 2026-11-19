@@ -1,5 +1,6 @@
 'use server';
 
+import { cookies } from 'next/headers';
 import { z } from 'zod';
 
 import { friendlyOrderError } from '@/lib/public-store';
@@ -23,10 +24,12 @@ export async function placePublicOrder(input: unknown): Promise<PlaceResult> {
   const parsed = PlaceOrder.safeParse(input);
   if (!parsed.success) return { ok: false, error: 'Confira os dados do pedido.' };
   const v = parsed.data;
+  // Link de afiliado (?ref=CODE) fica num cookie por 30 dias; o banco ignora código desconhecido ou suspenso.
+  const ref = (await cookies()).get('vento_ref')?.value;
   const db = await createSupabaseServerClient('aluno');
   const { data, error } = await db.rpc('create_public_order', {
     p_slug: v.slug, p_customer: v.customer, p_phone: v.phone, p_items: v.items,
-    p_affiliate_code: v.affiliate?.trim() || null, p_coupon_code: v.coupon?.trim() || null,
+    p_affiliate_code: v.affiliate?.trim() || (ref && /^[A-Z0-9-]{3,32}$/.test(ref) ? ref : null), p_coupon_code: v.coupon?.trim() || null,
   });
   if (error) return { ok: false, error: friendlyOrderError(error.message) };
   const row = (data as { order_number: string; token: string }[] | null)?.[0];

@@ -18,6 +18,7 @@ Pré-requisito: projeto Supabase de TESTE com as fases 1 a 7 aplicadas (ver `doc
 - [ ] Abrir o pedido sem `?t=` ou com token errado: "Pedido não encontrado".
 - [ ] Cancelar pelo link funciona enquanto "Recebido"; depois que a escola avança, não.
 - [ ] 4º pedido na mesma hora com o mesmo telefone é recusado com mensagem amigável.
+- [ ] Entrar na loja por um link de afiliado (`/escola/escola-teste-vitrine?ref=CODIGO`), fazer o pedido e conferir a atribuição ao afiliado.
 - [ ] Cupom como visitante é recusado; com conta e e-mail confirmado funciona.
 
 ## Roteiro (aluno logado)
