@@ -71,3 +71,6 @@ PG_TEST_SOCKET="$DATA" PG_TEST_PORT="$PORT" bash "$ROOT/scripts/test-p0-booking-
 
 # #88: caminho de atualização por cima de um ambiente com a migration original já aplicada + backup/restauração (clusters próprios).
 bash "$ROOT/scripts/test-migration-upgrade-path.sh"
+
+# #92: a cadeia e o job também precisam passar no estado REAL do projeto (sem as migrations do instrutor preferido; D7 de 19/11/2026).
+bash "$ROOT/scripts/test-prod-like-queue.sh"
