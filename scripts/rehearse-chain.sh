@@ -33,7 +33,7 @@ echo "   assinaturas de create_booking: $dups"
 
 step() { # $1=arquivo  $2=SQL de verificação (deve devolver 't')  $3=descrição
   local f="$ROOT/supabase/migrations/$1"
-  [ -f "$f" ] || { echo "-- pulando $1 (arquivo não existe nesta branch)"; return 0; }
+  [ -f "$f" ] || { echo "FALHOU: migration obrigatória ausente: $1. Nenhuma etapa pode ser pulada." >&2; exit 2; }
   echo "== Aplicando $1"
   if ! out="$("${Q[@]}" -1 -f "$f" 2>&1)"; then
     echo "FALHOU em $1. Mensagem exata abaixo. NÃO continue: copie para a issue #88." >&2
