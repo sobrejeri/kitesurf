@@ -11,6 +11,8 @@ const KNOWN: readonly [RegExp, string][] = [
     'O prazo de confirmação expirou ou a aula não está disponível. Confira a reserva ou procure um novo horário.'],
   [/Student already has a lesson at the selected time/i,
     'Você já tem uma aula ou uma busca de instrutor nesse horário. Escolha outro dia ou horário sem sobreposição.'],
+  [/Student already has a meeting in this time slot/i,
+    'Você já tem outro encontro nesse horário. Escolha um horário que não se sobreponha às suas aulas.'],
   [/Overlapping meetings/i,
     'Há dois encontros no mesmo horário. Ajuste as datas e os horários para continuar.'],
   [/Invalid meeting date or hours/i,
@@ -98,6 +100,9 @@ export function friendlyError(
     return 'A função necessária no Supabase não está disponível ou está desatualizada. Avise a administração para verificar as migrações.';
   }
   if (error?.code === '42501') return 'Você não tem permissão para esta operação. Entre novamente ou contate a administração.';
+  if (error?.hint === 'STUDENT_MEETING_CONFLICT') {
+    return 'Você já tem outro encontro nesse horário. Escolha um horário que não se sobreponha às suas aulas.';
+  }
   if (error?.hint === 'NO_INSTRUCTOR') {
     return 'Nenhum instrutor disponível para essa praia e horário. Escolha outro horário ou tente outra praia.';
   }

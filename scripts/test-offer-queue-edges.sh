@@ -19,6 +19,7 @@ declare
   v_bk uuid; v_total_offers int; v_bookings_before int;
 
   v_guarded boolean := false;
+  v_t0 timestamptz := now();
 begin
   select id into strict v_prea from public.beaches where slug = 'prea';
   select id into strict v_jeri from public.beaches where slug = 'jeri';
@@ -138,6 +139,8 @@ begin
     assert (select count(*) from public.booking_meetings m join public.bookings b on b.id = m.booking_id where b.student_id = stu and m.status::text <> 'cancelled' and b.status::text in ('confirmed','awaiting_payment')
             and tstzrange(m.starts_at, m.starts_at + make_interval(mins => m.minutes), '[)') && tstzrange(v_s, v_s + interval '150 minutes', '[)')) = 1, 'E5: o aluno deve ter um unico encontro ativo na janela';
   end; end if;
+  -- Deixa o fixture compartilhado neutro: os scripts seguintes escolhem os primeiros horarios livres do aluno e nao devem esbarrar nestas reservas.
+  update public.bookings set status = 'cancelled', cancelled_at = now() where student_id = stu and created_at >= v_t0 and status::text in ('awaiting_payment', 'confirmed');
   raise notice 'PASS: fila - aceite fora do prazo, oferta alheia, redistribuicao ate esgotar, aceite duplo e conflito do aluno no aceite';
 end $$;
 SQL
