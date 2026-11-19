@@ -90,6 +90,31 @@ begin
     raise exception 'IDOR: unrelated student sees queue booking meetings';
   end if;
   execute 'reset role';
+  -- Verify that a second instructor cannot inspect completed progress.
+  perform set_config('request.jwt.claim.sub','00000000-0000-0000-0000-0000000000a2',true);
+  execute 'set local role authenticated';
+  if exists(select 1 from public.booking_meetings
+      where booking_id=v_booking and (done_minutes>0 or note is not null)) then
+    raise exception 'IDOR: unrelated instructor sees completed queue lesson progress';
+  end if;
+  execute 'reset role';
+  -- The authenticated student can read evolution, but must not rewrite it.
+  perform set_config('request.jwt.claim.sub','00000000-0000-0000-0000-0000000000b2',true);
+  execute 'set local role authenticated';
+  begin
+    update public.booking_meetings
+      set done_minutes=0, note='forged progress'
+      where id=v_m1;
+    get diagnostics v_n = row_count;
+    if v_n<>0 then
+      raise exception 'SECURITY: student modified queue lesson progress';
+    end if;
+  exception when insufficient_privilege then null; end;
+  execute 'reset role';
+  if not exists(select 1 from public.booking_meetings
+    where id=v_m1 and done_minutes=110 and note='Controle e segurança') then
+    raise exception 'SECURITY: queue lesson progress changed after student write';
+  end if;
   raise notice 'PASS: request -> offer -> acceptance -> 4h/2 meetings -> 225 done -> 15 remaining';
 end $$;
 SQL
