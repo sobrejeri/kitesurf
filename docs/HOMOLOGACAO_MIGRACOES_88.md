@@ -100,8 +100,31 @@ Projeto `qadkqjfmmnxvovyyhqxw`:
   `confirm_test_payment(uuid)` e `instructor_can_attend(uuid,jsonb)` com `anon` sem EXECUTE (esta última também sem EXECUTE para `authenticated`).
 
 **Leitura correta:**
-1. O ledger **não tem 01 a 38** (foram aplicadas à mão). Portanto "a `20261115100000` não consta no ledger" **não prova** que a trava da #283 esteja ausente. **A pergunta segue em aberto até o Q3** de
-   `docs/CONSULTAS_HOMOLOGACAO_SOMENTE_LEITURA.sql` (corpo da função: `tem_trava_283`). Pela tabela de decisão acima: `false` ⇒ aplicar a `20261115100000` primeiro; `true` ⇒ começar em `20261116160000`.
+1. O ledger **não tem 01 a 38** (foram aplicadas à mão). Portanto "a `20261115100000` não consta no ledger" **não prova** que a trava da #283 esteja ausente. **A pergunta foi respondida pelo Passo 0 real** (abaixo): a trava da #283 **está** no corpo da função.
 2. A assinatura de 6 args **mantém 2 defaults** e a de 5 args existe: hoje uma chamada de 5 argumentos por nome (PostgREST) é **ambígua** (`PGRST203`). Isso é uma condição pré-existente que a `20261116160000` corrige; não foi introduzida por estas PRs.
 3. **Não aplicar nada neste projeto** sem conciliar (Q3, Q5, Q6) e revisar. **Não usar `supabase db push` aqui** (reaplicaria 01 a 38). A homologação autenticada deve ir para um projeto isolado: `docs/HOMOLOGACAO_PROJETO_ISOLADO.md`.
 4. Escopo v1 informado pelo responsável: **16 frentes** (sem laboratório 3D e sem checkout real). Os totais passam a ser dados sobre 16, não 18.
+
+## Passo 0 REAL executado em 19/11/2026 12:26 (somente leitura, issue #88, comentário do responsável) e decisão
+Projeto `qadkqjfmmnxvovyyhqxw`: ledger só com `20261110001348`, `20261110001427`, `20261110003527`, `20261110012944`; a função de **6 args tem a trava #283**, 2 defaults e `SECURITY DEFINER`;
+a de **5 args** tem 1 default e `SECURITY DEFINER`; guarda do aluno **ausente** (0 dos 2 gatilhos); **0 pares ativos sobrepostos** de aluno e de instrutor; as 9 assinaturas de reserva/fila/presença/remarcação consultadas permitem `authenticated` e negam `anon`.
+
+**Decisão pela tabela acima (`tem_trava_283 = true`, 2 defaults):** **NÃO reaplicar `20261115100000`.** A primeira migration a aplicar é `20261116160000`. Ordem para ESTE projeto, quando houver revisão e backup:
+`20261116160000` → `20261116170000` → `20261117190000` → `20261119120000` → `20261119130000` → `20261119140000` → `20261120100000` (esta última só na #303), cada uma conferida pela verificação da tabela de ordem.
+
+### Deriva entre o projeto e o repositório (conferir ANTES de aplicar)
+O projeto já divergiu do repositório uma vez: a assinatura legada de 5 args existe aqui e o repositório a apaga na migration 04. Como as migrations novas **substituem** funções
+(`CREATE OR REPLACE`), uma alteração manual anterior seria sobrescrita em silêncio. Rode `docs/CONSULTA_DERIVA_ANTES_DE_APLICAR.sql` (somente leitura, validado nos dois estados num banco descartável):
+- **D1:** `igual = true` em todas as linhas "substitui". Qualquer `false`: **não aplicar**, colar a saída na #88.
+- **D2:** a função legada de 5 args com `nomes_ok = true`, retorno `uuid`, `defaults = 1` (o `CREATE OR REPLACE` da `20261116170000` exige os mesmos nomes de parâmetros; se `nomes_ok = false` a migration falharia e a transação desfaria tudo).
+- **D3:** 0 dependentes (o `DROP … RESTRICT` da `20261116160000` falharia se houvesse). **D4:** `create_booking = 2`, demais `1`. **D5:** 0 linhas.
+O teste `scripts/test-migration-upgrade-path.sh` agora parte de um banco **com a assinatura legada de 5 args presente** (como o projeto real) e prova que a `20261116170000` a substitui por delegado `SECURITY INVOKER`.
+
+### Backup antes de aplicar (ainda não identificado)
+O painel só oferece backups automáticos em alguns planos. **Não presuma**: confira em Database > Backups. Se não houver backup utilizável, faça um manual **antes** de qualquer migration:
+```bash
+# string de conexão em Project Settings > Database (use a do pooler ou a direta; senha do banco do responsável)
+pg_dump "$DATABASE_URL" -Fc --no-owner -f kitesurf-antes-da-300-$(date +%Y%m%d).dump
+pg_restore --list kitesurf-antes-da-300-*.dump | head   # confere que o arquivo abre
+```
+A restauração foi ensaiada em banco descartável (`scripts/test-migration-upgrade-path.sh`). Para ensaiar com os **dados reais**, restaure esse dump num projeto novo e aplique as migrations nele primeiro (variante B de `docs/HOMOLOGACAO_PROJETO_ISOLADO.md`).

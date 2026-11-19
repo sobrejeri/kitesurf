@@ -1,7 +1,8 @@
 #!/usr/bin/env bash
 # #88 (migrações): caminho de ATUALIZAÇÃO reproduzível em PostgreSQL descartável, sem tocar em nenhum Supabase.
 #
-#  1. Cria um banco como o de um ambiente que JÁ recebeu as migrations até 20261115100000 (a original da #283) e já tem dados.
+#  1. Cria um banco como o de um ambiente que JÁ recebeu as migrations até 20261115100000 (a original da #283), já tem dados e ainda tem a
+#     assinatura LEGADA de 5 args (SECURITY DEFINER, sem trava), como o projeto real.
 #  2. Aplica as migrations seguintes (a partir de 20261116160000) por cima, como o responsável faria no painel.
 #  3. Confere: nenhum dado mudou; create_booking de 6 args sem defaults e de 5 args delegando; chamadas de 4, 5 e 6 args
 #     resolvem sem ambiguidade; permissões por papel nas RPCs de reserva, fila, remarcação e presença.
@@ -36,6 +37,18 @@ before_defaults="$("${SA[@]}" -c "select pronargdefaults from pg_proc where oid 
 "${QA[@]}" -f "$ROOT/supabase/tests/10_rules.test.sql" >/dev/null     # dados de reserva do fixture
 data_snapshot() { "$@" -c "select (select count(*) from public.bookings)||'/'||(select count(*) from public.booking_meetings)||'/'||(select count(*) from public.audit_logs)||'/'||(select count(*) from public.profiles)||'/'||coalesce((select md5(string_agg(id::text||status::text||total_cents::text||coalesce(instructor_id::text,''), ',' order by id)) from public.bookings),'-')||'/'||coalesce((select md5(string_agg(id::text||starts_at::text||minutes::text||status::text, ',' order by id)) from public.booking_meetings),'-')"; }
 before="$(data_snapshot "${SA[@]}")"
+# Como o projeto REAL: a assinatura LEGADA de 5 args ainda existe (a migration 04 a apagaria, mas o projeto nao a recebeu), SECURITY DEFINER,
+# sem a trava do instrutor, executavel por authenticated e nao por anon. A migration 20261116170000 precisa substitui-la (CREATE OR REPLACE
+# exige os mesmos nomes de parametros), nao apenas criar uma nova.
+"${QA[@]}" <<'SQL'
+create function public.create_booking(p_beach_id uuid, p_level public.lesson_level, p_language text, p_meetings jsonb, p_partner_code text default null)
+returns uuid language plpgsql security definer set search_path = '' as $$ begin raise exception 'legacy path without instructor lock'; end $$;
+revoke all on function public.create_booking(uuid, public.lesson_level, text, jsonb, text) from public, anon;
+grant execute on function public.create_booking(uuid, public.lesson_level, text, jsonb, text) to authenticated;
+SQL
+assert_legacy="$("${SA[@]}" -c "select prosecdef::text || '/' || pronargdefaults from pg_proc where oid = 'public.create_booking(uuid,public.lesson_level,text,jsonb,text)'::regprocedure")"
+[ "$assert_legacy" = "true/1" ] || { echo "fixture da assinatura legada invalido: $assert_legacy" >&2; exit 1; }
+
 nb="$("${SA[@]}" -c "select count(*) from public.bookings")"
 [ "$nb" -gt 0 ] || { echo "Fixture sem reservas: o teste de preservação de dados seria vazio" >&2; exit 1; }
 
