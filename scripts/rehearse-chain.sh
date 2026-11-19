@@ -62,6 +62,15 @@ step 20261119120000_offer_accept_student_conflict.sql \
 step 20261119130000_meeting_change_student_conflict.sql \
   "select position('student-meetings' in pg_get_functiondef('public.request_meeting_change(uuid,timestamptz,text)'::regprocedure)) > 0 and position('student-meetings' in pg_get_functiondef('public.respond_meeting_change(uuid,boolean)'::regprocedure)) > 0" \
   "remarcação barra conflito com outro encontro do aluno (pedido e resposta)"
+# Instrutor preferido (decisão separada): só roda com INCLUDE_PREFERRED=1, para ensaiar a cadeia com e sem elas.
+# As duas têm corpo idêntico (a 2ª só troca o cabeçalho); só vale a 1ª, a 2ª é no-op. CREATE OR REPLACE mantém os GRANTs (função fechada à API).
+if [ "${INCLUDE_PREFERRED:-0}" = "1" ]; then
+  for f in 20261113000043_preferred_instructor_availability.sql 20261114002000_fix_preferred_instructor_availability.sql; do
+    step "$f" \
+      "select position('distinct from r.preferred_instructor_id' in pg_get_functiondef('public.advance_instructor_offer(uuid)'::regprocedure)) = 0 and not has_function_privilege('anon', 'public.advance_instructor_offer(uuid)'::regprocedure, 'EXECUTE') and not has_function_privilege('authenticated', 'public.advance_instructor_offer(uuid)'::regprocedure, 'EXECUTE')" \
+      "instrutor preferido passa pela mesma checagem de agenda; função segue fechada à API"
+  done
+fi
 step 20261119140000_queue_expiry_job.sql \
   "select not has_function_privilege('anon', 'public.run_expiry_jobs()'::regprocedure, 'EXECUTE') and not has_function_privilege('authenticated', 'public.run_expiry_jobs()'::regprocedure, 'EXECUTE') and not has_function_privilege('authenticated', 'public.run_queue_expiry_job(integer)'::regprocedure, 'EXECUTE')" \
   "jobs de expiração criados e fechados à API (nada foi agendado)"

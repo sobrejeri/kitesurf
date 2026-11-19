@@ -73,5 +73,14 @@ set -e
 echo "$out" | grep -q "migration obrigatória ausente: 20261119140000" || { echo "D) falta mensagem explicita da migration" >&2; echo "$out" >&2; exit 1; }
 ! echo "$out" | grep -q "^PASS:" || { echo "D) ensaio incompleto nunca pode retornar PASS" >&2; exit 1; }
 [ "$(SQL -d rehearse_missing -c "select count(*) from pg_proc where proname='run_expiry_jobs'")" = "0" ] || { echo "D) nao deveria criar o job ausente" >&2; exit 1; }
-echo "PASS: ensaio completo, recusa deriva, falha em dependencias e recusa migration obrigatoria ausente"
+# E) instrutor preferido: sem INCLUDE_PREFERRED a cadeia NAO as aplica (A); com INCLUDE_PREFERRED=1 aplica, verifica e mantem a funcao fechada
+# a migration 14 isenta o instrutor preferido da checagem de agenda (para ele poder sugerir outra data); a 43/2000 remove a isencao
+HAS='select position($q$distinct from r.preferred_instructor_id$q$ in pg_get_functiondef($q$public.advance_instructor_offer(uuid)$q$::regprocedure)) = 0'
+[ "$(SQL -d rehearse_ok -c "$HAS")" = "f" ] || { echo "E) sem INCLUDE_PREFERRED, advance_instructor_offer deveria seguir na versao da migration 14 (com a isencao do preferido)" >&2; exit 1; }
+mkprod rehearse_pref
+out="$(INCLUDE_PREFERRED=1 run rehearse_pref 2>&1)" || { echo "E) ensaio com instrutor preferido deveria passar:" >&2; echo "$out" >&2; exit 1; }
+echo "$out" | grep -q "^PASS:" || { echo "E) sem a linha PASS" >&2; exit 1; }
+[ "$(SQL -d rehearse_pref -c "$HAS")" = "t" ] || { echo "E) advance_instructor_offer deveria exigir agenda tambem do instrutor preferido" >&2; exit 1; }
+[ "$(SQL -d rehearse_pref -c "select (has_function_privilege('authenticated','public.advance_instructor_offer(uuid)'::regprocedure,'EXECUTE') or has_function_privilege('anon','public.advance_instructor_offer(uuid)'::regprocedure,'EXECUTE'))::text")" = "false" ] || { echo "E) advance_instructor_offer deve seguir fechada a API" >&2; exit 1; }
+echo "PASS: ensaio completo, recusa deriva, falha em dependencias, recusa migration ausente e variante com instrutor preferido"
 

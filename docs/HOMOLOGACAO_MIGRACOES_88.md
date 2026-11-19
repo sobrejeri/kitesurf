@@ -172,3 +172,11 @@ Todas as 8 funções foram **reconhecidas** (nenhuma `DESCONHECIDA`):
 
 ## Ensaio automatizado da cadeia
 Para o ensaio em banco **isolado**, use `scripts/rehearse-chain.sh` (ver `docs/HOMOLOGACAO_PROJETO_ISOLADO.md`): ele aplica a ordem segura, confere cada passo, recusa o projeto atual e para no primeiro erro com a mensagem exata. **Nunca** aponte-o para `qadkqjfmmnxvovyyhqxw`.
+
+## Migrations do instrutor preferido (`20261113000043` e `20261114002000`): análise para o ensaio isolado
+**Decisão do responsável (19/11):** entram no **planejamento do ensaio isolado**; nada é aplicado no projeto atual.
+- **O que fazem:** substituem `advance_instructor_offer(uuid)` (`CREATE OR REPLACE`, mesma assinatura, `SECURITY DEFINER`, `search_path=''`). Os **corpos são idênticos** (a `…2000` só troca o cabeçalho): aplicadas em sequência, a segunda é no-op. `CREATE OR REPLACE` mantém os GRANTs (função fechada: `revoke … from public, anon, authenticated` desde a migration 11); o ensaio verifica isso.
+- **Dependências (todas já em produção pelo Q10/D7):** `instructor_can_attend` (migration 07), `write_audit`, coluna `instructor_requests.preferred_instructor_id` (migration 13), `instructors.queue_position`/`has_support_vehicle`. A versão em produção é a da migration 14.
+- **Mudança de comportamento (decisão de produto):** a migration 14 **isenta o instrutor preferido** da checagem de agenda "para ele poder sugerir outra data". A `…43/…2000` **remove a isenção**: o preferido sem agenda na data pedida **não recebe a oferta** e perde a chance de sugerir outra data. Fixado em `supabase/tests/89i_preferred_instructor_unavailable.test.sql`. Só aplique se a regra desejada for "preferido também precisa atender a data".
+- **Segurança/compatibilidade:** sem tabela, coluna, política ou permissão nova; o job `run_queue_expiry_job` chama a função por nome e funciona com as duas versões (`scripts/test-prod-like-queue.sh` com a 14; `test-db.sh` com a 43).
+- **Como ensaiar:** `INCLUDE_PREFERRED=1 CONFIRM_ISOLATED=sim DATABASE_URL=… scripts/rehearse-chain.sh` (sem a variável, a cadeia **não** as aplica). Coberto por `scripts/test-rehearse-chain.sh` caso E.
