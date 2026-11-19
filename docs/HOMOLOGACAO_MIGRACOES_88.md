@@ -167,3 +167,6 @@ Todas as 8 funções foram **reconhecidas** (nenhuma `DESCONHECIDA`):
 - `scripts/test-prod-like-queue.sh` (novo, roda no `test-db.sh`) monta um banco **sem** essas duas migrations (confere o hash `07ba8bce…`) e roda os testes de fila (bordas, A→B→C, executor offline com 3 instrutores) e as janelas 12h+12h: **passam**.
 - O que elas mudam é o comportamento da fila **para instrutor preferido** (um preferido sem agenda ainda pode oferecer outra data). É uma decisão **separada**: aplicá-las no projeto isolado e rodar `supabase/tests/29_preferred_instructor_availability` e `91_preferred_instructor_availability` antes de qualquer aplicação no projeto atual. Não é pré-requisito da #300.
 - As migrations `20261111020000` (45) e `20261111080000` (46) (políticas e grants de repasse de afiliado) também estão fora do ledger; não afetam a #300 e precisam de conferência própria.
+
+## Ensaio automatizado da cadeia
+Para o ensaio em banco **isolado**, use `scripts/rehearse-chain.sh` (ver `docs/HOMOLOGACAO_PROJETO_ISOLADO.md`): ele aplica a ordem segura, confere cada passo, recusa o projeto atual e para no primeiro erro com a mensagem exata. **Nunca** aponte-o para `qadkqjfmmnxvovyyhqxw`.
