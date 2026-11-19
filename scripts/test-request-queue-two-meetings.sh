@@ -135,6 +135,6 @@ begin
     raise exception 'SECURITY: queue lesson progress changed after student write';
   end if;
   raise notice 'PASS: request -> offer -> acceptance -> 4h/2 meetings -> 225 done -> 15 remaining';
-end $;
+end $$;
 rollback;
 SQL
