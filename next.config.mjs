@@ -41,6 +41,14 @@ const nextConfig = {
           { key: 'X-Robots-Tag', value: 'noindex, nofollow' },
         ],
       },
+      // The student and instructor chat request device permission before sharing a location.
+      ...['/aluno/:path*', '/instrutor/:path*'].map((source) => ({
+        source,
+        headers: [{
+          key: 'Permissions-Policy',
+          value: 'camera=(), microphone=(), payment=(), geolocation=(self)',
+        }],
+      })),
       // Always fetch the live version marker, never a cached copy.
       { source: '/version.json', headers: [{ key: 'Cache-Control', value: 'no-store, max-age=0' }] },
     ];
