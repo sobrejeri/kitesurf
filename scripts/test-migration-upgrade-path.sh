@@ -2,7 +2,7 @@
 # #88 (migrações): caminho de ATUALIZAÇÃO reproduzível em PostgreSQL descartável, sem tocar em nenhum Supabase.
 #
 #  1. Cria um banco como o de um ambiente que JÁ recebeu as migrations até 20261115100000 (a original da #283), já tem dados e ainda tem a
-#     assinatura LEGADA de 5 args (SECURITY DEFINER, sem trava), como o projeto real.
+#     assinatura LEGADA de 5 args (SECURITY DEFINER, sem trava) e a de 6 args com a trava mas SEM a revalidacao, como o projeto real.
 #  2. Aplica as migrations seguintes (a partir de 20261116160000) por cima, como o responsável faria no painel.
 #  3. Confere: nenhum dado mudou; create_booking de 6 args sem defaults e de 5 args delegando; chamadas de 4, 5 e 6 args
 #     resolvem sem ambiguidade; permissões por papel nas RPCs de reserva, fila, remarcação e presença.
@@ -46,6 +46,20 @@ returns uuid language plpgsql security definer set search_path = '' as $$ begin 
 revoke all on function public.create_booking(uuid, public.lesson_level, text, jsonb, text) from public, anon;
 grant execute on function public.create_booking(uuid, public.lesson_level, text, jsonb, text) to authenticated;
 SQL
+# Estado INTERMEDIARIO do projeto real (retorno do responsavel, 19/11): a funcao de 6 args tem a TRAVA do instrutor mas NAO tem a revalidacao depois da
+# trava. A migration 20261116160000 recria a funcao INTEIRA, entao precisa entregar o corpo completo mesmo partindo desse estado.
+"${QA[@]}" <<'SQL'
+do $$ declare d text;
+begin
+  d := pg_get_functiondef('public.create_booking(uuid,public.lesson_level,text,jsonb,text,boolean)'::regprocedure);
+  d := regexp_replace(d, 'if not public\.instructor_can_attend\(chosen_instructor, p_meetings\) then\s+raise exception[^;]*;\s+end if;', '', 'i');
+  assert position('instructor_can_attend(chosen_instructor' in lower(d)) = 0, 'a mutacao deveria remover a revalidacao';
+  assert position('for update of i skip locked' in lower(d)) > 0, 'a mutacao deve manter a trava';
+  execute d;
+end $$;
+SQL
+inter_state="$("${SA[@]}" -c "select (position('for update of i skip locked' in lower(pg_get_functiondef(p.oid))) > 0)::text || '/' || (position('instructor_can_attend(chosen_instructor' in lower(pg_get_functiondef(p.oid))) > 0)::text from pg_proc p where p.oid = 'public.create_booking(uuid,public.lesson_level,text,jsonb,text,boolean)'::regprocedure")"
+[ "$inter_state" = "true/false" ] || { echo "fixture do estado intermediario invalido (trava/revalidacao): $inter_state" >&2; exit 1; }
 assert_legacy="$("${SA[@]}" -c "select prosecdef::text || '/' || pronargdefaults from pg_proc where oid = 'public.create_booking(uuid,public.lesson_level,text,jsonb,text)'::regprocedure")"
 [ "$assert_legacy" = "true/1" ] || { echo "fixture da assinatura legada invalido: $assert_legacy" >&2; exit 1; }
 
@@ -78,6 +92,7 @@ begin
   assert not (select prosecdef from pg_proc where oid = five), 'a de 5 args delega como invoker';
   assert position('p_partner_code, false' in lower(pg_get_functiondef(five))) > 0, 'a de 5 args delega a de 6';
   assert position('for update of i skip locked' in lower(pg_get_functiondef(six))) > 0, 'a de 6 args mantem o lock do instrutor';
+  assert position('instructor_can_attend(chosen_instructor' in lower(pg_get_functiondef(six))) > 0, 'a de 6 args passa a ter a REVALIDACAO apos o lock (mesmo partindo do estado intermediario)';
 
   -- Resolucao sem ambiguidade: chamadas com 4, 5 e 6 argumentos chegam na validacao da funcao (22023 praia invalida), nunca em 42725/42883.
   perform set_config('request.jwt.claim.sub', (select student_id::text from public.bookings limit 1), true);

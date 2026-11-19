@@ -49,12 +49,15 @@ where m1.status::text <> 'cancelled' and m2.status::text <> 'cancelled'
 -- 0.6 Duplo agendamento de INSTRUTOR já existente: docs/CONSULTA_duplo_agendamento_instrutor.sql (ESPERADO: 0 linhas).
 ```
 
-### Tabela de decisão
-| 0.3 `tem_trava_283` | 0.2 defaults da assinatura de 6 args | O que aplicar |
-|---|---|---|
-| false ou sem linha | (qualquer) | `20261115100000`, depois todas as abaixo, na ordem |
-| true | 2 | **não** reaplicar a original; aplicar só `20261116160000` em diante |
-| true | 0 | a #296 original já foi aplicada à mão; aplicar `20261116160000` (é idempotente: o `DROP IF EXISTS` + `CREATE` recria igual) em diante |
+### Tabela de decisão (corrigida em 19/11 após o retorno completo do Passo 0 real)
+Em **qualquer** estado, o ponto de partida é `20261116160000`: ela faz `DROP … RESTRICT` e recria a função de 6 args **inteira** (trava do instrutor **e** revalidação depois da trava, sem `DEFAULT`),
+então entrega o corpo completo da #283 mesmo partindo de um estado intermediário. A `20261115100000` só é necessária num banco **novo** (ela já está na sequência normal) e **não** deve ser reaplicada num projeto existente.
+Estados possíveis, pela consulta 0.3 (`tem_trava_283`) e pela Q3 (`tem_revalidacao_283`):
+| `tem_trava_283` | `tem_revalidacao_283` | Significado | O que aplicar |
+|---|---|---|---|
+| false | false | #283 ausente | `20261116160000` em diante |
+| true | false | **intermediário (é o caso do projeto real, 19/11):** trava sem revalidação | `20261116160000` em diante; **antes**, comparar o texto da função atual com o do repositório (D6 de `docs/CONSULTA_DERIVA_ANTES_DE_APLICAR.sql`), porque o `DROP/CREATE` substitui tudo |
+| true | true | #283 completa (com 2 defaults) | `20261116160000` em diante (só tira os defaults) |
 
 ## Backup antes de aplicar (obrigatório)
 Faça o backup pelo painel (Database > Backups) **ou** `pg_dump` da string de conexão do projeto de teste, e guarde o identificador/arquivo.
@@ -107,12 +110,19 @@ Projeto `qadkqjfmmnxvovyyhqxw`:
 3. **Não aplicar nada neste projeto** sem conciliar (Q3, Q5, Q6) e revisar. **Não usar `supabase db push` aqui** (reaplicaria 01 a 38). A homologação autenticada deve ir para um projeto isolado: `docs/HOMOLOGACAO_PROJETO_ISOLADO.md`.
 4. Escopo v1 informado pelo responsável: **16 frentes** (sem laboratório 3D e sem checkout real). Os totais passam a ser dados sobre 16, não 18.
 
-## Passo 0 REAL executado em 19/11/2026 12:26 (somente leitura, issue #88, comentário do responsável) e decisão
-Projeto `qadkqjfmmnxvovyyhqxw`: ledger só com `20261110001348`, `20261110001427`, `20261110003527`, `20261110012944`; a função de **6 args tem a trava #283**, 2 defaults e `SECURITY DEFINER`;
-a de **5 args** tem 1 default e `SECURITY DEFINER`; guarda do aluno **ausente** (0 dos 2 gatilhos); **0 pares ativos sobrepostos** de aluno e de instrutor; as 9 assinaturas de reserva/fila/presença/remarcação consultadas permitem `authenticated` e negam `anon`.
+## Passo 0 REAL executado em 19/11/2026 (somente leitura, issue #88, comentários do responsável) e decisão
+Projeto `qadkqjfmmnxvovyyhqxw`. **Primeiro retorno (12:26):** ledger só com `20261110001348`, `20261110001427`, `20261110003527`, `20261110012944`; função de 6 args com a trava #283, 2 defaults e `SECURITY DEFINER`; de 5 args com 1 default e `SECURITY DEFINER`; guarda do aluno ausente; 0 pares sobrepostos de aluno e de instrutor; 9 assinaturas com `authenticated` sim e `anon` não.
+**Retorno completo Q3 a Q11 (12:40), com uma CORREÇÃO:** a função de 6 args tem a **trava** mas **não tem a revalidação** depois dela (`tem_trava_283 = true`, `tem_revalidacao_283 = false`); a de 5 args não tem trava nem delega. Ou seja, a #283 está **incompleta (estado intermediário)** e a legada de 5 args é o caminho sem trava que a #296 fecha.
+Também: guardas ausentes (Q4), 0 conflitos de aluno (Q5) e de instrutor (Q6); **6 buscas e 5 ofertas vencidas** (Q7; a #92 registrou 4 e 3); `pg_cron` **disponível (1.6.4) mas não instalado** (Q8); 6 buckets de Storage, **todos privados** (Q9); as **14 sondas** das migrations 01 a 38 todas presentes (Q10); contas: 1 aluno, 1 instrutor, 2 admins, 1 afiliado, e **1 instrutor aprovado por praia** (Q11).
 
-**Decisão pela tabela acima (`tem_trava_283 = true`, 2 defaults):** **NÃO reaplicar `20261115100000`.** A primeira migration a aplicar é `20261116160000`. Ordem para ESTE projeto, quando houver revisão e backup:
+**Decisão:** **NÃO reaplicar `20261115100000`.** Aplicar a partir de `20261116160000`, que recria `create_booking` de 6 args completa. Ordem para ESTE projeto, quando houver revisão e backup:
 `20261116160000` → `20261116170000` → `20261117190000` → `20261119120000` → `20261119130000` → `20261119140000` → `20261120100000` (esta última só na #303), cada uma conferida pela verificação da tabela de ordem.
+**Antes** de `20261116160000`: rodar o **D6** (texto das funções) para comparar o corpo atual com o do repositório, porque o `DROP/CREATE` substitui tudo, inclusive qualquer ajuste manual que não esteja no repositório.
+
+**Leituras que afetam o plano:**
+- **Q7:** ao agendar o job de expiração, as 6 buscas e 5 ofertas vencidas serão processadas na hora (expiram e a fila avança). Revise-as antes (consulta do Passo 0 de `docs/HOMOLOGACAO_FILA_92.md`).
+- **Q8:** habilitar o `pg_cron` é possível (extensão disponível); ainda não está instalado.
+- **Q11:** só há **1 instrutor aprovado por praia**; o ensaio A→B→C precisa de **3** na mesma praia. Isso **só pode ser feito num projeto isolado** (ou criando 2 instrutores fictícios de teste); não dá para homologar a fila no projeto como está.
 
 ### Deriva entre o projeto e o repositório (conferir ANTES de aplicar)
 O projeto já divergiu do repositório uma vez: a assinatura legada de 5 args existe aqui e o repositório a apaga na migration 04. Como as migrations novas **substituem** funções

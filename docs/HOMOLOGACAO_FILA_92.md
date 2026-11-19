@@ -4,6 +4,12 @@
 com o job do banco chamado direto. **Não foi executado** no projeto de teste: o ambiente de automação não alcança `*.supabase.co`
 (`curl: (56) CONNECT tunnel failed, response 403`) e não há agendador nem contas de teste disponíveis para quem escreveu isto.
 
+## O que o projeto atual mostra (consultas Q7 e Q11 do responsável, 19/11/2026)
+- **Q7:** hoje há **6 buscas e 5 ofertas já vencidas** (a #92 registrou 4 e 3). Ao agendar o job, elas serão processadas **na hora** (expiram e a fila avança). Revise-as no Passo 0 antes de agendar.
+- **Q11:** só existe **1 instrutor aprovado por praia** (e 1 aluno, 2 admins, 1 afiliado). O ensaio A→B→C precisa de **3** instrutores elegíveis na mesma praia: não dá para fazê-lo no projeto como está.
+  Faça no **projeto isolado** (`docs/HOMOLOGACAO_PROJETO_ISOLADO.md`) ou crie 2 instrutores fictícios aprovados no projeto de teste, com a mesma praia e agenda aberta.
+- **Q8:** o `pg_cron` está **disponível (1.6.4) e não instalado**: o Passo 1 abaixo o instala.
+
 ## Por que um job dentro do banco
 Hoje nada expira com o navegador fechado:
 - as migrations `20261102000030/31` e `20261105000038` só agendam o `pg_cron` **se ele já existia** quando rodaram; no Supabase real ele não existia (issue #92);
