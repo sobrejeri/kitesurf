@@ -14,6 +14,7 @@ declare
   v_request uuid;
   v_offer uuid;
   v_instructor uuid;
+  v_unrelated_instructor uuid;
   v_booking uuid;
   v_pin text;
   v_m1 uuid;
@@ -52,6 +53,14 @@ begin
   v_booking:=public.accept_instructor_offer(v_offer);
   execute 'reset role';
   if v_booking is null then raise exception 'Offer acceptance did not return booking'; end if;
+  -- The queue may choose either fixture instructor. Pick a different identity for IDOR.
+  v_unrelated_instructor := case v_instructor
+    when '00000000-0000-0000-0000-0000000000a1'::uuid then '00000000-0000-0000-0000-0000000000a2'::uuid
+    else '00000000-0000-0000-0000-0000000000a1'::uuid
+  end;
+  if v_unrelated_instructor = v_instructor then
+    raise exception 'Fixture must select a different instructor';
+  end if;
   if not exists(select 1 from public.bookings where id=v_booking
     and student_id='00000000-0000-0000-0000-0000000000b2'
     and instructor_id=v_instructor and total_hours=4) then
@@ -91,7 +100,7 @@ begin
   end if;
   execute 'reset role';
   -- Verify that a second instructor cannot inspect completed progress.
-  perform set_config('request.jwt.claim.sub','00000000-0000-0000-0000-0000000000a2',true);
+  perform set_config('request.jwt.claim.sub',v_unrelated_instructor::text,true);
   execute 'set local role authenticated';
   if exists(select 1 from public.booking_meetings
       where booking_id=v_booking and (done_minutes>0 or note is not null)) then
