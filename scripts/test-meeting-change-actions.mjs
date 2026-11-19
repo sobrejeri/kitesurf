@@ -12,6 +12,10 @@ const schedule = { exports: {} };
 vm.runInNewContext(transpile(readFileSync(new URL('../src/lib/student-schedule.ts', import.meta.url), 'utf8')), {
   module: schedule, exports: schedule.exports, require: () => { throw new Error('Unexpected schedule import'); }, Date,
 });
+const errors = { exports: {} };
+vm.runInNewContext(transpile(readFileSync(new URL('../src/app/actions/errors.ts', import.meta.url), 'utf8')), {
+  module: errors, exports: errors.exports, console: { error() {} },
+});
 const meetingId = '11111111-1111-4111-8111-111111111111';
 const bookingId = '22222222-2222-4222-8222-222222222222';
 const requestId = '33333333-3333-4333-8333-333333333333';
@@ -28,7 +32,7 @@ const deps = {
   } },
   '@/lib/supabase/server': { async createSupabaseServerClient() { return db; } },
   '@/lib/student-schedule': schedule.exports,
-  './errors': { friendlyError(error) { return error.message; } },
+  './errors': errors.exports,
 };
 const module = { exports: {} };
 vm.runInNewContext(transpile(readFileSync(new URL('../src/app/actions/meeting-change.ts', import.meta.url), 'utf8')), {
@@ -42,6 +46,7 @@ const form = (fields) => ({ get(name) { return fields[name] ?? null; } });
 const proposal = (proposedDate) => form({
   meetingId, bookingId, proposedDate, reason: 'Vento forte na praia',
 });
+const validDate = new Date(Date.now() + 7 * 86_400_000).toISOString().slice(0, 10) + 'T10:00';
 const { requestMeetingChange, respondMeetingChange, resolveStudentChange } = module.exports;
 const invalid = [
   '2026-02-30T10:00',
@@ -56,11 +61,11 @@ for (const date of invalid) {
 }
 assert.equal(calls.length, 0, 'Invalid date cannot call privileged RPC');
 
-let result = await requestMeetingChange({}, proposal('2026-12-01T10:00'));
+let result = await requestMeetingChange({}, proposal(validDate));
 assert.ok(result.ok);
 assert.equal(calls.at(-1).name, 'request_meeting_change');
 assert.equal(calls.at(-1).args.p_meeting_id, meetingId);
-assert.equal(calls.at(-1).args.p_new_start, '2026-12-01T10:00:00-03:00');
+assert.equal(calls.at(-1).args.p_new_start, validDate + ':00-03:00');
 assert.equal(calls.at(-1).args.p_reason, 'Vento forte na praia');
 
 result = await respondMeetingChange({}, form({ requestId, bookingId, decision: 'accept' }));
@@ -83,8 +88,13 @@ assert.equal(calls.at(-1).name, 'resolve_student_change');
 assert.equal(calls.at(-1).args.p_choice, 'replace');
 
 rpcError = { code: 'TEST_FAILURE', message: 'Forbidden' };
-result = await requestMeetingChange({}, proposal('2026-12-01T10:00'));
-assert.equal(result.error, 'Forbidden');
+result = await requestMeetingChange({}, proposal(validDate));
+assert.equal(result.error, 'Não foi possível concluir agora. Tente novamente.');
+
+rpcError = { code: '23P01', message: 'Student already has a meeting in this time slot', hint: 'STUDENT_MEETING_CONFLICT' };
+result = await respondMeetingChange({}, form({ requestId, bookingId, decision: 'accept' }));
+assert.equal(result.error, 'O aluno já tem uma aula nesse horário. Escolha outro dia ou horário.');
+assert.equal(result.ok, undefined);
 rpcError = null;
 
 console.log('PASS: reschedule civil dates/72h, Ceará timezone, accept/reject and student replacement server actions (isolated mocks)');

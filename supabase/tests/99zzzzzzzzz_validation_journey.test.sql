@@ -52,7 +52,7 @@ BEGIN
  SELECT id INTO last_id FROM public.booking_meetings WHERE booking_id=bid ORDER BY position DESC LIMIT 1;
  SELECT presence_code INTO pin FROM public.bookings WHERE id=bid;
  -- Advance fixture dates only inside the rollback transaction to exercise lesson completion.
- UPDATE public.booking_meetings SET starts_at=now()-interval '2 hours'+make_interval(hours=>position-1) WHERE booking_id=bid;
+ UPDATE public.booking_meetings SET starts_at=now()-interval '5 hours'+make_interval(hours=>2*(position-1)) WHERE booking_id=bid;
  PERFORM pg_temp.act_as(tid);
  PERFORM public.mark_my_booking_chat_read(bid,message_id);
  BEGIN PERFORM public.start_ordered_meeting(last_id,pin); RAISE EXCEPTION 'Out-of-order start allowed';

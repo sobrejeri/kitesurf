@@ -24,7 +24,11 @@ for migration in "$ROOT"/supabase/migrations/*.sql; do
   "${PSQL[@]}" -1 -f "$migration"
 done
 "${PSQL[@]}" -f "$ROOT/supabase/tests/10_rules.test.sql"
+# Run overlap regression while the two-meeting fixture from 10_rules is intact.
+# Later stateful SQL tests may cancel or reschedule that booking.
+"${PSQL[@]}" -f "$ROOT/supabase/tests/89a_student_overlap_behavior.test.sql"
 for testfile in "$ROOT"/supabase/tests/[2-9]*.test.sql; do
+  [ "$testfile" = "$ROOT/supabase/tests/89a_student_overlap_behavior.test.sql" ] && continue
   "${PSQL[@]}" -f "$testfile"
 done
 
@@ -43,6 +47,9 @@ PG_TEST_SOCKET="$DATA" PG_TEST_PORT="$PORT" bash "$ROOT/scripts/test-offer-queue
 
 # Authorized postponement and cross-account denial in throwaway PostgreSQL.
 PG_TEST_SOCKET="$DATA" PG_TEST_PORT="$PORT" bash "$ROOT/scripts/test-meeting-change-auth.sh"
+
+# Same student, different eligible instructors and partially overlapping times.
+PG_TEST_SOCKET="$DATA" PG_TEST_PORT="$PORT" bash "$ROOT/scripts/test-concurrent-student-booking.sh"
 
 # The booking race is timing dependent: a single run catches a regression only some of the time.
 # Run it again, many times, at the very end (each round books the next free pair of days for the

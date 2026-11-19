@@ -78,6 +78,17 @@ begin
   -- Move the *fictional* B offer expiry back in disposable PostgreSQL.
   update public.instructor_offers set expires_at=now()-interval '1 second'
     where id=v_offer;
+  perform set_config('request.jwt.claim.sub',v_b::text,true);
+  execute 'set local role authenticated';
+  v_booking:=public.accept_instructor_offer(v_offer);
+  execute 'reset role';
+  if v_booking is not null or exists(
+    select 1 from public.instructor_requests
+    where id=v_req and (status<>'searching' or booking_id is not null)
+  ) then
+    raise exception 'B accepted an expired offer or changed the request to booked';
+  end if;
+  -- Scheduler retry must reuse the offer already advanced by B's late attempt.
   perform public.advance_instructor_offer(v_req);
   if (select status from public.instructor_offers where id=v_offer)<>'expired' then
     raise exception 'B expiry not persisted'; end if;
