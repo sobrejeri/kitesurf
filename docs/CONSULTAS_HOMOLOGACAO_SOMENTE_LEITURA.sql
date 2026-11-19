@@ -8,8 +8,9 @@
 select version, name from supabase_migrations.schema_migrations order by version;
 
 -- Q3 [DECISIVA] A correção #283 (trava do instrutor) está no corpo de create_booking? Isto responde se a 20261115100000 já foi aplicada.
---      ESPERADO: 2 linhas (uma por assinatura). RESULTADO REAL (19/11): 6 args com trava = true e revalidação = false (estado INTERMEDIÁRIO);
---      5 args sem trava e sem delegar. Em qualquer estado o ponto de partida é 20261116160000, que recria a função inteira (tabela em HOMOLOGACAO_MIGRACOES_88.md).
+--      ESPERADO: 2 linhas. ATENÇÃO: a trava (`for update … skip locked`) existe desde a migration 07; o que identifica a #283 é a REVALIDAÇÃO.
+--      RESULTADO REAL (19/11): 6 args com trava = true e revalidação = FALSE (produção = versão da migration 10); 5 args sem trava e sem delegar.
+--      A cadeia começa em 20261116160000 (delegado) e a 20261116170000 recria a função de 6 args inteira (tabela em HOMOLOGACAO_MIGRACOES_88.md).
 select p.oid::regprocedure::text as assinatura,
        position('for update of i skip locked' in lower(pg_get_functiondef(p.oid))) > 0 as tem_trava_283,
        position('instructor_can_attend(chosen_instructor' in lower(pg_get_functiondef(p.oid))) > 0 as tem_revalidacao_283,
