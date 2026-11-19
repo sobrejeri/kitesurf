@@ -100,6 +100,10 @@ export function friendlyError(
     return 'A função necessária no Supabase não está disponível ou está desatualizada. Avise a administração para verificar as migrações.';
   }
   if (error?.code === '42501') return 'Você não tem permissão para esta operação. Entre novamente ou contate a administração.';
+  // Concorrência: o banco desfaz uma das duas operações (deadlock 40P01 ou "tente de novo" 40001); nada é perdido, basta repetir.
+  if (error?.code === '40P01' || error?.code === '40001' || /Booking changed, try again|deadlock detected/i.test(message)) {
+    return 'Muita gente usando ao mesmo tempo. Nada foi perdido: tente de novo em alguns segundos.';
+  }
   if (error?.hint === 'STUDENT_MEETING_CONFLICT') {
     return 'Você já tem outro encontro nesse horário. Escolha um horário que não se sobreponha às suas aulas.';
   }
