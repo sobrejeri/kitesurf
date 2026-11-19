@@ -74,6 +74,7 @@ Cole **um arquivo por vez** no SQL Editor do **projeto de teste**, confira a ver
 | 6 | `20261119130000_meeting_change_student_conflict.sql` | `select position('student-meetings' in pg_get_functiondef('public.request_meeting_change(uuid,timestamptz,text)'::regprocedure)) > 0;` → `true` |
 | 7 | `20261119140000_queue_expiry_job.sql` (não agenda nada) | `select has_function_privilege('authenticated', 'public.run_expiry_jobs()'::regprocedure, 'EXECUTE');` → `false` (idem `anon` e `run_queue_expiry_job(integer)`) |
 | 8 | `20261120100000_confirm_payment_lock_order.sql` (PR separada, empilhada sobre a #300) | `select position('Booking changed, try again' in pg_get_functiondef('public.confirm_test_payment(uuid)'::regprocedure)) > 0;` → `true` |
+| 9 | `20261120110000_simulate_test_payment_canonical_lock_order.sql` (na #303, commit de outra sessão; complementa o 8) | `select position('Do NOT lock bookings' in pg_get_functiondef('public.simulate_test_payment(uuid,text,text)'::regprocedure)) > 0;` → `true`; `anon` sem EXECUTE |
 
 Depois do último arquivo aplicado, rode de novo 0.2: **2 linhas**, 6 args com `defaults = 0`, 5 args com `defaults = 1`.
 E confirme que as RPCs continuam fechadas ao anônimo:
@@ -113,7 +114,7 @@ Projeto `qadkqjfmmnxvovyyhqxw`. **Primeiro retorno (12:26):** ledger só com `20
 Também: guardas ausentes (Q4), 0 conflitos de aluno (Q5) e de instrutor (Q6); **6 buscas e 5 ofertas vencidas** (Q7; a #92 registrou 4 e 3); `pg_cron` **disponível (1.6.4) mas não instalado** (Q8); 6 buckets de Storage, **todos privados** (Q9); as **14 sondas** das migrations 01 a 38 todas presentes (Q10); contas: 1 aluno, 1 instrutor, 2 admins, 1 afiliado, e **1 instrutor aprovado por praia** (Q11).
 
 **Decisão:** **NÃO reaplicar `20261115100000`.** A cadeia começa em `20261116160000` (delegado) e a `20261116170000` recria `create_booking` de 6 args completa. Ordem para ESTE projeto, quando houver revisão e backup:
-`20261116160000` → `20261116170000` → `20261117190000` → `20261119120000` → `20261119130000` → `20261119140000` → `20261120100000` (esta última só na #303), cada uma conferida pela verificação da tabela de ordem.
+`20261116160000` → `20261116170000` → `20261117190000` → `20261119120000` → `20261119130000` → `20261119140000` → `20261120100000` → `20261120110000` (as duas últimas só na #303), cada uma conferida pela verificação da tabela de ordem.
 **Antes** da cadeia: rodar o **D7** (hashes normalizados, que identificam a versão histórica de cada função) e conferir o resultado conforme "Resultado do D1 a D6 reais" abaixo.
 
 **Leituras que afetam o plano:**

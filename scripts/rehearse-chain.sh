@@ -69,6 +69,10 @@ step 20261120100000_confirm_payment_lock_order.sql \
   "select position('Booking changed, try again' in pg_get_functiondef('public.confirm_test_payment(uuid)'::regprocedure)) > 0 and has_function_privilege('authenticated', 'public.confirm_test_payment(uuid)'::regprocedure, 'EXECUTE')" \
   "confirmação de pagamento na ordem canônica de locks (só na #303)"
 
+step 20261120110000_simulate_test_payment_canonical_lock_order.sql \
+  "select position('Do NOT lock bookings' in pg_get_functiondef('public.simulate_test_payment(uuid,text,text)'::regprocedure)) > 0 and has_function_privilege('authenticated', 'public.simulate_test_payment(uuid,text,text)'::regprocedure, 'EXECUTE') and not has_function_privilege('anon', 'public.simulate_test_payment(uuid,text,text)'::regprocedure, 'EXECUTE')" \
+  "pagamento simulado não trava a reserva antes da confirmação (ordem canônica de locks); permissões mantidas (só na #303)"
+
 # ---- 2. conferência final (cada checagem separada; qualquer falso para) ----
 echo "== Conferência final"
 chk() { r="$("${A[@]}" -c "$2" 2>&1)" || { echo "A conferência '$1' deu erro: $r" >&2; exit 1; }; [ "$r" = "t" ] || { echo "A conferência '$1' NÃO passou (obtido '$r')" >&2; exit 1; }; echo "   ok: $1"; }
