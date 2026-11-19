@@ -11,6 +11,8 @@ const KNOWN: readonly [RegExp, string][] = [
     'O prazo de confirmação expirou ou a aula não está disponível. Confira a reserva ou procure um novo horário.'],
   [/Student already has a lesson at the selected time/i,
     'Você já tem uma aula ou uma busca de instrutor nesse horário. Escolha outro dia ou horário sem sobreposição.'],
+  [/Student already has a meeting in this time slot/i,
+    'O aluno já tem uma aula nesse horário. Escolha outro dia ou horário.'],
   [/Overlapping meetings/i,
     'Há dois encontros no mesmo horário. Ajuste as datas e os horários para continuar.'],
   [/Invalid meeting date or hours/i,
