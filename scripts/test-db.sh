@@ -57,3 +57,7 @@ for round in $(seq 1 "${RACE_ROUNDS:-12}"); do
     || { echo "Concurrent booking race failed on round $round" >&2; cat "$DATA/race.err" >&2; exit 1; }
 done
 echo "PASS: ${RACE_ROUNDS:-12} repeated concurrent booking rounds, never two accepted bookings for one instructor and slot"
+
+# P0 #90/#91: PRs #296 + #298 juntas. Dois alunos no mesmo horário (6 args vs 5 args) e um aluno pagando aulas
+# sobrepostas ao mesmo tempo. Roda por último: consome dias livres do instrutor de fixture.
+PG_TEST_SOCKET="$DATA" PG_TEST_PORT="$PORT" bash "$ROOT/scripts/test-p0-booking-concurrency.sh"
