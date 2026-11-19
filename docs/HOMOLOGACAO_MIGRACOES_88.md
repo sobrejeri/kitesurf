@@ -72,8 +72,10 @@ Cole **um arquivo por vez** no SQL Editor do **projeto de teste**, confira a ver
 | 4 | `20261117190000_guard_student_meeting_overlap.sql` | as 2 linhas da consulta 0.4 (gatilhos) e `guarda_existe = true`; `has_function_privilege('authenticated', 'public.guard_student_meeting_overlap()'::regprocedure, 'EXECUTE')` → `false` |
 | 5 | `20261119120000_offer_accept_student_conflict.sql` | `select position('offer.student_conflict' in pg_get_functiondef('public.accept_instructor_offer(uuid)'::regprocedure)) > 0;` → `true` |
 | 6 | `20261119130000_meeting_change_student_conflict.sql` | `select position('student-meetings' in pg_get_functiondef('public.request_meeting_change(uuid,timestamptz,text)'::regprocedure)) > 0;` → `true` |
+| 7 | `20261119140000_queue_expiry_job.sql` (não agenda nada) | `select has_function_privilege('authenticated', 'public.run_expiry_jobs()'::regprocedure, 'EXECUTE');` → `false` (idem `anon` e `run_queue_expiry_job(integer)`) |
+| 8 | `20261120100000_confirm_payment_lock_order.sql` (PR separada, empilhada sobre a #300) | `select position('Booking changed, try again' in pg_get_functiondef('public.confirm_test_payment(uuid)'::regprocedure)) > 0;` → `true` |
 
-Depois do 6, rode de novo 0.2: **2 linhas**, 6 args com `defaults = 0`, 5 args com `defaults = 1`.
+Depois do último arquivo aplicado, rode de novo 0.2: **2 linhas**, 6 args com `defaults = 0`, 5 args com `defaults = 1`.
 E confirme que as RPCs continuam fechadas ao anônimo:
 ```sql
 select p.oid::regprocedure::text, has_function_privilege('anon', p.oid, 'EXECUTE') as anon, has_function_privilege('authenticated', p.oid, 'EXECUTE') as autenticado
