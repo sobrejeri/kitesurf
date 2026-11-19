@@ -597,3 +597,11 @@ O projeto possui um **avaliador independente preparado, não necessariamente con
 - #294 integrada em `44bcc03` após [CI aprovado](https://github.com/sobrejeri/kitesurf/actions/runs/43922526862) e [Claude QA pulado](https://github.com/sobrejeri/kitesurf/actions/runs/43922526907). Ver deploy `dep-dbtk5m0jo6nc7381ate0` no Render e evidência final em #105.
 - O endpoint alternativo `/api/internal/expire-offers` passa a exigir o mesmo corte de ativação e filtra pela criação da solicitação, inclusive ao selecionar uma oferta recente vinculada a uma solicitação antiga. A regressão cobre recusa antes de consultar o banco quando o corte não é válido, preview sem RPC, aplicação sem legado e seleção incompleta. Sem ativação do worker ou alteração de ofertas reais.
 - Retomar pelo CI e deploy da PR desta mudança. Homologar o filtro PostgREST e a progressão A→B→C com chamadas do agendador em instância de teste isolada. O cenário principal de 4h/2 encontros segue pendente de navegador autenticado, como descrito acima.
+
+
+### Handoff P0 — 19/11/2026, PR #299: caminho preferencial da UI
+
+- CI do HEAD anterior `be57f789` aprovado (run `44470597093`). A PR #299 agora executa o fluxo genérico e a variante de sete argumentos `create_instructor_request_with_preference` usada pela interface, com instrutor preferido A1, no mesmo script e em transações isoladas com `ROLLBACK`.
+- Commits de implementação/teste: `31ea2467` e `20963bcb`. CI inicial do novo HEAD `44478067083` em execução ao registrar; Claude QA `44478067095` SKIPPED, **não revisou**. Este commit documental dispara nova checagem: validar o CI do HEAD final, não somente o anterior.
+- Sem merge ou deploy. Render live `4007b8fb` (`dep-dbtk7ep7lnhs73a391dg`), Supabase Kitesurf migrations 39–42, Protege 3B fechado. PRs #296/#298 continuam em draft.
+- **Retomada:** verificar CI da PR #299 no HEAD final; se falhar, investigar a RPC de preferência e fixtures, corrigir sem enfraquecer testes de RLS. Depois preparar ambiente isolado e sessões autorizadas Aluno/Instrutor, rodar E2E de 4h/2 encontros com aceite, presença, 110+115 minutos, evolução e leitura do aluno. SQL simulado não equivale a E2E. 0/18 tópicos homologados.
