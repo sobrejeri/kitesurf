@@ -58,4 +58,20 @@ echo "$out" | grep -q "FALHOU em 20261116170000" || { echo "C) deveria falhar na
 echo "$out" | grep -qi "depend" || { echo "C) a mensagem exata do banco deveria aparecer (dependencia)" >&2; echo "$out" >&2; exit 1; }
 [ "$(SQL -d rehearse_dep -c "select count(*) from pg_proc where proname='guard_student_meeting_overlap'")" = "0" ] || { echo "C) as migrations seguintes NAO deveriam ter sido aplicadas" >&2; exit 1; }
 [ "$(SQL -d rehearse_dep -c "select (position('instructor_can_attend(chosen_instructor' in lower(pg_get_functiondef('public.create_booking(uuid,public.lesson_level,text,jsonb,text,boolean)'::regprocedure))) = 0)::text")" = "true" ] || { echo "C) a transacao que falhou deveria ter sido desfeita (create_booking intacta)" >&2; exit 1; }
-echo "PASS: o ensaio passa no estado real do projeto, recusa funcao com ajuste manual antes de aplicar e para no primeiro erro com a mensagem exata, sem deixar migration pela metade"
+# D) arquivo obrigatorio ausente: ensaio deve recusar, jamais pular etapa e dizer PASS
+mkprod rehearse_missing
+mkdir -p "$D/rehearse_copy/scripts" "$D/rehearse_copy/docs" "$D/rehearse_copy/supabase/migrations"
+cp "$ROOT/scripts/rehearse-chain.sh" "$D/rehearse_copy/scripts/"
+cp "$ROOT/docs/CONSULTA_DERIVA_ANTES_DE_APLICAR.sql" "$D/rehearse_copy/docs/"
+cp "$ROOT"/supabase/migrations/202611{16,17,19,20}*.sql "$D/rehearse_copy/supabase/migrations/"
+rm "$D/rehearse_copy/supabase/migrations/20261119140000_queue_expiry_job.sql"
+set +e
+out="$(DATABASE_URL="$(url rehearse_missing)" CONFIRM_ISOLATED=sim bash "$D/rehearse_copy/scripts/rehearse-chain.sh" 2>&1)"
+rc=$?
+set -e
+[ "$rc" -eq 2 ] || { echo "D) esperado codigo 2 para migration ausente, obteve $rc" >&2; echo "$out" >&2; exit 1; }
+echo "$out" | grep -q "migration obrigatória ausente: 20261119140000" || { echo "D) falta mensagem explicita da migration" >&2; echo "$out" >&2; exit 1; }
+! echo "$out" | grep -q "^PASS:" || { echo "D) ensaio incompleto nunca pode retornar PASS" >&2; exit 1; }
+[ "$(SQL -d rehearse_missing -c "select count(*) from pg_proc where proname='run_expiry_jobs'")" = "0" ] || { echo "D) nao deveria criar o job ausente" >&2; exit 1; }
+echo "PASS: ensaio completo, recusa deriva, falha em dependencias e recusa migration obrigatoria ausente"
+
