@@ -42,6 +42,10 @@ PG_TEST_SOCKET="$DATA" PG_TEST_PORT="$PORT" bash "$ROOT/scripts/test-booking-two
 PG_TEST_SOCKET="$DATA" PG_TEST_PORT="$PORT" bash "$ROOT/scripts/test-request-queue-two-meetings.sh"
 PG_TEST_SOCKET="$DATA" PG_TEST_PORT="$PORT" PG_TEST_REQUEST_MODE=preferred bash "$ROOT/scripts/test-request-queue-two-meetings.sh"
 
+# Bordas da fila (aceite fora do prazo, oferta alheia, esgotar elegíveis, aceite duplo, conflito do aluno no aceite).
+# Roda ANTES do A->B->C, que cria um terceiro instrutor e mudaria a contagem de elegíveis.
+PG_TEST_SOCKET="$DATA" PG_TEST_PORT="$PORT" bash "$ROOT/scripts/test-offer-queue-edges.sh"
+
 # A declines, B expires, C accepts in the same disposable database.
 PG_TEST_SOCKET="$DATA" PG_TEST_PORT="$PORT" bash "$ROOT/scripts/test-offer-queue-abc.sh"
 
