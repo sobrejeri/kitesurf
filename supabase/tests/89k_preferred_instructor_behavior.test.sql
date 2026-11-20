@@ -86,6 +86,18 @@ BEGIN
   ) candidates
   WHERE public.instructor_can_attend(preferred,
     jsonb_build_array(jsonb_build_object('starts_at',st,'hours',1)))
+    AND st::date <> blocked_start::date
+    AND st::date <> ((busy_slots->0->>'starts_at')::timestamptz)::date
+    AND NOT EXISTS (
+      SELECT 1 FROM public.instructor_requests ir
+      WHERE ir.student_id='00000000-0000-0000-0000-0000000000b1'
+        AND ir.status IN ('searching','offered','accepted')
+        AND EXISTS (
+          SELECT 1 FROM jsonb_array_elements(ir.meetings) m
+          WHERE (m->>'starts_at')::timestamptz < st + interval '1 hour'
+            AND (m->>'starts_at')::timestamptz + make_interval(hours=>(m->>'hours')::numeric) > st
+        )
+    )
   ORDER BY st LIMIT 1;
   IF free_slots IS NULL THEN RAISE EXCEPTION 'No free fixture date'; END IF;
   PERFORM set_config('request.jwt.claim.sub','00000000-0000-0000-0000-0000000000b1',true);
