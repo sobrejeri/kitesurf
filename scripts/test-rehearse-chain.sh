@@ -96,3 +96,16 @@ set -e
 echo "$out" | grep -q "consulta D7 ausente" || { echo "F) faltou mensagem de recusa D7" >&2; echo "$out" >&2; exit 1; }
 [ "$(SQL -d rehearse_no_d7 -c "select count(*) from pg_proc where proname='guard_student_meeting_overlap'")" = "0" ] || { echo "F) nenhuma migration deve ser aplicada sem D7" >&2; exit 1; }
 echo "PASS: D7 ausente bloqueia ensaio antes de qualquer migration"
+
+# G) D7 presente mas com erro SQL: a falha nao pode virar zero funcoes desconhecidas.
+mkprod rehearse_bad_d7
+printf '%s\n' 'select coluna_inexistente from tabela_inexistente;' > "$D/rehearse_copy/docs/CONSULTA_DERIVA_ANTES_DE_APLICAR.sql"
+set +e
+out="$(DATABASE_URL="$(url rehearse_bad_d7)" CONFIRM_ISOLATED=sim bash "$D/rehearse_copy/scripts/rehearse-chain.sh" 2>&1)"
+rc=$?
+set -e
+[ "$rc" -eq 2 ] || { echo "G) esperado codigo 2 para D7 SQL invalido, obteve $rc" >&2; echo "$out" >&2; exit 1; }
+echo "$out" | grep -q "pré-checagem D7 falhou" || { echo "G) erro D7 precisa ser explicito" >&2; echo "$out" >&2; exit 1; }
+! echo "$out" | grep -q "^PASS:" || { echo "G) D7 invalido nao pode produzir PASS" >&2; exit 1; }
+[ "$(SQL -d rehearse_bad_d7 -c "select count(*) from pg_proc where proname='guard_student_meeting_overlap'")" = "0" ] || { echo "G) nenhuma migration pode ser aplicada com D7 invalido" >&2; exit 1; }
+echo "PASS: D7 com erro SQL bloqueia ensaio antes de qualquer migration"
