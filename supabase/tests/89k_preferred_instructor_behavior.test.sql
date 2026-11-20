@@ -95,7 +95,7 @@ BEGIN
         AND EXISTS (
           SELECT 1 FROM jsonb_array_elements(ir.meetings) m
           WHERE (m->>'starts_at')::timestamptz < st + interval '1 hour'
-            AND (m->>'starts_at')::timestamptz + make_interval(hours=>(m->>'hours')::numeric) > st
+            AND (m->>'starts_at')::timestamptz + ((m->>'hours')::numeric * interval '1 hour') > st
         )
     )
   ORDER BY st LIMIT 1;
