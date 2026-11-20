@@ -9,6 +9,8 @@ DECLARE
   beach uuid;
   busy_slots jsonb;
   free_slots jsonb;
+  no_alternative_slots jsonb;
+  blocked_start timestamptz;
   req uuid;
   offered uuid;
   chosen uuid;
@@ -44,11 +46,31 @@ BEGIN
     RAISE EXCEPTION 'Duplicate active offers in preferred-busy scenario';
   END IF;
 
-  -- With English only Rafael qualifies, but he is busy: no offer is allowed.
+  -- A second request cannot reuse the first request's slot: student schedule
+  -- protection correctly rejects overlapping pending requests before queueing.
+  SELECT st INTO blocked_start FROM (
+    SELECT (date_trunc('day',now() AT TIME ZONE 'America/Fortaleza')
+      + make_interval(days=>d,hours=>10)) AT TIME ZONE 'America/Fortaleza' AS st
+    FROM generate_series(25,45) d
+  ) candidates
+  WHERE public.instructor_can_attend(preferred,
+    jsonb_build_array(jsonb_build_object('starts_at',st,'hours',1)))
+    AND NOT EXISTS (
+      SELECT 1 FROM public.booking_meetings bm JOIN public.bookings b ON b.id=bm.booking_id
+      WHERE b.student_id='00000000-0000-0000-0000-0000000000b1'
+        AND bm.starts_at::date = st::date
+    )
+    AND st::date <> ((busy_slots->0->>'starts_at')::timestamptz)::date
+  ORDER BY st LIMIT 1;
+  IF blocked_start IS NULL THEN RAISE EXCEPTION 'No independent future slot'; END IF;
+  INSERT INTO public.instructor_time_off(instructor_id,starts_at,ends_at,reason)
+  VALUES (preferred,blocked_start,blocked_start + interval '1 hour','89k fixture');
+  no_alternative_slots := jsonb_build_array(jsonb_build_object('starts_at',blocked_start,'hours',1));
+  -- With English only Rafael qualifies, but he is unavailable: no offer is allowed.
   PERFORM set_config('request.jwt.claim.sub','00000000-0000-0000-0000-0000000000b1',true);
   EXECUTE 'SET LOCAL ROLE authenticated';
   req := public.create_instructor_request_with_preference(
-    beach,'returning','Inglês',busy_slots,null,false,preferred);
+    beach,'returning','Inglês',no_alternative_slots,null,false,preferred);
   EXECUTE 'RESET ROLE';
   IF EXISTS(SELECT 1 FROM public.instructor_offers WHERE request_id=req AND status='offered') THEN
     RAISE EXCEPTION 'P0: offered unavailable preferred with no alternate';
