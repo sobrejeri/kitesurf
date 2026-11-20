@@ -1,7 +1,8 @@
 -- #92 behavioral regression: preferred instructor must obey availability.
 -- Runs after 10_rules fixture, inside rollback-only transaction.
 -- Preferred-instructor requests require a previous lesson with that instructor.
--- Luana (b1) has a confirmed Rafael booking with one recorded meeting.
+-- Luana (b1) has a confirmed Rafael lesson; the busy slot comes from
+-- another student's (b2) Rafael booking, so Luana is free at that time.
 BEGIN;
 DO $$
 DECLARE
@@ -15,12 +16,12 @@ DECLARE
   alternate constant uuid := '00000000-0000-0000-0000-0000000000a2';
 BEGIN
   SELECT id INTO STRICT beach FROM public.beaches WHERE slug='prea';
-  -- Rafael has an existing confirmed lesson in the original 10_rules fixture.
+  -- Rafael is busy teaching b2; b1 must not have a conflicting lesson.
   SELECT jsonb_build_array(jsonb_build_object('starts_at',bm.starts_at,'hours',1))
     INTO STRICT busy_slots
   FROM public.booking_meetings bm
   JOIN public.bookings b ON b.id=bm.booking_id
-  WHERE b.student_id='00000000-0000-0000-0000-0000000000b1'
+  WHERE b.student_id='00000000-0000-0000-0000-0000000000b2'
     AND b.instructor_id=preferred
   ORDER BY bm.starts_at LIMIT 1;
   IF public.instructor_can_attend(preferred,busy_slots) THEN
