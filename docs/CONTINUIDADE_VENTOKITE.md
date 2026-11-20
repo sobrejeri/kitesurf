@@ -621,3 +621,10 @@ O projeto possui um **avaliador independente preparado, não necessariamente con
 - Commits de implementação/teste: `31ea2467` e `20963bcb`. CI inicial do novo HEAD `44478067083` em execução ao registrar; Claude QA `44478067095` SKIPPED, **não revisou**. Este commit documental dispara nova checagem: validar o CI do HEAD final, não somente o anterior.
 - Sem merge ou deploy. Render live `4007b8fb` (`dep-dbtk7ep7lnhs73a391dg`), Supabase Kitesurf migrations 39–42, Protege 3B fechado. PRs #296/#298 continuam em draft.
 - **Retomada:** verificar CI da PR #299 no HEAD final; se falhar, investigar a RPC de preferência e fixtures, corrigir sem enfraquecer testes de RLS. Depois preparar ambiente isolado e sessões autorizadas Aluno/Instrutor, rodar E2E de 4h/2 encontros com aceite, presença, 110+115 minutos, evolução e leitura do aluno. SQL simulado não equivale a E2E. 0/18 tópicos homologados.
+
+
+### Retomada 20/11/2026 — teste de precisão do início de aula (#93/#103)
+- Na PR #303, `144a6ceb` acrescenta regressão: exatamente 24h permite iniciar; 24h + 1 microssegundo recusa com `55000` e preserva `scheduled`. Ainda não foi validado CI desse HEAD. Não há E2E autenticado.
+- HEAD anterior `7179c608`: CI `Vento - build and database rules` `44666647268` success; Claude QA `44666647186` skipped (não revisou).
+- PRs #300 e #303 seguem abertas e sem reviews. Render live `61bab72664fa4053d64b60853d45f44ad2e191c5`; Supabase Kitesurf somente migrations 39–42; 0/16 frentes homologadas. Não houve merge, deploy nem execução de migrations nesta rodada.
+- **Próximo ponto exato:** conferir CI de `144a6ceb`; revisar e integrar #300 somente com critérios satisfeitos; reapontar e revisar #303; confirmar backup e ensaiar migrations em banco isolado; E2E VNT-1008 Aluno→Instrutor→225/15→Aluno. Não ativar pg_cron no projeto atual e não abrir Protege 3B.
