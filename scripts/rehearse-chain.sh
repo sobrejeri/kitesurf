@@ -66,6 +66,7 @@ required=(
   20261120100000_confirm_payment_lock_order.sql
   20261120110000_simulate_test_payment_canonical_lock_order.sql
   20261120120000_meeting_start_24h_window.sql
+  20261120130000_respond_balance_meeting_current_instructor.sql
 )
 if [ "${INCLUDE_PREFERRED:-0}" = "1" ]; then
   required+=(20261113000043_preferred_instructor_availability.sql 20261114002000_fix_preferred_instructor_availability.sql)
@@ -115,6 +116,9 @@ step 20261120110000_simulate_test_payment_canonical_lock_order.sql \
 step 20261120120000_meeting_start_24h_window.sql \
   "select position('24 hours' in pg_get_functiondef('public.start_ordered_meeting(uuid,text)'::regprocedure)) > 0 and has_function_privilege('authenticated', 'public.start_ordered_meeting(uuid,text)'::regprocedure, 'EXECUTE') and not has_function_privilege('anon', 'public.start_ordered_meeting(uuid,text)'::regprocedure, 'EXECUTE')" \
   "início do encontro liberado até 24h antes do horário (decisão do responsável); permissões mantidas (só na #303)"
+step 20261120130000_respond_balance_meeting_current_instructor.sql \
+  "select position('Make-up request not found for this instructor' in pg_get_functiondef('public.respond_balance_meeting(uuid,boolean)'::regprocedure)) > 0 and position('b.instructor_id is distinct from v_uid' in lower(pg_get_functiondef('public.respond_balance_meeting(uuid,boolean)'::regprocedure))) > 0 and has_function_privilege('authenticated', 'public.respond_balance_meeting(uuid,boolean)'::regprocedure, 'EXECUTE') and not has_function_privilege('anon', 'public.respond_balance_meeting(uuid,boolean)'::regprocedure, 'EXECUTE')" \
+  "resposta à reposição exige o instrutor ATUAL da reserva; permissões mantidas (stack sobre a #303)"
 
 # ---- 2. conferência final (cada checagem separada; qualquer falso para) ----
 echo "== Conferência final"

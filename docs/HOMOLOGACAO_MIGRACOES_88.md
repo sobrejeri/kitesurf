@@ -76,6 +76,7 @@ Cole **um arquivo por vez** no SQL Editor do **projeto de teste**, confira a ver
 | 8 | `20261120100000_confirm_payment_lock_order.sql` (PR separada, empilhada sobre a #300) | `select position('Booking changed, try again' in pg_get_functiondef('public.confirm_test_payment(uuid)'::regprocedure)) > 0;` → `true` |
 | 9 | `20261120110000_simulate_test_payment_canonical_lock_order.sql` (na #303, commit de outra sessão; complementa o 8) | `select position('Do NOT lock bookings' in pg_get_functiondef('public.simulate_test_payment(uuid,text,text)'::regprocedure)) > 0;` → `true`; `anon` sem EXECUTE |
 | 10 | `20261120120000_meeting_start_24h_window.sql` (#303; regra de início = até 24h antes) | `select position('24 hours' in pg_get_functiondef('public.start_ordered_meeting(uuid,text)'::regprocedure)) > 0;` → `true`; `anon` sem EXECUTE |
+| 11 | `20261120130000_respond_balance_meeting_current_instructor.sql` (branch empilhada sobre a #303; endurecimento P3 do QA de 10/11) | `select position('b.instructor_id is distinct from v_uid' in lower(pg_get_functiondef('public.respond_balance_meeting(uuid,boolean)'::regprocedure))) > 0;` → `true`; `anon` sem EXECUTE |
 
 Depois do último arquivo aplicado, rode de novo 0.2: **2 linhas**, 6 args com `defaults = 0`, 5 args com `defaults = 1`.
 E confirme que as RPCs continuam fechadas ao anônimo:
