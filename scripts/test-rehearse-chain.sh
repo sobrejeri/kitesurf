@@ -73,6 +73,7 @@ set -e
 echo "$out" | grep -q "migration obrigatória ausente: 20261119140000" || { echo "D) falta mensagem explicita da migration" >&2; echo "$out" >&2; exit 1; }
 ! echo "$out" | grep -q "^PASS:" || { echo "D) ensaio incompleto nunca pode retornar PASS" >&2; exit 1; }
 [ "$(SQL -d rehearse_missing -c "select count(*) from pg_proc where proname='run_expiry_jobs'")" = "0" ] || { echo "D) nao deveria criar o job ausente" >&2; exit 1; }
+[ "$(SQL -d rehearse_missing -c "select count(*) from pg_proc where proname='guard_student_meeting_overlap'")" = "0" ] || { echo "D) preflight deve impedir TODAS as migrations, inclusive as anteriores a ausente" >&2; exit 1; }
 # E) instrutor preferido: sem INCLUDE_PREFERRED a cadeia NAO as aplica (A); com INCLUDE_PREFERRED=1 aplica, verifica e mantem a funcao fechada
 # a migration 14 isenta o instrutor preferido da checagem de agenda (para ele poder sugerir outra data); a 43/2000 remove a isencao
 HAS='select position($q$distinct from r.preferred_instructor_id$q$ in pg_get_functiondef($q$public.advance_instructor_offer(uuid)$q$::regprocedure)) = 0'
