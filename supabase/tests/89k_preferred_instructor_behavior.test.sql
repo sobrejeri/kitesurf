@@ -1,5 +1,7 @@
 -- #92 behavioral regression: preferred instructor must obey availability.
 -- Runs after 10_rules fixture, inside rollback-only transaction.
+-- Preferred-instructor requests require a previous lesson with that instructor.
+-- Luana (b1) has a confirmed Rafael booking with one recorded meeting.
 BEGIN;
 DO $$
 DECLARE
@@ -27,10 +29,10 @@ BEGIN
   IF NOT public.instructor_can_attend(alternate,busy_slots) THEN
     RAISE EXCEPTION 'Invalid fixture: alternate instructor is not available';
   END IF;
-  PERFORM set_config('request.jwt.claim.sub','00000000-0000-0000-0000-0000000000b2',true);
+  PERFORM set_config('request.jwt.claim.sub','00000000-0000-0000-0000-0000000000b1',true);
   EXECUTE 'SET LOCAL ROLE authenticated';
   req := public.create_instructor_request_with_preference(
-    beach,'first_time','Português',busy_slots,null,false,preferred);
+    beach,'returning','Português',busy_slots,null,false,preferred);
   EXECUTE 'RESET ROLE';
   SELECT id,instructor_id INTO offered,chosen FROM public.instructor_offers
     WHERE request_id=req AND status='offered';
@@ -42,10 +44,10 @@ BEGIN
   END IF;
 
   -- With English only Rafael qualifies, but he is busy: no offer is allowed.
-  PERFORM set_config('request.jwt.claim.sub','00000000-0000-0000-0000-0000000000b2',true);
+  PERFORM set_config('request.jwt.claim.sub','00000000-0000-0000-0000-0000000000b1',true);
   EXECUTE 'SET LOCAL ROLE authenticated';
   req := public.create_instructor_request_with_preference(
-    beach,'first_time','Inglês',busy_slots,null,false,preferred);
+    beach,'returning','Inglês',busy_slots,null,false,preferred);
   EXECUTE 'RESET ROLE';
   IF EXISTS(SELECT 1 FROM public.instructor_offers WHERE request_id=req AND status='offered') THEN
     RAISE EXCEPTION 'P0: offered unavailable preferred with no alternate';
@@ -63,10 +65,10 @@ BEGIN
     jsonb_build_array(jsonb_build_object('starts_at',st,'hours',1)))
   ORDER BY st LIMIT 1;
   IF free_slots IS NULL THEN RAISE EXCEPTION 'No free fixture date'; END IF;
-  PERFORM set_config('request.jwt.claim.sub','00000000-0000-0000-0000-0000000000b2',true);
+  PERFORM set_config('request.jwt.claim.sub','00000000-0000-0000-0000-0000000000b1',true);
   EXECUTE 'SET LOCAL ROLE authenticated';
   req := public.create_instructor_request_with_preference(
-    beach,'first_time','Português',free_slots,null,false,preferred);
+    beach,'returning','Português',free_slots,null,false,preferred);
   EXECUTE 'RESET ROLE';
   SELECT instructor_id INTO chosen FROM public.instructor_offers
     WHERE request_id=req AND status='offered';
