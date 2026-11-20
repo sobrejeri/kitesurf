@@ -22,7 +22,7 @@ A migration `20261119140000_queue_expiry_job.sql` cria duas funções **fechadas
 | Função | O que faz |
 |---|---|
 | `public.run_queue_expiry_job(p_limit int default 50)` | avança, em lote e com `skip locked`, os pedidos de instrutor com janela de busca vencida ou oferta viva vencida; devolve quantos avançou |
-| `public.run_expiry_jobs()` | roda a anterior **e** `expire_meeting_change_requests()` e `expire_balance_meeting_requests()`; devolve `{"instructor_requests":n,"meeting_changes":n,"balance_requests":n}` (`-1` em uma chave = aquela rotina falhou, as outras seguem) |
+| `public.run_expiry_jobs()` | roda a anterior **e** `expire_meeting_change_requests()` e `expire_balance_meeting_requests()`; devolve `{"instructor_requests":n,"meeting_changes":n,"balance_requests":n}` (falha SQL propaga ao agendador, com rollback do lote; não retorna sucesso parcial) |
 
 A migration **não agenda nada** (a issue #92 manda não ativar agendador antes de revisar as buscas e ofertas já vencidas).
 
