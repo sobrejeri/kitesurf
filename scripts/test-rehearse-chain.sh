@@ -84,3 +84,14 @@ echo "$out" | grep -q "^PASS:" || { echo "E) sem a linha PASS" >&2; exit 1; }
 [ "$(SQL -d rehearse_pref -c "select (has_function_privilege('authenticated','public.advance_instructor_offer(uuid)'::regprocedure,'EXECUTE') or has_function_privilege('anon','public.advance_instructor_offer(uuid)'::regprocedure,'EXECUTE'))::text")" = "false" ] || { echo "E) advance_instructor_offer deve seguir fechada a API" >&2; exit 1; }
 echo "PASS: ensaio completo, recusa deriva, falha em dependencias, recusa migration ausente e variante com instrutor preferido"
 
+# F) consulta D7 ausente: deve recusar ANTES de qualquer migration.
+mkprod rehearse_no_d7
+rm "$D/rehearse_copy/docs/CONSULTA_DERIVA_ANTES_DE_APLICAR.sql"
+set +e
+out="$(DATABASE_URL="$(url rehearse_no_d7)" CONFIRM_ISOLATED=sim bash "$D/rehearse_copy/scripts/rehearse-chain.sh" 2>&1)"
+rc=$?
+set -e
+[ "$rc" -eq 2 ] || { echo "F) esperado codigo 2 sem D7, obteve $rc" >&2; echo "$out" >&2; exit 1; }
+echo "$out" | grep -q "consulta D7 ausente" || { echo "F) faltou mensagem de recusa D7" >&2; echo "$out" >&2; exit 1; }
+[ "$(SQL -d rehearse_no_d7 -c "select count(*) from pg_proc where proname='guard_student_meeting_overlap'")" = "0" ] || { echo "F) nenhuma migration deve ser aplicada sem D7" >&2; exit 1; }
+echo "PASS: D7 ausente bloqueia ensaio antes de qualquer migration"
