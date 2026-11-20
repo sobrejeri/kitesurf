@@ -144,6 +144,11 @@ export function AreaSignup({ area }: { area: Exclude<AppArea, 'admin'> }) {
           <input name="password" type="password" required minLength={8} autoComplete="new-password" className={inputClass} />
         </Field>
       </ActionForm>
+      <p className="mt-4 text-center text-[12px] leading-relaxed text-muted">
+        Ao criar a conta, você concorda com os{' '}
+        <Link href="/termos" className="font-semibold text-brand underline">Termos de uso</Link> e a{' '}
+        <Link href="/privacidade" className="font-semibold text-brand underline">Política de privacidade</Link>.
+      </p>
       <p className="mt-5 text-center text-[14px] text-label">
         Já tem conta?{' '}
         <Link href={`/${area}/entrar`} className="font-semibold text-brand">
