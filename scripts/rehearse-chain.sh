@@ -54,6 +54,29 @@ step() { # $1=arquivo  $2=SQL de verificação (deve devolver 't')  $3=descriç�
 
 SIX="'public.create_booking(uuid,public.lesson_level,text,jsonb,text,boolean)'::regprocedure"
 FIVE="'public.create_booking(uuid,public.lesson_level,text,jsonb,text)'::regprocedure"
+# Validar o conjunto COMPLETO antes de iniciar qualquer DDL. Uma migration ausente
+# não pode deixar as anteriores aplicadas e o banco em estado intermediário.
+required=(
+  20261116160000_create_booking_legacy_safe_delegate.sql
+  20261116170000_create_booking_six_args_no_defaults.sql
+  20261117190000_guard_student_meeting_overlap.sql
+  20261119120000_offer_accept_student_conflict.sql
+  20261119130000_meeting_change_student_conflict.sql
+  20261119140000_queue_expiry_job.sql
+  20261120100000_confirm_payment_lock_order.sql
+  20261120110000_simulate_test_payment_canonical_lock_order.sql
+  20261120120000_meeting_start_24h_window.sql
+)
+if [ "${INCLUDE_PREFERRED:-0}" = "1" ]; then
+  required+=(20261113000043_preferred_instructor_availability.sql 20261114002000_fix_preferred_instructor_availability.sql)
+fi
+for migration in "${required[@]}"; do
+  [ -f "$ROOT/supabase/migrations/$migration" ] || {
+    echo "FALHOU: migration obrigatória ausente: $migration. Nenhuma migration foi aplicada." >&2
+    exit 2
+  }
+done
+
 # ---- 1. cadeia, na ORDEM SEGURA (o delegado ANTES de remover os defaults) ----
 step 20261116160000_create_booking_legacy_safe_delegate.sql \
   "select (not prosecdef) and pronargdefaults = 1 and not has_function_privilege('anon', oid, 'EXECUTE') from pg_proc where oid = $FIVE" \
