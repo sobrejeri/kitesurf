@@ -43,6 +43,13 @@ begin
   update public.booking_meetings set starts_at = now() + interval '25 hours' where id = m1;
   r := pg_temp.try(format('select public.start_ordered_meeting(%L, %L)', m1, v_pin), a1);
   assert r like '55000:%start window has not opened%', '25h antes deveria estar bloqueado: ' || r;
+  -- Limite estrito: mesmo um microssegundo ANTES de abrir a janela continua bloqueado.
+  -- O teste compartilha now() transacional com a função, evitando flutuação de relógio.
+  update public.booking_meetings set starts_at = now() + interval '24 hours' + interval '1 microsecond' where id = m1;
+  r := pg_temp.try(format('select public.start_ordered_meeting(%L, %L)', m1, v_pin), a1);
+  assert r like '55000:%start window has not opened%', '24h + 1 microssegundo deveria estar bloqueado: ' || r;
+  assert (select status::text from public.booking_meetings where id = m1) = 'scheduled',
+    'tentativa prematura nao pode iniciar o encontro';
   -- Limite inclusivo: exatamente 24h antes deve permitir iniciar, sem arredondar para o dia local.
   -- now() e estavel durante a transacao; a igualdade e deterministica.
   update public.booking_meetings set starts_at = now() + interval '24 hours' where id = m1;
