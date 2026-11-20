@@ -22,7 +22,15 @@ echo "== Banco: $("${A[@]}" -c "select current_database() || ' em ' || coalesce(
 
 # ---- 0. pré-checagens (somente leitura) ----
 echo "== Pré-checagens"
-unknown="$("${A[@]}" -f "$ROOT/docs/CONSULTA_DERIVA_ANTES_DE_APLICAR.sql" 2>/dev/null | grep -c "DESCONHECIDA" || true)"
+# A falha de SQL/arquivo no D7 NÃO pode virar "0 DESCONHECIDA" por causa do grep.
+D7="$ROOT/docs/CONSULTA_DERIVA_ANTES_DE_APLICAR.sql"
+[ -f "$D7" ] || { echo "RECUSADO: consulta D7 ausente: $D7" >&2; exit 2; }
+if ! d7_output="$("${A[@]}" -f "$D7" 2>&1)"; then
+  echo "RECUSADO: pré-checagem D7 falhou; nenhuma migration será aplicada." >&2
+  echo "$d7_output" >&2
+  exit 2
+fi
+unknown="$(printf '%s\n' "$d7_output" | grep -c "DESCONHECIDA" || true)"
 if [ "${unknown:-0}" != "0" ]; then
   echo "RECUSADO: o D7 encontrou $unknown função(ões) DESCONHECIDA(s) (ajuste manual). Rode o D6/D7 e compare o texto antes de aplicar." >&2
   "${Q[@]}" -f "$ROOT/docs/CONSULTA_DERIVA_ANTES_DE_APLICAR.sql" 2>&1 | grep "DESCONHECIDA" >&2 || true
