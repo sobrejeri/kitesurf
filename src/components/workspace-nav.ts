@@ -36,6 +36,7 @@ export const ADMIN_NAV: readonly WorkspaceNavItem[] = [
   { group: 'Pessoas', label: 'Validar documentos', href: '/admin/documentos', icon: 'file' },
   { group: 'Pessoas', label: 'Afiliados', href: '/admin/afiliados', icon: 'link' },
   { group: 'Financeiro', label: 'Financeiro', href: '/admin/financeiro', icon: 'wallet', tab: true },
+  { group: 'Financeiro', label: 'Relatórios', href: '/admin/relatorios', icon: 'chart' },
   { group: 'Financeiro', label: 'Regras da operação', href: '/admin/regras', icon: 'sliders' },
   { group: 'Financeiro', label: 'Políticas comerciais', href: '/admin/politicas', icon: 'book' },
   { group: 'Cadastros', label: 'Praias', href: '/admin/praias', icon: 'pin' },
