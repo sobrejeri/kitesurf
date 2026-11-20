@@ -36,14 +36,16 @@ begin
   return n;
 end $$;
 
--- Executa TODAS as expirações conhecidas, uma a uma; a falha de uma não impede as outras (cada uma devolve a contagem ou -1).
+-- Falhas devem chegar ao agendador como SQL ERROR: o pg_cron marca a execução como failed.
+-- Todas as rotinas compartilham a mesma transação; qualquer erro reverte o lote inteiro,
+-- evitando progresso parcial silencioso. NÃO agenda cron nem altera dados na instalação.
 create function public.run_expiry_jobs() returns jsonb
 language plpgsql security definer set search_path = '' as $$
 declare v_requests integer; v_changes integer; v_balance integer;
 begin
-  begin v_requests := public.run_queue_expiry_job(); exception when others then v_requests := -1; end;
-  begin v_changes := public.expire_meeting_change_requests(); exception when others then v_changes := -1; end;
-  begin v_balance := public.expire_balance_meeting_requests(); exception when others then v_balance := -1; end;
+  v_requests := public.run_queue_expiry_job();
+  v_changes := public.expire_meeting_change_requests();
+  v_balance := public.expire_balance_meeting_requests();
   return jsonb_build_object('instructor_requests', v_requests, 'meeting_changes', v_changes, 'balance_requests', v_balance);
 end $$;
 
