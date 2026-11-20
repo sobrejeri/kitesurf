@@ -61,6 +61,8 @@ jobs:
         run: node --experimental-strip-types scripts/test-student-swipe-edge-scroll.mjs
       - name: Verify request page navigation on phone and PC
         run: node --experimental-strip-types scripts/test-student-request-navigation.mjs
+      - name: Test student instructor profile screen
+        run: node --experimental-strip-types scripts/test-instructor-profile.mjs
       - name: Test public terms and privacy pages
         run: node --experimental-strip-types scripts/test-legal-pages.mjs
       - name: Test safe student deep-link back navigation

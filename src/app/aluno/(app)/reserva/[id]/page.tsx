@@ -177,6 +177,11 @@ export default async function BookingPage({ params }: { params: Promise<{ id: st
                   {instructorName}
                 </p>
                 <p className="mt-1 text-[12px] text-[#b9d5e5]">Idioma: {booking.language}</p>
+                {booking.instructor_id ? (
+                  <Link href={`/aluno/reserva/${booking.id}/instrutor`} className="mt-1 inline-flex min-h-8 items-center text-[12px] font-semibold text-white underline">
+                    Ver perfil do instrutor
+                  </Link>
+                ) : null}
               </div>
             </div>
 
