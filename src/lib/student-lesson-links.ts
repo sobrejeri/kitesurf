@@ -18,3 +18,12 @@ export function lessonIsPast(status: string, startsAt: string, minutes: number, 
 export function lessonNeedsInstructorRecord(status: string, startsAt: string, minutes: number, now: number): boolean {
   return status === 'scheduled' && lessonIsPast(status, startsAt, minutes, now);
 }
+
+type DatedLesson = { startsAt: string; past: boolean };
+
+/** Upcoming lessons first, then history from newest to oldest. */
+export function compareStudentLessons(a: DatedLesson, b: DatedLesson): number {
+  if (a.past !== b.past) return a.past ? 1 : -1;
+  const difference = Date.parse(a.startsAt) - Date.parse(b.startsAt);
+  return a.past ? -difference : difference;
+}

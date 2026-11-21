@@ -1,5 +1,9 @@
 # VentoKite — comando mestre de continuidade entre conversas
 
+## Continuidade em 21/11 — ordenação em Minhas aulas
+
+A #310 entrou na principal em `9188fbd2`. A tela `/aluno/aulas` montava os cards de cada encontro com uma ordenação independente. A correção da tela usa o instante de início e preserva próximas aulas em ordem crescente e histórico em ordem decrescente. A regressão verifica horários com fusos distintos e horários equivalentes. Nenhuma alteração de banco.
+
 ## Handoff 21/11/2026 06h17 BRT — PR #310 (#90/#103)
 
 - PR #310 (commits `358c3cc`, `381ef39`) corrige a ordenação das próximas reservas do Aluno por instante UTC real, inclusive quando encontros usam offsets diferentes. Regressões acrescentadas em `scripts/test-booking-cycle.mjs` para duas reservas e para dois encontros na mesma reserva. **CI do HEAD ainda não confirmado ao registrar**; Claude QA precisa ser consultado antes do merge. Não declarar publicado ou homologado.
