@@ -2,7 +2,7 @@
 
 ## Continuidade em 21/11 — fila offline (#92)
 
-O diagnóstico de ofertas abertas contava um estado inexistente. A consulta agrega ofertas enviadas e sugestões de data, incluindo vencidas. A regressão executa a consulta sobre dados fictícios e verifica o instante exato do vencimento. Retomar a homologação A→B→C com três instrutores fictícios aprovados e recuperação do banco Kitesurf comprovada.
+O diagnóstico de ofertas abertas contava um estado inexistente. A consulta agrega ofertas enviadas e sugestões de data, incluindo vencidas. A regressão executa a consulta sobre dados fictícios e verifica o instante exato do vencimento. A solicitação expirada agora informa o encerramento no título de celular e PC. Retomar a homologação A→B→C com três instrutores fictícios aprovados e recuperação do banco Kitesurf comprovada.
 
 ## Continuidade em 21/11 — ordenação em Minhas aulas
 

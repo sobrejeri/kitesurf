@@ -23,3 +23,15 @@ assert.equal(isActive('/aluno/reservar', desktop), false);
 const page = readFileSync('src/app/aluno/(app)/solicitacao/[id]/page.tsx', 'utf8');
 assert.match(page, /backHref="\/aluno\/aulas"/);
 console.log('PASS: request page safe back and active navigation');
+
+// The phone and desktop headings must both reflect the persisted request status.
+for (const [status, title] of Object.entries({
+  expired: 'Prazo da busca encerrado', cancelled: 'Solicitação cancelada',
+  searching: 'Procurando seu instrutor', accepted: 'Instrutor encontrado!',
+})) {
+  assert.ok(page.includes(status + ": '" + title + "'"));
+}
+assert.match(page, /\}\[request\.status\]/);
+assert.match(page, /<DesktopPageHeader[^>]*title=\{title\}/);
+assert.match(page, /<StudentPageTitle title=\{title\}/);
+console.log('PASS: both request headers use the persisted search status');
