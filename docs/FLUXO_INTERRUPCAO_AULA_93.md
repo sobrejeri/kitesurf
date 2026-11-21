@@ -26,3 +26,11 @@ A PR #321 já está em produção e exige confirmação para renunciar saldo; el
 
 ## Status
 Decisão registrada e implementação planejada. Ainda **não implementado nem homologado**.
+
+## Inventário técnico verificado no Supabase Kitesurf (21/11/2026)
+- Tabela `public.booking_meetings`: `id`, `booking_id`, `position`, `starts_at`, `minutes`, `status`, `done_minutes`, `note`, `started_at`, `recorded_at`. **Não existem** colunas específicas de interrupção, motivo ou continuidade.
+- `record_meeting_with_skills(meeting_id, done_minutes, practiced_steps, mastered_steps)` é SECURITY DEFINER, exige instrutor atribuído e encontro `in_progress`; chama `record_meeting` e registra habilidades/auditoria. Modificar esse contrato sem verificar a RPC interna poderia duplicar progresso ou finalizar prematuramente a reserva.
+- Permanecem as RPCs antigas `request_balance_meeting`, `respond_balance_meeting` e `close_booking_balance`; também há `request_meeting_change`/`respond_meeting_change`, que não devem ser reutilizadas sem conferir as regras de titularidade e prazo.
+- Na página do Aluno `src/app/aluno/(app)/reserva/[id]/page.tsx`, o saldo é derivado de `bookingBalanceMinutes` e mostrado por `BalanceMeetingPanel`; remover o componente só após o novo aviso de interrupção estar funcional.
+- **Decisão técnica:** modelar a continuidade como estado explícito do encontro original, não como novo encontro com `position` adicional. Conservar `done_minutes` e `meeting_skill_progress` como histórico, e impedir a conclusão duplicada.
+- **Próxima alteração segura:** inspecionar `record_meeting`, triggers de `bookings`, enum `meeting_status`, regras de calendário e rotas do Instrutor; só então propor migration aditiva e teste em transação. Nenhum DDL aplicado nesta etapa.
