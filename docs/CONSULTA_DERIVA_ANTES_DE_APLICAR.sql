@@ -12,6 +12,7 @@ with esperado(assinatura, md5_esperado, papel) as (values
   ('request_meeting_change(uuid,timestamp with time zone,text)',       'f27abb79af5ade646fa950f1a49aefa7', 'substitui (20261119130000)'),
   ('respond_meeting_change(uuid,boolean)',                             '73b9b1d2827663586e9bc4007b95b9b6', 'substitui (20261119130000)'),
   ('confirm_test_payment(uuid)',                                       '98eafe9d56ebaace3211f97569bbcda4', 'substitui (20261120100000)'),
+  ('start_ordered_meeting(uuid,text)',                                'dfca202e7285dd0f2ef7a080068fa0ce', 'substitui (20261120120000)'),
   ('advance_instructor_offer(uuid)',                                   'e6dbe921aaa22fb112dd2561b5f5dec4', 'só é chamada pelo job novo'),
   ('expire_meeting_change_requests()',                                 '1ecc29bf9e6c343052200525f6ff9ad5', 'só é chamada pelo job novo'),
   ('expire_balance_meeting_requests()',                                '2cd45a5c9b7557854761b31f50f04420', 'só é chamada pelo job novo'))
@@ -55,6 +56,7 @@ from pg_proc p where p.pronamespace = 'public'::regnamespace and p.proname = 'cr
 --    ESPERADO (o que já se sabe de 19/11): create_booking(6) = migration 10 (sem a revalidação #283); as demais devem ser a versão marcada "ULTIMA".
 --    Se advance_instructor_offer vier como migration 11/13/14, as migrations 20261113000043 e 20261114002000 não estão aplicadas.
 with cand(assinatura, md5n, versao) as (values
+  ('start_ordered_meeting(uuid,text)',                          'f2cee766c646bcd3c8f4dd9f345fa10b', 'migration 26 (presença por dia; substituída por 20261120120000)'),
   ('simulate_test_payment(uuid,text,text)',                     '57334f613ab7b6f9713fde80410d99c7', 'ULTIMA: migration 09 (substituída por 20261120110000)'),
   ('create_booking(uuid,lesson_level,text,jsonb,text,boolean)', 'f2cbb615e40099fc86849ac36500948d', 'migration 04 (veículo de apoio)'),
   ('create_booking(uuid,lesson_level,text,jsonb,text,boolean)', 'cfe5afc944674ebff0669bfd16845675', 'migration 07 (agenda do instrutor)'),
@@ -74,13 +76,20 @@ with cand(assinatura, md5n, versao) as (values
   ('request_meeting_change(uuid,timestamp with time zone,text)', '10fac4c4a3d01af411121c09757aeea1', 'migration 30'),
   ('request_meeting_change(uuid,timestamp with time zone,text)', '8b14d49758649a082024e162f81799c7', 'ULTIMA: migration 31'),
   ('respond_meeting_change(uuid,boolean)',                      'ec19d70bc6f46e60f255d4c11f2b2bb6', 'migration 30'),
-  ('respond_meeting_change(uuid,boolean)',                      '5ef67a2d78b0f9876c28487de86cda34', 'ULTIMA: migration 31'))
-select p.oid::regprocedure::text as assinatura,
-       coalesce(c.versao, 'DESCONHECIDA (ajuste manual ou versão fora do repositório): comparar o texto antes de substituir') as versao_em_producao,
-       md5(regexp_replace(regexp_replace(p.prosrc, '--[^\n]*', '', 'g'), '\s+', '', 'g')) as md5_normalizado
-from pg_proc p
-left join cand c on c.assinatura = p.oid::regprocedure::text
-                and c.md5n = md5(regexp_replace(regexp_replace(p.prosrc, '--[^\n]*', '', 'g'), '\s+', '', 'g'))
-where p.pronamespace = 'public'::regnamespace
-  and p.oid::regprocedure::text in (select assinatura from cand)
-order by 1;
+  ('respond_meeting_change(uuid,boolean)',                      '5ef67a2d78b0f9876c28487de86cda34', 'ULTIMA: migration 31')),
+esperadas as (
+  select distinct assinatura from cand
+), atuais as (
+  select e.assinatura, p.oid,
+         md5(regexp_replace(regexp_replace(p.prosrc, '--[^\n]*', '', 'g'), '\s+', '', 'g')) as md5_normalizado
+  from esperadas e
+  left join pg_proc p on p.oid = to_regprocedure('public.' || e.assinatura)
+)
+select a.assinatura,
+       case when a.oid is null then 'DESCONHECIDA (assinatura obrigatória ausente)'
+            else coalesce(c.versao, 'DESCONHECIDA (ajuste manual ou versão fora do repositório): comparar o texto antes de substituir')
+       end as versao_em_producao,
+       a.md5_normalizado
+from atuais a
+left join cand c on c.assinatura = a.assinatura and c.md5n = a.md5_normalizado
+order by a.assinatura;
