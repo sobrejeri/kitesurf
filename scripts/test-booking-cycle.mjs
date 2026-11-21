@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
-import { activeBookingStageMeetingIds, activeStudentBookings, bookingIsFinished, selectedStudentBooking, evolutionBookingStatus } from '../src/lib/booking-cycle.ts';
+import { activeBookingStageMeetingIds, activeStudentBookings, bookingBalanceMinutes, bookingIsFinished, selectedStudentBooking, evolutionBookingStatus } from '../src/lib/booking-cycle.ts';
 
 // A meeting entry is a bare status string (one contracted hour, fully recorded
 // when done) or an object carrying its own minutes/done_minutes for balance cases.
@@ -121,6 +121,35 @@ assert.deepEqual(
   activeBookingStageMeetingIds(selectedStudentBooking([bothMeetingsRecorded], 'four-hours')),
   ['four-hours-0', 'four-hours-1'],
 );
+// VNT-1008: two completed two-hour meetings with partial attendance
+// must leave exactly 15 contracted minutes available for make-up, even
+// though both original meetings have status done. No new payment is due.
+const vnt1008 = booking('VNT-1008', 'confirmed', dates, [
+  { status: 'done', minutes: 120, done_minutes: 110 },
+  { status: 'done', minutes: 120, done_minutes: 115 },
+], 4);
+assert.equal(bookingBalanceMinutes(vnt1008), 15,
+  '110 + 115 of 240 minutes must leave exactly 15 minutes');
+assert.equal(bookingIsFinished(vnt1008), false,
+  'Two done meetings must not close a booking with remaining balance');
+assert.equal(evolutionBookingStatus(vnt1008), 'Saldo a reagendar');
+assert.deepEqual(activeStudentBookings([vnt1008]).map((b) => b.id), ['VNT-1008']);
+assert.deepEqual(activeBookingStageMeetingIds(vnt1008), ['VNT-1008-0', 'VNT-1008-1'],
+  'Both recorded meetings must remain in the student evolution history');
+// Scheduling the remaining 15 minutes consumes the free balance, but the
+// reservation stays active until that make-up meeting is completed.
+const vnt1008Makeup = {
+  ...vnt1008,
+  booking_meetings: [...vnt1008.booking_meetings, {
+    id: 'VNT-1008-makeup', status: 'scheduled',
+    starts_at: '2026-11-25T12:00:00Z', minutes: 15, done_minutes: 0,
+  }],
+};
+assert.equal(bookingBalanceMinutes(vnt1008Makeup), 0);
+assert.equal(bookingIsFinished(vnt1008Makeup), false);
+assert.equal(evolutionBookingStatus(vnt1008Makeup), 'Em andamento');
+console.log('PASS: VNT-1008 225/240 leaves 15 minutes; make-up reserves only the balance');
+
 console.log('PASS: four-hour package advances across two meetings and retains evolution in history');
 
 const reservationPage = readFileSync('src/app/aluno/(app)/reserva/[id]/page.tsx', 'utf8');
