@@ -280,11 +280,17 @@ DECLARE
   v_meeting public.booking_meetings;
   v_booking public.bookings;
 BEGIN
-  SELECT * INTO v_meeting
-    FROM public.booking_meetings WHERE id=p_meeting_id FOR UPDATE;
-  SELECT * INTO v_booking
-    FROM public.bookings WHERE id=v_meeting.booking_id FOR UPDATE;
+  -- Dono primeiro, sem travar; depois a ordem canônica de locks (instrutor -> reserva -> encontro), igual às RPCs de
+  -- interrupção/retomada e às de remarcação. (Antes: encontro -> reserva, o que podia formar ciclo com schedule_meeting_resume.)
+  SELECT * INTO v_meeting FROM public.booking_meetings WHERE id=p_meeting_id;
+  SELECT * INTO v_booking FROM public.bookings WHERE id=v_meeting.booking_id;
   IF v_meeting.id IS NULL OR v_booking.instructor_id IS DISTINCT FROM v_instructor THEN
+    RAISE EXCEPTION 'Meeting not found' USING errcode='P0002';
+  END IF;
+  PERFORM 1 FROM public.instructors WHERE id=v_instructor FOR UPDATE;
+  SELECT * INTO v_booking FROM public.bookings WHERE id=v_booking.id FOR UPDATE;
+  SELECT * INTO v_meeting FROM public.booking_meetings WHERE id=p_meeting_id FOR UPDATE;
+  IF v_booking.instructor_id IS DISTINCT FROM v_instructor THEN
     RAISE EXCEPTION 'Meeting not found' USING errcode='P0002';
   END IF;
   IF v_meeting.status <> 'scheduled' OR v_booking.status <> 'confirmed' THEN
@@ -319,10 +325,17 @@ DECLARE
   m public.booking_meetings;
   b public.bookings;
 BEGIN
-  SELECT * INTO m FROM public.booking_meetings WHERE id = p_meeting_id FOR UPDATE;
+  SELECT * INTO m FROM public.booking_meetings WHERE id = p_meeting_id;
   SELECT * INTO b FROM public.bookings WHERE id = m.booking_id;
   -- Assigned instructor only. An admin does not start lessons on anyone's behalf.
   IF m.id IS NULL OR b.instructor_id IS DISTINCT FROM uid THEN
+    RAISE EXCEPTION 'Meeting not found' USING errcode = 'P0002';
+  END IF;
+  -- Ordem canônica de locks (instrutor -> reserva -> encontro); as chamadas via start_ordered_meeting já os seguram.
+  PERFORM 1 FROM public.instructors WHERE id = uid FOR UPDATE;
+  SELECT * INTO b FROM public.bookings WHERE id = b.id FOR UPDATE;
+  SELECT * INTO m FROM public.booking_meetings WHERE id = p_meeting_id FOR UPDATE;
+  IF b.instructor_id IS DISTINCT FROM uid THEN
     RAISE EXCEPTION 'Meeting not found' USING errcode = 'P0002';
   END IF;
   IF b.status <> 'confirmed' OR m.status <> 'scheduled' THEN
