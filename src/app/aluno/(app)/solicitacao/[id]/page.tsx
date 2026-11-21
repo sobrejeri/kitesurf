@@ -58,7 +58,7 @@ export default async function InstructorRequestPage({ params }: { params: Promis
     cancelled: 'Solicitação cancelada',
   }[request.status];
   const subtitle = accepted
-    ? (VALIDATION_WITHOUT_CHECKOUT ? 'Confira a reserva e confirme sem cobrança.' : 'Agora é só concluir o pagamento de teste.')
+    ? 'Consulte os horários e a situação da sua aula na reserva.'
     : searching ? 'Sua proposta foi enviada aos instrutores compatíveis.' : 'Você pode escolher novos horários.';
   return (
     <div className="vento-pc-secondary-page vento-pc-request-screen vento-mobile-appbar-clearance">
@@ -78,7 +78,7 @@ export default async function InstructorRequestPage({ params }: { params: Promis
         </p> : null}
         {accepted && request.booking_id ? (
           <ButtonLink href={'/aluno/reserva/' + request.booking_id} className="mt-5 w-full">
-            {VALIDATION_WITHOUT_CHECKOUT ? 'Ver e confirmar minha aula' : 'Continuar para pagamento'}
+            Ver minha reserva
           </ButtonLink>
         ) : request.status === 'searching' ? (
           <>

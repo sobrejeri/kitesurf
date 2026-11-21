@@ -35,3 +35,7 @@ assert.match(page, /\}\[request\.status\]/);
 assert.match(page, /<DesktopPageHeader[^>]*title=\{title\}/);
 assert.match(page, /<StudentPageTitle title=\{title\}/);
 console.log('PASS: both request headers use the persisted search status');
+
+assert.match(page, /<ButtonLink href=\{'\/aluno\/reserva\/' \+ request\.booking_id\}[^>]*>\s*Ver minha reserva\s*<\/ButtonLink>/);
+assert.doesNotMatch(page, /Ver e confirmar minha aula|Agora é só concluir o pagamento de teste|Confira a reserva e confirme/);
+console.log('PASS: accepted requests link to the booking without prompting for a second confirmation');

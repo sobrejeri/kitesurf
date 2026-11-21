@@ -1,5 +1,9 @@
 # VentoKite — comando mestre de continuidade entre conversas
 
+## Continuidade em 21/11 — solicitação aceita e agenda do instrutor
+
+O pedido aceito abre a reserva pelo botão “Ver minha reserva”. A própria reserva exibe a confirmação quando aplicável. O destaque de próxima aula ignora encontros passados ainda sem registro. As listas do instrutor usam o instante de início para ordenar encontros com fusos diferentes. No painel do Kitesurf foram verificados oito backups físicos concluídos, o mais recente de 21/11 às 02h05 de Fortaleza. O ensaio de recuperação de uma cópia real em destino isolado segue pendente.
+
 ## Continuidade em 21/11 — fila offline (#92)
 
 O diagnóstico de ofertas abertas contava um estado inexistente. A consulta agrega ofertas enviadas e sugestões de data, incluindo vencidas. A regressão executa a consulta sobre dados fictícios e verifica o instante exato do vencimento. A solicitação expirada agora informa o encerramento no título de celular e PC. Retomar a homologação A→B→C com três instrutores fictícios aprovados e recuperação do banco Kitesurf comprovada.
