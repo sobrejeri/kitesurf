@@ -18,9 +18,13 @@ export function groupInstructorLessons(bookings: readonly Booking[]): LessonGrou
       if (group) groups[group].push({ booking, meeting });
     }
   }
-  groups.proximas.sort((a, b) => a.meeting.starts_at.localeCompare(b.meeting.starts_at));
-  groups.andamento.sort((a, b) => a.meeting.starts_at.localeCompare(b.meeting.starts_at));
-  groups.concluidas.sort((a, b) => b.meeting.starts_at.localeCompare(a.meeting.starts_at));
+  // ISO strings can carry different UTC offsets. Lexical sorting then puts a
+  // later lesson before an earlier one; compare absolute instants instead.
+  const byStart = (a: InstructorLesson, b: InstructorLesson) =>
+    Date.parse(a.meeting.starts_at) - Date.parse(b.meeting.starts_at);
+  groups.proximas.sort(byStart);
+  groups.andamento.sort(byStart);
+  groups.concluidas.sort((a, b) => byStart(b, a));
   return groups;
 }
 
