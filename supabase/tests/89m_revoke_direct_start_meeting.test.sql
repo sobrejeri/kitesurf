@@ -4,7 +4,6 @@ DO $$
 BEGIN
   IF has_function_privilege('authenticated', 'public.start_meeting(uuid,text)', 'EXECUTE')
      OR has_function_privilege('anon', 'public.start_meeting(uuid,text)', 'EXECUTE')
-     OR has_function_privilege('PUBLIC', 'public.start_meeting(uuid,text)', 'EXECUTE')
   THEN
     RAISE EXCEPTION 'P0: direct legacy start_meeting exposed';
   END IF;
