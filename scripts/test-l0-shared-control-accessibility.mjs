@@ -21,6 +21,10 @@ for (const [done, reserved, expectedDone, expectedReserved] of cases) {
     'Progress segments must fit the track');
 }
 
+const viewport = readFileSync('src/app/layout.tsx', 'utf8');
+assert.doesNotMatch(viewport, /maximumScale:\s*1\b|userScalable:\s*false/,
+  'The mobile viewport must allow pinch zoom');
+
 const ui = readFileSync('src/components/ui.tsx', 'utf8');
 assert.match(ui, /progressBarShares\(donePercent, reservedPercent\)/,
   'The shared UI component must use the bounded percentages');

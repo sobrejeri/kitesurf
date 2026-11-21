@@ -34,9 +34,6 @@ export const viewport: Viewport = {
   viewportFit: 'cover',
   width: 'device-width',
   initialScale: 1,
-  // App-like behaviour: no pinch-zoom and no accidental sideways pan.
-  maximumScale: 1,
-  userScalable: false,
 };
 
 export default async function RootLayout({ children }: { children: React.ReactNode }) {

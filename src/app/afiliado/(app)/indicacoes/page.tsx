@@ -4,7 +4,7 @@ import { AffiliateProgramRules } from '@/components/affiliate/program-rules';
 import { AdminTitle, Metric, Panel } from '@/components/admin/kit';
 import { ButtonLink, EmptyState } from '@/components/ui';
 import { requireRole } from '@/lib/auth';
-import { getPartnerSummary } from '@/lib/data';
+import { getOwnPartner, getPartnerSummary } from '@/lib/data';
 import { formatMoney } from '@/lib/format';
 
 export const metadata: Metadata = { title: 'Minhas indicações' };
@@ -18,14 +18,22 @@ const STEPS = [
 /** Aggregates only: an affiliate never sees who the referred students are. */
 export default async function ReferralsPage() {
   const viewer = await requireRole(['partner'], '/afiliado/indicacoes');
-  const summary = viewer.role === 'partner' ? await getPartnerSummary() : null;
+  const [summary, partner] = await Promise.all([
+    viewer.role === 'partner' ? getPartnerSummary() : null,
+    getOwnPartner(viewer.id),
+  ]);
+  const approved = partner?.status === 'approved';
   const total = summary ? summary.pending_cents + summary.released_cents : 0;
   return (
     <>
       <AdminTitle title="Minhas indicações" subtitle="Totais das reservas feitas pelo seu link." />
       {!summary || summary.bookings === 0 ? (
-        <EmptyState action={<ButtonLink href="/afiliado/divulgacao" size="sm" icon="link">Divulgar meu link</ButtonLink>}>
-          Nenhuma reserva feita pelo seu link ainda. Compartilhe o link ou o QR Code para começar.
+        <EmptyState action={approved
+          ? <ButtonLink href="/afiliado/divulgacao" size="sm" icon="link">Divulgar meu link</ButtonLink>
+          : <ButtonLink href="/afiliado/perfil" size="sm">Ver meu cadastro</ButtonLink>}>
+          {approved
+            ? 'Nenhuma reserva feita pelo seu link ainda. Compartilhe o link ou o QR Code para começar.'
+            : 'A divulgação do link e do QR Code fica disponível após a aprovação do cadastro.'}
         </EmptyState>
       ) : (
         <div className="grid grid-cols-2 gap-3 lg:grid-cols-4 lg:gap-4">
