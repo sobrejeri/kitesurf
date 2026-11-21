@@ -6,7 +6,7 @@ Este documento é a memória operacional do projeto em GitHub. **Não permite in
 
 - VNT-1008 (Aluno e Instrutor, navegador): primeiro encontro já registrado com 110 min; segundo iniciado com o código do voucher, registrado com 115 min e Pilotagem em terra. A evolução e a reserva do aluno exibiram 225 min realizados e 15 min disponíveis.
 - VNT-1012 (Aluno e Instrutor, navegador): busca geral para Jericoacoara, Iniciante, 26 e 27/11 às 09h, 2h por encontro. Aceite pelo instrutor e confirmação pelo aluno sem cobrança. Após o aceite e a confirmação, os dois horários ficaram indisponíveis.
-- #300, #304 e #303 integradas. Render e /api/version confirmaram 20fc8fe5. #305 aguarda a janela de 24h no banco. D7 da fila corresponde à migration 14; restauração do banco real ainda sem evidência. Aluno e Instrutor têm cenários parciais. Retomar Admin com AAL2, Pousada, dispositivos físicos e aplicação do banco após backup validado.
+- #300, #304 e #303 integradas. Render e /api/version confirmaram 20fc8fe5. #305 aguarda a janela de 24h no banco. D7 da fila corresponde à migration 14; restauração do banco real ainda sem evidência. Aluno e Instrutor têm cenários parciais. A sessão Pousada teste abriu o painel e as indicações, com cadastro em análise e zero reservas. O Admin redirecionou à configuração do autenticador. Retomar Admin com AAL2, comissão simulada de pousada aprovada, dispositivos físicos e aplicação do banco após backup validado.
 - PWA: a recuperação de navegação sem rede está sendo integrada. O service worker apresenta uma página genérica para reconectar, sem armazenar respostas de sessão ou enfileirar operações.
 
 ## Comando para copiar em outro chat

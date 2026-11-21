@@ -365,7 +365,7 @@ const studentNavigationCss = read('src/app/aluno/(app)/modelo3.css');
 assert.ok(studentNavigationCss.includes('Interactive student pager: neighboring PAGE CONTENT moves with the finger') &&
   studentNavigationCss.includes('.vento-student-swipe-viewport') &&
   studentNavigationCss.includes('.vento-student-swipe-preview') &&
-  studentNavigationCss.includes('touch-action:pan-y'),
+  studentNavigationCss.includes('touch-action:pan-y pinch-zoom;'),
   'Swipe preview must stay clipped inside one mobile viewport with vertical scroll available');
 assert.ok(
   pager.includes("shouldBlockEdgeTouchStart(touch.clientX, window.innerWidth, isStandalone())") &&
