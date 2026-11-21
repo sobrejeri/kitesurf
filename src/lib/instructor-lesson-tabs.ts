@@ -18,9 +18,13 @@ export function groupInstructorLessons(bookings: readonly Booking[]): LessonGrou
       if (group) groups[group].push({ booking, meeting });
     }
   }
-  groups.proximas.sort((a, b) => a.meeting.starts_at.localeCompare(b.meeting.starts_at));
-  groups.andamento.sort((a, b) => a.meeting.starts_at.localeCompare(b.meeting.starts_at));
-  groups.concluidas.sort((a, b) => b.meeting.starts_at.localeCompare(a.meeting.starts_at));
+  // ISO strings can carry different UTC offsets. Lexical sorting then puts a
+  // later lesson before an earlier one; compare absolute instants instead.
+  const byStart = (a: InstructorLesson, b: InstructorLesson) =>
+    Date.parse(a.meeting.starts_at) - Date.parse(b.meeting.starts_at);
+  groups.proximas.sort(byStart);
+  groups.andamento.sort(byStart);
+  groups.concluidas.sort((a, b) => byStart(b, a));
   return groups;
 }
 
@@ -48,14 +52,13 @@ export function selectInstructorLesson(
   return meetingId ? groups[tab].find(({ meeting }) => meeting.id === meetingId) ?? null : null;
 }
 
-export function mayStartInstructorLesson(
-  entry: InstructorLesson,
-  localToday: string,
-  localDay: (date: string) => string,
+export function mayStartLesson(
+  entry: { booking: Pick<Booking, 'status' | 'booking_meetings'>; meeting: Meeting },
+  now: number,
 ): boolean {
   return entry.booking.status === 'confirmed'
     && entry.meeting.status === 'scheduled'
-    && localDay(entry.meeting.starts_at) <= localToday
+    && Date.parse(entry.meeting.starts_at) <= now + 24 * 60 * 60 * 1000
     && entry.booking.booking_meetings.every((previous) =>
       previous.position >= entry.meeting.position || previous.status === 'done');
 }

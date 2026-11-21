@@ -635,3 +635,9 @@ O projeto possui um **avaliador independente preparado, não necessariamente con
 - HEAD anterior `7179c608`: CI `Vento - build and database rules` `44666647268` success; Claude QA `44666647186` skipped (não revisou).
 - PRs #300 e #303 seguem abertas e sem reviews. Render live `61bab72664fa4053d64b60853d45f44ad2e191c5`; Supabase Kitesurf somente migrations 39–42; 0/16 frentes homologadas. Não houve merge, deploy nem execução de migrations nesta rodada.
 - **Próximo ponto exato:** conferir CI de `144a6ceb`; revisar e integrar #300 somente com critérios satisfeitos; reapontar e revisar #303; confirmar backup e ensaiar migrations em banco isolado; E2E VNT-1008 Aluno→Instrutor→225/15→Aluno. Não ativar pg_cron no projeto atual e não abrir Protege 3B.
+
+### Retomada em 21/11/2026 — VNT-1008
+
+As PRs #300, #304 e #303 entraram na branch principal. Na aplicação publicada, o Aluno teste já via 110 minutos registrados no primeiro encontro. O instrutor iniciou o segundo com o código de presença do voucher e registrou 115 minutos e a etapa Pilotagem em terra. Após recarga, a reserva e a evolução do aluno mostraram 3h45 realizadas e saldo de 15 minutos. Esta execução começou com a reserva existente. A criação, o aceite original, a consulta administrativa e a sessão da pousada precisam de evidência própria.
+
+O painel do instrutor e a evolução do aluno ainda comparavam o dia do calendário. Esta alteração alinha as duas telas à janela de 24h da migration `20261120120000`. Coordenar a publicação desta interface com a aplicação verificada da migration: a RPC publicada ainda usa o dia agendado. O D7 da fila corresponde à migration 14 (`07ba8bce57117edfd686b668306a9ea7`). Ensaio em banco descartável e CI não substituem restauração identificada do banco Kitesurf. Nenhum DDL executado no Supabase nesta rodada.
