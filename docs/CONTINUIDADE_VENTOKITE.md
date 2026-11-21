@@ -658,3 +658,10 @@ O projeto possui um **avaliador independente preparado, não necessariamente con
 - HEAD anterior `7179c608`: CI `Vento - build and database rules` `44666647268` success; Claude QA `44666647186` skipped (não revisou).
 - PRs #300 e #303 seguem abertas e sem reviews. Render live `61bab72664fa4053d64b60853d45f44ad2e191c5`; Supabase Kitesurf somente migrations 39–42; 0/16 frentes homologadas. Não houve merge, deploy nem execução de migrations nesta rodada.
 - **Próximo ponto exato:** conferir CI de `144a6ceb`; revisar e integrar #300 somente com critérios satisfeitos; reapontar e revisar #303; confirmar backup e ensaiar migrations em banco isolado; E2E VNT-1008 Aluno→Instrutor→225/15→Aluno. Não ativar pg_cron no projeto atual e não abrir Protege 3B.
+
+
+### 21/11/2026 07h14 BRT — VNT-1008 regressão de saldo (#93/#103)
+- PR [#314](https://github.com/sobrejeri/kitesurf/pull/314), commit de teste `319feb37`: `scripts/test-booking-cycle.mjs` cobre 110 + 115 = 225/240 minutos, 15 minutos de saldo, histórico dos dois encontros e reposição agendada sem conclusão prematura.
+- **Status:** CI do HEAD ainda não confirmado, não integrado, não publicado; Claude QA não presumido ativo. E2E Aluno/Instrutor do cenário consta na issue #105, mas Admin AAL2, Afiliado aprovado, fila offline A→B→C, Storage HTTP e dispositivos continuam pendentes.
+- **Banco:** Supabase Kitesurf tem 8 backups físicos COMPLETED listados, porém restauração ainda não comprovada; Storage não coberto. D7 mantém `advance_instructor_offer(uuid)` da migration 14; #305 não deve ser integrada antes da conciliação da RPC de 24h e recuperação.
+- **Retomada exata:** conferir CI da #314 e revisão técnica; se aprovado integrar e verificar SHA LIVE. Em paralelo, validar recuperação isolada sem custo e só então tratar a migration/PR #305. Preservar 39–42, Protege 3B fechado e checkout real desativado. Homologação 0/16.
