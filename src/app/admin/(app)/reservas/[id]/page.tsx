@@ -9,6 +9,8 @@ import { Badge } from '@/components/ui';
 import { requireRole } from '@/lib/auth';
 import { LEVEL_LABELS, MEETING_STATUS_LABELS, getBookingForViewer } from '@/lib/data';
 import { formatDateLong, formatMinutes, formatMoney, formatTime } from '@/lib/format';
+import { getMeetingKiteSkills } from '@/lib/meeting-skills';
+import { KITE_CURRICULA } from '@/lib/kite-steps';
 
 export const metadata: Metadata = { title: 'Reserva' };
 
@@ -32,6 +34,9 @@ export default async function AdminBookingPage({ params }: { params: Promise<{ i
   if (!UUID.test(id)) notFound();
   const booking = await getBookingForViewer(id, viewer);
   if (!booking) notFound();
+  // Reuse the authenticated, RLS-scoped skill reader. Do not bypass RLS with a service key.
+  const skillResult = await getMeetingKiteSkills(booking.booking_meetings.map((meeting) => meeting.id));
+  const curriculum = KITE_CURRICULA[booking.level];
 
   const status = BOOKING_STATUS[booking.status];
   const awaiting = booking.status === 'awaiting_payment';
@@ -134,7 +139,24 @@ export default async function AdminBookingPage({ params }: { params: Promise<{ i
                     </dl>
                     <p className="mt-3 text-[12px] text-muted">Observação do encontro</p>
                     <p className="mt-1 whitespace-pre-wrap text-ink">{meeting.note?.trim() || 'Nenhuma observação registrada.'}</p>
-                    <p className="mt-3 text-[12px] text-muted">A evolução por habilidade não está disponível nesta visão. Consulte o registro do instrutor antes de homologar essa etapa.</p>
+                    <section className="mt-3 border-t border-line pt-3" aria-label="Evolução por habilidade">
+                      <h3 className="text-[13px] font-semibold text-ink">Evolução por habilidade</h3>
+                      {!skillResult.ready ? (
+                        <p className="mt-2 text-[12px] text-muted">O detalhamento não está disponível para esta sessão. Verifique a permissão de leitura do Admin antes da homologação.</p>
+                      ) : (() => {
+                        const rows = skillResult.rows.filter((row) => row.meeting_id === meeting.id);
+                        return rows.length ? (
+                          <ul className="mt-2 grid gap-2">
+                            {rows.map((row) => (
+                              <li key={row.step_number} className="flex items-start justify-between gap-3 text-[12px]">
+                                <span className="text-ink">{curriculum.find((step) => step.id === row.step_number)?.title ?? `Etapa ${row.step_number}`}</span>
+                                <span className="shrink-0 font-semibold text-label">{row.result === 'mastered' ? 'Concluída' : 'Em desenvolvimento'}</span>
+                              </li>
+                            ))}
+                          </ul>
+                        ) : <p className="mt-2 text-[12px] text-muted">Nenhuma habilidade registrada para este encontro.</p>;
+                      })()}
+                    </section>
                   </div>
                 </details>
               </li>
