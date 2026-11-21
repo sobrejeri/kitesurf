@@ -49,18 +49,27 @@ export default async function InstructorRequestPage({ params }: { params: Promis
     'id' in suggestion && 'meetings' in suggestion
       ? suggestion as Suggestion : null;
   const accepted = request.status === 'accepted' && Boolean(request.booking_id);
+  const searching = request.status === 'searching';
+  const cancelled = request.status === 'cancelled';
+  const title = {
+    accepted: 'Instrutor encontrado!',
+    searching: 'Procurando seu instrutor',
+    expired: 'Prazo da busca encerrado',
+    cancelled: 'Solicitação cancelada',
+  }[request.status];
+  const subtitle = accepted
+    ? (VALIDATION_WITHOUT_CHECKOUT ? 'Confira a reserva e confirme sem cobrança.' : 'Agora é só concluir o pagamento de teste.')
+    : searching ? 'Sua proposta foi enviada aos instrutores compatíveis.' : 'Você pode escolher novos horários.';
   return (
     <div className="vento-pc-secondary-page vento-pc-request-screen vento-mobile-appbar-clearance">
-      <DesktopPageHeader eyebrow="SUA SOLICITAÇÃO" title="Busca de instrutor" lead="Acompanhe a oferta, os retornos e as sugestões de horários." icon="users" backHref="/aluno/aulas" variant="coast"/>
+      <DesktopPageHeader eyebrow="SUA SOLICITAÇÃO" title={title} lead={subtitle} icon="users" backHref="/aluno/aulas" variant="coast"/>
       <div className="vento-pc-secondary-main">
-      <StudentPageTitle title={accepted ? 'Instrutor encontrado!' : 'Procurando seu instrutor'}
-        subtitle={accepted ? (VALIDATION_WITHOUT_CHECKOUT ? 'Confira a reserva e confirme sem cobrança.' : 'Agora é só concluir o pagamento de teste.') :
-          'Sua proposta foi enviada aos instrutores compatíveis.'}/>
+      <StudentPageTitle title={title} subtitle={subtitle}/>
       <Card className="max-w-2xl">
         <div className="flex items-center justify-between gap-3">
           <strong className="text-[17px] text-ink">{request.total_hours}h de kitesurf</strong>
           <Badge tone={accepted ? 'success' : 'warning'}>
-            {accepted ? 'Aceita' : request.status==='searching' ? 'Buscando' : 'Encerrada'}
+            {accepted ? 'Aceita' : searching ? 'Buscando' : cancelled ? 'Cancelada' : 'Encerrada'}
           </Badge>
         </div>
         {quote ? <p className="mt-2 text-[13px] text-muted">
@@ -105,7 +114,7 @@ export default async function InstructorRequestPage({ params }: { params: Promis
           </>
         ) : (
           <>
-            <Note tone="warning" className="mt-5">Não encontramos um instrutor dentro do prazo da busca. Nenhuma cobrança foi feita.</Note>
+            <Note tone="warning" className="mt-5">{cancelled ? 'A solicitação foi cancelada.' : 'Não encontramos um instrutor dentro do prazo da busca.'} Nenhuma cobrança foi feita.</Note>
             <ButtonLink href="/aluno/reservar" className="mt-4">Escolher outros horários</ButtonLink>
           </>
         )}

@@ -1,5 +1,9 @@
 # VentoKite — comando mestre de continuidade entre conversas
 
+## Continuidade em 21/11 — fila offline (#92)
+
+O diagnóstico de ofertas abertas contava um estado inexistente. A consulta agrega ofertas enviadas e sugestões de data, incluindo vencidas. A regressão executa a consulta sobre dados fictícios e verifica o instante exato do vencimento. A solicitação expirada agora informa o encerramento no título de celular e PC. Retomar a homologação A→B→C com três instrutores fictícios aprovados e recuperação do banco Kitesurf comprovada.
+
 ## Continuidade em 21/11 — ordenação em Minhas aulas
 
 A #310 entrou na principal em `9188fbd2`. A tela `/aluno/aulas` montava os cards de cada encontro com uma ordenação independente. A correção da tela usa o instante de início e preserva próximas aulas em ordem crescente e histórico em ordem decrescente. A regressão verifica horários com fusos distintos e horários equivalentes. Nenhuma alteração de banco.
