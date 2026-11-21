@@ -18,9 +18,9 @@ export function groupInstructorLessons(bookings: readonly Booking[]): LessonGrou
       if (group) groups[group].push({ booking, meeting });
     }
   }
-  groups.proximas.sort((a, b) => a.meeting.starts_at.localeCompare(b.meeting.starts_at));
-  groups.andamento.sort((a, b) => a.meeting.starts_at.localeCompare(b.meeting.starts_at));
-  groups.concluidas.sort((a, b) => b.meeting.starts_at.localeCompare(a.meeting.starts_at));
+  groups.proximas.sort((a, b) => Date.parse(a.meeting.starts_at) - Date.parse(b.meeting.starts_at));
+  groups.andamento.sort((a, b) => Date.parse(a.meeting.starts_at) - Date.parse(b.meeting.starts_at));
+  groups.concluidas.sort((a, b) => Date.parse(b.meeting.starts_at) - Date.parse(a.meeting.starts_at));
   return groups;
 }
 

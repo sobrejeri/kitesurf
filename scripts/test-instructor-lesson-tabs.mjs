@@ -60,3 +60,16 @@ assert.equal(resolveInstructorLessonTab(undefined,undefined,groupInstructorLesso
   booking('D', 'completed', [['done','02']]),
 ])), 'proximas', 'Without active class the initial tab must be safe');
 console.log('PASS: instructor tabs group meetings correctly and preserve ordered start eligibility');
+
+for (const [status, tab] of [['scheduled','proximas'], ['in_progress','andamento'], ['done','concluidas']]) {
+  const entries = groupInstructorLessons([{
+    status: 'confirmed',
+    booking_meetings: [
+      { id: 'later', starts_at: '2026-11-04T10:30:00-03:00', status },
+      { id: 'earlier', starts_at: '2026-11-04T13:00:00Z', status },
+    ],
+  }]);
+  const ids = entries[tab].map(({ meeting }) => meeting.id);
+  assert.deepEqual(ids, tab === 'concluidas' ? ['later', 'earlier'] : ['earlier', 'later']);
+}
+console.log('PASS: instructor tabs order equivalent time zones chronologically');
