@@ -59,4 +59,26 @@ assert.equal(mayStartLesson(blocked.proximas[1], Date.parse('2026-11-04T14:00:00
 assert.equal(resolveInstructorLessonTab(undefined,undefined,groupInstructorLessons([
   booking('D', 'completed', [['done','02']]),
 ])), 'proximas', 'Without active class the initial tab must be safe');
+// The same instant may have different local offsets. Compare actual time,
+// not ISO text, so the instructor's next lesson is genuinely the earliest.
+const offsetGroups = groupInstructorLessons([
+  {
+    ...booking('OFFSET-LATER', 'confirmed', [['scheduled', '06']]),
+    booking_meetings: [{
+      id: 'offset-later', position: 1, status: 'scheduled',
+      starts_at: '2026-11-06T10:30:00-03:00', // 13:30Z
+    }],
+  },
+  {
+    ...booking('OFFSET-EARLIER', 'confirmed', [['scheduled', '06']]),
+    booking_meetings: [{
+      id: 'offset-earlier', position: 1, status: 'scheduled',
+      starts_at: '2026-11-06T13:00:00+00:00', // 13:00Z
+    }],
+  },
+]);
+assert.deepEqual(offsetGroups.proximas.map(({ meeting }) => meeting.id),
+  ['offset-earlier', 'offset-later'],
+  'Agenda must sort by UTC instant even when records have different offsets');
+
 console.log('PASS: instructor tabs group meetings correctly and preserve ordered start eligibility');
