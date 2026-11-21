@@ -85,18 +85,34 @@ export default async function AdminBookingPage({ params }: { params: Promise<{ i
         <Panel title="Encontros" className="lg:col-span-2">
           <ul className="grid gap-2">
             {booking.booking_meetings.map((meeting) => (
-              <li key={meeting.id} className="flex items-center justify-between gap-3 rounded-[14px] border border-line px-4 py-3">
-                <span>
-                  <strong className="block text-[14px] font-semibold text-ink">
-                    {formatDateLong(meeting.starts_at)} · {formatTime(meeting.starts_at)}
-                  </strong>
-                  <span className="text-[12px] text-muted">
-                    {formatMinutes(meeting.minutes)}
-                    {meeting.status === 'done' ? ` · ${formatMinutes(meeting.done_minutes)} realizados` : ''}
-                  </span>
-                  {meeting.note ? <span className="mt-1 block text-[12px] text-label">{meeting.note}</span> : null}
-                </span>
-                <Badge tone={meeting.status === 'done' ? 'quiet' : 'brand'}>{MEETING_STATUS_LABELS[meeting.status]}</Badge>
+              <li key={meeting.id}>
+                <details className="group rounded-[14px] border border-line">
+                  <summary className="flex min-h-16 cursor-pointer list-none items-center justify-between gap-3 rounded-[14px] px-4 py-3 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand [&::-webkit-details-marker]:hidden">
+                    <span className="min-w-0">
+                      <strong className="block text-[14px] font-semibold text-ink">
+                        {formatDateLong(meeting.starts_at)} · {formatTime(meeting.starts_at)}
+                      </strong>
+                      <span className="block text-[12px] text-muted">
+                        {formatMinutes(meeting.minutes)}
+                        {meeting.status === 'done' ? ` · ${formatMinutes(meeting.done_minutes)} realizados` : ''}
+                      </span>
+                    </span>
+                    <span className="flex shrink-0 items-center gap-2">
+                      <Badge tone={meeting.status === 'done' ? 'quiet' : 'brand'}>{MEETING_STATUS_LABELS[meeting.status]}</Badge>
+                      <span aria-hidden="true" className="text-label transition-transform group-open:rotate-180">⌄</span>
+                    </span>
+                  </summary>
+                  <div className="border-t border-line px-4 pb-4 pt-3 text-[13px]">
+                    <dl className="grid gap-2">
+                      <div className="flex justify-between gap-3"><dt className="text-muted">Duração prevista</dt><dd className="text-ink">{formatMinutes(meeting.minutes)}</dd></div>
+                      <div className="flex justify-between gap-3"><dt className="text-muted">Tempo registrado</dt><dd className="text-ink">{meeting.status === 'done' ? formatMinutes(meeting.done_minutes) : 'Ainda não registrado'}</dd></div>
+                      <div className="flex justify-between gap-3"><dt className="text-muted">Situação</dt><dd className="text-ink">{MEETING_STATUS_LABELS[meeting.status]}</dd></div>
+                    </dl>
+                    <p className="mt-3 text-[12px] text-muted">Observação do encontro</p>
+                    <p className="mt-1 whitespace-pre-wrap text-ink">{meeting.note?.trim() || 'Nenhuma observação registrada.'}</p>
+                    <p className="mt-3 text-[12px] text-muted">A evolução por habilidade não está disponível nesta visão. Consulte o registro do instrutor antes de homologar essa etapa.</p>
+                  </div>
+                </details>
               </li>
             ))}
           </ul>
