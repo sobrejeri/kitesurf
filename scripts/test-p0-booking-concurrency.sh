@@ -112,7 +112,12 @@ for r in $(seq 1 "$ROUNDS"); do
 select public.simulate_test_payment(:'id'::uuid, 'pix', 'approved');"
   session "$B1" "$scratch/b2.sql" "select public.create_booking('$PREA'::uuid, 'first_time', 'Português', $M2, null::text, false) as id \\gset
 select public.simulate_test_payment(:'id'::uuid, 'pix', 'approved');"
+  # Uma corrida do mesmo aluno não pode alterar reservas de outro aluno da fixture.
+  # A comparação é por estado agregado, não por contagem global de reservas.
+  other_before="$("${PSQL[@]}" -c "select coalesce(md5(string_agg(id::text || '/' || status::text || '/' || coalesce(instructor_id::text,''), ',' order by id)), '-') from public.bookings where student_id='$B2'::uuid")"
   run_together "$scratch/b1.sql" "$scratch/b2.sql"
+  other_after="$("${PSQL[@]}" -c "select coalesce(md5(string_agg(id::text || '/' || status::text || '/' || coalesce(instructor_id::text,''), ',' order by id)), '-') from public.bookings where student_id='$B2'::uuid")"
+  [ "$other_after" = "$other_before" ] || { echo "B$r: corrida do aluno B1 alterou reservas de B2" >&2; exit 1; }
   s1=$(cat "$scratch/st1"); s2=$(cat "$scratch/st2")
   if [ $((s1 + s2)) -ne 1 ]; then echo "B$r: esperado exatamente uma aula confirmada (status $s1/$s2)" >&2; cat "$scratch/err1" "$scratch/err2" >&2; exit 1; fi
   loser_err="$scratch/err1"; [ "$s1" -eq 0 ] && loser_err="$scratch/err2"
