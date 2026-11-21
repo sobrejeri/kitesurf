@@ -48,6 +48,22 @@ assert.deepEqual(
   activeStudentBookings([completed, ongoingB, ongoingA, anotherCompleted, waitingPayment]).map(b=>b.id),
   ['B','A'], // earliest remaining scheduled meeting on A is Nov 5, B on Nov 4
 );
+// Two local offsets can invert the ISO text order: 13:00Z is earlier than
+// 10:30-03:00 (13:30Z), even though "10:30" sorts first as text.
+const offsetEarlier = booking('offset-early', 'confirmed',
+  ['2026-11-26T13:00:00+00:00'], ['scheduled']);
+const offsetLater = booking('offset-late', 'confirmed',
+  ['2026-11-26T10:30:00-03:00'], ['scheduled']);
+assert.deepEqual(activeStudentBookings([offsetLater, offsetEarlier]).map((b) => b.id),
+  ['offset-early', 'offset-late'],
+  'Student next booking must sort by absolute time, regardless of ISO offset');
+// Also select the earliest *meeting* inside a booking, not its earliest text.
+const multiOffset = booking('multi-offset', 'confirmed',
+  ['2026-11-26T10:30:00-03:00', '2026-11-26T13:00:00Z'],
+  ['scheduled', 'scheduled']);
+assert.deepEqual(activeStudentBookings([offsetLater, multiOffset]).map((b) => b.id),
+  ['multi-offset', 'offset-late'],
+  'The earliest UTC meeting determines the booking position');
 assert.equal(activeStudentBookings([completed, anotherCompleted, waitingPayment]).length, 0);
 assert.equal(ongoingA.booking_meetings[0].status, 'done'); // day 1 stays complete
 assert.equal(ongoingA.booking_meetings[1].status, 'scheduled'); // day 2 stays scheduled
