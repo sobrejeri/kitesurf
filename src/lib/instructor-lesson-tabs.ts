@@ -24,6 +24,11 @@ export function groupInstructorLessons(bookings: readonly Booking[]): LessonGrou
   return groups;
 }
 
+/** Past scheduled lessons remain accessible for recording. */
+export function nextScheduledInstructorLesson(groups: LessonGroups, now: number) {
+  return groups.proximas.find(({ meeting }) => Date.parse(meeting.starts_at) >= now);
+}
+
 export function resolveInstructorLessonTab(
   requested: string | undefined,
   selectedId: string | undefined,

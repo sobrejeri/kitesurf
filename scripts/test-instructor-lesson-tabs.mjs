@@ -1,6 +1,7 @@
 import assert from 'node:assert/strict';
 import {
   groupInstructorLessons,
+  nextScheduledInstructorLesson,
   resolveInstructorLessonTab,
   selectInstructorLesson,
   mayStartInstructorLesson,
@@ -73,3 +74,9 @@ for (const [status, tab] of [['scheduled','proximas'], ['in_progress','andamento
   assert.deepEqual(ids, tab === 'concluidas' ? ['later', 'earlier'] : ['earlier', 'later']);
 }
 console.log('PASS: instructor tabs order equivalent time zones chronologically');
+
+const start = Date.parse('2026-11-05T14:00:00Z');
+assert.equal(nextScheduledInstructorLesson(groups, start)?.meeting.id, 'A-2');
+assert.equal(nextScheduledInstructorLesson(groups, start + 1)?.meeting.id, 'A-3');
+assert.equal(nextScheduledInstructorLesson(groups, Date.parse('2026-11-10')), undefined);
+console.log('PASS: the next lesson skips overdue unrecorded meetings and includes the exact start');
