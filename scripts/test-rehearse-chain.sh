@@ -109,3 +109,29 @@ echo "$out" | grep -q "pré-checagem D7 falhou" || { echo "G) erro D7 precisa se
 ! echo "$out" | grep -q "^PASS:" || { echo "G) D7 invalido nao pode produzir PASS" >&2; exit 1; }
 [ "$(SQL -d rehearse_bad_d7 -c "select count(*) from pg_proc where proname='guard_student_meeting_overlap'")" = "0" ] || { echo "G) nenhuma migration pode ser aplicada com D7 invalido" >&2; exit 1; }
 echo "PASS: D7 com erro SQL bloqueia ensaio antes de qualquer migration"
+
+# A missing queue RPC and an edited attendance RPC must each stop the rehearsal
+# before its first migration, even when the D7 SQL itself executes successfully.
+mkprod rehearse_required
+assert_preflight_refused() {
+  local signature="$1" output status
+  if output="$(run rehearse_required 2>&1)"; then
+    echo "D7 aceitou indevidamente $signature" >&2
+    exit 1
+  else
+    status=$?
+  fi
+  [ "$status" -eq 3 ] && grep -F "$signature" <<<"$output" | grep -q DESCONHECIDA || {
+    echo "D7 não identificou a divergência de $signature" >&2; exit 1;
+  }
+  [ "$(SQL -d rehearse_required -c "select to_regprocedure('public.guard_student_meeting_overlap()') is null")" = "t" ] || exit 1
+}
+SQL -d rehearse_required -c 'alter function public.advance_instructor_offer(uuid) rename to fixture_missing_offer'
+assert_preflight_refused 'advance_instructor_offer(uuid)'
+SQL -d rehearse_required -c 'alter function public.fixture_missing_offer(uuid) rename to advance_instructor_offer'
+SQL -d rehearse_required <<'SQL'
+create or replace function public.start_ordered_meeting(p_meeting_id uuid, p_presence_code text)
+returns void language plpgsql security definer set search_path='' as $$ begin return; end $$;
+SQL
+assert_preflight_refused 'start_ordered_meeting(uuid,text)'
+echo "PASS: D7 exige cada assinatura esperada e reconhece deriva na RPC de presença antes da cadeia"
