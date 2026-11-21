@@ -50,7 +50,7 @@ export default async function BookingsPage() {
             </div>
             <p className="tabular self-end text-[16px] font-bold text-ink">{formatMoney(booking.total_cents)}</p>
           </div>
-          <BookingProgress meetings={booking.booking_meetings} bookingStatus={booking.status} />
+          <BookingProgress meetings={booking.booking_meetings} bookingStatus={booking.status} totalHours={booking.total_hours} />
         </ListCard>
       ),
     };
