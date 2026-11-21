@@ -2,6 +2,13 @@
 
 Este documento é a memória operacional do projeto em GitHub. **Não permite iniciar novas conversas sozinho ou executar trabalho fora de uma sessão ativa.** Serve para que, ao abrir uma nova conversa e enviar o comando abaixo, o desenvolvimento seja retomado sem reconstruir todo o histórico.
 
+## Retomada 21/11/2026 — correção de ordem cronológica (#93, PR #305)
+
+- Após a confirmação no #105 de que #300, #304 e #303 foram integradas e o fluxo Aluno/Instrutor VNT-1008 chegou a 225/240 min (saldo 15), esta rodada acrescentou correção funcional à PR #305: a agenda do instrutor agora ordena os encontros por instante absoluto, não por ordem lexicográfica das datas ISO com fusos diferentes. Regressão cobre 13:00Z versus 10:30-03:00 (13:30Z). Commits `e22ce4f` e `d45aabf`.
+- A PR #305 continua **aberta**, CI do novo HEAD ainda precisa ser verificado. **Não integrar/publicar a UI de janela 24h antes de aplicar e validar a migration `20261120120000` no banco Kitesurf**; o banco real ainda possui regra legada por dia, conforme evidência da PR. Não executar DDL sem identificar backup restaurável e reconciliar baseline.
+- PR #306 (PWA offline) já integrada, mas conferir SHA efetivamente LIVE no Render. Claude independent QA permanece SKIPPED nas últimas execuções; não declarar revisão independente.
+- Próximos passos: CI da #305, backup/restauração identificados e regra de 24h conciliada, depois E2E autenticado Admin AAL2 e Afiliado/Pousada, fila offline com executor, RLS/Storage HTTP, PWA iPhone/Android. Primeira versão continua **0/16 frentes integralmente homologadas** até evidência completa.
+
 ## Comando para copiar em outro chat
 
 > **CONTINUAR VENTOKITE — EXECUÇÃO ATÉ PRONTO PARA CHECKOUT**
