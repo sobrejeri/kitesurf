@@ -27,6 +27,8 @@ jobs:
         run: node scripts/test-auth-kite-level.mjs
       - name: Verify e-mail confirmation and password links return to the public site
         run: node --experimental-strip-types scripts/test-auth-redirect-origin.mjs
+      - name: Student meeting conflict message
+        run: node --experimental-strip-types scripts/test-student-conflict-message.mjs
       - name: Verify CPF/CNPJ registration for instructors and affiliates
         run: node --experimental-strip-types scripts/test-tax-id.mjs
       - name: Verify administrators need the authenticator-app code

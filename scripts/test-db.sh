@@ -24,7 +24,11 @@ for migration in "$ROOT"/supabase/migrations/*.sql; do
   "${PSQL[@]}" -1 -f "$migration"
 done
 "${PSQL[@]}" -f "$ROOT/supabase/tests/10_rules.test.sql"
+# Run overlap regression while the two-meeting fixture from 10_rules is intact.
+# Later stateful SQL tests may cancel or reschedule that booking.
+"${PSQL[@]}" -f "$ROOT/supabase/tests/89a_student_overlap_behavior.test.sql"
 for testfile in "$ROOT"/supabase/tests/[2-9]*.test.sql; do
+  [ "$testfile" = "$ROOT/supabase/tests/89a_student_overlap_behavior.test.sql" ] && continue
   "${PSQL[@]}" -f "$testfile"
 done
 
@@ -38,8 +42,15 @@ PG_TEST_SOCKET="$DATA" PG_TEST_PORT="$PORT" bash "$ROOT/scripts/test-booking-two
 PG_TEST_SOCKET="$DATA" PG_TEST_PORT="$PORT" bash "$ROOT/scripts/test-request-queue-two-meetings.sh"
 PG_TEST_SOCKET="$DATA" PG_TEST_PORT="$PORT" PG_TEST_REQUEST_MODE=preferred bash "$ROOT/scripts/test-request-queue-two-meetings.sh"
 
+# Bordas da fila (aceite fora do prazo, oferta alheia, esgotar elegíveis, aceite duplo, conflito do aluno no aceite).
+# Roda ANTES do A->B->C, que cria um terceiro instrutor e mudaria a contagem de elegíveis.
+PG_TEST_SOCKET="$DATA" PG_TEST_PORT="$PORT" bash "$ROOT/scripts/test-offer-queue-edges.sh"
+
 # A declines, B expires, C accepts in the same disposable database.
 PG_TEST_SOCKET="$DATA" PG_TEST_PORT="$PORT" bash "$ROOT/scripts/test-offer-queue-abc.sh"
+
+# #92: ensaio do executor offline (3 instrutores, sem sessão aberta) e mesmo estado para Aluno, Instrutor e Admin. Depende do instrutor C acima.
+PG_TEST_SOCKET="$DATA" PG_TEST_PORT="$PORT" bash "$ROOT/scripts/test-offer-offline-executor.sh"
 
 # Authorized postponement and cross-account denial in throwaway PostgreSQL.
 PG_TEST_SOCKET="$DATA" PG_TEST_PORT="$PORT" bash "$ROOT/scripts/test-meeting-change-auth.sh"
@@ -53,3 +64,13 @@ for round in $(seq 1 "${RACE_ROUNDS:-12}"); do
     || { echo "Concurrent booking race failed on round $round" >&2; cat "$DATA/race.err" >&2; exit 1; }
 done
 echo "PASS: ${RACE_ROUNDS:-12} repeated concurrent booking rounds, never two accepted bookings for one instructor and slot"
+
+# P0 #90/#91: PRs #296 + #298 juntas. Dois alunos no mesmo horário (6 args vs 5 args) e um aluno pagando aulas
+# sobrepostas ao mesmo tempo. Roda por último: consome dias livres do instrutor de fixture.
+PG_TEST_SOCKET="$DATA" PG_TEST_PORT="$PORT" bash "$ROOT/scripts/test-p0-booking-concurrency.sh"
+
+# #88: caminho de atualização por cima de um ambiente com a migration original já aplicada + backup/restauração (clusters próprios).
+bash "$ROOT/scripts/test-migration-upgrade-path.sh"
+
+# #92: a cadeia e o job também precisam passar no estado REAL do projeto (sem as migrations do instrutor preferido; D7 de 19/11/2026).
+bash "$ROOT/scripts/test-prod-like-queue.sh"
