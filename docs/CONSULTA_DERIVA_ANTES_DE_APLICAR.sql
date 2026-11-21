@@ -55,6 +55,7 @@ from pg_proc p where p.pronamespace = 'public'::regnamespace and p.proname = 'cr
 --    ESPERADO (o que já se sabe de 19/11): create_booking(6) = migration 10 (sem a revalidação #283); as demais devem ser a versão marcada "ULTIMA".
 --    Se advance_instructor_offer vier como migration 11/13/14, as migrations 20261113000043 e 20261114002000 não estão aplicadas.
 with cand(assinatura, md5n, versao) as (values
+  ('simulate_test_payment(uuid,text,text)',                     '57334f613ab7b6f9713fde80410d99c7', 'ULTIMA: migration 09 (substituída por 20261120110000)'),
   ('create_booking(uuid,lesson_level,text,jsonb,text,boolean)', 'f2cbb615e40099fc86849ac36500948d', 'migration 04 (veículo de apoio)'),
   ('create_booking(uuid,lesson_level,text,jsonb,text,boolean)', 'cfe5afc944674ebff0669bfd16845675', 'migration 07 (agenda do instrutor)'),
   ('create_booking(uuid,lesson_level,text,jsonb,text,boolean)', '5e398abb72c4bc994a5d6f8dcb976c32', 'migration 10 (primeira contratação do afiliado); SEM a revalidação #283  <== produção esperada'),

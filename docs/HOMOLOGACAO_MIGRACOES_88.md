@@ -72,8 +72,12 @@ Cole **um arquivo por vez** no SQL Editor do **projeto de teste**, confira a ver
 | 4 | `20261117190000_guard_student_meeting_overlap.sql` | as 2 linhas da consulta 0.4 (gatilhos) e `guarda_existe = true`; `has_function_privilege('authenticated', 'public.guard_student_meeting_overlap()'::regprocedure, 'EXECUTE')` → `false` |
 | 5 | `20261119120000_offer_accept_student_conflict.sql` | `select position('offer.student_conflict' in pg_get_functiondef('public.accept_instructor_offer(uuid)'::regprocedure)) > 0;` → `true` |
 | 6 | `20261119130000_meeting_change_student_conflict.sql` | `select position('student-meetings' in pg_get_functiondef('public.request_meeting_change(uuid,timestamptz,text)'::regprocedure)) > 0;` → `true` |
+| 7 | `20261119140000_queue_expiry_job.sql` (não agenda nada) | `select has_function_privilege('authenticated', 'public.run_expiry_jobs()'::regprocedure, 'EXECUTE');` → `false` (idem `anon` e `run_queue_expiry_job(integer)`) |
+| 8 | `20261120100000_confirm_payment_lock_order.sql` (PR separada, empilhada sobre a #300) | `select position('Booking changed, try again' in pg_get_functiondef('public.confirm_test_payment(uuid)'::regprocedure)) > 0;` → `true` |
+| 9 | `20261120110000_simulate_test_payment_canonical_lock_order.sql` (na #303, commit de outra sessão; complementa o 8) | `select position('Do NOT lock bookings' in pg_get_functiondef('public.simulate_test_payment(uuid,text,text)'::regprocedure)) > 0;` → `true`; `anon` sem EXECUTE |
+| 10 | `20261120120000_meeting_start_24h_window.sql` (#303; regra de início = até 24h antes) | `select position('24 hours' in pg_get_functiondef('public.start_ordered_meeting(uuid,text)'::regprocedure)) > 0;` → `true`; `anon` sem EXECUTE |
 
-Depois do 6, rode de novo 0.2: **2 linhas**, 6 args com `defaults = 0`, 5 args com `defaults = 1`.
+Depois do último arquivo aplicado, rode de novo 0.2: **2 linhas**, 6 args com `defaults = 0`, 5 args com `defaults = 1`.
 E confirme que as RPCs continuam fechadas ao anônimo:
 ```sql
 select p.oid::regprocedure::text, has_function_privilege('anon', p.oid, 'EXECUTE') as anon, has_function_privilege('authenticated', p.oid, 'EXECUTE') as autenticado
@@ -111,7 +115,7 @@ Projeto `qadkqjfmmnxvovyyhqxw`. **Primeiro retorno (12:26):** ledger só com `20
 Também: guardas ausentes (Q4), 0 conflitos de aluno (Q5) e de instrutor (Q6); **6 buscas e 5 ofertas vencidas** (Q7; a #92 registrou 4 e 3); `pg_cron` **disponível (1.6.4) mas não instalado** (Q8); 6 buckets de Storage, **todos privados** (Q9); as **14 sondas** das migrations 01 a 38 todas presentes (Q10); contas: 1 aluno, 1 instrutor, 2 admins, 1 afiliado, e **1 instrutor aprovado por praia** (Q11).
 
 **Decisão:** **NÃO reaplicar `20261115100000`.** A cadeia começa em `20261116160000` (delegado) e a `20261116170000` recria `create_booking` de 6 args completa. Ordem para ESTE projeto, quando houver revisão e backup:
-`20261116160000` → `20261116170000` → `20261117190000` → `20261119120000` → `20261119130000` → `20261119140000` → `20261120100000` (esta última só na #303), cada uma conferida pela verificação da tabela de ordem.
+`20261116160000` → `20261116170000` → `20261117190000` → `20261119120000` → `20261119130000` → `20261119140000` → `20261120100000` → `20261120110000` → `20261120120000` (as três últimas só na #303), cada uma conferida pela verificação da tabela de ordem.
 **Antes** da cadeia: rodar o **D7** (hashes normalizados, que identificam a versão histórica de cada função) e conferir o resultado conforme "Resultado do D1 a D6 reais" abaixo.
 
 **Leituras que afetam o plano:**
@@ -165,3 +169,14 @@ Todas as 8 funções foram **reconhecidas** (nenhuma `DESCONHECIDA`):
 - `scripts/test-prod-like-queue.sh` (novo, roda no `test-db.sh`) monta um banco **sem** essas duas migrations (confere o hash `07ba8bce…`) e roda os testes de fila (bordas, A→B→C, executor offline com 3 instrutores) e as janelas 12h+12h: **passam**.
 - O que elas mudam é o comportamento da fila **para instrutor preferido** (um preferido sem agenda ainda pode oferecer outra data). É uma decisão **separada**: aplicá-las no projeto isolado e rodar `supabase/tests/29_preferred_instructor_availability` e `91_preferred_instructor_availability` antes de qualquer aplicação no projeto atual. Não é pré-requisito da #300.
 - As migrations `20261111020000` (45) e `20261111080000` (46) (políticas e grants de repasse de afiliado) também estão fora do ledger; não afetam a #300 e precisam de conferência própria.
+
+## Ensaio automatizado da cadeia
+Para o ensaio em banco **isolado**, use `scripts/rehearse-chain.sh` (ver `docs/HOMOLOGACAO_PROJETO_ISOLADO.md`): ele aplica a ordem segura, confere cada passo, recusa o projeto atual e para no primeiro erro com a mensagem exata. **Nunca** aponte-o para `qadkqjfmmnxvovyyhqxw`.
+
+## Migrations do instrutor preferido (`20261113000043` e `20261114002000`): análise para o ensaio isolado
+**Decisão do responsável (19/11):** entram no **planejamento do ensaio isolado**; nada é aplicado no projeto atual.
+- **O que fazem:** substituem `advance_instructor_offer(uuid)` (`CREATE OR REPLACE`, mesma assinatura, `SECURITY DEFINER`, `search_path=''`). Os **corpos são idênticos** (a `…2000` só troca o cabeçalho): aplicadas em sequência, a segunda é no-op. `CREATE OR REPLACE` mantém os GRANTs (função fechada: `revoke … from public, anon, authenticated` desde a migration 11); o ensaio verifica isso.
+- **Dependências (todas já em produção pelo Q10/D7):** `instructor_can_attend` (migration 07), `write_audit`, coluna `instructor_requests.preferred_instructor_id` (migration 13), `instructors.queue_position`/`has_support_vehicle`. A versão em produção é a da migration 14.
+- **Mudança de comportamento (decisão de produto):** a migration 14 **isenta o instrutor preferido** da checagem de agenda "para ele poder sugerir outra data". A `…43/…2000` **remove a isenção**: o preferido sem agenda na data pedida **não recebe a oferta** e perde a chance de sugerir outra data. Fixado em `supabase/tests/89i_preferred_instructor_unavailable.test.sql`. Só aplique se a regra desejada for "preferido também precisa atender a data".
+- **Segurança/compatibilidade:** sem tabela, coluna, política ou permissão nova; o job `run_queue_expiry_job` chama a função por nome e funciona com as duas versões (`scripts/test-prod-like-queue.sh` com a 14; `test-db.sh` com a 43).
+- **Como ensaiar:** `INCLUDE_PREFERRED=1 CONFIRM_ISOLATED=sim DATABASE_URL=… scripts/rehearse-chain.sh` (sem a variável, a cadeia **não** as aplica). Coberto por `scripts/test-rehearse-chain.sh` caso E.

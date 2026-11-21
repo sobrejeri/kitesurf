@@ -3,7 +3,7 @@
 **Por que existe:** o ambiente de automação não alcança `*.supabase.co` (`curl: (56) CONNECT tunnel failed, response 403`), não tem contas de teste nem
 dispositivos. Os testes automatizados do repositório são **evidência técnica**; só a execução abaixo, com sessões reais, é **homologação**.
 Use **somente o projeto de teste** e **cobranças reais desativadas** (pagamento é o simulado). Migrations nesta ordem (ver `docs/HOMOLOGACAO_MIGRACOES_88.md`):
-`20261116160000` (delegado), `20261116170000` (sem defaults), `20261117190000`, `20261119120000`, `20261119130000`, `20261119140000`.
+`20261116160000` (delegado), `20261116170000` (sem defaults), `20261117190000`, `20261119120000`, `20261119130000`, `20261119140000`, `20261120100000`, `20261120110000`, `20261120120000` (janela de 24h).
 
 ## Como registrar a evidência (um bloco por cenário, na issue correspondente)
 ```
@@ -33,7 +33,7 @@ Evidência SQL (somente leitura): `select status, count(*) from instructor_docum
 ## #93: presença, minutos e evolução (reserva de teste VNT-1008, se ainda válida)
 **Evidência de partida (leitura agregada, 19/11 16:20):** 2 reservas de teste de 4 h com exatamente 2 encontros, ambas `confirmed`, **cada uma com 1 encontro registrado** (110 e 120 minutos); nenhuma tem os 2 registrados, nenhuma chegou a 225 minutos e nenhuma mostra o saldo de 15. A leitura **não identifica qual é a VNT-1008**; localize-a no app (Admin) pelo código. **Não simular a conclusão por SQL.**
 1. Conferir o ponto de partida (somente leitura): `select code, status, total_hours from bookings where code = 'VNT-1008';` e `select position, status, starts_at, minutes, done_minutes from booking_meetings where booking_id = (select id from bookings where code = 'VNT-1008') order by position;` — esperado: encontro 1 `done` com 110, encontro 2 `scheduled`.
-2. **Regra de início: divergência documentada.** As issues #93/#103 falam em "início 24h antes". O banco libera pelo **dia do calendário em Fortaleza** (`start_ordered_meeting`): encontro de **hoje** pode iniciar a qualquer hora do dia; encontro de **amanhã** (mesmo 00:05) **não** inicia, mesmo faltando poucas horas. Fixado em `supabase/tests/89e_meeting_start_window.test.sql`. **Decisão pendente do responsável:** manter "no dia" ou trocar por 24h reais (mudança de uma linha na função). Registre no app o que foi observado.
+2. **Regra de início (decidida em 19/11/2026): até 24 horas antes do horário agendado**, em instante absoluto (migration `20261120120000`, ainda NÃO aplicada em nenhum projeto). Esperado: encontro a mais de 24h **não** inicia (mensagem "Meeting start window has not opened" / "só pode ser iniciado a partir de 24 horas antes"); a 23h55 inicia; encontro passado ainda agendado inicia. Fixado em `supabase/tests/89e_meeting_start_window.test.sql`.
 3. Se o encontro 2 for de outro dia: aguarde o dia **ou**, em teste, antecipe só o horário (`update booking_meetings set starts_at = … where id = …`) e anote que foi antecipado.
 4. Instrutor: abrir a aula, **PIN errado** (deve recusar), **PIN certo** (inicia), tentar iniciar o encontro 2 **antes** do 1 (deve recusar), registrar **115 min** com habilidades; tentar **registrar de novo** (deve recusar) e **minutos inválidos** (ex.: 121; deve recusar).
 5. Aluno: abrir a reserva → esperado **225 min realizados e 15 de saldo**, habilidades no encontro certo (110: encontro 1; 115: encontro 2), avaliação do instrutor só na conclusão elegível, e o pedido de **reposição de 15 min** (instrutor aceita/recusa; confirmar o prazo de 48h do pedido).

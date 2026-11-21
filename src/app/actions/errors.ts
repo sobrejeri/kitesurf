@@ -34,8 +34,8 @@ const KNOWN: readonly [RegExp, string][] = [
   [/Only scheduled confirmed meetings may be changed|Meeting no longer eligible for change/i,
     'Apenas aulas agendadas de reservas confirmadas podem ser reagendadas.'],
 
-  [/Meeting day has not arrived/i,
-    'Este encontro só pode ser iniciado a partir do dia agendado. Confira a data da aula.'],
+  [/Meeting start window has not opened|Meeting day has not arrived/i,
+    'Este encontro só pode ser iniciado a partir de 24 horas antes do horário agendado. Confira a data e a hora da aula.'],
   [/Finish the previous meeting first/i,
     'Conclua e registre o encontro anterior antes de iniciar o próximo.'],
   [/Select valid kite skills for the minutes taught/i,

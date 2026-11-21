@@ -69,8 +69,14 @@ echo "PASS: ${RACE_ROUNDS:-12} repeated concurrent booking rounds, never two acc
 # sobrepostas ao mesmo tempo. Roda por último: consome dias livres do instrutor de fixture.
 PG_TEST_SOCKET="$DATA" PG_TEST_PORT="$PORT" bash "$ROOT/scripts/test-p0-booking-concurrency.sh"
 
+# P2-1: pagar uma reserva e criar outra com o mesmo instrutor (mesmo aluno) ao mesmo tempo não pode dar deadlock.
+PG_TEST_SOCKET="$DATA" PG_TEST_PORT="$PORT" bash "$ROOT/scripts/test-payment-lock-order.sh"
+
 # #88: caminho de atualização por cima de um ambiente com a migration original já aplicada + backup/restauração (clusters próprios).
 bash "$ROOT/scripts/test-migration-upgrade-path.sh"
 
 # #92: a cadeia e o job também precisam passar no estado REAL do projeto (sem as migrations do instrutor preferido; D7 de 19/11/2026).
 bash "$ROOT/scripts/test-prod-like-queue.sh"
+
+# O script de ensaio da cadeia (scripts/rehearse-chain.sh) no estado real do projeto: feliz, recusa por ajuste manual e parada no primeiro erro.
+bash "$ROOT/scripts/test-rehearse-chain.sh"
