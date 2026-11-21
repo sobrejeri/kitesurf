@@ -35,6 +35,16 @@ export default async function AdminBookingPage({ params }: { params: Promise<{ i
 
   const status = BOOKING_STATUS[booking.status];
   const awaiting = booking.status === 'awaiting_payment';
+  // A registered encounter is not necessarily a fully delivered lesson.
+  // Keep this separate from the encounter-count progress shown on the list.
+  const contractedMinutes = Math.max(0, Math.round(booking.total_hours * 60));
+  const deliveredMinutes = booking.booking_meetings
+    .filter((meeting) => meeting.status === 'done')
+    .reduce((sum, meeting) => sum + Math.max(0, meeting.done_minutes || 0), 0);
+  const remainingMinutes = Math.max(0, contractedMinutes - deliveredMinutes);
+  const deliveredPercent = contractedMinutes
+    ? Math.min(100, Math.round((deliveredMinutes / contractedMinutes) * 10000) / 100)
+    : 0;
 
   return (
     <>
@@ -81,6 +91,20 @@ export default async function AdminBookingPage({ params }: { params: Promise<{ i
             <p className="mt-3 text-[12px] text-muted">{booking.is_test ? 'Valores apenas ilustrativos: não houve pagamento e não há comissão ou repasse.' : 'Fixada no momento da reserva; mudanças de preço não alteram este valor.'}</p>
           </Panel>
         </div>
+
+        <section className="rounded-[16px] border border-line bg-surface p-4 lg:col-span-2" aria-label="Saldo de horas da reserva">
+          <h2 className="text-[16px] font-semibold text-ink">Horas contratadas e realizadas</h2>
+          <p className="mt-2 text-[14px] text-label">
+            {formatMinutes(deliveredMinutes)} realizados de {formatMinutes(contractedMinutes)} contratados
+          </p>
+          <div role="progressbar" aria-label="Minutos realizados" aria-valuemin={0} aria-valuemax={100} aria-valuenow={deliveredPercent} className="mt-2 h-2 overflow-hidden rounded-full bg-track">
+            <div className="h-full bg-brand-bar" style={{ width: `${deliveredPercent}%` }} />
+          </div>
+          <p className="mt-2 text-[13px] font-semibold text-ink">
+            {remainingMinutes > 0 ? `${formatMinutes(remainingMinutes)} ainda não realizados` : 'Carga horária contratada realizada'}
+          </p>
+          <p className="mt-1 text-[12px] text-muted">Encontros registrados e minutos realizados são indicadores diferentes. Este saldo é informativo; não agenda reposição automaticamente.</p>
+        </section>
 
         <Panel title="Encontros" className="lg:col-span-2">
           <ul className="grid gap-2">
