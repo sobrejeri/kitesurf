@@ -1,5 +1,13 @@
 # VentoKite — comando mestre de continuidade entre conversas
 
+## Handoff 21/11/2026 06h17 BRT — PR #310 (#90/#103)
+
+- PR #310 (commits `358c3cc`, `381ef39`) corrige a ordenação das próximas reservas do Aluno por instante UTC real, inclusive quando encontros usam offsets diferentes. Regressões acrescentadas em `scripts/test-booking-cycle.mjs` para duas reservas e para dois encontros na mesma reserva. **CI do HEAD ainda não confirmado ao registrar**; Claude QA precisa ser consultado antes do merge. Não declarar publicado ou homologado.
+- Último Render LIVE consultado: `abd56997c83e1878308cec7333a6b521467de737` (deploy `dep-dc0l8vtg1s2s73e65hb0`), PR #309. #300/#303/#304 já integradas. #305 segue aberta: não publicar a UI 24h antes da RPC real reconciliada e backup restaurável do Kitesurf.
+- #105 registra VNT-1008 com Aluno/Instrutor e 110+115=225/240 minutos, saldo 15; VNT-1012 adiamento bilateral e VNT-1013 recontratação. Admin requer sessão AAL2; Pousada autenticada mas aprovação/comissão ainda não concluídas. 0/16 frentes integralmente homologadas. Supabase não alterado nesta rodada; Protege 3B e checkout real permanecem fechados.
+- Próximo passo: verificar CI #310 no SHA final, corrigir se falhar; merge somente com revisão adequada, confirmar SHA LIVE e reexecutar a ordenação no Aluno. Paralelamente, resolver recuperação do banco antes da #305, autenticação Admin AAL2, fila offline e Storage HTTP. O skill Supabase não apareceu na listagem desta execução; nenhuma operação Supabase foi tentada.
+
+
 Este documento é a memória operacional do projeto em GitHub. **Não permite iniciar novas conversas sozinho ou executar trabalho fora de uma sessão ativa.** Serve para que, ao abrir uma nova conversa e enviar o comando abaixo, o desenvolvimento seja retomado sem reconstruir todo o histórico.
 
 ## Execução de 21/11/2026

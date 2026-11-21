@@ -33,10 +33,15 @@ export function bookingIsFinished(
 export function activeStudentBookings(bookings: readonly StudentBooking[]): StudentBooking[] {
   return bookings.filter((b) => b.status === 'confirmed' && !bookingIsFinished(b))
     .sort((a, b) => {
-      const nextDate = (booking: StudentBooking) => booking.booking_meetings
+      // ISO strings with different UTC offsets do not sort chronologically as text.
+      // Use the earliest actual instant, not the first lexicographic date.
+      const nextTime = (booking: StudentBooking) => booking.booking_meetings
         .filter((m) => m.status === 'scheduled' || m.status === 'in_progress')
-        .map((m) => m.starts_at).sort()[0] ?? '9999';
-      return nextDate(a).localeCompare(nextDate(b)) || b.created_at.localeCompare(a.created_at);
+        .reduce((earliest, meeting) => {
+          const instant = Date.parse(meeting.starts_at);
+          return Number.isFinite(instant) ? Math.min(earliest, instant) : earliest;
+        }, Number.POSITIVE_INFINITY);
+      return nextTime(a) - nextTime(b) || b.created_at.localeCompare(a.created_at);
     });
 }
 
