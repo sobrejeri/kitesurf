@@ -1,5 +1,13 @@
 # VentoKite — comando mestre de continuidade entre conversas
 
+## Handoff 21/11/2026 09h14 BRT — #93/#103, PR #322
+- PR #300 integrada. PR #319 tinha CI verde (run 44898536408), mas ficou conflitante; teste SQL RLS portado para PR #322 (SHA ad19563a) sobre a base atual. Aguardar novo CI e QA.
+- Render LIVE confirmado: d69f4552dd1fbf26abb10afd5596e9dc86c44b98, deploy dep-dc0okedg1s2s73e96gu0, finalizado 12:12:51 UTC. PR #321 exige confirmação de renúncia ao saldo, E2E ainda pendente.
+- Supabase schema_migrations última versão 20261121111421. Não reaplicar 01–38; Protege 3B e checkout real fechados.
+- VNT-1008: evidência anterior 225/240 min e saldo 15. E2E autenticado Aluno/Instrutor/Admin AAL2 e reposição ainda pendentes; nenhum dado alterado nesta rodada.
+- Próximo: verificar CI/QA PR #322, merge se aprovado, conferir deploy LIVE, fechar PR #319 obsoleta; executar E2E real quando sessões disponíveis. 0/16 homologadas.
+
+
 ## Continuidade em 21/11 — solicitação aceita e agenda do instrutor
 
 O pedido aceito abre a reserva pelo botão “Ver minha reserva”. A própria reserva exibe a confirmação quando aplicável. O destaque de próxima aula ignora encontros passados ainda sem registro. As listas do instrutor usam o instante de início para ordenar encontros com fusos diferentes. No painel do Kitesurf foram verificados oito backups físicos concluídos, o mais recente de 21/11 às 02h05 de Fortaleza. O ensaio de recuperação de uma cópia real em destino isolado segue pendente.
