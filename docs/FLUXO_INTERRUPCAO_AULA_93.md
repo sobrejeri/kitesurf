@@ -34,3 +34,10 @@ Decisão registrada e implementação planejada. Ainda **não implementado nem h
 - Na página do Aluno `src/app/aluno/(app)/reserva/[id]/page.tsx`, o saldo é derivado de `bookingBalanceMinutes` e mostrado por `BalanceMeetingPanel`; remover o componente só após o novo aviso de interrupção estar funcional.
 - **Decisão técnica:** modelar a continuidade como estado explícito do encontro original, não como novo encontro com `position` adicional. Conservar `done_minutes` e `meeting_skill_progress` como histórico, e impedir a conclusão duplicada.
 - **Próxima alteração segura:** inspecionar `record_meeting`, triggers de `bookings`, enum `meeting_status`, regras de calendário e rotas do Instrutor; só então propor migration aditiva e teste em transação. Nenhum DDL aplicado nesta etapa.
+
+## Confirmação da causa-raiz (21/11/2026)
+A definição REAL de `public.record_meeting(uuid, integer, text)` foi inspecionada. Ela muda `booking_meetings.status` para `done`, registra `done_minutes` e só muda `bookings.status` para `completed` quando **não há encontros ativos E** `sum(done_minutes) >= total_hours * 60`. Portanto uma aula normal de 45/60 deixa reserva confirmada, embora encontro esteja concluído. Essa é a causa-raiz do saldo artificial.
+
+`record_meeting_with_skills` chama `record_meeting`; a correção deve preservar a validação de competências e impedir dupla contabilização. Enum atual `meeting_status`: `scheduled`, `in_progress`, `done`, `cancelled`. Contagem de referência do projeto de testes: 10 scheduled, 7 done, 1 cancelled; não atualizar dados legados automaticamente.
+
+**Gate para implementação:** implementar operação transacional de interrupção/retomada com estado inequívoco, motivo, duração e autorização por instrutor. Mudar a conclusão para contar encontros contratados concluídos, sem condicionar ao total de minutos, mas somente após tratar as interrupções. Testar reservas com múltiplos encontros, skills, conflitos e legado em ROLLBACK antes de aplicar DDL. A migração ainda não foi aplicada e nenhuma reserva foi alterada.
