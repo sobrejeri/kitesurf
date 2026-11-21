@@ -20,7 +20,7 @@ import { releaseMyBooking } from '@/app/actions/meeting-change';
 import { MeetingChangePanel } from '@/components/meeting-change-panel';
 import { listPendingBalanceRequestsForInstructor } from '@/lib/balance-requests';
 import { InstructorBalanceRequests, type PendingBalanceItem } from '@/components/instructor/balance-requests';
-import { groupInstructorLessons, resolveInstructorLessonTab, selectInstructorLesson, mayStartInstructorLesson } from '@/lib/instructor-lesson-tabs';
+import { groupInstructorLessons, resolveInstructorLessonTab, selectInstructorLesson, mayStartLesson } from '@/lib/instructor-lesson-tabs';
 import { getBookingLevelAssessments } from '@/lib/booking-level-assessments';
 
 
@@ -66,7 +66,7 @@ export default async function RunLessonPage({
     getMeetingKiteSkills(selectedHistory ? [selectedHistory.meeting.id] : []),
     getBookingLevelAssessments(bookings.map((booking) => booking.id)),
   ]);
-  const todayInCeara = new Date().toLocaleDateString('en-CA', { timeZone: 'America/Fortaleza' });
+  const now = Date.now();
   const cearaDay = (iso: string) =>
     new Date(iso).toLocaleDateString('en-CA', { timeZone: 'America/Fortaleza' });
   const completed = bookings
@@ -170,7 +170,7 @@ export default async function RunLessonPage({
             const actionLabel = expanded ? 'Fechar detalhes'
               : meeting.status === 'done' ? 'Ver detalhes'
                 : meeting.status === 'in_progress' ? 'Continuar aula'
-                  : mayStartInstructorLesson({ booking, meeting }, todayInCeara, cearaDay)
+                  : mayStartLesson({ booking, meeting }, now)
                     ? 'Abrir e iniciar'
                     : Date.parse(meeting.starts_at) - Date.now() <= 24*3600000
                       ? 'Preparar aula' : 'Ver agendamento';
@@ -247,7 +247,7 @@ export default async function RunLessonPage({
                 <>
       {selected ? (() => {
         const { booking, meeting } = selected;
-        const canStart = mayStartInstructorLesson(selected, todayInCeara, cearaDay);
+        const canStart = mayStartLesson(selected, now);
         const studentName = booking.student?.full_name?.trim() || 'Aluno';
         return (
           <Card as="section" className="!rounded-[18px] !border-brand-reserved !bg-brand-wash">
@@ -329,7 +329,7 @@ export default async function RunLessonPage({
               {meeting.status === 'scheduled' && !canStart ? (
                 <Note tone="warning">
                   Você pode consultar os detalhes e preparar a aula com antecedência.
-                  O início real exige o dia agendado, o código de presença e a conclusão
+                  O início fica disponível 24 horas antes do horário da aula e exige o código de presença e a conclusão
                   dos encontros anteriores. Data prevista: {formatDateLong(meeting.starts_at)}.
                 </Note>
               ) : meeting.status === 'scheduled' ? (
@@ -524,7 +524,7 @@ export default async function RunLessonPage({
 
       {activeTab === 'proximas' ? (
         <Note className="mt-4">
-          Inicie no dia da aula com o código de presença do aluno, seguindo a ordem dos encontros.
+          A partir de 24 horas antes do horário agendado, inicie com o código de presença do aluno, seguindo a ordem dos encontros.
           Depois de iniciada, ela vai para a aba Em aula.
         </Note>
       ) : null}

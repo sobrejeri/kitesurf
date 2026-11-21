@@ -48,14 +48,13 @@ export function selectInstructorLesson(
   return meetingId ? groups[tab].find(({ meeting }) => meeting.id === meetingId) ?? null : null;
 }
 
-export function mayStartInstructorLesson(
-  entry: InstructorLesson,
-  localToday: string,
-  localDay: (date: string) => string,
+export function mayStartLesson(
+  entry: { booking: Pick<Booking, 'status' | 'booking_meetings'>; meeting: Meeting },
+  now: number,
 ): boolean {
   return entry.booking.status === 'confirmed'
     && entry.meeting.status === 'scheduled'
-    && localDay(entry.meeting.starts_at) <= localToday
+    && Date.parse(entry.meeting.starts_at) <= now + 24 * 60 * 60 * 1000
     && entry.booking.booking_meetings.every((previous) =>
       previous.position >= entry.meeting.position || previous.status === 'done');
 }
