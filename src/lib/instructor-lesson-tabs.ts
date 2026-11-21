@@ -57,10 +57,16 @@ export function mayStartInstructorLesson(
   entry: InstructorLesson,
   localToday: string,
   localDay: (date: string) => string,
+  /** Se informado, vale a regra do banco (a partir de 24h antes do horário); sem ele, o dia do calendário (comportamento antigo). */
+  nowMs?: number,
 ): boolean {
+  const open = nowMs === undefined
+    ? localDay(entry.meeting.starts_at) <= localToday
+    : Date.parse(entry.meeting.starts_at) <= nowMs + 24 * 3_600_000;
   return entry.booking.status === 'confirmed'
     && entry.meeting.status === 'scheduled'
-    && localDay(entry.meeting.starts_at) <= localToday
+    && entry.meeting.interruption_state !== 'awaiting_resume'
+    && open
     && entry.booking.booking_meetings.every((previous) =>
       previous.position >= entry.meeting.position || previous.status === 'done');
 }
