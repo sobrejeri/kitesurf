@@ -4,12 +4,23 @@ import { getBookingProgress } from '@/lib/booking-progress';
 export function BookingProgress({
   meetings,
   bookingStatus,
+  totalHours,
 }: {
   meetings: readonly Meeting[];
   bookingStatus: BookingStatus;
+  totalHours: number;
 }) {
   const { total, completed, inProgress, remaining, percent, inProgressPercent } =
     getBookingProgress(meetings);
+
+  const contractedMinutes = Math.max(0, Math.round(totalHours * 60));
+  const deliveredMinutes = meetings.filter((meeting) => meeting.status === 'done')
+    .reduce((sum, meeting) => sum + Math.max(0, meeting.done_minutes || 0), 0);
+  const remainingMinutes = Math.max(0, contractedMinutes - deliveredMinutes);
+  const timePercent = contractedMinutes
+    ? Math.min(100, Math.round((deliveredMinutes / contractedMinutes) * 10000) / 100)
+    : 0;
+  const formatDuration = (minutes: number) => `${Math.floor(minutes / 60)}h${String(minutes % 60).padStart(2, '0')}`;
 
   const statusText = total === 0
     ? 'Nenhum encontro ativo'
@@ -24,7 +35,7 @@ export function BookingProgress({
   return (
     <div className="mt-4 border-t border-line pt-3.5">
       <div className="flex items-center justify-between gap-3">
-        <p className="text-[12px] font-semibold text-label">Progresso das aulas</p>
+        <p className="text-[12px] font-semibold text-label">Progresso dos encontros</p>
         <span className="tabular shrink-0 text-[13px] font-bold text-brand">{percent}%</span>
       </div>
 
@@ -60,6 +71,21 @@ export function BookingProgress({
           {statusText}
         </span>
       </div>
+      {contractedMinutes > 0 && bookingStatus !== 'cancelled' ? (
+        <div className="mt-3 border-t border-line pt-3" aria-label="Progresso por horas">
+          <div className="flex items-center justify-between gap-3">
+            <p className="text-[12px] font-semibold text-label">Horas realizadas</p>
+            <span className="tabular text-[13px] font-bold text-brand">{timePercent}%</span>
+          </div>
+          <div className="mt-2 h-2 w-full overflow-hidden rounded-full bg-track" role="progressbar" aria-label="Horas realizadas" aria-valuemin={0} aria-valuemax={100} aria-valuenow={timePercent} aria-valuetext={`${deliveredMinutes} de ${contractedMinutes} minutos realizados`}>
+            <span className="block h-full bg-brand-bar" style={{ width: `${timePercent}%` }} />
+          </div>
+          <div className="mt-2 flex flex-wrap justify-between gap-x-3 gap-y-1 text-[11px] text-label">
+            <span>{formatDuration(deliveredMinutes)} de {formatDuration(contractedMinutes)} realizadas</span>
+            <span>{formatDuration(remainingMinutes)} restantes</span>
+          </div>
+        </div>
+      ) : null}
     </div>
   );
 }
