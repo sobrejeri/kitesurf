@@ -210,6 +210,8 @@ for(const route of remainingRoutes){
     'Missing desktop visual layout for student route '+route);
 }
 const desktopBuilderPage = read('src/app/aluno/(app)/reservar/page.tsx');
+assert.ok(desktopBuilderPage.includes('allowPackageSelection={Boolean(defaults.preferredInstructorId) || requestedHours(params.horas) === undefined}'),
+  'Rehiring an instructor allows changing the previous duration; an explicit catalog package stays fixed');
 const desktopBookingPage = read('src/app/aluno/(app)/reserva/[id]/page.tsx');
 const desktopRequestPage = read('src/app/aluno/(app)/solicitacao/[id]/page.tsx');
 const desktopChatPage = read('src/app/aluno/(app)/atendimento/[id]/page.tsx');

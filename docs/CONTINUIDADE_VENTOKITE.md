@@ -9,6 +9,9 @@ Este documento é a memória operacional do projeto em GitHub. **Não permite in
 - #300, #304 e #303 integradas. Render e /api/version confirmaram 20fc8fe5. #305 aguarda a janela de 24h no banco. D7 da fila corresponde à migration 14; restauração do banco real ainda sem evidência. Aluno e Instrutor têm cenários parciais. A sessão Pousada teste abriu o painel e as indicações, com cadastro em análise e zero reservas. O Admin redirecionou à configuração do autenticador. Retomar Admin com AAL2, comissão simulada de pousada aprovada, dispositivos físicos e aplicação do banco após backup validado.
 - PWA: a recuperação de navegação sem rede está sendo integrada. O service worker apresenta uma página genérica para reconectar, sem armazenar respostas de sessão ou enfileirar operações.
 
+- Complemento do mesmo lote: na VNT-1012 o aluno adiou o segundo encontro de 27/11 para 04/12, o instrutor aprovou e a reserva conservou 240 minutos. O horário anterior voltou a ficar livre. Na VNT-1008, o [registro anterior de aceite e presença](https://github.com/sobrejeri/kitesurf/issues/103#issuecomment-7007850788) e o registro do segundo encontro referem-se à mesma reserva.
+- O D7 passou a conferir a presença das dez assinaturas e o corpo anterior da RPC de presença. Em recontratação pelo histórico, as horas da aula anterior são uma sugestão editável. Validar a jornada preferencial em conjunto com a disponibilidade do instrutor (D7 do banco real ainda na migration 14).
+
 ## Comando para copiar em outro chat
 
 > **CONTINUAR VENTOKITE — EXECUÇÃO ATÉ PRONTO PARA CHECKOUT**

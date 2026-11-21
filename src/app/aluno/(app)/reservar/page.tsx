@@ -41,13 +41,14 @@ export default async function BuildLessonPage({ searchParams }: { searchParams: 
   const [params, quotes, beaches, kiteLevel, occupiedSlots] = await Promise.all([
     searchParams, getQuoteTable(), listActiveBeaches(), getStudentKiteLevel(viewer.id), getStudentOccupiedSlots(viewer.id),
   ]);
+  const defaults = defaultsFrom(params, beaches, kiteLevel.effective);
   return (
     <div className="mar-profundo-page mar-profundo-page--booking vento-pc-secondary-page vento-pc-booking-screen">
       <DesktopPageHeader eyebrow="SEU PRÓXIMO BORDO" title="Monte sua aula" lead="Escolha seu nível, os horários e organize cada encontro com clareza." icon="calendar" variant="lesson" backHref="/aluno/inicio" />
       <div className="vento-pc-original-hero"><StudentHero eyebrow="Seu próximo bordo" title="Monte sua aula" highlight="aula" lead="Escolha suas horas e os dias para ir ao mar." compact image="ocean" /></div>
-      <div className="vento-pc-secondary-main vento-pc-builder"><LessonBuilder quotes={quotes} beaches={beaches} defaults={defaultsFrom(params, beaches, kiteLevel.effective)}
+      <div className="vento-pc-secondary-main vento-pc-builder"><LessonBuilder quotes={quotes} beaches={beaches} defaults={defaults}
         studentLevel={kiteLevel.effective} occupiedSlots={occupiedSlots}
-        allowPackageSelection={requestedHours(params.horas) === undefined}
+        allowPackageSelection={Boolean(defaults.preferredInstructorId) || requestedHours(params.horas) === undefined}
         startEditing={!(params.praia || params.nivel || params.idioma || params.horas || params.dia)} /></div>
     </div>
   );
