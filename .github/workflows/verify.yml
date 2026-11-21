@@ -110,6 +110,7 @@ jobs:
         run: node scripts/test-meeting-change-actions.mjs
       - name: Verify guarded offline queue batch selection
         run: node scripts/test-queue-batch.mjs
+      - run: node scripts/test-instructor-queue-preflight.mjs
       - name: Verify read-only instructor queue expiry readiness preflight
         run: node scripts/test-queue-expiry-preflight.mjs
       - name: Test overdue lesson protection monitoring
