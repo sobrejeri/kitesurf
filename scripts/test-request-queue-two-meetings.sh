@@ -87,11 +87,48 @@ begin
   select presence_code into strict v_pin from public.bookings where id=v_booking;
   select id into strict v_m1 from public.booking_meetings where booking_id=v_booking and position=1;
   select id into strict v_m2 from public.booking_meetings where booking_id=v_booking and position=2;
+  -- Disposable fixture only: use elapsed local days for ordered-start validation.
+  -- Pick free slots dynamically in the disposable DB: earlier test fixtures
+  -- may already occupy fixed hours. Preserve overlap triggers and all grants.
+  with candidates as (
+    select (date_trunc('day',now() at time zone 'America/Fortaleza')
+      - interval '1 day' + make_interval(hours=>h,mins=>17))
+      at time zone 'America/Fortaleza' as st
+    from generate_series(0,21) h
+  )
+  select c.st into strict v_first from candidates c
+  where not exists (
+    select 1 from public.booking_meetings m
+    join public.bookings b on b.id=m.booking_id
+    where m.booking_id<>v_booking
+      and b.student_id='00000000-0000-0000-0000-0000000000b2'::uuid
+      and tstzrange(m.starts_at,m.starts_at+make_interval(mins=>m.minutes),'[)')
+          && tstzrange(c.st,c.st+interval '2 hours','[)')
+  )
+  order by c.st limit 1;
+  with candidates as (
+    select (date_trunc('day',now() at time zone 'America/Fortaleza')
+      + make_interval(hours=>h,mins=>17))
+      at time zone 'America/Fortaleza' as st
+    from generate_series(0,21) h
+  )
+  select c.st into strict v_second from candidates c
+  where not exists (
+    select 1 from public.booking_meetings m
+    join public.bookings b on b.id=m.booking_id
+    where m.booking_id<>v_booking
+      and b.student_id='00000000-0000-0000-0000-0000000000b2'::uuid
+      and tstzrange(m.starts_at,m.starts_at+make_interval(mins=>m.minutes),'[)')
+          && tstzrange(c.st,c.st+interval '2 hours','[)')
+  )
+  order by c.st limit 1;
+  update public.booking_meetings set starts_at=v_first where id=v_m1;
+  update public.booking_meetings set starts_at=v_second where id=v_m2;
   perform set_config('request.jwt.claim.sub',v_instructor::text,true);
   execute 'set local role authenticated';
-  perform public.start_meeting(v_m1,v_pin);
+  perform public.start_ordered_meeting(v_m1,v_pin);
   perform public.record_meeting(v_m1,110,'Controle e segurança');
-  perform public.start_meeting(v_m2,v_pin);
+  perform public.start_ordered_meeting(v_m2,v_pin);
   perform public.record_meeting(v_m2,115,'Water start e bordos');
   execute 'reset role';
   perform set_config('request.jwt.claim.sub','00000000-0000-0000-0000-0000000000b2',true);

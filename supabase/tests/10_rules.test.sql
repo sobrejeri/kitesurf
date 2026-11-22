@@ -196,27 +196,36 @@ begin
     = '00000000-0000-0000-0000-0000000000a1', 'free slot goes to Rafael';
 end $$;
 
--- Instructor flow: wrong presence code is refused, right one starts, minutes
--- are recorded and capped at the scheduled duration.
+-- Instructor flow: direct legacy RPC is forbidden, while ordered start enforces
+-- assignment, PIN and time window. Fixtures exist only in disposable CI DB.
 do $$
 declare m uuid; pcode text;
 begin
   select bm.id, b.presence_code into m, pcode from public.booking_meetings bm
     join public.bookings b on b.id = bm.booking_id
-    where b.id = (select id from public.bookings where code = 'VNT-1001') and bm.position = 1;
+    where b.code = 'VNT-1001' and bm.position = 1;
+
+  -- The original booking starts in two days; move this disposable fixture
+  -- inside the allowed 24-hour window without changing production rules.
+  update public.booking_meetings set starts_at = now() + interval '1 hour'
+    where id = m;
+
+  -- RPC privileges are verified separately by the dedicated 89m regression
+  -- after all fixtures; this block exercises only ordered-start behavior.
+
   perform pg_temp.act_as('00000000-0000-0000-0000-0000000000a2');
   begin
-    perform public.start_meeting(m, pcode);
+    perform public.start_ordered_meeting(m, pcode);
     raise exception 'unassigned instructor started a meeting';
   exception when no_data_found then null; end;
   perform pg_temp.reset();
 
   perform pg_temp.act_as('00000000-0000-0000-0000-0000000000a1');
   begin
-    perform public.start_meeting(m, case when pcode = '0000' then '0001' else '0000' end);
+    perform public.start_ordered_meeting(m, case when pcode = '0000' then '0001' else '0000' end);
     raise exception 'wrong presence code accepted';
   exception when invalid_parameter_value then null; end;
-  perform public.start_meeting(m, pcode);
+  perform public.start_ordered_meeting(m, pcode);
   begin
     perform public.record_meeting(m, 500, 'too long');
     raise exception 'recorded more than scheduled';
