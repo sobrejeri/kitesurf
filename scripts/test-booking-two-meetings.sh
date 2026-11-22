@@ -100,10 +100,10 @@ begin
   -- Disposable DB only: move booked fixture meetings to yesterday/today so
   -- ordered start is exercised without bypassing the real date guard.
   update public.booking_meetings set starts_at =
-    (date_trunc('day',now() at time zone 'America/Fortaleza') - interval '1 day' + interval '9 hours') at time zone 'America/Fortaleza'
+    (date_trunc('day',now() at time zone 'America/Fortaleza') - interval '1 day' + interval '4 hours 17 minutes') at time zone 'America/Fortaleza'
     where id=v_m1;
   update public.booking_meetings set starts_at =
-    (date_trunc('day',now() at time zone 'America/Fortaleza') + interval '9 hours') at time zone 'America/Fortaleza'
+    (date_trunc('day',now() at time zone 'America/Fortaleza') + interval '4 hours 17 minutes') at time zone 'America/Fortaleza'
     where id=v_m2;
   -- Verify that the assigned instructor can read both meetings and that an
   -- unrelated instructor cannot discover their IDs or scheduled dates via RLS.
