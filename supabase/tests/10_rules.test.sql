@@ -199,7 +199,7 @@ end $$;
 -- Instructor flow: direct legacy RPC is forbidden, while ordered start enforces
 -- assignment, PIN and time window. Fixtures exist only in disposable CI DB.
 do $$
-declare m uuid; pcode text; got_denial boolean;
+declare m uuid; pcode text;
 begin
   select bm.id, b.presence_code into m, pcode from public.booking_meetings bm
     join public.bookings b on b.id = bm.booking_id
@@ -210,14 +210,12 @@ begin
   update public.booking_meetings set starts_at = now() + interval '1 hour'
     where id = m;
 
-  perform pg_temp.act_as('00000000-0000-0000-0000-0000000000a1');
-  got_denial := false;
-  begin
-    perform public.start_meeting(m, pcode);
-  exception when insufficient_privilege then got_denial := true;
-  end;
-  assert got_denial, 'authenticated caller reached legacy start_meeting';
-  perform pg_temp.reset();
+  -- A DO block compiled as the fixture owner may retain owner privileges
+  -- after SET ROLE inside a helper. Assert the API role's effective ACL
+  -- explicitly; 89m independently checks both authenticated and anon.
+  assert not has_function_privilege('authenticated',
+    'public.start_meeting(uuid,text)', 'EXECUTE'),
+    'authenticated role has direct EXECUTE on legacy start_meeting';
 
   perform pg_temp.act_as('00000000-0000-0000-0000-0000000000a2');
   begin
