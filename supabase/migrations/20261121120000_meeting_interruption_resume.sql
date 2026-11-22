@@ -351,7 +351,8 @@ BEGIN
 END;
 $$;
 REVOKE ALL ON FUNCTION public.start_meeting(uuid,text) FROM PUBLIC, anon;
-GRANT EXECUTE ON FUNCTION public.start_meeting(uuid,text) TO authenticated;
+-- #93 P0: only the SECURITY DEFINER ordered starter may invoke this internally.
+REVOKE EXECUTE ON FUNCTION public.start_meeting(uuid,text) FROM authenticated;
 
 -- Grants das funções novas: só instrutor autenticado (o papel é conferido dentro, por require_role).
 REVOKE ALL ON FUNCTION public.interrupt_meeting(uuid, text, integer, integer, integer[], integer[]) FROM PUBLIC, anon;
