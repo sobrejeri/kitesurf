@@ -210,12 +210,8 @@ begin
   update public.booking_meetings set starts_at = now() + interval '1 hour'
     where id = m;
 
-  -- A DO block compiled as the fixture owner may retain owner privileges
-  -- after SET ROLE inside a helper. Assert the API role's effective ACL
-  -- explicitly; 89m independently checks both authenticated and anon.
-  assert not has_function_privilege('authenticated',
-    'public.start_meeting(uuid,text)', 'EXECUTE'),
-    'authenticated role has direct EXECUTE on legacy start_meeting';
+  -- RPC privileges are verified separately by the dedicated 89m regression
+  -- after all fixtures; this block exercises only ordered-start behavior.
 
   perform pg_temp.act_as('00000000-0000-0000-0000-0000000000a2');
   begin
