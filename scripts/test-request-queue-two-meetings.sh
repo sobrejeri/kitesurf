@@ -89,10 +89,10 @@ begin
   select id into strict v_m2 from public.booking_meetings where booking_id=v_booking and position=2;
   -- Disposable fixture only: use elapsed local days for ordered-start validation.
   update public.booking_meetings set starts_at =
-    (date_trunc('day',now() at time zone 'America/Fortaleza') - interval '1 day' + interval '9 hours') at time zone 'America/Fortaleza'
+    (date_trunc('day',now() at time zone 'America/Fortaleza') - interval '1 day' + interval '4 hours 17 minutes') at time zone 'America/Fortaleza'
     where id=v_m1;
   update public.booking_meetings set starts_at =
-    (date_trunc('day',now() at time zone 'America/Fortaleza') + interval '9 hours') at time zone 'America/Fortaleza'
+    (date_trunc('day',now() at time zone 'America/Fortaleza') + interval '4 hours 17 minutes') at time zone 'America/Fortaleza'
     where id=v_m2;
   perform set_config('request.jwt.claim.sub',v_instructor::text,true);
   execute 'set local role authenticated';
