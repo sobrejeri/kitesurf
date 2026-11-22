@@ -87,7 +87,14 @@ begin
   select presence_code into strict v_pin from public.bookings where id=v_booking;
   select id into strict v_m1 from public.booking_meetings where booking_id=v_booking and position=1;
   select id into strict v_m2 from public.booking_meetings where booking_id=v_booking and position=2;
-  -- Disposable fixture only: use elapsed local days for ordered-start validation.\n  update public.booking_meetings set starts_at =\n    (date_trunc('day',now() at time zone 'America/Fortaleza') - interval '1 day' + interval '9 hours') at time zone 'America/Fortaleza'\n    where id=v_m1;\n  update public.booking_meetings set starts_at =\n    (date_trunc('day',now() at time zone 'America/Fortaleza') + interval '9 hours') at time zone 'America/Fortaleza'\n    where id=v_m2;\n  perform set_config('request.jwt.claim.sub',v_instructor::text,true);
+  -- Disposable fixture only: use elapsed local days for ordered-start validation.
+  update public.booking_meetings set starts_at =
+    (date_trunc('day',now() at time zone 'America/Fortaleza') - interval '1 day' + interval '9 hours') at time zone 'America/Fortaleza'
+    where id=v_m1;
+  update public.booking_meetings set starts_at =
+    (date_trunc('day',now() at time zone 'America/Fortaleza') + interval '9 hours') at time zone 'America/Fortaleza'
+    where id=v_m2;
+  perform set_config('request.jwt.claim.sub',v_instructor::text,true);
   execute 'set local role authenticated';
   perform public.start_ordered_meeting(v_m1,v_pin);
   perform public.record_meeting(v_m1,110,'Controle e segurança');
