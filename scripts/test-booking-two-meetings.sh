@@ -97,7 +97,15 @@ begin
     where booking_id=v_id and position=1;
   select id into strict v_m2 from public.booking_meetings
     where booking_id=v_id and position=2;
-  -- Disposable DB only: move booked fixture meetings to yesterday/today so\n  -- ordered start is exercised without bypassing the real date guard.\n  update public.booking_meetings set starts_at =\n    (date_trunc('day',now() at time zone 'America/Fortaleza') - interval '1 day' + interval '9 hours') at time zone 'America/Fortaleza'\n    where id=v_m1;\n  update public.booking_meetings set starts_at =\n    (date_trunc('day',now() at time zone 'America/Fortaleza') + interval '9 hours') at time zone 'America/Fortaleza'\n    where id=v_m2;\n  -- Verify that the assigned instructor can read both meetings and that an
+  -- Disposable DB only: move booked fixture meetings to yesterday/today so
+  -- ordered start is exercised without bypassing the real date guard.
+  update public.booking_meetings set starts_at =
+    (date_trunc('day',now() at time zone 'America/Fortaleza') - interval '1 day' + interval '9 hours') at time zone 'America/Fortaleza'
+    where id=v_m1;
+  update public.booking_meetings set starts_at =
+    (date_trunc('day',now() at time zone 'America/Fortaleza') + interval '9 hours') at time zone 'America/Fortaleza'
+    where id=v_m2;
+  -- Verify that the assigned instructor can read both meetings and that an
   -- unrelated instructor cannot discover their IDs or scheduled dates via RLS.
   perform set_config('request.jwt.claim.sub','00000000-0000-0000-0000-0000000000a1',true);
   execute 'set local role authenticated';
