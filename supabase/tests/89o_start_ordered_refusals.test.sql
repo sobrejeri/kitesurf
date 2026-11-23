@@ -113,16 +113,17 @@ begin
   update public.booking_meetings set status = 'scheduled' where id = v.m1;
   update public.booking_meetings set starts_at = (select d from (select starts_at d from public.booking_meetings where id = v.m2) x) where id = v.m2;
 
-  -- 5. Dia futuro: exatamente 24 h. 24h01 recusa; 23h59 libera. (ver também 89e)
-  update public.booking_meetings set starts_at = now() + interval '24 hours 1 minute', status = 'scheduled' where id = v.m1;
+  -- 5. A RPC bloqueia qualquer dia posterior ao dia local de Fortaleza,
+  -- independentemente da distancia em horas (nao e uma janela movel de 24h).
+  update public.booking_meetings set starts_at = ((now() at time zone 'America/Fortaleza')::date + 1 + time '09:00') at time zone 'America/Fortaleza', status = 'scheduled' where id = v.m1;
   s0 := pg_temp.snap(v.v_bk);
-  assert pg_temp.try(format('select public.start_ordered_meeting(%L, %L)', v.m1, v.v_pin), a1) like '55000:%window%', 'a 24h01 deve recusar';
-  assert pg_temp.snap(v.v_bk) = s0, '24h01: recusa deixou efeitos'; n := n + 1;
+  assert pg_temp.try(format('select public.start_ordered_meeting(%L, %L)', v.m1, v.v_pin), a1) like '55000:%', 'dia seguinte deve recusar';
+  assert pg_temp.snap(v.v_bk) = s0, 'dia seguinte: recusa deixou efeitos'; n := n + 1;
 
-  -- 6. Início correto: muda só o encontro iniciado; repetir é recusado sem efeitos.
-  update public.booking_meetings set starts_at = now() + interval '23 hours 59 minutes' where id = v.m1;
+  -- 6. Inicio correto no dia local de Fortaleza; repetir e recusado sem efeitos.
+  update public.booking_meetings set starts_at = now() - interval '1 minute' where id = v.m1;
   assert (select status::text from public.booking_meetings where id = v.m2) = 'scheduled', 'pré: encontro 2 agendado';
-  assert pg_temp.try(format('select public.start_ordered_meeting(%L, %L)', v.m1, v.v_pin), a1) = 'ok', 'a 23h59 deve iniciar';
+  assert pg_temp.try(format('select public.start_ordered_meeting(%L, %L)', v.m1, v.v_pin), a1) = 'ok', 'encontro no dia local deve iniciar';
   assert (select status::text from public.booking_meetings where id = v.m1) = 'in_progress' and (select started_at is not null from public.booking_meetings where id = v.m1), 'iniciado e com started_at';
   assert (select status::text from public.booking_meetings where id = v.m2) = 'scheduled', 'o encontro 2 não é afetado';
   assert (select status::text from public.bookings where id = v.v_bk) = 'confirmed', 'a reserva segue confirmada';
