@@ -118,9 +118,9 @@ begin
   assert r like '55000:%', 'interrupcao duplicada deve ser recusada: ' || r;
   assert (select count(*) from public.app_notifications where recipient_id = stu and title = 'Aula interrompida' and href = '/aluno/atendimento/' || v.v_bk) = 1, 'sem segundo aviso';
   assert (select interruption_count from public.booking_meetings where id = v.m1) = 1, 'contagem nao dobra';
-  -- Sem agendar a continuidade, nao inicia (nem pelo caminho legado) e o encontro 2 nao pula a fila.
+  -- Sem agendar a continuidade, nao inicia; a RPC legada deve estar revogada e o encontro 2 nao pula a fila.
   assert pg_temp.try(format('select public.start_ordered_meeting(%L, %L)', v.m1, v.v_pin), a1) like '55000:%continuation%', 'nao inicia sem agendar a continuidade';
-  assert pg_temp.try(format('select public.start_meeting(%L, %L)', v.m1, v.v_pin), a1) like '55000:%continuation%', 'caminho legado tambem recusa';
+  assert pg_temp.try(format('select public.start_meeting(%L, %L)', v.m1, v.v_pin), a1) like '42501:%', 'RPC legada deve estar revogada para authenticated';
   update public.booking_meetings set starts_at = now() + interval '5 hours' where id = v.m2;   -- (tempo de teste) abre a janela de 24h do encontro 2
   assert pg_temp.try(format('select public.start_ordered_meeting(%L, %L)', v.m2, v.v_pin), a1) like '55000:%previous%', 'encontro 2 espera o 1';
   update public.booking_meetings set starts_at = v.d2 where id = v.m2;
