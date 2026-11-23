@@ -83,4 +83,5 @@ bash "$ROOT/scripts/test-backup-rollback.sh"
 bash "$ROOT/scripts/test-prod-like-queue.sh"
 
 # O script de ensaio da cadeia (scripts/rehearse-chain.sh) no estado real do projeto: feliz, recusa por ajuste manual e parada no primeiro erro.
+bash "$ROOT/scripts/test-isolation-guard.sh"
 bash "$ROOT/scripts/test-rehearse-chain.sh"

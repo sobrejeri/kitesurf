@@ -4,7 +4,8 @@
 # Cada arquivo é uma transação: o que falhou foi desfeito, nada fica pela metade.
 #
 # SEGURANÇA (recusa de propósito, sem opção de contornar):
-#   - recusa a URL do projeto de produção/atual (qadkqjfmmnxvovyyhqxw);
+#   - recusa a URL do projeto de produção/atual (qadkqjfmmnxvovyyhqxw) em qualquer parte, host Supabase sem ISOLATED_PROJECT_REF e alias de DNS
+#     (scripts/isolation-guard.sh), e exige a MARCA gravada no banco isolado (scripts/mark-isolated-db.sh);
 #   - exige CONFIRM_ISOLATED=sim, para ninguém rodar por engano;
 #   - recusa se o D7 achar função DESCONHECIDA entre as que a cadeia substitui (ajuste manual: comparar o texto antes).
 # NÃO usa `supabase db push`. NÃO escreve em nada além das migrations listadas.
@@ -14,11 +15,21 @@ set -euo pipefail
 ROOT="$(cd "$(dirname "$0")/.." && pwd)"
 : "${DATABASE_URL:?Defina DATABASE_URL com a string de conexão do banco ISOLADO}"
 [ "${CONFIRM_ISOLATED:-}" = "sim" ] || { echo "Recusado: defina CONFIRM_ISOLATED=sim para confirmar que o banco é ISOLADO." >&2; exit 2; }
-case "$DATABASE_URL" in *qadkqjfmmnxvovyyhqxw*) echo "RECUSADO: esta URL é a do projeto atual/produção. Use um projeto isolado (docs/HOMOLOGACAO_PROJETO_ISOLADO.md)." >&2; exit 2;; esac
+# Camada 1 (URL/DNS): scripts/isolation-guard.sh recusa o ref real em qualquer parte, host Supabase sem ISOLATED_PROJECT_REF e alias de DNS do projeto real.
+bash "$ROOT/scripts/isolation-guard.sh" "$DATABASE_URL" >/dev/null || { bash "$ROOT/scripts/isolation-guard.sh" "$DATABASE_URL" >&2; exit 2; }
 command -v psql >/dev/null || { echo "psql não encontrado" >&2; exit 2; }
 Q=(psql "$DATABASE_URL" -X -v ON_ERROR_STOP=1 -q); A=("${Q[@]}" -At)
 
 echo "== Banco: $("${A[@]}" -c "select current_database() || ' em ' || coalesce(inet_server_addr()::text, 'socket local')")"
+# Camada 2 (dentro do banco): só um banco que um humano MARCOU como isolado (scripts/mark-isolated-db.sh) recebe o ensaio. Um clone restaurado do dump do projeto
+# real NÃO traz a marca (ela é gravada depois da restauração). A marca com o ref real também é recusada.
+marker_ok="$("${A[@]}" -c "select case when to_regclass('public.zz_isolated_rehearsal_marker') is null then 'ausente' else coalesce((select string_agg(project_ref, ',') from public.zz_isolated_rehearsal_marker), 'vazia') end" 2>&1)" || marker_ok="erro"
+case "$marker_ok" in
+  ausente|vazia|erro) echo "RECUSADO: o banco não tem a marca de ensaio isolado (public.zz_isolated_rehearsal_marker: $marker_ok). Rode scripts/mark-isolated-db.sh no CLONE isolado e tente de novo." >&2; exit 2;;
+  *qadkqjfmmnxvovyyhqxw*) echo "RECUSADO: a marca do banco aponta para o projeto real." >&2; exit 2;;
+esac
+iso_ref="${ISOLATED_PROJECT_REF:-local}"
+case ",$marker_ok," in *",$iso_ref,"*) ;; *) echo "RECUSADO: a marca do banco ($marker_ok) não corresponde a ISOLATED_PROJECT_REF ($iso_ref)." >&2; exit 2;; esac
 
 # ---- 0. pré-checagens (somente leitura) ----
 echo "== Pré-checagens"
