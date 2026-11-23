@@ -41,14 +41,17 @@ begin
   -- Other disposable SQL fixtures can reserve nearby slots. Retry with distinct
   -- future days, but only for the known booking-overlap rejection. A failed
   -- create_booking attempt rolls back its writes via the exception subtransaction.
-  perform set_config('request.jwt.claim.sub', stu::text, true); execute 'set local role authenticated';
+  perform set_config('request.jwt.claim.sub', stu::text, true);
   for slot_attempt in 0..11 loop
+    -- Slot discovery calls an internal availability helper that is not granted
+    -- to authenticated clients; perform fixture setup as the migration owner.
     d1 := pg_temp.free_slot(3 + slot_attempt * 10, 12 + slot_attempt * 10);
     if d1 is null then continue; end if;
     d2 := pg_temp.free_slot(
       ((d1 at time zone 'America/Fortaleza')::date - (now() at time zone 'America/Fortaleza')::date) + 3,
       ((d1 at time zone 'America/Fortaleza')::date - (now() at time zone 'America/Fortaleza')::date) + 9);
     if d2 is null then continue; end if;
+    execute 'set local role authenticated';
     begin
       bk := public.create_booking((select id from public.beaches where slug='jeri'), 'first_time', 'Português',
         jsonb_build_array(jsonb_build_object('starts_at', d1, 'hours', 1), jsonb_build_object('starts_at', d2, 'hours', 1)));
@@ -57,8 +60,10 @@ begin
       get stacked diagnostics last_slot_error = message_text;
       if last_slot_error <> 'Overlapping meetings' then raise; end if;
     end;
+    execute 'reset role';
   end loop;
   assert bk is not null, 'No non-overlapping fixture slot found in bounded search';
+  execute 'set local role authenticated';
   perform public.simulate_test_payment(bk, 'pix', 'approved');
   execute 'reset role';
   select id into m1 from public.booking_meetings where booking_id = bk and position = 1;
