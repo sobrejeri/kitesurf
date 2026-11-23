@@ -1,3 +1,7 @@
+## QA independente — conferência contra o ledger REAL (23/11/2026)
+
+Em revisão posterior à entrega do lote, o ChatGPT leu `supabase_migrations.schema_migrations.statements` do projeto Kitesurf e identificou que os três espelhos iniciais tinham SQL reconstruído, não literal. **Corrigidos no código desta mesma PR** para conter exatamente os statements aplicados: `20261123114519` (commit `1670a916`), `20261123114813` (`bb0b0892`) e `20261123114943` (`bbb4c465`). Não foi aplicada nenhuma migration no banco. O CI anterior `45177535031` antecede esses commits e **não** aprova o HEAD corrigido; verificar novo CI. Não executar migrations no banco real sem backup restaurável e ensaio isolado. O conteúdo histórico abaixo descreve a auditoria original e deve ser lido à luz desta atualização.
+
 # Reconciliação de migrations (#93, lote de 10, item 1): repositório × PR #323 × hotfixes aplicados no Supabase
 
 **Data:** 23/11/2026. **Escopo:** só leitura e documentação mais três espelhos idempotentes no repositório. **Nada foi aplicado em nenhum Supabase** e o ledger não foi tocado.
