@@ -70,6 +70,7 @@ required=(
   20261123114519_security_p0_revoke_legacy_start_meeting_direct_access.sql
   20261123114813_security_restrict_notification_trigger_rpc_execute.sql
   20261123114943_security_fix_four_trigger_search_paths.sql
+  20261123130000_balance_minutes_count_resumed.sql
 )
 if [ "${INCLUDE_PREFERRED:-0}" = "1" ]; then
   required+=(20261113000043_preferred_instructor_availability.sql 20261114002000_fix_preferred_instructor_availability.sql)
@@ -132,6 +133,9 @@ step 20261123114813_security_restrict_notification_trigger_rpc_execute.sql \
 step 20261123114943_security_fix_four_trigger_search_paths.sql \
   "select count(*) = 4 and bool_and('search_path=\"\"' = any (p.proconfig)) from pg_proc p where p.pronamespace='public'::regnamespace and p.proname in ('bookings_snapshot_frozen','touch_updated_at','reject_change','reject_test_payment')" \
   "hotfix: search_path fixo nas 4 funções de trigger"
+step 20261123130000_balance_minutes_count_resumed.sql \
+  "select position('previous_done_minutes' in pg_get_functiondef('public.booking_balance_minutes(uuid)'::regprocedure)) > 0 and has_function_privilege('authenticated', 'public.booking_balance_minutes(uuid)'::regprocedure, 'EXECUTE') and not has_function_privilege('anon', 'public.booking_balance_minutes(uuid)'::regprocedure, 'EXECUTE')" \
+  "saldo de minutos conta a 1ª parte da aula retomada (#93); permissões mantidas (empilhada sobre a #323)"
 
 # ---- 2. conferência final (cada checagem separada; qualquer falso para) ----
 echo "== Conferência final"

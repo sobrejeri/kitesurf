@@ -13,6 +13,9 @@ ROOT="$(cd "$(dirname "$0")/.." && pwd)"
 PG_BIN="${PG_BIN:-$(dirname "$(command -v pg_ctl || ls /usr/lib/postgresql/*/bin/pg_ctl | tail -1)")}"
 [ "$(id -u)" != "0" ] || { echo "Rode como usuário não-root (o PostgreSQL recusa root)." >&2; exit 1; }
 TARGET="20261121120000_meeting_interruption_resume.sql"
+# Migrations que DEPENDEM do alvo (colunas novas): ficam fora do estado anterior, entram depois do alvo e são revertidas pelo mesmo down.sql.
+DEPENDENTS=("20261123130000_balance_minutes_count_resumed.sql")
+is_dep() { local x; for x in "${DEPENDENTS[@]}"; do [ "$x" = "$1" ] && return 0; done; return 1; }
 DOWN="$ROOT/docs/rollback/20261121120000_down.sql"
 A="$(mktemp -d)"; B="$(mktemp -d)"; PA="${PORT_A:-54671}"; PB="${PORT_B:-54672}"
 trap '"$PG_BIN/pg_ctl" -D "$A" -m immediate stop >/dev/null 2>&1 || true; "$PG_BIN/pg_ctl" -D "$B" -m immediate stop >/dev/null 2>&1 || true; rm -rf "$A" "$B"' EXIT
@@ -22,7 +25,7 @@ QA=(psql -h "$A" -p "$PA" -U postgres -d postgres -v ON_ERROR_STOP=1 -q); QB=(ps
 SA=("${QA[@]}" -At); SB=("${QB[@]}" -At)
 
 "${QA[@]}" -f "$ROOT/supabase/tests/00_supabase_stub.sql"
-for m in "$ROOT"/supabase/migrations/*.sql; do [ "$(basename "$m")" = "$TARGET" ] && continue; "${QA[@]}" -1 -f "$m" >/dev/null; done
+for m in "$ROOT"/supabase/migrations/*.sql; do b="$(basename "$m")"; [ "$b" = "$TARGET" ] && continue; is_dep "$b" && continue; "${QA[@]}" -1 -f "$m" >/dev/null; done
 "${QA[@]}" -f "$ROOT/supabase/tests/10_rules.test.sql" >/dev/null     # dados de reserva do fixture
 
 fingerprint() { "$@" <<'SQL'
@@ -46,8 +49,9 @@ counts() { "$@" -c "select (select count(*) from public.bookings)||'/'||(select 
 
 # ---- gera (ou confere) o down.sql a partir de S0 ----
 gen_down() {
-  cat <<'HDR'
--- ROLLBACK da migration 20261121120000_meeting_interruption_resume.sql (PR #323, #93). GERADO por scripts/test-backup-rollback.sh a partir do estado
+  local hdr bal
+  hdr="$(cat <<'HDR'
+-- ROLLBACK da migration 20261121120000_meeting_interruption_resume.sql (PR #323, #93) E da 20261123130000_balance_minutes_count_resumed.sql (que depende dela). GERADO por scripts/test-backup-rollback.sh a partir do estado
 -- anterior; o teste prova que este arquivo devolve o banco ao fingerprint de antes (colunas, restrições, funções, ACLs, gatilhos, RLS, dados).
 -- USE SÓ COM BACKUP VERIFICADO E EM JANELA CONTROLADA. Rode com `psql -1 -f` (uma transação). NÃO está no caminho de migrations.
 -- RECUSA se houver encontro interrompido: apagar as colunas perderia o motivo, os minutos e o estado da continuidade (exporte antes).
@@ -57,6 +61,8 @@ BEGIN
     RAISE EXCEPTION 'Rollback refused: interrupted meetings exist (data would be lost). Complete or export them first.';
   END IF;
 END $$;
+-- 1) primeiro a função que lê as colunas novas volta ao corpo anterior (20261123130000 -> migration 42); só depois as colunas podem sair.
+__BALANCE__
 DROP TRIGGER IF EXISTS guard_interrupted_meeting_completion ON public.booking_meetings;
 DROP FUNCTION IF EXISTS public.guard_interrupted_meeting_completion();
 DROP FUNCTION IF EXISTS public.interrupt_meeting(uuid, text, integer, integer, integer[], integer[]);
@@ -71,6 +77,9 @@ ALTER TABLE public.booking_meetings
   DROP COLUMN IF EXISTS interruption_count, DROP COLUMN IF EXISTS resume_scheduled_at;
 -- Corpos anteriores das duas funções que a migration substituiu (ACLs não mudam com CREATE OR REPLACE).
 HDR
+)"
+  bal="$("${SA[@]}" -c "select pg_get_functiondef('public.booking_balance_minutes(uuid)'::regprocedure) || ';'")"
+  printf '%s\n' "${hdr/__BALANCE__/$bal}"
   "${SA[@]}" -c "select pg_get_functiondef('public.start_ordered_meeting(uuid,text)'::regprocedure) || ';' ; select pg_get_functiondef('public.start_meeting(uuid,text)'::regprocedure) || ';'" \
     | sed -e 's/^\s*$//' 
   echo "NOTIFY pgrst, 'reload schema';"
@@ -89,6 +98,7 @@ BACKUP="$A/backup-pre-323.dump"
 
 # ---- 2. aplica a migration ----
 "${QA[@]}" -1 -f "$ROOT/supabase/migrations/$TARGET" >/dev/null
+for d in "${DEPENDENTS[@]}"; do "${QA[@]}" -1 -f "$ROOT/supabase/migrations/$d" >/dev/null; done
 f1="$(fingerprint "${SA[@]}")"; c1="$(counts "${SA[@]}")"
 [ "$f1" != "$f0" ] || { echo "a migration não mudou o fingerprint (o teste não enxerga a mudança)" >&2; exit 1; }
 [ "$c1" = "$c0" ] || { echo "a migration alterou dados: $c0 -> $c1" >&2; exit 1; }
@@ -117,6 +127,7 @@ if [ "$f2" != "$f0" ]; then echo "O rollback não devolveu o estado anterior:" >
 [ "$c2" = "$c0" ] || { echo "contagens após rollback diferem: $c0 -> $c2" >&2; exit 1; }
 # A migration pode ser reaplicada depois do rollback (rollback limpo).
 "${QA[@]}" -1 -f "$ROOT/supabase/migrations/$TARGET" >/dev/null
+for d in "${DEPENDENTS[@]}"; do "${QA[@]}" -1 -f "$ROOT/supabase/migrations/$d" >/dev/null; done
 [ "$(fingerprint "${SA[@]}")" = "$f1" ] || { echo "reaplicar após o rollback não reproduz o estado migrado" >&2; exit 1; }
 echo "PASS: backup anterior à migration restaura o estado exato em cluster novo; rollback por SQL (down.sql) devolve fingerprint e dados e recusa quando há encontro interrompido; reaplicação é limpa"
 echo "contagens (reservas/encontros/auditoria/perfis/habilidades/avisos): antes=$c0 migrado=$c1 restaurado=$cb apos_rollback=$c2"
