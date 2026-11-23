@@ -35,6 +35,14 @@ for (const bad of [undefined, null, 5, '', '2026-11-25', '2026-11-25 09:00', '20
 }
 assert.ok('iso' in parseFortalezaLocal('2027-02-18T12:00', now), 'dentro de 90 dias');
 assert.ok('error' in parseFortalezaLocal('2027-02-20T12:00', now), 'além de 90 dias');
+// Datas impossíveis: usar relógios FIXOS anteriores à entrada para não confundir invalidez com passado.
+const beforeFeb = Date.parse('2026-02-01T00:00:00Z');
+for (const invalid of ['2026-02-30T09:00', '2026-04-31T09:00', '2027-02-29T09:00', '2026-11-25T24:00', '2026-11-25T25:00', '2026-11-25T09:60']) {
+  assert.deepEqual(parseFortalezaLocal(invalid, beforeFeb), { error: 'Data inválida.' }, `data impossível recusada: ${invalid}`);
+}
+const beforeLeap = Date.parse('2028-02-01T00:00:00Z');
+assert.deepEqual(parseFortalezaLocal('2028-02-29T09:00', beforeLeap), { iso: '2028-02-29T12:00:00.000Z' }, '29/02 bissexto válido');
+assert.deepEqual(parseFortalezaLocal('2026-03-02T09:00', beforeFeb), { iso: '2026-03-02T12:00:00.000Z' }, 'data válida próxima à inválida aceita');
 assert.equal(fortalezaLocalInput(Date.parse('2026-11-25T12:00:00Z')), '2026-11-25T09:00', 'ida e volta em Fortaleza');
 assert.equal(fortalezaLocalInput(Date.parse('2026-11-25T02:30:00Z')), '2026-11-24T23:30', 'virada de dia em Fortaleza');
 
