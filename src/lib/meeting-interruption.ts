@@ -53,6 +53,9 @@ export function parseFortalezaLocal(value: unknown, nowMs: number = Date.now()):
   if (typeof value !== 'string' || !/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}$/.test(value)) return { error: 'Escolha a data e a hora da continuidade.' };
   const ms = Date.parse(`${value}:00-03:00`);
   if (!Number.isFinite(ms)) return { error: 'Data inválida.' };
+  // Date.parse normaliza datas impossíveis (ex.: 30/02 vira 02/03). Exigir ida e volta exata
+  // no fuso fixo de Fortaleza (UTC-3), incluindo hora/minuto e anos bissextos.
+  if (new Date(ms - 3 * 60 * 60 * 1000).toISOString().slice(0, 16) !== value) return { error: 'Data inválida.' };
   if (ms <= nowMs) return { error: 'A continuidade precisa ser em uma data futura.' };
   if (ms > nowMs + MAX_RESUME_DAYS * 86_400_000) return { error: `A continuidade deve ser agendada em até ${MAX_RESUME_DAYS} dias.` };
   return { iso: new Date(ms).toISOString() };
