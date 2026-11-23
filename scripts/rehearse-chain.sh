@@ -67,6 +67,9 @@ required=(
   20261120110000_simulate_test_payment_canonical_lock_order.sql
   20261120120000_meeting_start_24h_window.sql
   20261121120000_meeting_interruption_resume.sql
+  20261123114519_security_p0_revoke_legacy_start_meeting_direct_access.sql
+  20261123114813_security_restrict_notification_trigger_rpc_execute.sql
+  20261123114943_security_fix_four_trigger_search_paths.sql
 )
 if [ "${INCLUDE_PREFERRED:-0}" = "1" ]; then
   required+=(20261113000043_preferred_instructor_availability.sql 20261114002000_fix_preferred_instructor_availability.sql)
@@ -119,6 +122,16 @@ step 20261120120000_meeting_start_24h_window.sql \
 step 20261121120000_meeting_interruption_resume.sql \
   "select to_regprocedure('public.interrupt_meeting(uuid,text,integer,integer,integer[],integer[])') is not null and to_regprocedure('public.schedule_meeting_resume(uuid,timestamptz)') is not null and to_regprocedure('public.complete_meeting_with_skills(uuid,integer,integer[],integer[])') is not null and not has_function_privilege('anon', 'public.interrupt_meeting(uuid,text,integer,integer,integer[],integer[])'::regprocedure, 'EXECUTE') and has_function_privilege('authenticated', 'public.interrupt_meeting(uuid,text,integer,integer,integer[],integer[])'::regprocedure, 'EXECUTE') and not has_function_privilege('authenticated', 'public.save_meeting_steps(uuid,integer[],integer[])'::regprocedure, 'EXECUTE') and (select count(*) from public.booking_meetings where interruption_count > 0) = 0" \
   "interrupção/retomada por aula (#93 etapa 1): funções criadas e fechadas ao anon, internos fechados, nenhum encontro existente alterado"
+# Espelhos dos 3 hotfixes de 23/11 (já aplicados no Supabase real; idempotentes aqui, para o ensaio em banco vazio ou restaurado).
+step 20261123114519_security_p0_revoke_legacy_start_meeting_direct_access.sql \
+  "select not has_function_privilege('anon', 'public.start_meeting(uuid,text)'::regprocedure, 'EXECUTE') and not has_function_privilege('authenticated', 'public.start_meeting(uuid,text)'::regprocedure, 'EXECUTE') and has_function_privilege('authenticated', 'public.start_ordered_meeting(uuid,text)'::regprocedure, 'EXECUTE') and not has_function_privilege('anon', 'public.start_ordered_meeting(uuid,text)'::regprocedure, 'EXECUTE')" \
+  "hotfix P0: start_meeting fechada ao cliente; start_ordered_meeting só para authenticated"
+step 20261123114813_security_restrict_notification_trigger_rpc_execute.sql \
+  "select count(*) = 4 and bool_and(not has_function_privilege('anon', p.oid, 'EXECUTE') and not has_function_privilege('authenticated', p.oid, 'EXECUTE')) from pg_proc p where p.pronamespace='public'::regnamespace and p.proname in ('notify_booking_message','notify_confirmed_booking','notify_lesson_incident','notify_offer_transition')" \
+  "hotfix: 4 funções de trigger notify_* sem EXECUTE para anon/authenticated"
+step 20261123114943_security_fix_four_trigger_search_paths.sql \
+  "select count(*) = 4 and bool_and('search_path=\"\"' = any (p.proconfig)) from pg_proc p where p.pronamespace='public'::regnamespace and p.proname in ('bookings_snapshot_frozen','touch_updated_at','reject_change','reject_test_payment')" \
+  "hotfix: search_path fixo nas 4 funções de trigger"
 
 # ---- 2. conferência final (cada checagem separada; qualquer falso para) ----
 echo "== Conferência final"
