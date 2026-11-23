@@ -55,8 +55,8 @@ begin
   select * into v from pg_temp.mkbook(6);
   select * into w from pg_temp.mkbook(12);     -- outra reserva (para o PIN "de outra reserva")
   pin2 := w.v_pin;
-  assert pin2 is distinct from v.v_pin or true, 'pins podem coincidir; o teste usa um PIN de formato válido diferente quando coincidem';
   if pin2 = v.v_pin then pin2 := lpad(((v.v_pin::int + 1) % 10000)::text, 4, '0'); end if;
+  assert pin2 is distinct from v.v_pin, 'PIN de outra reserva deve ser diferente';
 
   -- Regra: cada item = (rótulo, chamador, SQL, prefixo esperado do erro)
   create temp table cases(label text, who uuid, q text, expect text) on commit drop;
