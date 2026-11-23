@@ -72,6 +72,8 @@ jobs:
         run: node scripts/test-student-subpage-header-clearance.mjs
       - name: Test 4h / 2-meeting booking Server Action and legacy queue fallback
         run: node scripts/test-booking-four-hours-action.mjs
+      - name: Test PWA publication and update invariants
+        run: node scripts/test-pwa-publication.mjs
       - name: Test interruption flow rules and screen regression (flag off by default)
         run: node --experimental-strip-types scripts/test-meeting-interruption-lib.mjs
       - name: Test interruption Server Actions (permissions, flag, validation, fail-closed)
