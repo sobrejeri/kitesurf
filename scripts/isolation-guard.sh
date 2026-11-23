@@ -18,32 +18,24 @@ RESOLVER="${ISOLATION_RESOLVER:-getent ahosts}"
 refuse() { echo "RECUSADO (isolamento): $1" >&2; exit 2; }
 [ -n "$URL" ] || refuse "DATABASE_URL vazia"
 
-# decodifica %XX e normaliza a caixa antes de procurar o ref real
-decoded="$(python3 - "$URL" <<'PY'
-import sys, urllib.parse
-u = sys.argv[1]
-for _ in range(3): u = urllib.parse.unquote(u)
-print(u.lower())
-PY
-)"
+# decodifica %XX (3 voltas, sem python: o runner do CI não tem) e normaliza a caixa antes de procurar o ref real
+pct_decode() { local v="$1" k; for k in 1 2 3; do v="$(printf '%b' "${v//%/\\x}")"; done; printf '%s' "$v"; }
+decoded="$(pct_decode "$URL" | tr 'A-Z' 'a-z')"
 case "$decoded" in *"$(echo "$REAL_REF" | tr 'A-Z' 'a-z')"*) refuse "a URL contém o ref do projeto real ($REAL_REF) em alguma parte";; esac
 
-# host: postgresql://user:pass@HOST:port/db  ou  postgresql:///db?host=HOST&port=...
-host="$(python3 - "$URL" <<'PY'
-import sys, urllib.parse
-p = urllib.parse.urlparse(sys.argv[1])
-host = p.hostname or ''
-if not host:
-    q = urllib.parse.parse_qs(p.query)
-    host = (q.get('host') or [''])[0]
-print(host.lower())
-PY
-)"
-user="$(python3 - "$URL" <<'PY'
-import sys, urllib.parse
-p = urllib.parse.urlparse(sys.argv[1]); print((urllib.parse.unquote(p.username or '')).lower())
-PY
-)"
+# host e usuário: postgresql://user:pass@HOST:port/db  ou  postgresql:///db?host=HOST&port=...
+authority="$(printf '%s' "$URL" | sed -E 's#^[A-Za-z][A-Za-z0-9+.-]*://([^/?]*).*#\1#')"
+case "$URL" in *://*) ;; *) authority="";; esac
+userinfo=""; hostport="$authority"
+case "$authority" in *@*) userinfo="${authority%@*}"; hostport="${authority##*@}";; esac
+user="$(pct_decode "${userinfo%%:*}" | tr 'A-Z' 'a-z')"
+host="$(printf '%s' "$hostport" | sed -E 's#^\[([^]]*)\].*#\1#; t; s#:[0-9]*$##')"
+if [ -z "$host" ]; then   # forma por socket: ?host=...
+  q="${URL#*\?}"; [ "$q" = "$URL" ] && q=""
+  host="$(printf '%s' "$q" | tr '&' '\n' | sed -n 's/^host=//p' | head -1)"
+  host="$(pct_decode "$host")"
+fi
+host="$(printf '%s' "$host" | tr 'A-Z' 'a-z')"
 is_local=0
 case "$host" in ''|localhost|127.0.0.1|::1|/*) is_local=1;; esac
 case "$host" in *.supabase.co|*.supabase.com|*pooler*) is_local=0; managed=1;; *) managed=0;; esac
