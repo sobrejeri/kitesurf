@@ -24,9 +24,11 @@ BEGIN
         AND p.prorettype = 'pg_catalog.trigger'::regtype
         AND p.prokind = 'f'
         AND NOT p.prosecdef
-        AND p.proconfig @> ARRAY['search_path=pg_catalog']::text[]
+        -- Estado real do Supabase (hotfix 20261123114943) = search_path="" ; a migration 44 preparada (nunca aplicada) usa pg_catalog.
+        -- Os dois são FIXOS e seguros; o que a regressão proíbe é a função voltar a ter search_path mutável (sem configuração).
+        AND (p.proconfig @> ARRAY['search_path=pg_catalog']::text[] OR p.proconfig @> ARRAY['search_path=""']::text[])
     ) THEN
-      RAISE EXCEPTION 'Migration 44 regression: % must remain SECURITY INVOKER trigger with fixed pg_catalog search_path', fn;
+      RAISE EXCEPTION 'Migration 44 regression: % must remain SECURITY INVOKER trigger with a FIXED search_path (pg_catalog or empty)', fn;
     END IF;
 
     IF NOT EXISTS (

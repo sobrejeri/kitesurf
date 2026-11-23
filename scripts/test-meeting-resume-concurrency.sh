@@ -33,8 +33,10 @@ declare a1 constant uuid := '00000000-0000-0000-0000-0000000000a1'; stu constant
   n int; d1 timestamptz; d2 timestamptz; bk uuid; m1 uuid; m2 uuid; pin text; t timestamptz;
 begin
   for n in 1..2 loop   -- n=1: reserva X (F1-F3); n=2: reserva Y (F4-F5), cada uma com o encontro 1 interrompido
-    d1 := public.zz_free_slot(3 + (n-1)*30, 40 + (n-1)*30);
-    d2 := public.zz_free_slot(((d1 at time zone 'America/Fortaleza')::date - (now() at time zone 'America/Fortaleza')::date) + 3, 120);
+    d1 := public.zz_free_slot(3 + (n-1)*70, 60 + (n-1)*70);
+    if d1 is null then raise exception 'FIXTURE: sem horario livre para o 1o encontro (reserva %)', n; end if;
+    d2 := public.zz_free_slot(((d1 at time zone 'America/Fortaleza')::date - (now() at time zone 'America/Fortaleza')::date) + 3, 200);
+    if d2 is null then raise exception 'FIXTURE: sem horario livre para o 2o encontro (reserva %)', n; end if;
     perform set_config('request.jwt.claim.sub', stu::text, true); execute 'set local role authenticated';
     bk := public.create_booking((select id from public.beaches where slug='jeri'), 'first_time', 'Português',
       jsonb_build_array(jsonb_build_object('starts_at', d1, 'hours', 1), jsonb_build_object('starts_at', d2, 'hours', 1)));
