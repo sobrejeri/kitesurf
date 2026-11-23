@@ -20,7 +20,7 @@ done
 h="$("${A[@]}" -c "select md5(regexp_replace(regexp_replace(p.prosrc, '--[^\n]*', '', 'g'), '\s+', '', 'g')) from pg_proc p where p.oid = 'public.advance_instructor_offer(uuid)'::regprocedure")"
 [ "$h" = "07ba8bce57117edfd686b668306a9ea7" ] || { echo "fixture invalido: advance_instructor_offer nao esta na versao da migration 14 ($h)" >&2; exit 1; }
 "${Q[@]}" -f "$ROOT/supabase/tests/10_rules.test.sql" >/dev/null
-for t in test-offer-queue-edges.sh test-offer-queue-abc.sh test-offer-offline-executor.sh; do
+for t in test-offer-queue-edges.sh test-offer-queue-abc.sh test-offer-offline-executor.sh test-expiry-overdue-requests.sh; do
   PG_TEST_SOCKET="$D" PG_TEST_PORT="$P" bash "$ROOT/scripts/$t" >/dev/null 2>"$D/err" || { echo "FALHOU no estado de producao: $t" >&2; cat "$D/err" >&2; exit 1; }
 done
 "${Q[@]}" -f "$ROOT/supabase/tests/89h_change_windows_and_incident.test.sql" >/dev/null 2>"$D/err" || { echo "FALHOU no estado de producao: 89h" >&2; cat "$D/err" >&2; exit 1; }

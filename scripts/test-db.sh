@@ -74,6 +74,8 @@ PG_TEST_SOCKET="$DATA" PG_TEST_PORT="$PORT" bash "$ROOT/scripts/test-payment-loc
 PG_TEST_SOCKET="$DATA" PG_TEST_PORT="$PORT" bash "$ROOT/scripts/test-meeting-resume-concurrency.sh"
 
 # #88: caminho de atualização por cima de um ambiente com a migration original já aplicada + backup/restauração (clusters próprios).
+PG_TEST_SOCKET="$DATA" PG_TEST_PORT="$PORT" bash "$ROOT/scripts/test-expiry-overdue-requests.sh"
+
 bash "$ROOT/scripts/test-migration-upgrade-path.sh"
 
 # Lote de 10, item 2: backup restaurável + rollback por SQL (clusters próprios).
