@@ -117,7 +117,8 @@ begin
   -- independentemente da distancia em horas (nao e uma janela movel de 24h).
   update public.booking_meetings set starts_at = ((now() at time zone 'America/Fortaleza')::date + 1 + time '09:00') at time zone 'America/Fortaleza', status = 'scheduled' where id = v.m1;
   s0 := pg_temp.snap(v.v_bk);
-  assert pg_temp.try(format('select public.start_ordered_meeting(%L, %L)', v.m1, v.v_pin), a1) like '55000:%', 'dia seguinte deve recusar';
+  r := pg_temp.try(format('select public.start_ordered_meeting(%L, %L)', v.m1, v.v_pin), a1);
+  assert r like '55000:%', format('dia seguinte deve recusar: got=%s, starts_at=%s, local_start=%s, local_today=%s, booking_status=%s, meeting_status=%s', r, (select starts_at from public.booking_meetings where id=v.m1), (select (starts_at at time zone 'America/Fortaleza')::date from public.booking_meetings where id=v.m1), (now() at time zone 'America/Fortaleza')::date, (select status from public.bookings where id=v.v_bk), (select status from public.booking_meetings where id=v.m1));
   assert pg_temp.snap(v.v_bk) = s0, 'dia seguinte: recusa deixou efeitos'; n := n + 1;
 
   -- 6. Inicio correto no dia local de Fortaleza; repetir e recusado sem efeitos.
