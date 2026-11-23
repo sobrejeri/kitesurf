@@ -63,7 +63,7 @@ begin
   insert into cases values
     ('instrutor que NAO é o dono',        a2,  format('select public.start_ordered_meeting(%L, %L)', v.m1, v.v_pin), 'P0002:'),
     ('aluno',                              stu, format('select public.start_ordered_meeting(%L, %L)', v.m1, v.v_pin), '42501:'),
-    ('admin sem AAL2 (nao inicia aula)', adm, format('select public.start_ordered_meeting(%L, %L)', v.m1, v.v_pin), '42501:'),
+    ('admin com AAL2 (nao e dono)', adm, format('select public.start_ordered_meeting(%L, %L)', v.m1, v.v_pin), 'P0002:'),
     ('encontro inexistente',               a1,  format('select public.start_ordered_meeting(%L, %L)', gen_random_uuid(), v.v_pin), 'P0002:'),
     ('PIN errado',                         a1,  format('select public.start_ordered_meeting(%L, %L)', v.m1, case when v.v_pin = '0000' then '1111' else '0000' end), '22023:'),
     ('PIN de outra reserva',               a1,  format('select public.start_ordered_meeting(%L, %L)', v.m1, pin2), '22023:'),
