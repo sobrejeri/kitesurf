@@ -142,6 +142,38 @@ assert.deepEqual(activeStudentBookings([vnt1008Partial]).map((b) => b.id),
   ['VNT-1008']);
 console.log('PASS: VNT-1008 partial delivery 110 + 115 leaves 15 minutes and preserves both stages');
 
+// A make-up reserves only the remaining 15 minutes; while it is scheduled,
+// the available balance is zero, but the booking remains active. Completing
+// the make-up must not erase the original two evolution stages.
+const makeUpScheduled = {
+  ...vnt1008Partial,
+  booking_meetings: [
+    ...vnt1008Partial.booking_meetings,
+    { id: 'VNT-1008-makeup', status: 'scheduled', minutes: 15, done_minutes: 0,
+      starts_at: '2026-11-25T12:00:00Z' },
+  ],
+};
+assert.equal(bookingBalanceMinutes(makeUpScheduled), 0,
+  'A scheduled 15-minute make-up reserves the balance without counting as taught');
+assert.equal(bookingIsFinished(makeUpScheduled), false,
+  'A make-up awaiting attendance must keep the reservation active');
+assert.equal(evolutionBookingStatus(makeUpScheduled), 'Em andamento');
+const makeUpDone = {
+  ...makeUpScheduled,
+  booking_meetings: makeUpScheduled.booking_meetings.map((meeting) =>
+    meeting.id === 'VNT-1008-makeup'
+      ? { ...meeting, status: 'done', done_minutes: 15 }
+      : meeting),
+};
+assert.equal(bookingBalanceMinutes(makeUpDone), 0);
+assert.equal(bookingIsFinished(makeUpDone), true);
+assert.equal(evolutionBookingStatus(makeUpDone), 'Concluída');
+assert.deepEqual(activeBookingStageMeetingIds(makeUpDone),
+  ['VNT-1008-0', 'VNT-1008-1', 'VNT-1008-makeup']);
+assert.deepEqual(activeStudentBookings([makeUpDone]), []);
+console.log('PASS: VNT-1008 15-minute make-up reserves balance then completes all evolution stages');
+
+
 
 const reservationPage = readFileSync('src/app/aluno/(app)/reserva/[id]/page.tsx', 'utf8');
 const actionsStart = reservationPage.indexOf('<nav aria-label="Ações da reserva"');
