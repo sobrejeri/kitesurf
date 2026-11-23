@@ -1,4 +1,4 @@
--- ROLLBACK da migration 20261121120000_meeting_interruption_resume.sql (PR #323, #93). GERADO por scripts/test-backup-rollback.sh a partir do estado
+-- ROLLBACK da migration 20261121120000_meeting_interruption_resume.sql (PR #323, #93) E da 20261123130000_balance_minutes_count_resumed.sql (que depende dela). GERADO por scripts/test-backup-rollback.sh a partir do estado
 -- anterior; o teste prova que este arquivo devolve o banco ao fingerprint de antes (colunas, restrições, funções, ACLs, gatilhos, RLS, dados).
 -- USE SÓ COM BACKUP VERIFICADO E EM JANELA CONTROLADA. Rode com `psql -1 -f` (uma transação). NÃO está no caminho de migrations.
 -- RECUSA se houver encontro interrompido: apagar as colunas perderia o motivo, os minutos e o estado da continuidade (exporte antes).
@@ -8,6 +8,32 @@ BEGIN
     RAISE EXCEPTION 'Rollback refused: interrupted meetings exist (data would be lost). Complete or export them first.';
   END IF;
 END $$;
+-- 1) primeiro a função que lê as colunas novas volta ao corpo anterior (20261123130000 -> migration 42); só depois as colunas podem sair.
+CREATE OR REPLACE FUNCTION public.booking_balance_minutes(p_booking_id uuid)
+ RETURNS integer
+ LANGUAGE sql
+ STABLE SECURITY DEFINER
+ SET search_path TO ''
+AS $function$
+  SELECT GREATEST(0,
+    b.total_hours * 60
+    - COALESCE((SELECT sum(m.done_minutes)::integer
+                FROM public.booking_meetings m
+                WHERE m.booking_id=b.id AND m.status='done'),0)
+    - COALESCE((SELECT sum(m.minutes)::integer
+                FROM public.booking_meetings m
+                WHERE m.booking_id=b.id
+                  AND m.status IN ('scheduled','in_progress')),0)
+  )
+  FROM public.bookings b
+  WHERE b.id=p_booking_id
+    AND (
+      b.student_id=auth.uid()
+      OR b.instructor_id=auth.uid()
+      OR public.is_admin()
+    );
+$function$
+;
 DROP TRIGGER IF EXISTS guard_interrupted_meeting_completion ON public.booking_meetings;
 DROP FUNCTION IF EXISTS public.guard_interrupted_meeting_completion();
 DROP FUNCTION IF EXISTS public.interrupt_meeting(uuid, text, integer, integer, integer[], integer[]);

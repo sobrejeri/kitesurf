@@ -3,7 +3,8 @@ import type { Booking, StudentBooking } from '@/lib/data';
 /**
  * Paid minutes not yet delivered or scheduled: contracted − recorded − the
  * minutes already held by a scheduled or in-progress meeting. Mirrors the
- * server's booking_balance_minutes so the UI and the database never disagree.
+ * server's booking_balance_minutes (incl. the resumed-meeting rule of migration
+ * 20261123130000) so the UI and the database never disagree.
  */
 export function bookingBalanceMinutes(
   booking: Pick<Booking, 'total_hours' | 'booking_meetings'>,
@@ -11,8 +12,13 @@ export function bookingBalanceMinutes(
   let done = 0;
   let scheduled = 0;
   for (const meeting of booking.booking_meetings) {
-    if (meeting.status === 'done') done += meeting.done_minutes;
-    else if (meeting.status === 'scheduled' || meeting.status === 'in_progress') scheduled += meeting.minutes;
+    // #93: a retomada de uma aula interrompida guarda a 1ª parte em previous_done_minutes (campos opcionais: só existem com a migration 20261121120000).
+    const previous = meeting.previous_done_minutes ?? 0;
+    if (meeting.status === 'done') done += meeting.done_minutes + previous;
+    else if (meeting.status === 'scheduled' || meeting.status === 'in_progress') {
+      const interrupted = meeting.interruption_state != null && meeting.interruption_state !== 'resumed';
+      scheduled += previous + (interrupted ? (meeting.remaining_minutes ?? meeting.minutes) : meeting.minutes);
+    }
   }
   return Math.max(0, booking.total_hours * 60 - done - scheduled);
 }

@@ -142,6 +142,23 @@ assert.deepEqual(activeStudentBookings([vnt1008Partial]).map((b) => b.id),
   ['VNT-1008']);
 console.log('PASS: VNT-1008 partial delivery 110 + 115 leaves 15 minutes and preserves both stages');
 
+// #93 (revisão de 23/11): o saldo precisa contar a 1ª parte de uma aula interrompida (previous_done_minutes) — espelho de booking_balance_minutes (migration 20261123130000).
+const m = (o) => ({ id: 'x', starts_at: '2026-11-10T12:00:00Z', done_minutes: 0, ...o });
+const four = (meetings) => ({ id: 'R', code: 'VNT-R', status: 'confirmed', created_at: '2026-11-01T12:00:00Z', total_hours: 4, booking_meetings: meetings });
+const second = m({ status: 'done', minutes: 120, done_minutes: 115 });
+assert.equal(bookingBalanceMinutes(four([m({ status: 'done', minutes: 120, done_minutes: 110 }), second])), 15, 'legado inalterado: 110 + 115 = 225, saldo 15');
+assert.equal(bookingBalanceMinutes(four([m({ status: 'done', minutes: 10, done_minutes: 10, previous_done_minutes: 110, interruption_state: 'resumed' }), second])), 5,
+  'retomada concluída: 110 + 10 = 120 no encontro 1; com 115 no encontro 2 = 235 e saldo 5 (antes da correção contava 10 e dava 115)');
+assert.equal(bookingBalanceMinutes(four([m({ status: 'scheduled', minutes: 120, previous_done_minutes: 110, remaining_minutes: 10, interruption_state: 'awaiting_resume' }), second])), 5,
+  'interrompida aguardando continuidade: 110 dados + 10 reservados = 120');
+assert.equal(bookingBalanceMinutes(four([m({ status: 'scheduled', minutes: 10, previous_done_minutes: 110, remaining_minutes: 10, interruption_state: 'resume_scheduled' }), second])), 5,
+  'continuidade agendada (minutes = restante): 110 + 10');
+assert.equal(bookingBalanceMinutes(four([m({ status: 'in_progress', minutes: 10, previous_done_minutes: 110, remaining_minutes: 10, interruption_state: 'resume_scheduled' }), second])), 5,
+  'retomada em andamento: 110 + 10');
+assert.equal(bookingBalanceMinutes(four([m({ status: 'done', minutes: 120, done_minutes: 120 }), m({ status: 'done', minutes: 120, done_minutes: 120 })])), 0, 'tudo entregue: saldo 0');
+assert.equal(bookingBalanceMinutes(four([m({ status: 'scheduled', minutes: 120 }), m({ status: 'scheduled', minutes: 120 })])), 0, 'reserva sem interrupção: minutos reservados contam como antes');
+console.log('PASS: saldo conta a primeira parte da aula interrompida (110 + 10) e não muda para reservas sem interrupção');
+
 
 const reservationPage = readFileSync('src/app/aluno/(app)/reserva/[id]/page.tsx', 'utf8');
 const actionsStart = reservationPage.indexOf('<nav aria-label="Ações da reserva"');
