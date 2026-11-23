@@ -40,7 +40,10 @@ Na variante A (projeto vazio) o `supabase db push` é o caminho; na variante B n
 ## Aplicar a cadeia com o script de ensaio (em vez de colar arquivo por arquivo)
 Com o banco isolado pronto (variante A: projeto vazio com as migrations 01 a 42 já aplicadas; variante B: cópia restaurada), rode, da raiz do repositório na branch da #303:
 ```bash
-DATABASE_URL='postgresql://postgres:<senha>@db.<REF_DO_PROJETO_ISOLADO>.supabase.co:5432/postgres' CONFIRM_ISOLATED=sim bash scripts/rehearse-chain.sh
+# 1) UMA vez, depois de restaurar o dump no clone: grava a MARCA de isolado no banco (a guarda recusa o projeto real, alias de DNS e host sem ref)
+DATABASE_URL='postgresql://postgres:<senha>@db.<REF_DO_PROJETO_ISOLADO>.supabase.co:5432/postgres' ISOLATED_PROJECT_REF='<REF_DO_PROJETO_ISOLADO>' CONFIRM_ISOLATED=sim bash scripts/mark-isolated-db.sh
+# 2) o ensaio (recusa sem a marca):
+DATABASE_URL='postgresql://postgres:<senha>@db.<REF_DO_PROJETO_ISOLADO>.supabase.co:5432/postgres' ISOLATED_PROJECT_REF='<REF_DO_PROJETO_ISOLADO>' CONFIRM_ISOLATED=sim bash scripts/rehearse-chain.sh
 ```
 O script **recusa** a URL do projeto atual (`qadkqjfmmnxvovyyhqxw`) e exige `CONFIRM_ISOLATED=sim`; **recusa** se o D7 achar função `DESCONHECIDA`; aplica as migrations **na ordem segura**, uma por vez (cada uma é uma transação), confere a verificação de cada passo e **para no primeiro erro mostrando a mensagem exata** (copie-a para a issue #88). Ao final confere que `anon` não executa nenhuma RPC de reserva e que **nada foi agendado** no `pg_cron`. Ele não usa `supabase db push`.
 Testado em banco descartável com o estado real do projeto (`scripts/test-rehearse-chain.sh`): passa no caminho feliz, recusa função com ajuste manual antes de aplicar qualquer coisa e para no primeiro erro sem deixar migration pela metade.

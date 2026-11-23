@@ -33,7 +33,8 @@ grant execute on function public.create_booking(uuid, public.lesson_level, text,
 SQL2
 }
 url() { echo "postgresql:///$1?host=$D&port=$P&user=postgres"; }
-run() { DATABASE_URL="$(url "$1")" CONFIRM_ISOLATED=sim bash "$ROOT/scripts/rehearse-chain.sh"; }
+mark() { DATABASE_URL="$(url "$1")" CONFIRM_ISOLATED=sim bash "$ROOT/scripts/mark-isolated-db.sh" >/dev/null; }
+run() { mark "$1"; DATABASE_URL="$(url "$1")" CONFIRM_ISOLATED=sim bash "$ROOT/scripts/rehearse-chain.sh"; }
 
 # A) caminho feliz
 mkprod rehearse_ok
@@ -66,6 +67,7 @@ cp "$ROOT/docs/CONSULTA_DERIVA_ANTES_DE_APLICAR.sql" "$D/rehearse_copy/docs/"
 cp "$ROOT"/supabase/migrations/202611{16,17,19,20}*.sql "$D/rehearse_copy/supabase/migrations/"
 rm "$D/rehearse_copy/supabase/migrations/20261119140000_queue_expiry_job.sql"
 set +e
+mark rehearse_missing; cp "$ROOT/scripts/isolation-guard.sh" "$D/rehearse_copy/scripts/"
 out="$(DATABASE_URL="$(url rehearse_missing)" CONFIRM_ISOLATED=sim bash "$D/rehearse_copy/scripts/rehearse-chain.sh" 2>&1)"
 rc=$?
 set -e
@@ -83,10 +85,22 @@ out="$(INCLUDE_PREFERRED=1 run rehearse_pref 2>&1)" || { echo "E) ensaio com ins
 echo "$out" | grep -q "^PASS:" || { echo "E) sem a linha PASS" >&2; exit 1; }
 [ "$(SQL -d rehearse_pref -c "$HAS")" = "t" ] || { echo "E) advance_instructor_offer deveria exigir agenda tambem do instrutor preferido" >&2; exit 1; }
 [ "$(SQL -d rehearse_pref -c "select (has_function_privilege('authenticated','public.advance_instructor_offer(uuid)'::regprocedure,'EXECUTE') or has_function_privilege('anon','public.advance_instructor_offer(uuid)'::regprocedure,'EXECUTE'))::text")" = "false" ] || { echo "E) advance_instructor_offer deve seguir fechada a API" >&2; exit 1; }
+# H) sem a MARCA no banco o ensaio recusa antes de aplicar qualquer coisa (um clone restaurado do projeto real não traz a marca)
+mkprod rehearse_unmarked
+set +e; out="$(DATABASE_URL="$(url rehearse_unmarked)" CONFIRM_ISOLATED=sim bash "$ROOT/scripts/rehearse-chain.sh" 2>&1)"; rc=$?; set -e
+[ "$rc" -eq 2 ] && echo "$out" | grep -q "não tem a marca" || { echo "H) sem marca deveria recusar com codigo 2 (obteve $rc):" >&2; echo "$out" >&2; exit 1; }
+[ "$(SQL -d rehearse_unmarked -c "select count(*) from pg_proc where proname='guard_student_meeting_overlap'")" = "0" ] || { echo "H) nada deveria ter sido aplicado" >&2; exit 1; }
+# I) marca de OUTRO projeto (ou do projeto real) também recusa
+SQL -d rehearse_unmarked -c "create table public.zz_isolated_rehearsal_marker (project_ref text primary key, marked_at timestamptz default now(), note text default 'x'); insert into public.zz_isolated_rehearsal_marker(project_ref) values ('outro-projeto')"
+set +e; out="$(DATABASE_URL="$(url rehearse_unmarked)" CONFIRM_ISOLATED=sim bash "$ROOT/scripts/rehearse-chain.sh" 2>&1)"; rc=$?; set -e
+[ "$rc" -eq 2 ] && echo "$out" | grep -q "não corresponde" || { echo "I) marca de outro ref deveria recusar (obteve $rc):" >&2; echo "$out" >&2; exit 1; }
+SQL -d rehearse_unmarked -c "update public.zz_isolated_rehearsal_marker set project_ref='qadkqjfmmnxvovyyhqxw'"
+set +e; out="$(DATABASE_URL="$(url rehearse_unmarked)" CONFIRM_ISOLATED=sim bash "$ROOT/scripts/rehearse-chain.sh" 2>&1)"; rc=$?; set -e
+[ "$rc" -eq 2 ] && echo "$out" | grep -q "projeto real" || { echo "I) marca com o ref real deveria recusar (obteve $rc):" >&2; echo "$out" >&2; exit 1; }
 echo "PASS: ensaio completo, recusa deriva, falha em dependencias, recusa migration ausente e variante com instrutor preferido"
 
 # F) consulta D7 ausente: deve recusar ANTES de qualquer migration.
-mkprod rehearse_no_d7
+mkprod rehearse_no_d7; mark rehearse_no_d7; cp "$ROOT/scripts/isolation-guard.sh" "$D/rehearse_copy/scripts/"
 rm "$D/rehearse_copy/docs/CONSULTA_DERIVA_ANTES_DE_APLICAR.sql"
 set +e
 out="$(DATABASE_URL="$(url rehearse_no_d7)" CONFIRM_ISOLATED=sim bash "$D/rehearse_copy/scripts/rehearse-chain.sh" 2>&1)"
@@ -98,7 +112,7 @@ echo "$out" | grep -q "consulta D7 ausente" || { echo "F) faltou mensagem de rec
 echo "PASS: D7 ausente bloqueia ensaio antes de qualquer migration"
 
 # G) D7 presente mas com erro SQL: a falha nao pode virar zero funcoes desconhecidas.
-mkprod rehearse_bad_d7
+mkprod rehearse_bad_d7; mark rehearse_bad_d7; cp "$ROOT/scripts/isolation-guard.sh" "$D/rehearse_copy/scripts/"
 printf '%s\n' 'select coluna_inexistente from tabela_inexistente;' > "$D/rehearse_copy/docs/CONSULTA_DERIVA_ANTES_DE_APLICAR.sql"
 set +e
 out="$(DATABASE_URL="$(url rehearse_bad_d7)" CONFIRM_ISOLATED=sim bash "$D/rehearse_copy/scripts/rehearse-chain.sh" 2>&1)"
