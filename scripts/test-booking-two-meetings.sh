@@ -97,6 +97,44 @@ begin
     where booking_id=v_id and position=1;
   select id into strict v_m2 from public.booking_meetings
     where booking_id=v_id and position=2;
+  -- Disposable DB only: move booked fixture meetings to yesterday/today so
+  -- ordered start is exercised without bypassing the real date guard.
+  -- Pick free slots dynamically in the disposable DB: earlier test fixtures
+  -- may already occupy fixed hours. Preserve overlap triggers and all grants.
+  with candidates as (
+    select (date_trunc('day',now() at time zone 'America/Fortaleza')
+      - interval '1 day' + make_interval(hours=>h,mins=>17))
+      at time zone 'America/Fortaleza' as st
+    from generate_series(0,21) h
+  )
+  select c.st into strict v_first from candidates c
+  where not exists (
+    select 1 from public.booking_meetings m
+    join public.bookings b on b.id=m.booking_id
+    where m.booking_id<>v_id
+      and b.student_id='00000000-0000-0000-0000-0000000000b2'::uuid
+      and tstzrange(m.starts_at,m.starts_at+make_interval(mins=>m.minutes),'[)')
+          && tstzrange(c.st,c.st+interval '2 hours','[)')
+  )
+  order by c.st limit 1;
+  with candidates as (
+    select (date_trunc('day',now() at time zone 'America/Fortaleza')
+      + make_interval(hours=>h,mins=>17))
+      at time zone 'America/Fortaleza' as st
+    from generate_series(0,21) h
+  )
+  select c.st into strict v_second from candidates c
+  where not exists (
+    select 1 from public.booking_meetings m
+    join public.bookings b on b.id=m.booking_id
+    where m.booking_id<>v_id
+      and b.student_id='00000000-0000-0000-0000-0000000000b2'::uuid
+      and tstzrange(m.starts_at,m.starts_at+make_interval(mins=>m.minutes),'[)')
+          && tstzrange(c.st,c.st+interval '2 hours','[)')
+  )
+  order by c.st limit 1;
+  update public.booking_meetings set starts_at=v_first where id=v_m1;
+  update public.booking_meetings set starts_at=v_second where id=v_m2;
   -- Verify that the assigned instructor can read both meetings and that an
   -- unrelated instructor cannot discover their IDs or scheduled dates via RLS.
   perform set_config('request.jwt.claim.sub','00000000-0000-0000-0000-0000000000a1',true);
@@ -113,7 +151,7 @@ begin
   perform set_config('request.jwt.claim.sub','00000000-0000-0000-0000-0000000000b2',true);
   execute 'set local role authenticated';
   begin
-    perform public.start_meeting(v_m1,v_pin);
+    perform public.start_ordered_meeting(v_m1,v_pin);
     raise exception 'SECURITY: student started instructor meeting';
   exception when no_data_found or insufficient_privilege then null; end;
   begin
@@ -132,7 +170,7 @@ begin
   perform set_config('request.jwt.claim.sub','00000000-0000-0000-0000-0000000000a2',true);
   execute 'set local role authenticated';
   begin
-    perform public.start_meeting(v_m1,v_pin);
+    perform public.start_ordered_meeting(v_m1,v_pin);
     raise exception 'SECURITY: unrelated instructor started meeting';
   exception when no_data_found or insufficient_privilege then null; end;
   begin
@@ -150,24 +188,24 @@ begin
   execute 'set local role authenticated';
   -- Each meeting requires the valid PIN; no recorded minutes above its quota.
   begin
-    perform public.start_meeting(v_m1,case when v_pin='0000' then '0001' else '0000' end);
+    perform public.start_ordered_meeting(v_m1,case when v_pin='0000' then '0001' else '0000' end);
     raise exception 'SECURITY: invalid PIN accepted for first meeting';
-  exception when invalid_parameter_value then null; end;
-  perform public.start_meeting(v_m1,v_pin);
+  exception when invalid_parameter_value or object_not_in_prerequisite_state then null; end;
+  perform public.start_ordered_meeting(v_m1,v_pin);
   begin
     perform public.record_meeting(v_m1,121,'invalid overrun');
     raise exception 'SECURITY: instructor recorded 121 minutes for a 120-minute encounter';
-  exception when invalid_parameter_value then null; end;
+  exception when invalid_parameter_value or object_not_in_prerequisite_state then null; end;
   perform public.record_meeting(v_m1,110,'Controle e segurança: janela de vento');
   begin
-    perform public.start_meeting(v_m2,case when v_pin='0000' then '0001' else '0000' end);
+    perform public.start_ordered_meeting(v_m2,case when v_pin='0000' then '0001' else '0000' end);
     raise exception 'SECURITY: invalid PIN accepted for second meeting';
-  exception when invalid_parameter_value then null; end;
-  perform public.start_meeting(v_m2,v_pin);
+  exception when invalid_parameter_value or object_not_in_prerequisite_state then null; end;
+  perform public.start_ordered_meeting(v_m2,v_pin);
   begin
     perform public.record_meeting(v_m2,121,'invalid second meeting overrun');
     raise exception 'SECURITY: instructor recorded 121 minutes for second 120-minute encounter';
-  exception when invalid_parameter_value then null; end;
+  exception when invalid_parameter_value or object_not_in_prerequisite_state then null; end;
   perform public.record_meeting(v_m2,115,'Water start e primeiros bordos');
   execute 'reset role';
   -- The aggregate alone is insufficient: each lesson must retain its own

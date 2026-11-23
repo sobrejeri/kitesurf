@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
-import { activeBookingStageMeetingIds, activeStudentBookings, bookingIsFinished, selectedStudentBooking, evolutionBookingStatus } from '../src/lib/booking-cycle.ts';
+import { activeBookingStageMeetingIds, activeStudentBookings, bookingBalanceMinutes, bookingIsFinished, selectedStudentBooking, evolutionBookingStatus } from '../src/lib/booking-cycle.ts';
 
 // A meeting entry is a bare status string (one contracted hour, fully recorded
 // when done) or an object carrying its own minutes/done_minutes for balance cases.
@@ -122,6 +122,26 @@ assert.deepEqual(
   ['four-hours-0', 'four-hours-1'],
 );
 console.log('PASS: four-hour package advances across two meetings and retains evolution in history');
+
+// VNT-1008 regression: two 120-minute encounters recorded as 110 + 115
+// must retain 15 contracted minutes without falsely marking the booking complete.
+// This is a pure-data regression, not an authenticated E2E approval.
+const vnt1008Partial = booking('VNT-1008', 'confirmed', dates, [
+  { status: 'done', minutes: 120, done_minutes: 110 },
+  { status: 'done', minutes: 120, done_minutes: 115 },
+], 4);
+assert.equal(bookingBalanceMinutes(vnt1008Partial), 15,
+  '225 recorded minutes out of 240 must leave exactly 15');
+assert.equal(bookingIsFinished(vnt1008Partial), false,
+  'An unfulfilled 15-minute balance must not be silently completed');
+assert.equal(evolutionBookingStatus(vnt1008Partial), 'Saldo a reagendar');
+assert.deepEqual(activeBookingStageMeetingIds(vnt1008Partial),
+  ['VNT-1008-0', 'VNT-1008-1'],
+  'Both recorded encounters must remain visible in student evolution');
+assert.deepEqual(activeStudentBookings([vnt1008Partial]).map((b) => b.id),
+  ['VNT-1008']);
+console.log('PASS: VNT-1008 partial delivery 110 + 115 leaves 15 minutes and preserves both stages');
+
 
 const reservationPage = readFileSync('src/app/aluno/(app)/reserva/[id]/page.tsx', 'utf8');
 const actionsStart = reservationPage.indexOf('<nav aria-label="Ações da reserva"');
