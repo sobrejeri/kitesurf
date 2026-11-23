@@ -47,6 +47,12 @@ begin
   select id into m1 from public.booking_meetings where booking_id = bk and position = 1;
   select presence_code into pin from public.bookings where id = bk;
   update public.booking_meetings set starts_at = now() - interval '5 hours' where id = m1;
+  -- Exercise the exposed RPC with an actual authenticated instructor, not just an ACL introspection.
+  -- The legacy path must reject even a valid presence code; ordered start must still succeed.
+  assert pg_temp.try(format('select public.start_meeting(%L, %L)', m1, pin), a1) like '42501:%',
+    'P0: instructor can invoke legacy starter directly';
+  assert (select status::text from public.booking_meetings where id = m1) = 'scheduled',
+    'legacy RPC denial must leave meeting unchanged';
   assert pg_temp.try(format('select public.start_ordered_meeting(%L, %L)', m1, pin), a1) = 'ok', 'inicio';
   assert pg_temp.try(format('select public.interrupt_meeting(%L, ''Vento forte demais para voar'', 30, 30, array[1], array[]::int[])', m1), a1) = 'ok', 'interrupcao';
 
