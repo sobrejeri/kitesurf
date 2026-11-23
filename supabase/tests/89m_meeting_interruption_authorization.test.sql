@@ -4,14 +4,14 @@
 begin;
 -- #93 P0: redefinition of the legacy starter must never reopen its RPC to clients.
 -- Check effective privileges (including PUBLIC), not just explicit ACL entries.
-do $ begin
+do $$ begin
   assert not has_function_privilege('authenticated', 'public.start_meeting(uuid,text)', 'EXECUTE'),
     'P0: authenticated can bypass the ordered start guard';
   assert not has_function_privilege('anon', 'public.start_meeting(uuid,text)', 'EXECUTE'),
     'P0: anon can execute legacy starter';
   assert has_function_privilege('authenticated', 'public.start_ordered_meeting(uuid,text)', 'EXECUTE'),
     'ordered starter unavailable to instructor';
-end $;
+end $$;
 create function pg_temp.try(q text, who uuid) returns text language plpgsql as $$
 declare st text; msg text;
 begin
