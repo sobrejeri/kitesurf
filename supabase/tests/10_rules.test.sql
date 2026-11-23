@@ -204,19 +204,22 @@ begin
   select bm.id, b.presence_code into m, pcode from public.booking_meetings bm
     join public.bookings b on b.id = bm.booking_id
     where b.id = (select id from public.bookings where code = 'VNT-1001') and bm.position = 1;
+  -- Fixture histórica criada para daqui a 2 dias; início ordenado exige janela de 24h.
+  -- Ajustar somente o encontro desta transação descartável.
+  update public.booking_meetings set starts_at = now() - interval '1 hour' where id = m;
   perform pg_temp.act_as('00000000-0000-0000-0000-0000000000a2');
   begin
-    perform public.start_meeting(m, pcode);
+    perform public.start_ordered_meeting(m, pcode);
     raise exception 'unassigned instructor started a meeting';
   exception when no_data_found then null; end;
   perform pg_temp.reset();
 
   perform pg_temp.act_as('00000000-0000-0000-0000-0000000000a1');
   begin
-    perform public.start_meeting(m, case when pcode = '0000' then '0001' else '0000' end);
+    perform public.start_ordered_meeting(m, case when pcode = '0000' then '0001' else '0000' end);
     raise exception 'wrong presence code accepted';
   exception when invalid_parameter_value then null; end;
-  perform public.start_meeting(m, pcode);
+  perform public.start_ordered_meeting(m, pcode);
   begin
     perform public.record_meeting(m, 500, 'too long');
     raise exception 'recorded more than scheduled';
