@@ -88,8 +88,8 @@ begin
   select id into strict v_m1 from public.booking_meetings where booking_id=v_booking and position=1;
   select id into strict v_m2 from public.booking_meetings where booking_id=v_booking and position=2;
   -- Banco de teste descartável: iniciar encontros na janela de 24h, sem sobreposição.
-  update public.booking_meetings set starts_at = now() - interval '3 hours' where id = v_m1;
-  update public.booking_meetings set starts_at = now() - interval '1 hour' where id = v_m2;
+  update public.booking_meetings set starts_at = now() - interval '20 hours' where id = v_m1;
+  update public.booking_meetings set starts_at = now() - interval '17 hours' where id = v_m2;
   perform set_config('request.jwt.claim.sub',v_instructor::text,true);
   execute 'set local role authenticated';
   perform public.start_ordered_meeting(v_m1,v_pin);
