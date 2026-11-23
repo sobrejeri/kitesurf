@@ -35,6 +35,13 @@ begin
   for n in 1..2 loop   -- n=1: reserva X (F1-F3); n=2: reserva Y (F4-F5), cada uma com o encontro 1 interrompido
     d1 := public.zz_free_slot(3 + (n-1)*30, 40 + (n-1)*30);
     d2 := public.zz_free_slot(((d1 at time zone 'America/Fortaleza')::date - (now() at time zone 'America/Fortaleza')::date) + 3, 120);
+    -- Validar o par completo: disponibilidade individual não garante que
+    -- create_booking aceite os dois encontros juntos.
+    if d1 is null or d2 is null or not public.instructor_can_attend(a1,
+      jsonb_build_array(jsonb_build_object('starts_at',d1,'hours',1),
+                        jsonb_build_object('starts_at',d2,'hours',1))) then
+      raise exception 'FIXTURE: no eligible pair for concurrency booking %', n;
+    end if;
     perform set_config('request.jwt.claim.sub', stu::text, true); execute 'set local role authenticated';
     bk := public.create_booking((select id from public.beaches where slug='jeri'), 'first_time', 'Português',
       jsonb_build_array(jsonb_build_object('starts_at', d1, 'hours', 1), jsonb_build_object('starts_at', d2, 'hours', 1)));
