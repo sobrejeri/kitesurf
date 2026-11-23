@@ -36,12 +36,29 @@ declare
   a1 constant uuid := '00000000-0000-0000-0000-0000000000a1'; a2 constant uuid := '00000000-0000-0000-0000-0000000000a2';
   stu constant uuid := '00000000-0000-0000-0000-0000000000b2'; oth constant uuid := '00000000-0000-0000-0000-0000000000b1';
   v_buf int; d1 timestamptz; d2 timestamptz; bk uuid; m1 uuid; pin text; t timestamptz; r text; n int; rsn text;
+  slot_attempt int; last_slot_error text;
 begin
-  d1 := pg_temp.free_slot(3, 40);
-  d2 := pg_temp.free_slot(((d1 at time zone 'America/Fortaleza')::date - (now() at time zone 'America/Fortaleza')::date) + 3, 120);
+  -- Other disposable SQL fixtures can reserve nearby slots. Retry with distinct
+  -- future days, but only for the known booking-overlap rejection. A failed
+  -- create_booking attempt rolls back its writes via the exception subtransaction.
   perform set_config('request.jwt.claim.sub', stu::text, true); execute 'set local role authenticated';
-  bk := public.create_booking((select id from public.beaches where slug='jeri'), 'first_time', 'Português',
-    jsonb_build_array(jsonb_build_object('starts_at', d1, 'hours', 1), jsonb_build_object('starts_at', d2, 'hours', 1)));
+  for slot_attempt in 0..11 loop
+    d1 := pg_temp.free_slot(3 + slot_attempt * 10, 12 + slot_attempt * 10);
+    if d1 is null then continue; end if;
+    d2 := pg_temp.free_slot(
+      ((d1 at time zone 'America/Fortaleza')::date - (now() at time zone 'America/Fortaleza')::date) + 3,
+      ((d1 at time zone 'America/Fortaleza')::date - (now() at time zone 'America/Fortaleza')::date) + 9);
+    if d2 is null then continue; end if;
+    begin
+      bk := public.create_booking((select id from public.beaches where slug='jeri'), 'first_time', 'Português',
+        jsonb_build_array(jsonb_build_object('starts_at', d1, 'hours', 1), jsonb_build_object('starts_at', d2, 'hours', 1)));
+      exit;
+    exception when raise_exception then
+      get stacked diagnostics last_slot_error = message_text;
+      if last_slot_error <> 'Overlapping meetings' then raise; end if;
+    end;
+  end loop;
+  assert bk is not null, 'No non-overlapping fixture slot found in bounded search';
   perform public.simulate_test_payment(bk, 'pix', 'approved');
   execute 'reset role';
   select id into m1 from public.booking_meetings where booking_id = bk and position = 1;
