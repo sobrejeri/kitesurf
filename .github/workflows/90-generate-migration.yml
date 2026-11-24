@@ -1,0 +1,37 @@
+name: Generate #90 migration candidate (isolated)
+on:
+  push:
+    branches: ['draft/90-queue-civil-day-db-guard']
+permissions:
+  contents: read
+jobs:
+  generate:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - name: Generate official migration filename and checksum locally
+        shell: bash
+        run: |
+          set -euo pipefail
+          tmp="$(mktemp -d)"
+          trap 'rm -rf "$tmp"' EXIT
+          curl --fail --silent --show-error --location --max-time 90 \
+            https://github.com/supabase/cli/releases/download/v2.122.1/supabase_2.122.1_linux_amd64.tar.gz \
+            -o "$tmp/cli.tar.gz"
+          echo "3e54b98e5ead7be0a3b0753526833d4cc9a55304e4d57da0d72f1efc342738ea  $tmp/cli.tar.gz" | sha256sum -c -
+          tar -xzf "$tmp/cli.tar.gz" -C "$tmp" supabase
+          "$tmp/supabase" --version
+          "$tmp/supabase" migration new --help
+          mkdir "$tmp/project"
+          cd "$tmp/project"
+          "$tmp/supabase" init
+          "$tmp/supabase" migration new guard_request_distinct_civil_days
+          mapfile -t files < <(find supabase/migrations -maxdepth 1 -type f -name '*_guard_request_distinct_civil_days.sql')
+          test "${#files[@]}" -eq 1
+          cp "$GITHUB_WORKSPACE/supabase/reconciliation/90_request_distinct_civil_days.proposed.sql" "${files[0]}"
+          echo "CANDIDATE_MIGRATION=${files[0]}"
+          sha256sum "${files[0]}"
+          # No linked project, no credentials, no remote database connection.
