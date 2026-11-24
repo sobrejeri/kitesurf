@@ -148,9 +148,8 @@ begin
 end $$;
 SQL
 
-# #90: rehearse the candidate ONLY after the canonical overload reconciliation,
-# on the historical fixture, before dump/restore. Never target a remote database.
-"${QA[@]}" -f "$ROOT/supabase/reconciliation/90_request_distinct_civil_days.proposed.sql"
+# #90: the migration loop already applied the canonical guard after overload reconciliation.
+# Assert on the historical fixture before dump/restore; never target a remote database.
 "${QA[@]}" -f "$ROOT/supabase/reconciliation/90_request_distinct_civil_days.test.sql"
 [ "$(data_snapshot "${SA[@]}")" = "$after" ] || { echo "Proposta #90 alterou reservas existentes" >&2; exit 1; }
 

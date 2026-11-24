@@ -2,6 +2,7 @@ name: Generate #90 migration candidate (isolated)
 on:
   push:
     branches: ['draft/90-queue-civil-day-db-guard']
+    paths: ['.github/workflows/90-generate-migration.yml']
 permissions:
   contents: read
 jobs:

@@ -81,6 +81,5 @@ bash "$ROOT/scripts/test-prod-like-queue.sh"
 # O script de ensaio da cadeia (scripts/rehearse-chain.sh) no estado real do projeto: feliz, recusa por ajuste manual e parada no primeiro erro.
 bash "$ROOT/scripts/test-rehearse-chain.sh"
 
-# #90 draft-only: exercise proposed SQL against the disposable database, never remote.
-"${PSQL[@]}" -f "$ROOT/supabase/reconciliation/90_request_distinct_civil_days.proposed.sql"
+# #90: test the migration already loaded by the standard disposable migration loop.
 "${PSQL[@]}" -f "$ROOT/supabase/reconciliation/90_request_distinct_civil_days.test.sql"
