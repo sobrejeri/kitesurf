@@ -66,6 +66,7 @@ required=(
   20261120100000_confirm_payment_lock_order.sql
   20261120110000_simulate_test_payment_canonical_lock_order.sql
   20261120120000_meeting_start_24h_window.sql
+  20261121120000_meeting_interruption_resume.sql
 )
 if [ "${INCLUDE_PREFERRED:-0}" = "1" ]; then
   required+=(20261113000043_preferred_instructor_availability.sql 20261114002000_fix_preferred_instructor_availability.sql)
@@ -115,6 +116,9 @@ step 20261120110000_simulate_test_payment_canonical_lock_order.sql \
 step 20261120120000_meeting_start_24h_window.sql \
   "select position('24 hours' in pg_get_functiondef('public.start_ordered_meeting(uuid,text)'::regprocedure)) > 0 and has_function_privilege('authenticated', 'public.start_ordered_meeting(uuid,text)'::regprocedure, 'EXECUTE') and not has_function_privilege('anon', 'public.start_ordered_meeting(uuid,text)'::regprocedure, 'EXECUTE')" \
   "início do encontro liberado até 24h antes do horário (decisão do responsável); permissões mantidas (só na #303)"
+step 20261121120000_meeting_interruption_resume.sql \
+  "select to_regprocedure('public.interrupt_meeting(uuid,text,integer,integer,integer[],integer[])') is not null and to_regprocedure('public.schedule_meeting_resume(uuid,timestamptz)') is not null and to_regprocedure('public.complete_meeting_with_skills(uuid,integer,integer[],integer[])') is not null and not has_function_privilege('anon', 'public.interrupt_meeting(uuid,text,integer,integer,integer[],integer[])'::regprocedure, 'EXECUTE') and has_function_privilege('authenticated', 'public.interrupt_meeting(uuid,text,integer,integer,integer[],integer[])'::regprocedure, 'EXECUTE') and not has_function_privilege('authenticated', 'public.save_meeting_steps(uuid,integer[],integer[])'::regprocedure, 'EXECUTE') and (select count(*) from public.booking_meetings where interruption_count > 0) = 0" \
+  "interrupção/retomada por aula (#93 etapa 1): funções criadas e fechadas ao anon, internos fechados, nenhum encontro existente alterado"
 
 # ---- 2. conferência final (cada checagem separada; qualquer falso para) ----
 echo "== Conferência final"
