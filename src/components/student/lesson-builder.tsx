@@ -8,7 +8,7 @@ import { LEVEL_LABELS, type Beach, type LessonLevel, type QuoteRow } from '@/lib
 import { allowedLessonLevels, KITE_CURRICULA, KITE_LEVEL_BADGES } from '@/lib/kite-steps';
 import { formatMoney, LESSON_UTC_OFFSET } from '@/lib/format';
 import { levelQuote } from '@/lib/level-prices';
-import { hasBookingLeadTime, hasScheduleConflict, type StudentTimeSlot } from '@/lib/student-schedule';
+import { hasBookingLeadTime, hasRepeatedMeetingDay, hasScheduleConflict, type StudentTimeSlot } from '@/lib/student-schedule';
 import { VALIDATION_WITHOUT_CHECKOUT } from '@/lib/booking-mode';
 
 import { Icon, type IconName } from '../icon';
@@ -142,6 +142,7 @@ export function LessonBuilder({
       return aStart < bStart + b.hours * 3600000 && bStart < aEnd;
     });
   });
+  const repeatedMeetingDay = hasRepeatedMeetingDay(meetings.map((meeting) => meeting.date));
   const hoursFullyDistributed = remainingHours === 0;
   const proposedSlots = meetings.map((meeting) => ({
     startsAt: `${meeting.date}T${meeting.start}:00-03:00`, minutes: meeting.hours * 60,
@@ -149,7 +150,7 @@ export function LessonBuilder({
   const existingConflict = proposedSlots.some((slot) => hasScheduleConflict([slot], occupiedSlots));
   const canAddMeeting = meetings.length < selectedHours &&
     (remainingHours > 0 || meetings.some((meeting) => meeting.hours > 1));
-  const valid = hoursFullyDistributed && Boolean(beachId) && datesValid && !meetingsOverlap && !existingConflict && allowed.includes(level);
+  const valid = hoursFullyDistributed && Boolean(beachId) && datesValid && !repeatedMeetingDay && !meetingsOverlap && !existingConflict && allowed.includes(level);
 
   function changePackageHours(hours: number) {
     if (!Number.isInteger(hours) || hours < meetings.length || hours > 8) return;
@@ -467,6 +468,11 @@ export function LessonBuilder({
                 </p>
               </div>
               {!datesValid ? <p role="alert" className="mt-3 text-[12px] text-warning">Escolha um horário com pelo menos uma hora de antecedência para cada encontro.</p> : null}
+              {repeatedMeetingDay && datesValid ? (
+                <p role="alert" className="mt-3 text-[12px] text-warning">
+                  Escolha apenas um encontro por dia. Distribua as horas em datas diferentes.
+                </p>
+              ) : null}
               {meetingsOverlap ? (
                 <p role="alert" className="mt-3 text-[12px] text-warning">
                   Você colocou dois encontros no mesmo horário. Ajuste a data ou o início de uma das aulas para continuar.
