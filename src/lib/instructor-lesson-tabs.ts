@@ -24,6 +24,14 @@ export function groupInstructorLessons(bookings: readonly Booking[]): LessonGrou
   return groups;
 }
 
+/** Dashboard: active classes first, then future classes. Keep overdue records separate. */
+export function instructorTodayLessons(groups: LessonGroups, now: number) {
+  return {
+    upcoming: [...groups.andamento, ...groups.proximas.filter(({ meeting }) => Date.parse(meeting.starts_at) >= now)],
+    overdue: groups.proximas.filter(({ meeting }) => Date.parse(meeting.starts_at) < now),
+  };
+}
+
 /** Past scheduled lessons remain accessible for recording. */
 export function nextScheduledInstructorLesson(groups: LessonGroups, now: number) {
   return groups.proximas.find(({ meeting }) => Date.parse(meeting.starts_at) >= now);

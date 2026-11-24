@@ -119,6 +119,7 @@ export function InstructorTodayView({
   position,
   queueSize,
   upcoming,
+  overdueCount = 0,
   doneMinutes,
   expectedNet,
 }: {
@@ -129,6 +130,7 @@ export function InstructorTodayView({
   position: number;
   queueSize: number;
   upcoming: readonly TodayEntry[];
+  overdueCount?: number;
   doneMinutes: number;
   expectedNet: number;
 }) {
@@ -142,6 +144,12 @@ export function InstructorTodayView({
         <QueueCard status={status} position={position} queueSize={queueSize} />
       </div>
 
+      {overdueCount > 0 ? (
+        <Note tone="warning" className="mt-4" title="Encontros com horário passado">
+          {overdueCount} {overdueCount === 1 ? 'encontro agendado com início já passado' : 'encontros agendados com início já passado'}.{' '}
+          <Link href="/instrutor/aula?aba=proximas" className="font-semibold underline">Conferir aulas pendentes</Link>
+        </Note>
+      ) : null}
       <div className="mt-4 grid grid-cols-2 gap-3 lg:grid-cols-3 lg:gap-4">
         <Metric label="Aulas agendadas" value={String(upcoming.length)} hint="Próximos encontros" icon="calendar" tone="blue" />
         <Metric label="Horas realizadas" value={formatMinutes(doneMinutes)} hint="Tempo registrado" icon="clock" tone="sky" />

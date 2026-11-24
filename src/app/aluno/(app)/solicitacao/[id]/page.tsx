@@ -3,6 +3,7 @@ import { DesktopPageHeader } from '@/components/student/desktop-page-header';
 import { notFound } from 'next/navigation';
 
 import { RequestPoller } from '@/components/student/request-poller';
+import { visibleRequestStatus } from '@/lib/request-status';
 import { respondToSuggestedDate } from '@/app/actions/suggestions';
 import { ActionForm } from '@/components/action-form';
 import { formatDateLong, formatTime } from '@/lib/format';
@@ -40,7 +41,8 @@ export default async function InstructorRequestPage({ params }: { params: Promis
   if (!request) notFound();
   const quoted = await db.rpc('my_instructor_request_quote', { p_request_id: request.id });
   const quote = !quoted.error ? quoted.data?.[0] as { total_cents: number } | undefined : undefined;
-  const { data: suggestion } = request.status === 'searching'
+  const status = visibleRequestStatus(request.status, request.expires_at, Date.now());
+  const { data: suggestion } = status === 'searching'
     ? await db.rpc('read_my_offer_suggestion', { p_request_id: request.id })
     : { data: null };
   interface SuggestedMeeting { starts_at: string; hours: number }
@@ -48,18 +50,18 @@ export default async function InstructorRequestPage({ params }: { params: Promis
   const proposed = suggestion && typeof suggestion === 'object' &&
     'id' in suggestion && 'meetings' in suggestion
       ? suggestion as Suggestion : null;
-  const accepted = request.status === 'accepted' && Boolean(request.booking_id);
-  const searching = request.status === 'searching';
-  const cancelled = request.status === 'cancelled';
+  const accepted = status === 'accepted' && Boolean(request.booking_id);
+  const searching = status === 'searching';
+  const cancelled = status === 'cancelled';
   const title = {
     accepted: 'Instrutor encontrado!',
     searching: 'Procurando seu instrutor',
     expired: 'Prazo da busca encerrado',
     cancelled: 'Solicitação cancelada',
-  }[request.status];
+  }[status];
   const subtitle = accepted
     ? 'Consulte os horários e a situação da sua aula na reserva.'
-    : searching ? 'Sua proposta foi enviada aos instrutores compatíveis.' : 'Você pode escolher novos horários.';
+    : searching ? 'Estamos verificando se há um instrutor disponível para todos os encontros.' : 'Você pode escolher novos horários.';
   return (
     <div className="vento-pc-secondary-page vento-pc-request-screen vento-mobile-appbar-clearance">
       <DesktopPageHeader eyebrow="SUA SOLICITAÇÃO" title={title} lead={subtitle} icon="users" backHref="/aluno/aulas" variant="coast"/>
@@ -80,7 +82,7 @@ export default async function InstructorRequestPage({ params }: { params: Promis
           <ButtonLink href={'/aluno/reserva/' + request.booking_id} className="mt-5 w-full">
             Ver minha reserva
           </ButtonLink>
-        ) : request.status === 'searching' ? (
+        ) : searching ? (
           <>
             {proposed ? (
               <div className="mt-4 rounded-xl border border-brand p-4">
@@ -106,11 +108,9 @@ export default async function InstructorRequestPage({ params }: { params: Promis
               </div>
             ) : null}
             {request.preferred_instructor_id ? <Note className="mt-3">
-              O instrutor escolhido recebeu prioridade. Caso recuse ou não responda, outro profissional da fila poderá atender.
+              O instrutor escolhido tem prioridade na busca. Se não puder atender, outro profissional compatível da fila poderá receber a proposta.
             </Note> : null}
-            <Note className="mt-5">Cada instrutor tem até 2 minutos para responder.
-              A busca dura até 6 minutos. Se não houver aceite, você poderá tentar novos horários.</Note>
-            <RequestPoller requestId={request.id}/>
+            <Note className="mt-5">A proposta só é encaminhada a um instrutor compatível com a reserva e as regras da fila. Se nenhum estiver disponível para todos os horários, tente outras datas. Cada instrutor tem até 2 minutos para responder; a busca dura até 6 minutos.</Note>
           </>
         ) : (
           <>
@@ -118,6 +118,7 @@ export default async function InstructorRequestPage({ params }: { params: Promis
             <ButtonLink href="/aluno/reservar" className="mt-4">Escolher outros horários</ButtonLink>
           </>
         )}
+        {request.status === 'searching' ? <RequestPoller requestId={request.id}/> : null}
       </Card>
       </div>
     </div>
