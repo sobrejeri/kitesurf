@@ -18,7 +18,14 @@ export type InterruptionState = 'awaiting_resume' | 'resume_scheduled' | 'resume
 
 /** Restante possível: de 1 minuto até (previsto − já ministrado). Quando não sobra nada, a aula deve ser concluída normalmente. */
 export function remainingBounds(plannedMinutes: number, previousDone: number, doneNow: number): { min: number; max: number; canInterrupt: boolean } {
-  const max = Math.max(0, Math.trunc(plannedMinutes) - Math.trunc(previousDone) - Math.trunc(doneNow));
+  // Invalid or inconsistent counters must not enable the interruption form.
+  // The database remains authoritative; this protects the client-side bounds.
+  const values = [plannedMinutes, previousDone, doneNow];
+  if (values.some((value) => !Number.isSafeInteger(value) || value < 0)
+    || plannedMinutes === 0 || previousDone + doneNow > plannedMinutes) {
+    return { min: 1, max: 0, canInterrupt: false };
+  }
+  const max = plannedMinutes - previousDone - doneNow;
   return { min: 1, max, canInterrupt: max >= 1 };
 }
 
