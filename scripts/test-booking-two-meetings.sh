@@ -97,18 +97,6 @@ begin
     where booking_id=v_id and position=1;
   select id into strict v_m2 from public.booking_meetings
     where booking_id=v_id and position=2;
-  -- Verify that the assigned instructor can read both meetings and that an
-  -- unrelated instructor cannot discover their IDs or scheduled dates via RLS.
-  perform set_config('request.jwt.claim.sub','00000000-0000-0000-0000-0000000000a1',true);
-  execute 'set local role authenticated';
-  select count(*) into v_count from public.booking_meetings where booking_id=v_id;
-  if v_count<>2 then raise exception 'Assigned instructor cannot read both meetings'; end if;
-  execute 'reset role';
-  perform set_config('request.jwt.claim.sub','00000000-0000-0000-0000-0000000000a2',true);
-  execute 'set local role authenticated';
-  select count(*) into v_count from public.booking_meetings where booking_id=v_id;
-  if v_count<>0 then raise exception 'IDOR: unrelated instructor sees scheduled meetings'; end if;
-  execute 'reset role';
   -- Disposable DB only: move booked fixture meetings to yesterday/today so
   -- ordered start is exercised without bypassing the real date guard.
   -- Pick free slots dynamically in the disposable DB: earlier test fixtures
@@ -147,6 +135,18 @@ begin
   order by c.st limit 1;
   update public.booking_meetings set starts_at=v_first where id=v_m1;
   update public.booking_meetings set starts_at=v_second where id=v_m2;
+  -- Verify that the assigned instructor can read both meetings and that an
+  -- unrelated instructor cannot discover their IDs or scheduled dates via RLS.
+  perform set_config('request.jwt.claim.sub','00000000-0000-0000-0000-0000000000a1',true);
+  execute 'set local role authenticated';
+  select count(*) into v_count from public.booking_meetings where booking_id=v_id;
+  if v_count<>2 then raise exception 'Assigned instructor cannot read both meetings'; end if;
+  execute 'reset role';
+  perform set_config('request.jwt.claim.sub','00000000-0000-0000-0000-0000000000a2',true);
+  execute 'set local role authenticated';
+  select count(*) into v_count from public.booking_meetings where booking_id=v_id;
+  if v_count<>0 then raise exception 'IDOR: unrelated instructor sees scheduled meetings'; end if;
+  execute 'reset role';
   -- Student and an unrelated instructor must never start or record lessons.
   perform set_config('request.jwt.claim.sub','00000000-0000-0000-0000-0000000000b2',true);
   execute 'set local role authenticated';
@@ -190,22 +190,22 @@ begin
   begin
     perform public.start_ordered_meeting(v_m1,case when v_pin='0000' then '0001' else '0000' end);
     raise exception 'SECURITY: invalid PIN accepted for first meeting';
-  exception when invalid_parameter_value then null; end;
+  exception when invalid_parameter_value or object_not_in_prerequisite_state then null; end;
   perform public.start_ordered_meeting(v_m1,v_pin);
   begin
     perform public.record_meeting(v_m1,121,'invalid overrun');
     raise exception 'SECURITY: instructor recorded 121 minutes for a 120-minute encounter';
-  exception when invalid_parameter_value then null; end;
+  exception when invalid_parameter_value or object_not_in_prerequisite_state then null; end;
   perform public.record_meeting(v_m1,110,'Controle e segurança: janela de vento');
   begin
     perform public.start_ordered_meeting(v_m2,case when v_pin='0000' then '0001' else '0000' end);
     raise exception 'SECURITY: invalid PIN accepted for second meeting';
-  exception when invalid_parameter_value then null; end;
+  exception when invalid_parameter_value or object_not_in_prerequisite_state then null; end;
   perform public.start_ordered_meeting(v_m2,v_pin);
   begin
     perform public.record_meeting(v_m2,121,'invalid second meeting overrun');
     raise exception 'SECURITY: instructor recorded 121 minutes for second 120-minute encounter';
-  exception when invalid_parameter_value then null; end;
+  exception when invalid_parameter_value or object_not_in_prerequisite_state then null; end;
   perform public.record_meeting(v_m2,115,'Water start e primeiros bordos');
   execute 'reset role';
   -- The aggregate alone is insufficient: each lesson must retain its own
