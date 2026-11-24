@@ -29,16 +29,18 @@ begin
   select id, starts_at into v_second, v_original
   from public.booking_meetings where booking_id=v_booking
   order by position offset 1 limit 1;
-  -- Os dados semeados podem estar no passado. Fixar dois horários futuros
-  -- distintos nesta transação descartável para exercitar o conflito real,
-  -- não a validação de antecedência mínima de create_booking.
-  v_start := now() + interval '60 days';
-  v_original := now() + interval '62 days';
-  update public.booking_meetings set starts_at = v_start where id = v_first;
-  update public.booking_meetings set starts_at = v_original where id = v_second;
   if v_first = v_second or v_start = v_original then
     raise exception 'P0 fixture must have distinct meetings and times';
   end if;
+
+  -- The seeded booking may be in the past relative to CI execution. Move only
+  -- these disposable test rows into a future booking window so create_booking
+  -- reaches the overlap guard instead of failing its minimum-start validation.
+  -- The enclosing transaction is rolled back at the end of this test.
+  v_start := date_trunc('day', now() + interval '14 days') + interval '12 hours';
+  v_original := v_start + interval '2 days';
+  update public.booking_meetings set starts_at=v_start where id=v_first;
+  update public.booking_meetings set starts_at=v_original where id=v_second;
 
   -- Same student, same booking, two active meetings: must reject the UPDATE.
   begin
