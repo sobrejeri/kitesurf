@@ -11,6 +11,11 @@ DECLARE
   before_meetings bigint;
   msg text;
 BEGIN
+  ASSERT NOT (SELECT prosecdef FROM pg_proc WHERE oid='public.create_booking(uuid,public.lesson_level,text,jsonb,text)'::regprocedure), 'legacy delegate must remain SECURITY INVOKER';
+  ASSERT (SELECT pronargdefaults FROM pg_proc WHERE oid='public.create_booking(uuid,public.lesson_level,text,jsonb,text,boolean)'::regprocedure)=0, 'canonical overload has no defaults';
+  ASSERT NOT has_function_privilege('anon','public.create_booking(uuid,public.lesson_level,text,jsonb,text)','EXECUTE'), 'anon denied legacy';
+  ASSERT NOT has_function_privilege('anon','public.create_booking(uuid,public.lesson_level,text,jsonb,text,boolean)','EXECUTE'), 'anon denied canonical';
+  ASSERT NOT has_function_privilege('authenticated','public.guard_request_distinct_civil_days()','EXECUTE'), 'trigger not directly executable';
   SELECT id INTO STRICT beach FROM public.beaches WHERE slug='prea';
   d := (date_trunc('day', now() AT TIME ZONE 'America/Fortaleza') + interval '30 days 9 hours') AT TIME ZONE 'America/Fortaleza';
   slots := jsonb_build_array(jsonb_build_object('starts_at',d,'hours',1),

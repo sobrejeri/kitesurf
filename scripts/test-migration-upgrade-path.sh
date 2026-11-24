@@ -148,6 +148,12 @@ begin
 end $$;
 SQL
 
+# #90: rehearse the candidate ONLY after the canonical overload reconciliation,
+# on the historical fixture, before dump/restore. Never target a remote database.
+"${QA[@]}" -f "$ROOT/supabase/reconciliation/90_request_distinct_civil_days.proposed.sql"
+"${QA[@]}" -f "$ROOT/supabase/reconciliation/90_request_distinct_civil_days.test.sql"
+[ "$(data_snapshot "${SA[@]}")" = "$after" ] || { echo "Proposta #90 alterou reservas existentes" >&2; exit 1; }
+
 # ---- 4. backup e restauração ----
 DUMP="$A/backup.dump"
 "$PG_BIN/pg_dump" -h "$A" -p "$PA" -U postgres -d postgres -Fc --no-owner -f "$DUMP"
@@ -179,5 +185,10 @@ fi
 [ "$(data_snapshot "${SB[@]}")" = "$after" ] || { echo "Dados de reserva do banco restaurado diferem do original" >&2; exit 1; }
 # O banco restaurado funciona: a RPC resolve e o gatilho de sobreposição do aluno existe.
 "${SB[@]}" -c "select 1 from pg_trigger where tgname = 'guard_student_meeting_overlap_insert_update' and not tgisinternal" | grep -q 1 || { echo "gatilho do aluno ausente após restauração" >&2; exit 1; }
+
+# Recheck the guard on the restored database, not merely its presence in the dump.
+"${QB[@]}" -f "$ROOT/supabase/reconciliation/90_request_distinct_civil_days.test.sql"
+[ "$(data_snapshot "${SB[@]}")" = "$after" ] || { echo "Regressão #90 alterou os dados restaurados" >&2; exit 1; }
+echo "PASS: #90 civil-day guard preserves historical reservations before and after isolated restore"
 
 echo "PASS: atualização por cima de um ambiente com a original aplicada (${applied} migrations novas, ${nb} reservas preservadas), create_booking sem ambiguidade, permissões por papel e backup/restauração idênticos"

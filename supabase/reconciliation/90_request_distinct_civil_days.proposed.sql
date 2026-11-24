@@ -198,7 +198,7 @@ GRANT EXECUTE ON FUNCTION public.create_booking(uuid,public.lesson_level,text,js
 CREATE OR REPLACE FUNCTION public.create_booking(
   p_beach_id uuid, p_level public.lesson_level, p_language text,
   p_meetings jsonb, p_partner_code text DEFAULT NULL
-) RETURNS uuid LANGUAGE plpgsql SECURITY DEFINER SET search_path = '' AS $legacy_booking_guard$
+) RETURNS uuid LANGUAGE plpgsql SECURITY INVOKER SET search_path = '' AS $legacy_booking_guard$
 BEGIN
   RETURN public.create_booking(p_beach_id, p_level, p_language, p_meetings, p_partner_code, false);
 END;
