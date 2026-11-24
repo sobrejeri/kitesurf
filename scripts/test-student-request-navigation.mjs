@@ -2,6 +2,7 @@ import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 import { isActive } from '../src/lib/navigation-state.ts';
 import { studentSafeBackHref } from '../src/lib/student-safe-back.ts';
+import { visibleRequestStatus } from '../src/lib/request-status.ts';
 
 const REQUEST = '/aluno/solicitacao/7f0c1d2e-3a4b-4c5d-8e9f-001122334455';
 assert.equal(studentSafeBackHref(REQUEST), '/aluno/aulas');
@@ -24,14 +25,14 @@ const page = readFileSync('src/app/aluno/(app)/solicitacao/[id]/page.tsx', 'utf8
 assert.match(page, /backHref="\/aluno\/aulas"/);
 console.log('PASS: request page safe back and active navigation');
 
-// The phone and desktop headings must both reflect the persisted request status.
+// Both headings use the effective deadline-aware status.
 for (const [status, title] of Object.entries({
   expired: 'Prazo da busca encerrado', cancelled: 'Solicitação cancelada',
   searching: 'Procurando seu instrutor', accepted: 'Instrutor encontrado!',
 })) {
   assert.ok(page.includes(status + ": '" + title + "'"));
 }
-assert.match(page, /\}\[request\.status\]/);
+assert.match(page, /\}\[status\]/);
 assert.match(page, /<DesktopPageHeader[^>]*title=\{title\}/);
 assert.match(page, /<StudentPageTitle title=\{title\}/);
 console.log('PASS: both request headers use the persisted search status');
@@ -39,3 +40,16 @@ console.log('PASS: both request headers use the persisted search status');
 assert.match(page, /<ButtonLink href=\{'\/aluno\/reserva\/' \+ request\.booking_id\}[^>]*>\s*Ver minha reserva\s*<\/ButtonLink>/);
 assert.doesNotMatch(page, /Ver e confirmar minha aula|Agora é só concluir o pagamento de teste|Confira a reserva e confirme/);
 console.log('PASS: accepted requests link to the booking without prompting for a second confirmation');
+
+const expiry = '2026-11-24T12:04:28Z';
+const deadline = Date.parse(expiry);
+assert.equal(visibleRequestStatus('searching', expiry, deadline - 1), 'searching');
+assert.equal(visibleRequestStatus('searching', expiry, deadline), 'expired');
+assert.equal(visibleRequestStatus('searching', expiry, deadline + 1), 'expired');
+for (const status of ['accepted','cancelled','expired']) assert.equal(visibleRequestStatus(status, expiry, deadline + 1), status);
+assert.doesNotMatch(page, /Sua proposta foi enviada aos instrutores compatíveis/);
+assert.match(page, /request.status === 'searching' \? <RequestPoller/);
+const poller = readFileSync('src/components/student/request-poller.tsx', 'utf8');
+assert.match(poller, /poll\(\);\s*document.addEventListener\('visibilitychange', poll\)/);
+assert.match(poller, /removeEventListener\('visibilitychange', poll\)/);
+console.log('PASS: deadline-aware request status and immediate/resume polling');

@@ -370,7 +370,7 @@ export function LessonBuilder({
               <SectionHead icon="calendar" title="Seus encontros" aside={<span className="text-[12px] text-muted">Mesmo instrutor</span>} />
               <p className="mt-3 text-[13px] leading-relaxed text-muted">
                 Você escolheu <strong className="text-ink">{selectedHours}h de aula</strong>. Divida esse total entre
-                um ou mais encontros, em dias diferentes se preferir.
+                um ou mais encontros, com apenas um encontro por dia.
               </p>
               <ul className="mt-4 grid gap-3">
                 {meetings.map((meeting, index) => {
@@ -543,7 +543,7 @@ export function LessonBuilder({
                       </span>
                       <Icon name="check" className="!h-[17px] !w-[17px] text-[#00e1ec]" />
                     </div>
-                    <dl className="mt-3 grid grid-cols-3 gap-2">
+                    <dl className="mt-3 grid grid-cols-[minmax(0,1.4fr)_minmax(0,1fr)_minmax(0,1fr)] gap-2">
                       <ReviewDetail
                         icon="calendar"
                         label="Data"

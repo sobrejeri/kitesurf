@@ -1,6 +1,7 @@
 import assert from 'node:assert/strict';
 import {
   groupInstructorLessons,
+  instructorTodayLessons,
   nextScheduledInstructorLesson,
   resolveInstructorLessonTab,
   selectInstructorLesson,
@@ -80,3 +81,9 @@ assert.equal(nextScheduledInstructorLesson(groups, start)?.meeting.id, 'A-2');
 assert.equal(nextScheduledInstructorLesson(groups, start + 1)?.meeting.id, 'A-3');
 assert.equal(nextScheduledInstructorLesson(groups, Date.parse('2026-11-10')), undefined);
 console.log('PASS: the next lesson skips overdue unrecorded meetings and includes the exact start');
+
+const dashboard = instructorTodayLessons(groups, Date.parse('2026-11-05T14:00:00Z'));
+assert.deepEqual(dashboard.upcoming.map(({meeting})=>meeting.id), ['B-1','A-2','A-3']);
+assert.deepEqual(dashboard.overdue.map(({meeting})=>meeting.id), ['C-1']);
+assert.equal(instructorTodayLessons(groups, Date.parse('2026-11-10')).upcoming.length, 1, 'Only in-progress class remains after all scheduled starts');
+console.log('PASS: instructor dashboard prioritizes active/future lessons and preserves overdue access');
