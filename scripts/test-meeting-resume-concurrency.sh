@@ -34,7 +34,30 @@ declare a1 constant uuid := '00000000-0000-0000-0000-0000000000a1'; stu constant
 begin
   for n in 1..2 loop   -- n=1: reserva X (F1-F3); n=2: reserva Y (F4-F5), cada uma com o encontro 1 interrompido
     d1 := public.zz_free_slot(3 + (n-1)*30, 40 + (n-1)*30);
-    d2 := public.zz_free_slot(((d1 at time zone 'America/Fortaleza')::date - (now() at time zone 'America/Fortaleza')::date) + 3, 120);
+    -- Buscar o segundo horário que seja válido COM o primeiro, não apenas isoladamente.
+    select candidate.st into d2
+      from (
+        select (date_trunc('day', now() at time zone 'America/Fortaleza')
+                  + make_interval(days => day_offset, hours => hour_offset))
+                  at time zone 'America/Fortaleza' as st
+          from generate_series(
+            ((d1 at time zone 'America/Fortaleza')::date
+              - (now() at time zone 'America/Fortaleza')::date) + 3, 120) day_offset
+          cross join generate_series(8, 10) hour_offset
+      ) candidate
+     where d1 is not null
+       and public.instructor_can_attend(a1,
+         jsonb_build_array(jsonb_build_object('starts_at',d1,'hours',1),
+                           jsonb_build_object('starts_at',candidate.st,'hours',1)))
+       and not exists (
+         select 1 from public.booking_meetings m
+         join public.bookings b on b.id=m.booking_id
+         where b.student_id=stu and m.status::text <> 'cancelled'
+           and b.status::text in ('confirmed','awaiting_payment')
+           and tstzrange(m.starts_at,m.starts_at+make_interval(mins=>m.minutes),'[)')
+               && tstzrange(candidate.st,candidate.st+interval '1 hour','[)')
+       )
+     order by candidate.st limit 1;
     -- Validar o par completo: disponibilidade individual não garante que
     -- create_booking aceite os dois encontros juntos.
     if d1 is null or d2 is null or not public.instructor_can_attend(a1,
