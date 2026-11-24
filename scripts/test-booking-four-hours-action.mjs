@@ -13,6 +13,11 @@ vm.runInNewContext(transpile(readFileSync(new URL('../src/lib/student-schedule.t
   module: schedule, exports: schedule.exports, require: () => { throw new Error('Unexpected schedule import'); }, Date,
 });
 
+const levels = { exports: {} };
+vm.runInNewContext(transpile(readFileSync(new URL('../src/lib/kite-steps.ts', import.meta.url), 'utf8')), {
+  module: levels, exports: levels.exports, require: () => { throw new Error('Unexpected level import'); },
+});
+
 const calls = [];
 let occupied = [];
 let occupiedError = false;
@@ -21,6 +26,8 @@ let preferredRpcMissing = false;
 let legacyRpcError = null;
 let rpcResult;
 let viewerRole = 'student';
+let studentLevel = 'first_time';
+let levelReady = true;
 const requestId = '22222222-2222-4222-8222-222222222222';
 rpcResult = requestId;
 const beachId = '11111111-1111-4111-8111-111111111111';
@@ -44,9 +51,9 @@ const deps = {
   } },
   '@/lib/dates': { lessonDate() { return '2026-11-13'; } },
   '@/lib/student-kite-level': { async getStudentKiteLevel() {
-    return { effective: 'first_time', ready: true };
+    return { effective: studentLevel, ready: levelReady };
   } },
-  '@/lib/kite-steps': { isAllowedLessonLevel() { return true; } },
+  '@/lib/kite-steps': levels.exports,
   '@/lib/format': { LESSON_UTC_OFFSET: '-03:00' },
   '@/lib/supabase/server': { async createSupabaseServerClient() { return db; } },
   '@/lib/student-occupied-slots': { async getStudentOccupiedSlots() { if (occupiedError) throw new Error('Occupied lookup unavailable'); return occupied; } },
@@ -193,3 +200,31 @@ assert.equal(calls.length, beforeOrdinaryError + 1);
 console.log('PASS: booking negative cases (invalid hours/time/date/instructor, RPC error, role guard)');
 
 console.log('PASS: real student booking action validates 4h/2 dates, hours, civil days and occupied slots before queue RPC (isolated mocks)');
+
+// #90: package sizes, actual level policy and server-derived financial fields.
+viewerRole = 'student';
+for (const [hours, split] of [[1, [1]], [2, [2]], [4, [2, 2]], [6, [2, 2, 2]], [8, [4, 4]]]) {
+  const allocation = split.map((h, i) => ({ date: '2026-11-' + (20 + i * 2), start: '09:00', hours: h }));
+  const before = calls.length;
+  await assert.rejects(() => create({}, form({ meetings: JSON.stringify(allocation), expectedHours: String(hours),
+    language: 'Inglês', totalCents: '1', hourlyRateCents: '1', instructorNetCents: '1' })), /REDIRECT:\/aluno\/solicitacao\//);
+  assert.equal(calls.length, before + 1);
+  const args = calls.at(-1).args;
+  assert.equal(args.p_beach_id, beachId);
+  assert.equal(args.p_language, 'Inglês');
+  assert.equal(args.p_meetings.reduce((sum, m) => sum + m.hours, 0), hours);
+  assert.deepEqual(Object.keys(args).sort(), ['p_beach_id', 'p_level', 'p_language', 'p_meetings', 'p_partner_code', 'p_with_transport', 'p_preferred_instructor_id'].sort(), 'client money must never enter RPC');
+}
+let beforeValidation = calls.length;
+for (const invalid of [{ beachId: 'not-a-uuid' }, { language: 'invalid-language' }, { level: 'invalid-level' },
+  { meetings: JSON.stringify([{ ...meetings[0], price: 1 }, meetings[1]]) }]) {
+  assert.ok((await create({}, form(invalid))).error);
+}
+studentLevel = 'improving';
+assert.match((await create({}, form({ level: 'first_time' }))).error, /nível atual/);
+studentLevel = 'first_time';
+levelReady = false;
+assert.match((await create({}, form())).error, /configurar seu nível/);
+assert.equal(calls.length, beforeValidation, 'invalid selection or unavailable profile must not create request');
+levelReady = true;
+console.log('PASS: 1/2/4/6/8h allocation, actual level policy, beach/language validation and no client-supplied price forwarded');
