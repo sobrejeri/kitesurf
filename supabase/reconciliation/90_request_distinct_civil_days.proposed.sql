@@ -31,7 +31,7 @@ create or replace function public.create_booking(
   p_partner_code text,
   p_with_transport boolean
 ) returns uuid
-language plpgsql security definer set search_path = '' as $
+language plpgsql security definer set search_path = '' as $booking_guard$
 declare
   uid uuid := public.require_role(array['student']::public.app_role[]);
   price public.price_versions := public.current_price_version();
@@ -188,7 +188,7 @@ begin
 
   return booking_id;
 end;
-$;
+$booking_guard$;
 
 
 REVOKE ALL ON FUNCTION public.create_booking(uuid,public.lesson_level,text,jsonb,text,boolean) FROM PUBLIC, anon;
