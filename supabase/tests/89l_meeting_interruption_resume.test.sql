@@ -67,6 +67,15 @@ begin
   select * into v from pg_temp.mkbook(6);
   r := pg_temp.try(format('select public.start_ordered_meeting(%L, %L)', v.m1, v.v_pin), a1);
   assert r = 'ok', 'inicio do encontro 1: ' || r;
+  -- Simulate a stale in-progress meeting after the reservation loses confirmation.
+  -- A direct RPC must not revive a non-confirmed booking or write skills/minutes.
+  update public.bookings set status = 'cancelled' where id = v.v_bk;
+  r := pg_temp.try(format('select public.complete_meeting_with_skills(%L, 45, array[1], array[]::int[])', v.m1), a1);
+  assert r like '55000:%Booking must be confirmed%', 'cancelled booking cannot complete: ' || r;
+  assert (select status::text from public.bookings where id = v.v_bk) = 'cancelled', 'booking remains cancelled';
+  assert (select status::text from public.booking_meetings where id = v.m1) = 'in_progress', 'meeting remains unchanged';
+  assert not exists (select 1 from public.meeting_skill_progress where meeting_id = v.m1), 'no skills written';
+  update public.bookings set status = 'confirmed' where id = v.v_bk;
   r := pg_temp.try(format('select public.complete_meeting_with_skills(%L, 45, array[1], array[]::int[])', v.m1), a1);
   assert r = 'ok', 'conclusao normal 45/60: ' || r;
   assert (select status::text || done_minutes from public.booking_meetings where id = v.m1) = 'done45' and (select interruption_state from public.booking_meetings where id = v.m1) is null, 'encontro 1 concluido com 45, sem estado de interrupcao';

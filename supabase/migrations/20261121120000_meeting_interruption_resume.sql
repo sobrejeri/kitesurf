@@ -222,6 +222,9 @@ BEGIN
   IF b.instructor_id IS DISTINCT FROM v_uid THEN
     RAISE EXCEPTION 'Meeting not found' USING errcode = 'P0002';
   END IF;
+  IF b.status <> 'confirmed' THEN
+    RAISE EXCEPTION 'Booking must be confirmed to complete a meeting' USING errcode = '55000';
+  END IF;
   IF m.status <> 'in_progress' THEN
     RAISE EXCEPTION 'Start the meeting with the presence code first' USING errcode = '55000';
   END IF;
