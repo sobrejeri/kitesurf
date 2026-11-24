@@ -83,3 +83,6 @@ bash "$ROOT/scripts/test-rehearse-chain.sh"
 
 # #90: test the migration already loaded by the standard disposable migration loop.
 "${PSQL[@]}" -f "$ROOT/supabase/reconciliation/90_request_distinct_civil_days.test.sql"
+
+# #90: exportação do backup lógico, restauração local, rollback exato de create_booking e recusas fail-closed (somente PostgreSQL descartável).
+bash "$ROOT/scripts/test-90-ops.sh"
