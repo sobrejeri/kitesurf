@@ -109,10 +109,44 @@ begin
   select count(*) into v_count from public.booking_meetings where booking_id=v_id;
   if v_count<>0 then raise exception 'IDOR: unrelated instructor sees scheduled meetings'; end if;
   execute 'reset role';
-  -- Apenas no PostgreSQL descartável: trazer os encontros para a janela de início
-  -- de 24h, sem sobrepor os intervalos de 120 minutos.
-  update public.booking_meetings set starts_at = now() - interval '3 hours' where id = v_m1;
-  update public.booking_meetings set starts_at = now() - interval '1 hour' where id = v_m2;
+  -- Disposable DB only: move booked fixture meetings to yesterday/today so
+  -- ordered start is exercised without bypassing the real date guard.
+  -- Pick free slots dynamically in the disposable DB: earlier test fixtures
+  -- may already occupy fixed hours. Preserve overlap triggers and all grants.
+  with candidates as (
+    select (date_trunc('day',now() at time zone 'America/Fortaleza')
+      - interval '1 day' + make_interval(hours=>h,mins=>17))
+      at time zone 'America/Fortaleza' as st
+    from generate_series(0,21) h
+  )
+  select c.st into strict v_first from candidates c
+  where not exists (
+    select 1 from public.booking_meetings m
+    join public.bookings b on b.id=m.booking_id
+    where m.booking_id<>v_id
+      and b.student_id='00000000-0000-0000-0000-0000000000b2'::uuid
+      and tstzrange(m.starts_at,m.starts_at+make_interval(mins=>m.minutes),'[)')
+          && tstzrange(c.st,c.st+interval '2 hours','[)')
+  )
+  order by c.st limit 1;
+  with candidates as (
+    select (date_trunc('day',now() at time zone 'America/Fortaleza')
+      + make_interval(hours=>h,mins=>17))
+      at time zone 'America/Fortaleza' as st
+    from generate_series(0,21) h
+  )
+  select c.st into strict v_second from candidates c
+  where not exists (
+    select 1 from public.booking_meetings m
+    join public.bookings b on b.id=m.booking_id
+    where m.booking_id<>v_id
+      and b.student_id='00000000-0000-0000-0000-0000000000b2'::uuid
+      and tstzrange(m.starts_at,m.starts_at+make_interval(mins=>m.minutes),'[)')
+          && tstzrange(c.st,c.st+interval '2 hours','[)')
+  )
+  order by c.st limit 1;
+  update public.booking_meetings set starts_at=v_first where id=v_m1;
+  update public.booking_meetings set starts_at=v_second where id=v_m2;
   -- Student and an unrelated instructor must never start or record lessons.
   perform set_config('request.jwt.claim.sub','00000000-0000-0000-0000-0000000000b2',true);
   execute 'set local role authenticated';
