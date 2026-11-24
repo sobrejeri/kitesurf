@@ -24,3 +24,9 @@ assert.match(friendlyError({ message: 'Student already has a lesson at the selec
 assert.match(friendlyError({ message: 'x', hint: 'NO_INSTRUCTOR' }), /Nenhum instrutor disponível/);
 assert.match(friendlyError({ message: 'algo interno', code: 'XX000' }), /Não foi possível concluir agora/);
 console.log('PASS: conflito de horário do aluno traduzido, sem código técnico');
+
+// #90: rejection from the canonical database guard must match the UI/server rule.
+assert.equal(friendlyError({ message: 'Only one meeting per local calendar day is allowed', code: '22023' }),
+  'Escolha apenas um encontro por dia. Distribua as horas em datas diferentes.');
+assert.match(friendlyError({ message: 'Overlapping meetings', code: '22023' }), /mesmo horário/);
+console.log('PASS: duplicate civil-day rejection translated without exposing SQLSTATE');

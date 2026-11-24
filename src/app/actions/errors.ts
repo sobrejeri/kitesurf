@@ -13,6 +13,8 @@ const KNOWN: readonly [RegExp, string][] = [
     'Você já tem uma aula ou uma busca de instrutor nesse horário. Escolha outro dia ou horário sem sobreposição.'],
   [/Student already has a meeting in this time slot/i,
     'Você já tem outro encontro nesse horário. Escolha um horário que não se sobreponha às suas aulas.'],
+  [/Only one meeting per local calendar day is allowed/i,
+    'Escolha apenas um encontro por dia. Distribua as horas em datas diferentes.'],
   [/Overlapping meetings/i,
     'Há dois encontros no mesmo horário. Ajuste as datas e os horários para continuar.'],
   [/Invalid meeting date or hours/i,
