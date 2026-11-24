@@ -193,4 +193,16 @@ $booking_guard$;
 
 REVOKE ALL ON FUNCTION public.create_booking(uuid,public.lesson_level,text,jsonb,text,boolean) FROM PUBLIC, anon;
 GRANT EXECUTE ON FUNCTION public.create_booking(uuid,public.lesson_level,text,jsonb,text,boolean) TO authenticated;
+-- Explicitly replace the legacy overload with a delegate to the guarded path.
+-- Preserve its existing argument names and default for callers.
+CREATE OR REPLACE FUNCTION public.create_booking(
+  p_beach_id uuid, p_level public.lesson_level, p_language text,
+  p_meetings jsonb, p_partner_code text DEFAULT NULL
+) RETURNS uuid LANGUAGE plpgsql SECURITY DEFINER SET search_path = '' AS $legacy_booking_guard$
+BEGIN
+  RETURN public.create_booking(p_beach_id, p_level, p_language, p_meetings, p_partner_code, false);
+END;
+$legacy_booking_guard$;
+REVOKE ALL ON FUNCTION public.create_booking(uuid,public.lesson_level,text,jsonb,text) FROM PUBLIC, anon;
+GRANT EXECUTE ON FUNCTION public.create_booking(uuid,public.lesson_level,text,jsonb,text) TO authenticated;
 COMMIT;
