@@ -15,6 +15,14 @@ assert.deepEqual(remainingBounds(60, 0, 30), { min: 1, max: 30, canInterrupt: tr
 assert.deepEqual(remainingBounds(60, 30, 20), { min: 1, max: 10, canInterrupt: true });   // 2ª interrupção
 assert.deepEqual(remainingBounds(60, 0, 60), { min: 1, max: 0, canInterrupt: false }, 'nada sobrou: conclua normalmente');
 assert.equal(remainingBounds(60, 40, 40).max, 0, 'nunca negativo');
+// Counters from UI/data must fail closed when corrupt, fractional or non-finite.
+for (const [planned, previous, current] of [
+  [60, -1, 10], [60, 0, -1], [0, 0, 0], [60, 50, 20],
+  [NaN, 0, 10], [60, Infinity, 10], [60, 0.5, 10], [60, 0, 1.5],
+]) {
+  assert.deepEqual(remainingBounds(planned, previous, current),
+    { min: 1, max: 0, canInterrupt: false }, 'invalid minutes must not enable interruption');
+}
 
 // Etapas
 const get = (o) => (n) => o[n];
