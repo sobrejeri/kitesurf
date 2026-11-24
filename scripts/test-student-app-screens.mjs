@@ -89,3 +89,19 @@ assert.equal(formatLessonWhen('2026-11-12T12:00:00Z', now), 'amanhã às 09:00')
 assert.equal(formatLessonWhen('2026-11-14T18:30:00Z', now), 'sáb., 14 de nov. às 15:30');
 
 console.log('PASS: student screens use app titles, inbox/messenger rows, readable chat, fitted labels and Ceará-time stamps');
+
+// The same historical accepted-offer notification must be accurate in validation mode.
+const { notificationBody } = await import('../src/lib/notification-copy.ts');
+const legacyOffer = {
+  category: 'offer', title: 'Instrutor aceitou a aula',
+  body: 'Sua solicitação foi aceita. Acesse para continuar o pagamento.',
+  href: '/aluno/solicitacao/7f0c1d2e-3a4b-4c5d-8e9f-001122334455',
+};
+assert.equal(notificationBody(legacyOffer, true), 'Sua solicitação foi aceita. Acesse a reserva para confirmar a aula de validação, sem cobrança.');
+assert.equal(notificationBody(legacyOffer, false), legacyOffer.body, 'Checkout mode retains its existing wording');
+for (const patch of [{category:'booking'}, {title:'Outro aviso'}, {href:'/instrutor/solicitacao'}, {href:'/aluno/solicitacao/not-a-uuid'}, {body:'Texto novo'}]) {
+  const notice = {...legacyOffer, ...patch};
+  assert.equal(notificationBody(notice, true), notice.body, 'Unrelated notices must remain unchanged');
+}
+assert.ok(inbox.includes("notificationBody(n, area === 'aluno' && VALIDATION_WITHOUT_CHECKOUT)"));
+console.log('PASS: accepted offer copy follows validation mode without changing historical rows or unrelated alerts');
