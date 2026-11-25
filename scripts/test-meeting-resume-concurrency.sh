@@ -49,7 +49,8 @@ begin
     perform public.start_ordered_meeting(m1, pin);
     perform public.interrupt_meeting(m1, 'Vento forte demais para voar', 30, 30, array[1], array[]::int[]);
     execute 'reset role';
-    t := public.zz_free_slot(1, ((d2 at time zone 'America/Fortaleza')::date - (now() at time zone 'America/Fortaleza')::date) - 1);
+    -- a continuidade fica a mais de 2 dias: o teste nao pode depender da hora do dia em que roda (dentro de 24h o inicio seria permitido)
+    t := public.zz_free_slot(3 + (n-1)*30, ((d2 at time zone 'America/Fortaleza')::date - (now() at time zone 'America/Fortaleza')::date) - 1);
     assert t is not null, 'FIXTURE: horario de continuidade';
     insert into public.zz_ids values ('bk'||n, bk::text), ('m1_'||n, m1::text), ('pin'||n, pin), ('t'||n, t::text), ('b'||n, bk::text);
   end loop;

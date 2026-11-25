@@ -83,7 +83,7 @@ function QueueCard({ status, position, queueSize }: { status: InstructorStatus |
         {status === 'paused'
           ? 'Você não recebe pedidos enquanto estiver pausado. Sua posição na fila está guardada.'
           : 'Complete seu perfil profissional e marque suas praias. A operação libera os pedidos depois da análise.'}{' '}
-        <Link href="/instrutor/cadastro" className="font-semibold underline">Abrir perfil</Link>
+        <Link href="/instrutor/cadastro" className="inline-flex min-h-11 items-center font-semibold underline">Abrir perfil</Link>
       </Note>
     );
   }
@@ -147,7 +147,7 @@ export function InstructorTodayView({
       {overdueCount > 0 ? (
         <Note tone="warning" className="mt-4" title="Encontros com horário passado">
           {overdueCount} {overdueCount === 1 ? 'encontro agendado com início já passado' : 'encontros agendados com início já passado'}.{' '}
-          <Link href="/instrutor/aula?aba=proximas" className="font-semibold underline">Conferir aulas pendentes</Link>
+          <Link href="/instrutor/aula?aba=proximas" className="inline-flex min-h-11 items-center font-semibold underline">Conferir aulas pendentes</Link>
         </Note>
       ) : null}
       <div className="mt-4 grid grid-cols-2 gap-3 lg:grid-cols-3 lg:gap-4">
