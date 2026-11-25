@@ -4,11 +4,15 @@ Branch guarda-chuva `feat/estrutura-modulos-20261125` (PR #340, **rascunho, não
 
 | Mód. | O quê | Arquivos | Migration (não aplicada) | PR de entrega |
 |---|---|---|---|---|
-| **A** | #91 Agenda e disponibilidade | 18 | `20261125100000_instructor_schedule_v2.sql` | **#339** (CI verde em `37f2204`) |
-| **B** | #93 Interrupção/retomada de aula, etapas 1 a 3, atrás da flag `NEXT_PUBLIC_VENTO_INTERRUPTION_FLOW_ENABLED` (desligada) | 26 (6 são capturas PNG) | `20261121120000_meeting_interruption_resume.sql` | PR própria `feat/93-interrupcao-aula` |
-| **C** | E2E autenticado + varredura de telas | 6 | nenhuma | PR própria `test/e2e-runner`, **baseada só na principal** |
-| **D** | Alvos de toque ≥ 44 px (UI) | 6 | nenhuma | pode ir junto de C ou em PR trivial |
-| **S** | Arquivos compartilhados | 4 | — | tocados por A, B e C (ver abaixo) |
+| **A** | #91 Agenda e disponibilidade | 18 | `20261125100000_instructor_schedule_v2.sql` | **#339** (`feat/91-agenda-disponibilidade-20261124`) |
+| **B** | #93 Interrupção/retomada de aula, etapas 1 a 3, atrás da flag `NEXT_PUBLIC_VENTO_INTERRUPTION_FLOW_ENABLED` (desligada) | 26 (6 são capturas PNG) | `20261121120000_meeting_interruption_resume.sql` | **#344** (`feat/93-interrupcao-aula-v2-20261125`, sobre a #323 atual `232f695`) |
+| **C** | E2E autenticado (cenário prioritário) + varredura de telas | 8 | nenhuma | **#341** (`test/e2e-runner-20261125`, só a principal) |
+| **D** | Alvos de toque ≥ 44 px (UI) | 6 | nenhuma | **#345** (`fix/ui-alvos-de-toque-20261125`) |
+| **E** | #92 solicitação some com um instrutor só (poller + regressões + investigação) | 9 | nenhuma | **#342** (`fix/92-solicitacao-um-instrutor-20261125`) |
+| **F** | Cancelamento de reserva aguardando pagamento (auditoria/trava/testes) | 3 | `20261125130000_audit_hold_cancellation.sql` | **#343** (`test/hold-cancel-audit-20261125`) |
+| **S** | Arquivos compartilhados | 4 | — | tocados por A, B, C e E (ver abaixo) |
+
+> Esta branch guarda-chuva (#340) é anterior à separação: **a fonte de verdade de cada módulo é a sua PR**. Divergências conhecidas: B foi refeita sobre a #323 atual (`232f695`, que traz correções a mais) e ganhou um ajuste no teste de concorrência da retomada; E, F e a corrida F/G da #339 não estão aqui.
 
 ## Dependências
 - **A e B não dependem uma da outra para compilar nem para rodar seus testes.** Há uma dependência **semântica**: B (`schedule_meeting_resume`) chama `can_move_meeting`, que A substitui por uma versão com pausas, férias e horário extra (mesma assinatura). Qualquer ordem de merge é válida; a suíte combinada passou.
@@ -19,8 +23,8 @@ Branch guarda-chuva `feat/estrutura-modulos-20261125` (PR #340, **rascunho, não
 ## Arquivos compartilhados e conflitos esperados entre as PRs
 | Arquivo | Tocado por | Conflito esperado |
 |---|---|---|
-| `.github/workflows/verify.yml` | A, B, C (cada um acrescenta passos `node`) | **textual** (linhas vizinhas); resolver mantendo todos os passos |
-| `scripts/test-db.sh` | A (3 linhas), B (1 linha) | **textual** (linhas vizinhas); manter ambas |
+| `.github/workflows/verify.yml` | A, B, C, E (cada um acrescenta passos `node`) | **textual** (linhas vizinhas); resolver mantendo todos os passos |
+| `scripts/test-db.sh` | A (4 linhas), B (1 linha), E (1 linha) | **textual** (linhas vizinhas); manter ambas |
 | `src/app/actions/errors.ts` | A (mensagens de agenda, dica `INSTRUCTOR_MEETING_CONFLICT`), B (mensagens de interrupção) | **textual** (inserções na mesma lista `KNOWN`) |
 | `src/lib/data.ts` | só B | nenhum entre PRs |
 | `.env.example`, `scripts/rehearse-chain.sh` | só B | nenhum |
