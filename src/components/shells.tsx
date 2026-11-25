@@ -351,7 +351,7 @@ function WorkspaceProfileAvatar({ person, size }: { person: { name: string; init
       href={person.profileHref}
       aria-label="Abrir meu perfil"
       title="Meu perfil"
-      className="press inline-flex shrink-0 items-center rounded-full focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand"
+      className="press inline-flex min-h-11 min-w-11 shrink-0 items-center justify-center rounded-full focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand"
     >
       {avatar}
     </Link>
