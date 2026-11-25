@@ -72,3 +72,32 @@ export function fortalezaLocalInput(ms: number): string {
     timeZone: 'America/Fortaleza', year: 'numeric', month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit', hourCycle: 'h23',
   }).format(new Date(ms)).replace(' ', 'T');
 }
+
+/** Encontro interrompido que ainda espera o instrutor agendar a continuidade: não é "próximo encontro" nem "atrasado" para o aluno. */
+export function isAwaitingResume(meeting: { interruption_state?: InterruptionState | null }): boolean {
+  return meeting.interruption_state === 'awaiting_resume';
+}
+
+/** Texto fixo da regra aprovada (21/11): a plataforma não cria saldo nem cobra de novo; o aluno combina a continuidade pelo chat. */
+export function interruptionCopy(
+  state: InterruptionState | null | undefined,
+  minutes: { plannedMinutes?: number | null; previousDone?: number; remaining?: number | null },
+): { title: string; body: string; badge: string } | null {
+  const done = minutes.previousDone ?? 0;
+  const planned = minutes.plannedMinutes ?? null;
+  const ratio = planned ? ` Foram ministrados ${done} de ${planned} minutos.` : '';
+  if (state === 'awaiting_resume') {
+    return {
+      title: 'Aula interrompida.',
+      body: `Entre em contato com seu instrutor pelo chat para combinar a continuidade.${ratio} Não há nova cobrança.`,
+      badge: 'Interrompida',
+    };
+  }
+  if (state === 'resume_scheduled') {
+    return { title: 'Continuidade agendada.', body: `Seu instrutor marcou a continuação desta mesma aula.${ratio} Não há nova cobrança.`, badge: 'Continuidade agendada' };
+  }
+  if (state === 'resumed') {
+    return { title: 'Aula retomada e concluída.', body: 'A continuação foi registrada e a aula conta uma única vez na sua evolução.', badge: 'Retomada e concluída' };
+  }
+  return null;
+}
