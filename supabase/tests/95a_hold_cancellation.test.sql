@@ -36,9 +36,17 @@ declare
   b1 constant text := '00000000-0000-0000-0000-0000000000b1';
   b2 constant text := '00000000-0000-0000-0000-0000000000b2';
   d date := (now() at time zone 'America/Fortaleza')::date + 60;
-  s1 timestamptz; s2 timestamptz; s3 timestamptz; h1 uuid; h2 uuid; h3 uuid; n int; j jsonb; attempts int;
+  slots timestamptz[]; s1 timestamptz; s2 timestamptz; s3 timestamptz; h1 uuid; h2 uuid; h3 uuid; n int; j jsonb; attempts int;
 begin
-  s1 := ((d + time '09:00') at time zone 'America/Fortaleza'); s2 := s1 + interval '1 day'; s3 := s1 + interval '2 days';
+  -- horários elegíveis do instrutor de jeri (a agenda salva por outros testes pode restringir dias e horas): 8 dias locais distintos
+  select array_agg(st order by st) into slots from (
+    select distinct on ((st at time zone 'America/Fortaleza')::date) st from (
+      select (date_trunc('day', now() at time zone 'America/Fortaleza') + make_interval(days => g, hours => h)) at time zone 'America/Fortaleza' st
+        from generate_series(50, 120) g cross join generate_series(8, 15) h) q
+     where public.instructor_can_attend('00000000-0000-0000-0000-0000000000a1'::uuid, jsonb_build_array(jsonb_build_object('starts_at', st, 'hours', 1)))
+     order by (st at time zone 'America/Fortaleza')::date, st) z;
+  assert coalesce(array_length(slots, 1), 0) >= 9, 'FIXTURE: poucos dias elegíveis (' || coalesce(array_length(slots, 1), 0) || ')';
+  s1 := slots[1]; s2 := slots[2]; s3 := slots[3];
 
   -- 1) retenção vencida varrida pelo create_booking: cancelada, auditada UMA vez, com o estado dos pagamentos
   h1 := pg_temp.hold(b1, s1);
@@ -78,7 +86,7 @@ begin
   assert pg_temp.try(format('select public.simulate_test_payment(%L, ''pix'', ''pending'')', h2), b2) = 'ok', 'FIXTURE: pagamento em processamento';
   assert (select status::text from public.bookings where id = h2) = 'awaiting_payment', 'processando: segue aguardando';
   perform pg_temp.age(h2, 11);
-  perform pg_temp.hold(b1, s1 + interval '3 days');                    -- varredura
+  perform pg_temp.hold(b1, slots[4]);                    -- varredura
   assert (select status::text from public.bookings where id = h2) = 'cancelled', 'política atual: ao fim da janela a retenção cancela mesmo em processamento';
   j := (select new_state from public.audit_logs where action = 'booking.hold_cancelled' and entity_id = h2::text);
   assert (j->>'had_pending_payment')::boolean = true and (j->>'had_approved_payment')::boolean = false, 'a auditoria registra que havia pagamento em processamento';
@@ -87,7 +95,7 @@ begin
 
   -- 5) trava: não se cancela retenção com pagamento APROVADO (não pode ocorrer; defesa em profundidade)
   declare h4 uuid; begin
-    h4 := pg_temp.hold(b1, s1 + interval '4 days');
+    h4 := pg_temp.hold(b1, slots[5]);
     insert into public.test_payment_attempts (booking_id, student_id, method, outcome) values (h4, b1::uuid, 'pix', 'approved');
     begin
       update public.bookings set status = 'cancelled' where id = h4;
@@ -100,11 +108,11 @@ begin
 
   -- 6) caminho da guarda de agenda do aluno (INSERT em instructor_requests varre as retenções vencidas do próprio aluno)
   declare h5 uuid; r uuid; begin
-    h5 := pg_temp.hold(b2, s1 + interval '5 days');
+    h5 := pg_temp.hold(b2, slots[6]);
     perform pg_temp.age(h5, 11);
     perform pg_temp.act_as(b2);
     r := public.create_instructor_request((select id from public.beaches where slug = 'prea'), 'first_time', 'Português',
-           jsonb_build_array(jsonb_build_object('starts_at', s1 + interval '7 days', 'hours', 1)), null::text, false);
+           jsonb_build_array(jsonb_build_object('starts_at', slots[7], 'hours', 1)), null::text, false);
     perform pg_temp.reset();
     assert (select status::text from public.bookings where id = h5) = 'cancelled', 'a guarda de agenda varreu a retenção vencida do aluno';
     assert (select count(*) from public.audit_logs where action = 'booking.hold_cancelled' and entity_id = h5::text) = 1, 'também auditada nesse caminho';
