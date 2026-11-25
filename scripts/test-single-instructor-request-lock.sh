@@ -13,7 +13,15 @@ JERI="$("${PSQL[@]}" -c "select id from public.beaches where slug='jeri'")"
 out="$(mktemp -d)"; trap 'rm -rf "$out"' EXIT
 fail() { echo "FAIL $1" >&2; exit 1; }
 as() { printf "begin; select set_config('request.jwt.claim.sub','%s',true); set local role authenticated; %s commit;" "$1" "$2"; }
-S="$("${PSQL[@]}" -c "select (((now() at time zone 'America/Fortaleza')::date + 400 + time '10:00') at time zone 'America/Fortaleza')")"
+# horário distante em que o instrutor ATENDE (a agenda salva por testes anteriores pode restringir dias e horas) e sem nenhuma aula do aluno por perto
+S="$("${PSQL[@]}" -c "
+  select st::text from (
+    select (date_trunc('day', now() at time zone 'America/Fortaleza') + make_interval(days => d, hours => h)) at time zone 'America/Fortaleza' as st
+    from generate_series(300, 420) d cross join generate_series(8, 13) h) c
+  where public.instructor_can_attend('$A1'::uuid, jsonb_build_array(jsonb_build_object('starts_at', c.st, 'hours', 1)))
+    and not exists (select 1 from public.instructor_offers o join public.instructor_requests q on q.id = o.request_id where o.instructor_id = '$A1'::uuid and o.status = 'offered' and q.meetings::text like '%' || to_char(c.st at time zone 'UTC', 'YYYY-MM-DD') || '%')
+  order by st limit 1")"
+[ -n "$S" ] || fail "FIXTURE: nenhum horário distante elegível para o instrutor"
 dl0="$("${PSQL[@]}" -c "select deadlocks from pg_stat_database where datname='postgres'")"
 # sessão 1: segura a linha do instrutor (como uma outra solicitação avançando, ou ele salvando a agenda)
 ( set +e; PGAPPNAME=lock-s1 "${PSQL[@]}" -c "begin; select id from public.instructors where id='$A1' for update; select pg_sleep(4); commit;" >"$out/s1.out" 2>"$out/s1.err"; echo $? >"$out/s1.rc" ) &
