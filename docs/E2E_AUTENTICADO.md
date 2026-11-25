@@ -36,3 +36,7 @@ Recusa host fora da lista; não envia credenciais a nada além do formulário de
 1. Rodar contra o app de teste com as contas fictícias e arquivar `resultado.md` na issue #103.
 2. Automatizar a reserva do aluno (2h e 4h) e o aceite/confirmação sem cobrança (#90).
 3. Fila A→B→C com 3 instrutores (#92), após o agendador do projeto de teste.
+
+## Varredura de telas (`scripts/e2e/crawl.mjs`)
+Visita **todas as telas estáticas** de cada área (descobertas em `src/app`; rotas com `[id]` são puladas) em 390 px e 1280 px, só por GET: não clica nem envia formulários. Por tela aponta erro HTTP, rolagem horizontal, erros de console, requisições que falharam, imagens quebradas ou sem `alt`, botões/links/campos sem nome acessível, alvos de toque menores que 40 px no celular, `lang` e título ausentes. Saída em `crawl-out/telas.md`. As mesmas variáveis do E2E valem. Tela sem sessão do perfil fica BLOQUEADO.
+Na primeira rodada, contra o backend fictício, a varredura achou alvos de toque pequenos (links "Entrar", "Criar conta", "Solicitar novo link", título do dia na agenda e botões do aviso de nova versão), já corrigidos. Avisos de `NaN` no console e o 404 de `/instrutor/checkin` vieram do backend fictício e da tela que exige parâmetro; confirme no app de teste.

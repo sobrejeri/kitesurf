@@ -89,7 +89,7 @@ export function AgendaCalendar({ view, date, entries, off, shifts, extras, today
           return (
             <div key={day} className={`grid grid-cols-[minmax(0,1fr)] gap-2 rounded-[16px] border p-3 sm:grid-cols-[11rem_minmax(0,1fr)] ${day === today ? 'border-brand bg-brand-tint' : 'border-line bg-surface'}`}>
               <div className="min-w-0">
-                <Link href={agendaHref(day, 'day')} className="block min-h-6 text-[14px] font-bold text-ink hover:text-brand">
+                <Link href={agendaHref(day, 'day')} className="flex min-h-11 items-center text-[14px] font-bold text-ink hover:text-brand">
                   {WEEKDAY_NAMES[weekdayOf(day)] ?? ''}, {dayNumber(day)}{day === today ? ' · hoje' : ''}
                 </Link>
                 <DayHeader day={day} shifts={shifts} extras={extras} off={off} />
