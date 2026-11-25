@@ -4,7 +4,7 @@ import { useRouter } from 'next/navigation';
 import { useEffect, useMemo, useState, useTransition } from 'react';
 
 import { loadFreeSlots, placePublicOrder } from '@/app/actions/public-store';
-import { MAX_CART_ITEMS, brl, minutesLabel, rentalName, type CartLine, type StoreCatalog, type StoreService } from '@/lib/public-store';
+import { MAX_CART_ITEMS, MAX_QTY, RENTAL_HOUR_OPTIONS, brl, minutesLabel, rentalName, sanitizeCart, setLineQty, type CartLine, type StoreCatalog, type StoreService } from '@/lib/public-store';
 
 const addDays = (n: number): string => new Date(Date.now() - 3 * 3600_000 + n * 86400_000).toISOString().slice(0, 10); // dia em Fortaleza (UTC-3)
 
@@ -24,7 +24,7 @@ export function StoreClient({ catalog }: { catalog: StoreCatalog }) {
 
   // O carrinho guarda só escolhas, nunca valores. sessionStorage pode falhar (aba privada): a loja funciona sem ele.
   useEffect(() => {
-    try { const raw = sessionStorage.getItem(storageKey); if (raw) setCart(JSON.parse(raw) as CartLine[]); } catch { /* sem armazenamento */ }
+    try { const raw = sessionStorage.getItem(storageKey); if (raw) setCart(sanitizeCart(JSON.parse(raw))); } catch { /* sem armazenamento ou conteúdo inválido */ }
     setLoaded(true);
   }, [storageKey]);
   useEffect(() => { if (loaded) { try { sessionStorage.setItem(storageKey, JSON.stringify(cart)); } catch { /* sem armazenamento */ } } }, [cart, loaded, storageKey]);
@@ -34,6 +34,7 @@ export function StoreClient({ catalog }: { catalog: StoreCatalog }) {
     setCart((c) => (c.length >= MAX_CART_ITEMS ? c : [...c.filter((x) => x.key !== line.key), line]));
   };
   const remove = (key: string) => setCart((c) => c.filter((x) => x.key !== key));
+  const changeQty = (key: string, qty: number) => setCart((c) => setLineQty(c, key, qty));
 
   function submit() {
     setError(null);
@@ -88,8 +89,16 @@ export function StoreClient({ catalog }: { catalog: StoreCatalog }) {
         <section className="card" style={{ marginTop: 24 }} aria-label="Finalizar pedido">
           <h3>Seu pedido</h3>
           {cart.map((l) => (
-            <div className="line" key={l.key}><span>{l.label}{l.kind === 'rental' ? ` · ${l.hours}h` : ''}</span>
-              <button type="button" className="btn danger" style={{ minHeight: 36, padding: '4px 10px' }} onClick={() => remove(l.key)}>Remover</button></div>
+            <div className="line" key={l.key} style={{ flexWrap: 'wrap', alignItems: 'center' }}><span style={{ flex: '1 1 100%' }}>{l.label}{l.kind === 'rental' ? ` · ${l.hours}h` : ''}{l.kind !== 'lesson' && l.qty > 1 ? ` · ${l.qty}x` : ''}</span>
+              <span style={{ display: 'flex', gap: 8, marginLeft: 'auto' }}>
+                {l.kind !== 'lesson' && (
+                  <>
+                    <button type="button" className="btn ghost" style={{ padding: '4px 12px' }} aria-label={`Diminuir a quantidade de ${l.label}`} disabled={l.qty <= 1} onClick={() => changeQty(l.key, l.qty - 1)}>−</button>
+                    <button type="button" className="btn ghost" style={{ padding: '4px 12px' }} aria-label={`Aumentar a quantidade de ${l.label}`} disabled={l.qty >= MAX_QTY} onClick={() => changeQty(l.key, l.qty + 1)}>+</button>
+                  </>
+                )}
+                <button type="button" className="btn danger" style={{ padding: '4px 10px' }} onClick={() => remove(l.key)}>Remover</button>
+              </span></div>
           ))}
           <p className="muted" style={{ marginTop: 10 }}>O valor final é calculado pela escola ao enviar e aparece no seu pedido. Nada é cobrado agora: o pagamento é combinado direto com a escola.</p>
           <label htmlFor="c-name">Seu nome</label>
@@ -165,7 +174,7 @@ function RentalCard({ rental, unitName, onAdd }: { rental: StoreCatalog['rentals
       <div className="row"><h3>{rentalName(rental.type)}</h3><span className="price">{brl(rental.cents_per_hour)}/h</span></div>
       <label htmlFor={`h-${rental.type}`}>Horas</label>
       <select id={`h-${rental.type}`} value={hours} onChange={(e) => setHours(Number(e.target.value))}>
-        {[1, 2, 3, 4, 6, 8].map((h) => <option key={h} value={h}>{h}h</option>)}
+        {RENTAL_HOUR_OPTIONS.map((h) => <option key={h} value={h}>{h}h</option>)}
       </select>
       <p className="muted">Estimativa: {brl(total)} (o valor final vem do pedido)</p>
       <div className="chips">

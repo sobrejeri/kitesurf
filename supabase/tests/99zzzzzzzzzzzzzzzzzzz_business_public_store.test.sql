@@ -211,6 +211,81 @@ begin
   perform pg_temp.reset();
   perform pg_temp.act_as(o1); perform public.set_store_public(a, 'ventos-do-norte', true); perform pg_temp.reset();
 
+  -- 9b. Isolamento entre empresas e unidades: nada de uma loja entra no pedido de outra, nem uma unidade usa a outra.
+  declare pb uuid; svcb uuid; n0 integer; n1 integer; used_a integer; stock_a integer; bres record; raised2 boolean;
+  begin
+    perform pg_temp.act_as(o2);
+    pb := public.create_product(b, 'BON-B', 'Produto da B', 'Outros', 1000, 0);
+    perform public.record_stock_movement(ub, pb, 'in', 5, 'Estoque inicial B');
+    svcb := public.create_service(b, 'Aula da B', 60, 2, 'Aula da escola B', 9000);
+    perform public.create_coupon(b, 'BCUPOM', 'percent', 1000, 0, 60, 50);
+    perform public.set_store_public(b, 'loja-b', true);
+    perform pg_temp.reset();
+    select count(*) into n0 from public.company_orders;
+    select used into used_a from public.company_coupons where company_id = a and code = 'VENTO10';
+    select qty into stock_a from public.company_stock_balances where unit_id = u1 and product_id = p1;
+
+    perform pg_temp.visitor();
+    -- Loja de A recebendo coisas de B.
+    begin perform public.create_public_order('ventos-do-norte', 'Cliente Cruzado', '88999990501', jsonb_build_array(jsonb_build_object('kind', 'product', 'unit_id', u1, 'product_id', pb, 'qty', 1))); raise exception 'product of B in the store of A';
+      exception when invalid_parameter_value then assert sqlerrm = 'Product not available', 'B product refused by company: ' || sqlerrm; end;
+    begin perform public.create_public_order('ventos-do-norte', 'Cliente Cruzado', '88999990501', jsonb_build_array(jsonb_build_object('kind', 'product', 'unit_id', ub, 'product_id', p1, 'qty', 1))); raise exception 'unit of B in the store of A';
+      exception when invalid_parameter_value then assert sqlerrm = 'Unit not available', 'B unit refused by company: ' || sqlerrm; end;
+    begin perform public.create_public_order('ventos-do-norte', 'Cliente Cruzado', '88999990501', jsonb_build_array(jsonb_build_object('kind', 'product', 'unit_id', ub, 'product_id', pb, 'qty', 1))); raise exception 'unit and product of B in the store of A';
+      exception when invalid_parameter_value then assert sqlerrm = 'Unit not available', 'B unit and product refused: ' || sqlerrm; end;
+    begin perform public.create_public_order('ventos-do-norte', 'Cliente Cruzado', '88999990501', jsonb_build_array(jsonb_build_object('kind', 'lesson', 'unit_id', u1, 'service_id', svcb, 'instructor_id', ins, 'starts_at', pg_temp.at(6, '08:00')))); raise exception 'service of B in the store of A';
+      exception when invalid_parameter_value then assert sqlerrm = 'Service not available', 'B service refused by company: ' || sqlerrm; end;
+    -- Loja de B recebendo coisas de A.
+    begin perform public.create_public_order('loja-b', 'Cliente Cruzado', '88999990502', jsonb_build_array(jsonb_build_object('kind', 'product', 'unit_id', ub, 'product_id', p1, 'qty', 1))); raise exception 'product of A in the store of B';
+      exception when invalid_parameter_value then assert sqlerrm = 'Product not available', 'A product refused by company: ' || sqlerrm; end;
+    begin perform public.create_public_order('loja-b', 'Cliente Cruzado', '88999990502', jsonb_build_array(jsonb_build_object('kind', 'product', 'unit_id', u1, 'product_id', pb, 'qty', 1))); raise exception 'unit of A in the store of B';
+      exception when invalid_parameter_value then assert sqlerrm = 'Unit not available', 'A unit refused by company: ' || sqlerrm; end;
+    begin perform public.create_public_order('loja-b', 'Cliente Cruzado', '88999990502', jsonb_build_array(jsonb_build_object('kind', 'rental', 'unit_id', ub, 'type', 'prancha', 'hours', 1, 'qty', 1))); raise exception 'rental rate of A used by B';
+      exception when no_data_found then null; end;
+    -- Unidade sem o serviço habilitado para o instrutor: nada é criado.
+    raised2 := false;
+    begin perform public.create_public_order('ventos-do-norte', 'Cliente Cruzado', '88999990503', jsonb_build_array(item_l || jsonb_build_object('unit_id', u2, 'starts_at', pg_temp.at(6, '09:00')))); exception when others then raised2 := true; end;
+    assert raised2, 'a lesson in a unit where the instructor is not enabled for the service is refused';
+    perform pg_temp.reset();
+
+    -- Cupom de uma empresa não vale na outra (cupom exige conta com e-mail confirmado).
+    perform pg_temp.act_as(al1);
+    begin perform public.create_public_order('ventos-do-norte', 'Aluna Um', '88999990504', jsonb_build_array(item_p), null, 'BCUPOM'); raise exception 'coupon of B used in A';
+      exception when invalid_parameter_value then assert sqlerrm = 'Coupon not found', 'coupon of B refused in A: ' || sqlerrm; end;
+    begin perform public.create_public_order('loja-b', 'Aluna Um', '88999990504', jsonb_build_array(jsonb_build_object('kind', 'product', 'unit_id', ub, 'product_id', pb, 'qty', 1)), null, 'VENTO10'); raise exception 'coupon of A used in B';
+      exception when invalid_parameter_value then assert sqlerrm = 'Coupon not found', 'coupon of A refused in B: ' || sqlerrm; end;
+    perform pg_temp.reset();
+
+    -- Código de afiliado de A não atribui venda de B; o pedido legítimo de B só toca em B.
+    perform pg_temp.visitor();
+    select * into bres from public.create_public_order('loja-b', 'Cliente B', '88999990505', jsonb_build_array(jsonb_build_object('kind', 'product', 'unit_id', ub, 'product_id', pb, 'qty', 2)), 'brisa-77');
+    perform pg_temp.reset();
+    assert (select company_id = b and affiliate_link_id is null and affiliate_commission_cents = 0 and total_cents = 2000 from public.company_orders where number = bres.order_number), 'B order priced by B, with no affiliate of A attributed';
+    select count(*) into n1 from public.company_orders;
+    assert n1 = n0 + 1, 'every cross-company attempt left nothing behind; only the legitimate order of B exists';
+    assert (select used from public.company_coupons where company_id = a and code = 'VENTO10') = used_a and (select used from public.company_coupons where company_id = b and code = 'BCUPOM') = 0, 'no coupon use was consumed by a refused order';
+    assert (select qty from public.company_stock_balances where unit_id = u1 and product_id = p1) = stock_a, 'the stock of A is untouched by B';
+
+    -- O catálogo de cada loja mostra só os dados da própria empresa.
+    perform pg_temp.visitor();
+    cat := public.public_store_catalog('ventos-do-norte');
+    assert cat::text !~ 'Produto da B|Loja B|Unidade B|Aula da B|Camocim', 'the catalog of A has nothing of B';
+    cat := public.public_store_catalog('loja-b');
+    assert cat::text ~ 'Produto da B' and cat::text !~ 'Camiseta|Ventos do Norte|Aula iniciante|Preá|prancha', 'the catalog of B has nothing of A';
+    perform pg_temp.reset();
+
+    -- Perfis: a equipe de A não opera pedidos de B, e o atendente da unidade 1 não opera a unidade 2.
+    perform pg_temp.act_as(at_);
+    begin perform public.create_order(b, 'Equipe de A', '88999990506', 'balcao', jsonb_build_array(jsonb_build_object('kind', 'product', 'unit_id', ub, 'product_id', pb, 'qty', 1))); raise exception 'staff of A ordered in B';
+      exception when insufficient_privilege then null; end;
+    begin perform public.create_order(a, 'Atendente', '88999990507', 'balcao', jsonb_build_array(item_p || jsonb_build_object('unit_id', u2))); raise exception 'attendant of unit 1 ordered in unit 2';
+      exception when insufficient_privilege then null; end;
+    assert (select count(*) from public.company_orders where company_id = b) = 0, 'staff of A sees no order of B';
+    begin perform public.get_public_order(bres.order_number, null); raise exception 'staff of A tracked an order of B'; exception when no_data_found then null; end;
+    perform pg_temp.reset();
+    perform pg_temp.act_as(o2); assert (select count(*) from public.company_orders where company_id = b) = 1 and (select count(*) from public.company_orders where company_id = a) = 0, 'the owner of B sees only the orders of B'; perform pg_temp.reset();
+  end;
+
   -- 10. Limites contra abuso.
   perform pg_temp.visitor();
   perform public.create_public_order('ventos-do-norte', 'Cliente Limite', '88999990301', jsonb_build_array(item_p));

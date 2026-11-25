@@ -1,3 +1,4 @@
+import type { Metadata } from 'next';
 import Link from 'next/link';
 
 import { brl, statusLabel } from '@/lib/public-store';
@@ -6,6 +7,7 @@ import { readOrder } from '@/lib/public-store-server';
 import { CancelForm } from './cancel-form';
 
 export const dynamic = 'force-dynamic';
+export const metadata: Metadata = { title: 'Seu pedido', robots: { index: false, follow: false }, referrer: 'no-referrer' };
 
 export default async function OrderPage({ params, searchParams }: { params: Promise<{ number: string }>; searchParams: Promise<{ t?: string }> }) {
   const { number } = await params;

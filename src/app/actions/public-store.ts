@@ -1,27 +1,14 @@
 'use server';
 
 import { cookies } from 'next/headers';
-import { z } from 'zod';
-
-import { friendlyOrderError } from '@/lib/public-store';
+import { CancelInput, FreeSlotsInput, PlaceOrderInput, friendlyOrderError } from '@/lib/public-store';
 import { createSupabaseServerClient } from '@/lib/supabase/server';
-
-const Slug = z.string().regex(/^[a-z0-9-]{3,40}$/);
-const Item = z.discriminatedUnion('kind', [
-  z.strictObject({ kind: z.literal('lesson'), unit_id: z.uuid(), service_id: z.uuid(), instructor_id: z.uuid(), starts_at: z.string().max(40) }),
-  z.strictObject({ kind: z.literal('product'), unit_id: z.uuid(), product_id: z.uuid(), qty: z.number().int().min(1).max(20) }),
-  z.strictObject({ kind: z.literal('rental'), unit_id: z.uuid(), type: z.string().max(30), hours: z.number().int().min(1).max(12), qty: z.number().int().min(1).max(10) }),
-]);
-const PlaceOrder = z.strictObject({
-  slug: Slug, customer: z.string().trim().min(3).max(80), phone: z.string().max(30),
-  items: z.array(Item).min(1).max(10), affiliate: z.string().max(32).optional(), coupon: z.string().max(32).optional(),
-});
 
 export type PlaceResult = { ok: true; number: string; token: string } | { ok: false; error: string };
 
 /** Envia só escolhas. Preço, desconto e comissão são calculados no banco. */
 export async function placePublicOrder(input: unknown): Promise<PlaceResult> {
-  const parsed = PlaceOrder.safeParse(input);
+  const parsed = PlaceOrderInput.safeParse(input);
   if (!parsed.success) return { ok: false, error: 'Confira os dados do pedido.' };
   const v = parsed.data;
   // Link de afiliado (?ref=CODE) fica num cookie por 30 dias; o banco ignora código desconhecido ou suspenso.
@@ -38,7 +25,7 @@ export async function placePublicOrder(input: unknown): Promise<PlaceResult> {
 }
 
 export async function loadFreeSlots(input: unknown): Promise<string[]> {
-  const parsed = z.strictObject({ slug: Slug, unit: z.uuid(), service: z.uuid(), instructor: z.uuid(), date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/) }).safeParse(input);
+  const parsed = FreeSlotsInput.safeParse(input);
   if (!parsed.success) return [];
   const v = parsed.data;
   const db = await createSupabaseServerClient('aluno');
@@ -48,7 +35,7 @@ export async function loadFreeSlots(input: unknown): Promise<string[]> {
 
 export type CancelResult = { ok: true } | { ok: false; error: string };
 export async function cancelPublicOrder(input: unknown): Promise<CancelResult> {
-  const parsed = z.strictObject({ number: z.string().max(40), token: z.string().max(80).nullable(), reason: z.string().trim().min(3).max(150) }).safeParse(input);
+  const parsed = CancelInput.safeParse(input);
   if (!parsed.success) return { ok: false, error: 'Diga o motivo (mínimo 3 letras).' };
   const db = await createSupabaseServerClient('aluno');
   const { error } = await db.rpc('cancel_public_order', { p_number: parsed.data.number, p_token: parsed.data.token, p_reason: parsed.data.reason });

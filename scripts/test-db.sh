@@ -83,3 +83,6 @@ bash "$ROOT/scripts/test-rehearse-chain.sh"
 
 # #90: test the migration already loaded by the standard disposable migration loop.
 "${PSQL[@]}" -f "$ROOT/supabase/reconciliation/90_request_distinct_civil_days.test.sql"
+
+# Loja pública do Business (aluno/visitante): 20 pedidos anônimos simultâneos do mesmo telefone criam exatamente 3 (cluster próprio).
+bash "$ROOT/scripts/test-business-public-order-race.sh"
