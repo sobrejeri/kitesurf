@@ -82,6 +82,10 @@ jobs:
         run: node scripts/test-student-desktop.mjs
       - name: Test student schedule conflicts and evolution destinations
         run: node --experimental-strip-types scripts/test-student-schedule.mjs
+      - name: Test TOTP generator used by the authenticated E2E runner (RFC 6238 vectors)
+        run: node scripts/test-e2e-totp.mjs
+      - name: Test E2E priority scenario helpers (Fortaleza dates, expected balance)
+        run: node scripts/test-e2e-scenario-lib.mjs
       - name: Test real admin agenda date ranges
         run: node --experimental-strip-types scripts/test-admin-agenda-range.mjs
       - name: Test per-level quote selection and exact money inputs
