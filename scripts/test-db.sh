@@ -71,6 +71,7 @@ PG_TEST_SOCKET="$DATA" PG_TEST_PORT="$PORT" bash "$ROOT/scripts/test-p0-booking-
 
 # #91: agenda do instrutor x reserva do aluno, duas conexões reais (bloqueio, reserva e redução de turno).
 PG_TEST_SOCKET="$DATA" PG_TEST_PORT="$PORT" bash "$ROOT/scripts/test-schedule-concurrency.sh"
+PG_TEST_SOCKET="$DATA" PG_TEST_PORT="$PORT" bash "$ROOT/scripts/test-schedule-concurrency-mutation.sh"
 
 # #91: rollback exato da migration da agenda v2 (funções substituídas, ACL, gatilhos novos).
 bash "$ROOT/scripts/test-91-rollback.sh"

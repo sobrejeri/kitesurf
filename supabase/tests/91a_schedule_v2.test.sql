@@ -98,6 +98,12 @@ begin
   assert pg_temp.try(format('select public.add_my_time_off(%L, %L, ''vacation'', '''')', pg_temp.loc(mon + 200, '00:00'), pg_temp.loc(mon + 400, '00:00')), a1) like '22023:%', 'B: mais de 180 dias recusado';
   assert pg_temp.try(format('select public.add_my_time_off(%L, %L, ''block'', '''')', pg_temp.loc(mon + 1, '00:00'), pg_temp.loc(mon + 50, '00:00')), a1) like '22023:%', 'B: bloqueio avulso acima de 30 dias recusado';
   assert pg_temp.try(format('select public.add_my_time_off(%L, %L, ''xx'', '''')', pg_temp.loc(mon + 1, '00:00'), pg_temp.loc(mon + 2, '00:00')), a1) like '22023:%', 'B: tipo inválido recusado';
+  assert pg_temp.try(format('select public.add_my_time_off(%L, %L, null, '''')', pg_temp.loc(mon + 1, '00:00'), pg_temp.loc(mon + 2, '00:00')), a1) like '22023:Invalid block%', 'B: tipo NULL recusado explicitamente (22023)';
+  assert pg_temp.try(format('select public.add_my_time_off(%L, %L, ''day_off'', '''')', pg_temp.loc(mon + 1, '09:00'), pg_temp.loc(mon + 1, '10:00')), a1) like '22023:%', 'B: folga de 1 hora recusada (dia inteiro local)';
+  assert pg_temp.try(format('select public.add_my_time_off(%L, %L, ''day_off'', '''')', pg_temp.loc(mon + 1, '00:00'), pg_temp.loc(mon + 1, '23:00')), a1) like '22023:%', 'B: folga que termina às 23h recusada (fim parcial)';
+  assert pg_temp.try(format('select public.add_my_time_off(%L, %L, ''vacation'', '''')', pg_temp.loc(mon + 1, '08:00'), pg_temp.loc(mon + 3, '00:00')), a1) like '22023:%', 'B: férias que começam às 8h recusadas (início parcial)';
+  assert pg_temp.try(format('select public.add_my_time_off(%L, %L, ''block'', '''')', pg_temp.loc(mon + 1, '09:00'), pg_temp.loc(mon + 1, '10:00')), a1) = 'ok', 'B: bloqueio avulso de 1 hora continua permitido';
+  delete from public.instructor_time_off where instructor_id = a1 and starts_at = pg_temp.loc(mon + 1, '09:00');
   assert pg_temp.try(format('select public.add_my_time_off(%L, %L, ''block'', '''')', now() - interval '3 days', now() - interval '2 days'), a1) like '22023:%', 'B: período passado recusado';
   assert not pg_temp.can(a1, pg_temp.loc(mon + 61, '15:00'), 1), 'B: dentro das férias, recusado';
   assert pg_temp.try(format('select public.save_my_weekly_schedule(%L::jsonb, 0)', '[{"weekday":1,"opens":"08:00","closes":"18:00","breaks":[{"from":"12:00","to":"13:00"}]},{"weekday":2,"opens":"14:00","closes":"20:00"}]'), a1) = 'ok', 'B: salvar de novo mantém férias';
@@ -153,6 +159,36 @@ begin
   perform pg_temp.try($q$select public.save_my_weekly_schedule('[{"weekday":1,"opens":"08:00","closes":"23:00"},{"weekday":2,"opens":"08:00","closes":"23:00"}]'::jsonb, 0)$q$, a1);
   assert pg_temp.bk(b1, v_jeri, pg_temp.loc(mon + 8, '16:00'), 1) = 'ok', 'F: reserva em pagamento criada';
   assert pg_temp.try(format('select public.add_my_time_off(%L, %L, ''block'', '''')', pg_temp.loc(mon + 8, '15:00'), pg_temp.loc(mon + 8, '18:00')), a1) like '55000:A pending reservation%', 'F: bloqueio sobre reserva em pagamento recusado';
+
+  -- H) reserva EM PAGAMENTO que deixa de caber na nova agenda é cancelada (nada pago) e não pode mais ser confirmada;
+  --    a reserva JÁ CONFIRMADA continua intacta (só é listada)
+  declare hold uuid; hold_res jsonb;
+  begin
+    select b.id into strict hold from public.bookings b join public.booking_meetings m on m.booking_id = b.id
+     where b.student_id = b1 and b.instructor_id = a1 and b.status::text = 'awaiting_payment' and m.starts_at = pg_temp.loc(mon + 8, '16:00');
+    set local role authenticated; perform set_config('request.jwt.claim.sub', a1::text, true);
+    hold_res := public.save_my_weekly_schedule('[{"weekday":1,"opens":"08:00","closes":"23:00"}]'::jsonb, 0);  -- só segunda: a retenção da terça (mon+8) deixa de caber
+    reset role;
+    assert (hold_res->>'holds_cancelled')::int >= 1, 'H: a reserva em pagamento fora da nova agenda foi cancelada: ' || hold_res::text;
+    assert (select status::text from public.bookings where id = hold) = 'cancelled', 'H: reserva em pagamento cancelada';
+    assert exists (select 1 from public.audit_logs where action = 'booking.hold_cancelled_availability' and entity_id = hold::text), 'H: cancelamento auditado';
+    assert pg_temp.try(format('select public.confirm_test_payment(%L)', hold), b1) like '55000:%', 'H: confirmar a reserva cancelada é recusado (confirm_test_payment)';
+    assert pg_temp.try(format('select public.confirm_validation_lesson(%L)', hold), b1) like '55000:%', 'H: confirmar a reserva cancelada é recusado (confirm_validation_lesson)';
+    assert (select status::text from public.bookings where id = v_id) = 'confirmed'
+       and (select count(*) from public.booking_meetings where booking_id = v_id and status::text = 'scheduled') = 2, 'H: a reserva confirmada fica intacta mesmo fora da nova agenda';
+    assert (hold_res->>'conflicting_meetings')::int >= 1, 'H: a aula confirmada fora da agenda é contada como conflito';
+  end;
+
+  -- I) reagendamento usa a MESMA regra: can_move_meeting (função interna) respeita turno, dia fechado, férias e ignora o próprio encontro
+  declare own uuid; v_ok boolean;
+  begin
+    select m.id into strict own from public.booking_meetings m where m.booking_id = v_id and m.position = 1;
+    assert public.can_move_meeting(a1, own, pg_temp.loc(mon, '14:00'), 120), 'I: mover o encontro para o próprio horário é aceito (ignora a si mesmo)';
+    assert public.can_move_meeting(a1, gen_random_uuid(), pg_temp.loc(mon, '19:00'), 60), 'I: segunda 19:00 está dentro do turno e livre';
+    assert not public.can_move_meeting(a1, gen_random_uuid(), pg_temp.loc(mon, '14:00'), 60), 'I: horário de outro encontro confirmado é recusado';
+    assert not public.can_move_meeting(a1, own, pg_temp.loc(mon + 1, '10:00'), 120), 'I: terça está fora da agenda salva (só segunda)';
+    assert not public.can_move_meeting(a1, own, pg_temp.loc(mon + 61, '10:00'), 60), 'I: férias bloqueiam o reagendamento';
+  end;
 
   -- G) barreira do banco: dois encontros ativos do mesmo instrutor não se sobrepõem, nem por inserção direta, nem por troca de instrutor
   declare vb uuid; vm uuid; other_b uuid; begin

@@ -10,7 +10,7 @@
 begin;
 
 -- 1. Estrutura ------------------------------------------------------------------------------------------------------
-create table public.instructor_weekly_breaks (
+create table if not exists public.instructor_weekly_breaks (
   id uuid primary key default gen_random_uuid(),
   instructor_id uuid not null references public.instructor_schedule_settings(instructor_id) on delete cascade,
   weekday integer not null check (weekday between 0 and 6),
@@ -19,7 +19,7 @@ create table public.instructor_weekly_breaks (
   check (starts_at < ends_at),
   unique (instructor_id, weekday, starts_at)
 );
-create table public.instructor_extra_hours (
+create table if not exists public.instructor_extra_hours (
   id uuid primary key default gen_random_uuid(),
   instructor_id uuid not null references public.instructors(id) on delete cascade,
   day date not null,
@@ -30,14 +30,16 @@ create table public.instructor_extra_hours (
   unique (instructor_id, day)
 );
 alter table public.instructor_time_off
-  add column kind text not null default 'block' check (kind in ('block', 'day_off', 'vacation'));
+  add column if not exists kind text not null default 'block' check (kind in ('block', 'day_off', 'vacation'));
 
 alter table public.instructor_weekly_breaks enable row level security;
 alter table public.instructor_extra_hours enable row level security;
 revoke all on public.instructor_weekly_breaks, public.instructor_extra_hours from public, anon, authenticated;
 grant select on public.instructor_weekly_breaks, public.instructor_extra_hours to authenticated;
+drop policy if exists breaks_self on public.instructor_weekly_breaks;
 create policy breaks_self on public.instructor_weekly_breaks for select to authenticated
   using (instructor_id = auth.uid() or public.is_admin());
+drop policy if exists extra_hours_self on public.instructor_extra_hours;
 create policy extra_hours_self on public.instructor_extra_hours for select to authenticated
   using (instructor_id = auth.uid() or public.is_admin());
 
@@ -115,9 +117,9 @@ end $$;
 -- 3. Reconciliação (interna) e conflitos (somente leitura, do próprio instrutor) -------------------------------------------
 create function public.reconcile_instructor_availability(p_id uuid) returns jsonb
 language plpgsql security definer set search_path = '' as $$
-declare o record; v_advanced integer := 0; v_conflicts integer;
+declare o record; h record; v_advanced integer := 0; v_holds integer := 0; v_conflicts integer;
 begin
-  -- SKIP LOCKED: nunca espera por uma solicitação que outra transação já está movendo (evita ciclo de locks).
+  -- Ordem de locks: instrutor (já travado por quem chama) -> solicitação/oferta (SKIP LOCKED: nunca espera por outra transação) -> reserva.
   for o in select f.id as offer_id, f.request_id, r.meetings
              from public.instructor_offers f join public.instructor_requests r on r.id = f.request_id
             where f.instructor_id = p_id and f.status = 'offered' and r.status = 'searching'
@@ -130,11 +132,28 @@ begin
       v_advanced := v_advanced + 1;
     end if;
   end loop;
+  -- POLÍTICA (a confirmar na revisão): reserva EM PAGAMENTO (retenção de 10 min, nada pago) que deixou de caber na nova agenda é cancelada,
+  -- para que ela não possa ser confirmada em horário que o instrutor acabou de fechar. Reserva JÁ CONFIRMADA nunca é tocada (só listada).
+  -- confirm_test_payment trava o instrutor antes da reserva e confirm_validation_lesson trava só a reserva: o bloqueio de linha da reserva abaixo
+  -- decide quem chega primeiro (confirmada antes => vira conflito listado; cancelada antes => a confirmação é recusada com 55000).
+  for h in select b.id, b.code from public.bookings b
+            where b.instructor_id = p_id and b.status = 'awaiting_payment' and b.created_at >= now() - interval '10 minutes'
+              and exists (select 1 from public.booking_meetings m where m.booking_id = b.id and m.status = 'scheduled'
+                           and not public.instructor_slot_open(p_id, m.starts_at, m.starts_at + make_interval(mins => m.minutes::integer)))
+            order by b.id for update of b
+  loop
+    update public.bookings set status = 'cancelled', cancelled_at = now() where id = h.id and status = 'awaiting_payment';
+    if found then
+      perform public.write_audit('booking.hold_cancelled_availability', 'booking', h.id::text, null,
+        jsonb_build_object('reason', 'instructor schedule changed'), h.code);
+      v_holds := v_holds + 1;
+    end if;
+  end loop;
   select count(*) into v_conflicts
     from public.booking_meetings m join public.bookings b on b.id = m.booking_id
    where b.instructor_id = p_id and b.status = 'confirmed' and m.status = 'scheduled' and m.starts_at > now()
-     and not public.instructor_slot_open(p_id, m.starts_at, m.starts_at + make_interval(mins => m.minutes));
-  return jsonb_build_object('offers_advanced', v_advanced, 'conflicting_meetings', v_conflicts);
+     and not public.instructor_slot_open(p_id, m.starts_at, m.starts_at + make_interval(mins => m.minutes::integer));
+  return jsonb_build_object('offers_advanced', v_advanced, 'holds_cancelled', v_holds, 'conflicting_meetings', v_conflicts);
 end $$;
 revoke all on function public.reconcile_instructor_availability(uuid) from public, anon, authenticated;
 
@@ -235,8 +254,13 @@ declare
 begin
   perform 1 from public.instructors where id = uid for update;
   if not found then raise exception 'Instructor only' using errcode = '42501'; end if;
-  if p_kind not in ('block', 'day_off', 'vacation') or p_start is null or p_end is null or p_end <= p_start
+  if p_kind is null or p_kind not in ('block', 'day_off', 'vacation') or p_start is null or p_end is null or p_end <= p_start
      or length(coalesce(p_reason, '')) > 160 then
+    raise exception 'Invalid block' using errcode = '22023';
+  end if;
+  -- Folga e férias são DIAS INTEIROS locais: começam e terminam exatamente à meia-noite de Fortaleza (imposto aqui, não só na Server Action).
+  if p_kind in ('day_off', 'vacation')
+     and ((p_start at time zone 'America/Fortaleza')::time <> time '00:00' or (p_end at time zone 'America/Fortaleza')::time <> time '00:00') then
     raise exception 'Invalid block' using errcode = '22023';
   end if;
   v_max := case p_kind when 'block' then interval '30 days' when 'day_off' then interval '14 days' else interval '180 days' end;
@@ -274,9 +298,9 @@ begin
   return public.add_my_time_off(p_start, p_end, 'block', p_reason);
 end $$;
 
-create function public.add_my_extra_hours(p_day date, p_opens time, p_closes time) returns uuid
+create function public.add_my_extra_hours(p_day date, p_opens time, p_closes time) returns jsonb
 language plpgsql security definer set search_path = '' as $$
-declare uid uuid := public.require_role(array['instructor']::public.app_role[]); v_id uuid;
+declare uid uuid := public.require_role(array['instructor']::public.app_role[]); v_id uuid; v_result jsonb;
 begin
   perform 1 from public.instructors where id = uid for update;
   if not found then raise exception 'Instructor only' using errcode = '42501'; end if;
@@ -291,9 +315,11 @@ begin
   insert into public.instructor_extra_hours (instructor_id, day, opens_at, closes_at) values (uid, p_day, p_opens, p_closes)
     on conflict (instructor_id, day) do update set opens_at = excluded.opens_at, closes_at = excluded.closes_at
     returning id into v_id;
+  -- Reduzir uma janela existente pode invalidar ofertas e reservas em pagamento: reconcilia sempre.
+  v_result := public.reconcile_instructor_availability(uid);
   perform public.write_audit('instructor.extra_hours_saved', 'extra_hours', v_id::text, null,
-    jsonb_build_object('day', p_day, 'opens', p_opens, 'closes', p_closes));
-  return v_id;
+    jsonb_build_object('day', p_day, 'opens', p_opens, 'closes', p_closes) || v_result);
+  return jsonb_build_object('id', v_id) || v_result;
 end $$;
 revoke all on function public.add_my_extra_hours(date, time, time) from public, anon;
 grant execute on function public.add_my_extra_hours(date, time, time) to authenticated;
