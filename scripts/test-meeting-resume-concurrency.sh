@@ -17,6 +17,17 @@ cleanup() { "${PSQL[@]}" -c "update public.booking_meetings set status='cancelle
 trap cleanup EXIT
 dl0="$("${PSQL[@]}" -c "select deadlocks from pg_stat_database where datname='postgres'")"
 
+# Os dias livres do instrutor a1 dependem da agenda que testes ANTERIORES deixaram salva (ex.: só domingo) e das reservas que eles já consumiram.
+# Para este teste não depender disso, guarda a agenda de a1, deixa-o sem restrição (regra legada) e restaura tudo no fim.
+"${PSQL[@]}" <<SQL
+create table public.zz_sched_hours as select * from public.instructor_weekly_hours where instructor_id = '$A1';
+create table public.zz_sched_settings as select * from public.instructor_schedule_settings where instructor_id = '$A1';
+delete from public.instructor_weekly_hours where instructor_id = '$A1';
+delete from public.instructor_schedule_settings where instructor_id = '$A1';
+SQL
+restore_schedule() { "${PSQL[@]}" -c "delete from public.instructor_weekly_hours where instructor_id='$A1'; delete from public.instructor_schedule_settings where instructor_id='$A1'; insert into public.instructor_schedule_settings select * from public.zz_sched_settings; insert into public.instructor_weekly_hours select * from public.zz_sched_hours; drop table if exists public.zz_sched_hours, public.zz_sched_settings" >/dev/null 2>&1 || true; }
+trap 'cleanup; restore_schedule' EXIT
+
 "${PSQL[@]}" <<'SQL'
 create table public.zz_ids(k text primary key, v text);
 create function public.zz_free_slot(p_from int, p_to int) returns timestamptz language sql as $$
@@ -79,7 +90,8 @@ begin
     perform public.start_ordered_meeting(m1, pin);
     perform public.interrupt_meeting(m1, 'Vento forte demais para voar', 30, 30, array[1], array[]::int[]);
     execute 'reset role';
-    t := public.zz_free_slot(1, ((d2 at time zone 'America/Fortaleza')::date - (now() at time zone 'America/Fortaleza')::date) - 1);
+    -- a continuidade fica a mais de 2 dias: o teste nao pode depender da hora do dia em que roda (dentro de 24h o inicio seria permitido)
+    t := public.zz_free_slot(3 + (n-1)*30, ((d2 at time zone 'America/Fortaleza')::date - (now() at time zone 'America/Fortaleza')::date) - 1);
     assert t is not null, 'FIXTURE: horario de continuidade';
     insert into public.zz_ids values ('bk'||n, bk::text), ('m1_'||n, m1::text), ('pin'||n, pin), ('t'||n, t::text), ('b'||n, bk::text);
   end loop;
