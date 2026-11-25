@@ -7,6 +7,7 @@ import { requireRole } from '@/lib/auth';
 import { BOOKING_STATUS_LABELS, MEETING_STATUS_LABELS, listBookingsForStudent } from '@/lib/data';
 import { formatDateShort, formatDay, formatLessonWhen, formatMinutes, formatMonthTag, formatTime } from '@/lib/format';
 import { initials } from '@/lib/people';
+import { isAwaitingResume } from '@/lib/meeting-interruption';
 import { compareStudentLessons, lessonHasEvolution, lessonEvolutionHref, lessonIsPast, lessonNeedsInstructorRecord } from '@/lib/student-lesson-links';
 import { getStudentBookingInstructorAvatar } from '@/lib/student-booking-avatar';
 import { VALIDATION_WITHOUT_CHECKOUT } from '@/lib/booking-mode';
@@ -33,7 +34,8 @@ export default async function MyLessonsPage({searchParams}:{searchParams:Promise
       booking.booking_meetings.map((meeting) => {
         const past = lessonIsPast(meeting.status, meeting.starts_at, meeting.minutes, now);
         const awaiting = booking.status === 'awaiting_payment';
-        const needsRecord = booking.status === 'confirmed'
+        const interrupted = isAwaitingResume(meeting);
+        const needsRecord = booking.status === 'confirmed' && !interrupted
           && lessonNeedsInstructorRecord(meeting.status, meeting.starts_at, meeting.minutes, now);
         return {
           bookingId: booking.id,
@@ -41,8 +43,8 @@ export default async function MyLessonsPage({searchParams}:{searchParams:Promise
           startsAt: meeting.starts_at,
           evolutionHref: lessonHasEvolution(meeting.status) ? lessonEvolutionHref(booking.id, meeting.id) : null,
           title: 'Aula particular de kitesurf',
-          statusLabel: awaiting ? (VALIDATION_WITHOUT_CHECKOUT ? 'Aguardando sua confirmação' : BOOKING_STATUS_LABELS.awaiting_payment) : meeting.status === 'done' ? 'Concluída' : needsRecord ? 'Aguardando registro' : MEETING_STATUS_LABELS[meeting.status],
-          statusTone: awaiting || needsRecord ? 'warning' : meeting.status === 'done' ? 'quiet' : 'success',
+          statusLabel: awaiting ? (VALIDATION_WITHOUT_CHECKOUT ? 'Aguardando sua confirmação' : BOOKING_STATUS_LABELS.awaiting_payment) : meeting.status === 'done' ? 'Concluída' : interrupted ? 'Interrompida · fale com o instrutor' : needsRecord ? 'Aguardando registro' : MEETING_STATUS_LABELS[meeting.status],
+          statusTone: awaiting || needsRecord || interrupted ? 'warning' : meeting.status === 'done' ? 'quiet' : 'success',
           day: formatDay(meeting.starts_at),
           month: formatMonthTag(meeting.starts_at),
           beach: (booking.beach?.name ?? '—'),
