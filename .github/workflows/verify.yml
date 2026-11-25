@@ -72,6 +72,10 @@ jobs:
         run: node scripts/test-student-subpage-header-clearance.mjs
       - name: Test 4h / 2-meeting booking Server Action and legacy queue fallback
         run: node scripts/test-booking-four-hours-action.mjs
+      - name: Test interruption flow rules and screen regression (flag off by default)
+        run: node --experimental-strip-types scripts/test-meeting-interruption-lib.mjs
+      - name: Test interruption Server Actions (permissions, flag, validation, fail-closed)
+        run: node scripts/test-meeting-interruption-actions.mjs
       - name: Test instructor ordered presence and atomic skills Server Actions
         run: node scripts/test-instructor-meeting-actions.mjs
       - name: Test student multi-booking and history separation
@@ -82,6 +86,12 @@ jobs:
         run: node scripts/test-student-desktop.mjs
       - name: Test student schedule conflicts and evolution destinations
         run: node --experimental-strip-types scripts/test-student-schedule.mjs
+      - name: Test student view of interrupted lessons (flag off by default, no balance/make-up)
+        run: node --experimental-strip-types scripts/test-student-interruption-view.mjs
+      - name: Test TOTP generator used by the authenticated E2E runner (RFC 6238 vectors)
+        run: node scripts/test-e2e-totp.mjs
+      - name: Test instructor agenda rules (shifts, breaks, time off, calendar views, Fortaleza day mapping)
+        run: node --experimental-strip-types scripts/test-instructor-agenda.mjs
       - name: Test real admin agenda date ranges
         run: node --experimental-strip-types scripts/test-admin-agenda-range.mjs
       - name: Test per-level quote selection and exact money inputs
