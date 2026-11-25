@@ -9,12 +9,17 @@
 #  D) redução de turno em curso x confirm_validation_lesson (trava só a reserva) de uma reserva em pagamento que deixou de caber: a confirmação ESPERA a reserva (Lock) e é
 #     recusada, porque a reconciliação a cancelou; a reserva nunca é confirmada em horário que o instrutor acabou de fechar.
 #  E) o mesmo com confirm_test_payment (trava o instrutor antes da reserva): espera o instrutor (Lock) e é recusada. Sem deadlock em nenhum dos dois caminhos.
+#  F) edição de agenda em curso x respond_meeting_change (aceitar reagendamento para o dia que a edição fecha): a resposta ESPERA a linha do instrutor (Lock) e é
+#     recusada ('Proposed time is no longer available'); o encontro e o pedido ficam como estavam.
+#  G) aceite do reagendamento em curso x edição de agenda que fecha o dia novo: a edição ESPERA (Lock), depois vale; o encontro movido NÃO é apagado nem
+#     devolvido: fica agendado e é contado como conflito (aula confirmada fora da agenda é só listada). Sem deadlock nem sobreposição.
 # Ordem de locks: linha do instrutor primeiro. Nenhum deadlock (pg_stat_database.deadlocks não muda).
 # ONLY=A|B|C roda um só cenário (usado pelo teste de mutação, que espera FALHA no A quando o lock é removido).
 set -euo pipefail
 : "${PG_TEST_SOCKET:?}"; : "${PG_TEST_PORT:?}"
 PSQL=(psql -X -h "$PG_TEST_SOCKET" -p "$PG_TEST_PORT" -U postgres -d postgres -v ON_ERROR_STOP=1 -Atq)
-ONLY="${ONLY:-ABCDE}"
+ONLY="${ONLY:-ABCDEFG}"
+CH="${CHANGE_BASE:-20}"   # dia dos cenários F/G: o reagendamento exige a nova data em até 90 dias
 OFF="${OFFSET_BASE:-120}"   # dia inicial dos cenários (cada execução usa dias próprios: as reservas são confirmadas no banco descartável e não se repetem)
 A1=00000000-0000-0000-0000-0000000000a1; B1=00000000-0000-0000-0000-0000000000b1
 JERI="$("${PSQL[@]}" -c "select id from public.beaches where slug='jeri'")"
@@ -112,6 +117,55 @@ hold_case() { # hold_case <letra> <dias> <função de confirmação> : D (confir
 }
 if [[ "$ONLY" == *D* ]]; then hold_case D $((OFF+3)) confirm_validation_lesson; fi
 if [[ "$ONLY" == *E* ]]; then hold_case E $((OFF+4)) confirm_test_payment; fi
+
+# ---- F e G: respond_meeting_change x edição de agenda ----
+change_case() { # change_case <letra> <offset do dia original>  -> define BK MID RQ ORIG NEW WDNEW
+  local letter="$1" off="$2" bk
+  ORIG="$(loc "$off" '10:00')"; NEW="$(loc $((off+1)) '10:00')"
+  bk="$("${PSQL[@]}" -c "$(as $B1 "select public.create_booking('$JERI','first_time','Português','[{\"starts_at\":\"$ORIG\",\"hours\":1}]'::jsonb);")" | tail -1)"
+  [[ "$bk" =~ ^[0-9a-f-]{36}$ ]] || fail "$letter: fixture: reserva não criada: $bk"
+  "${PSQL[@]}" -c "$(as $B1 "select public.confirm_test_payment('$bk');")" >/dev/null
+  MID="$("${PSQL[@]}" -c "select id from public.booking_meetings where booking_id='$bk'")"
+  "${PSQL[@]}" -c "$(as $B1 "select public.request_meeting_change('$MID','$NEW','Preciso mudar a data da aula');")" >/dev/null 2>"$out/$letter.req.err" || fail "$letter: fixture: pedido de reagendamento recusado: $(cat "$out/$letter.req.err")"
+  RQ="$("${PSQL[@]}" -c "select id from public.meeting_change_requests where meeting_id='$MID' and status='pending'")"
+  [[ "$RQ" =~ ^[0-9a-f-]{36}$ ]] || fail "$letter: fixture: pedido pendente não encontrado"
+  BK="$bk"
+  WDNEW="$("${PSQL[@]}" -c "select extract(dow from ((now() at time zone 'America/Fortaleza')::date + $((off+1))))::int")"
+  CLOSED="$(echo "$days" | sed "s/{\"weekday\":$WDNEW,\"opens\":\"08:00\",\"closes\":\"20:00\"},\?//; s/,\]/]/")"
+  [ "$CLOSED" != "$days" ] || fail "$letter: fixture não fechou o dia novo"
+}
+if [[ "$ONLY" == *F* ]]; then
+  change_case F $CH
+  bg conc-f1 "$(as $A1 "select public.save_my_weekly_schedule('$CLOSED'::jsonb, 0); select pg_sleep(4);")"
+  wait_state "F: edição de agenda em curso segurando o instrutor" "$(sleeping conc-f1)"
+  bg conc-f2 "$(as $A1 "select public.respond_meeting_change('$RQ', true);")"
+  wait_state "F: a resposta ficou ESPERANDO a linha do instrutor" "$(blocked conc-f2)"
+  wait_rc conc-f1; wait_rc conc-f2
+  [ "$(cat "$out/conc-f1.rc")" = 0 ] || fail "F: salvar agenda: $(cat "$out/conc-f1.err")"
+  [ "$(cat "$out/conc-f2.rc")" != 0 ] || fail "F: o aceite deveria ser recusado (o dia novo foi fechado)"
+  grep -q "no longer available\|55000" "$out/conc-f2.err" || fail "F: recusa por motivo inesperado: $(cat "$out/conc-f2.err")"
+  [ "$("${PSQL[@]}" -c "select starts_at = '$ORIG'::timestamptz from public.booking_meetings where id='$MID'")" = t ] || fail "F: o encontro não deveria ter mudado de horário"
+  [ "$("${PSQL[@]}" -c "select status from public.meeting_change_requests where id='$RQ'")" = pending ] || fail "F: o pedido deveria seguir pendente"
+  "${PSQL[@]}" -c "$(as $A1 "select public.save_my_weekly_schedule('$days'::jsonb, 0);")" >/dev/null
+  echo "PASS F: a resposta ao reagendamento esperou (Lock observado) a edição de agenda e foi recusada; encontro e pedido intactos"
+fi
+if [[ "$ONLY" == *G* ]]; then
+  change_case G $((CH+20))
+  bg conc-g1 "$(as $A1 "select public.respond_meeting_change('$RQ', true); select pg_sleep(4);")"
+  wait_state "G: aceite do reagendamento em curso segurando o instrutor" "$(sleeping conc-g1)"
+  bg conc-g2 "$(as $A1 "select public.save_my_weekly_schedule('$CLOSED'::jsonb, 0);")"
+  wait_state "G: a edição de agenda ficou ESPERANDO a linha do instrutor" "$(blocked conc-g2)"
+  wait_rc conc-g1; wait_rc conc-g2
+  [ "$(cat "$out/conc-g1.rc")" = 0 ] || fail "G: aceite: $(cat "$out/conc-g1.err")"
+  [ "$(cat "$out/conc-g2.rc")" = 0 ] || fail "G: salvar agenda: $(cat "$out/conc-g2.err")"
+  [ "$("${PSQL[@]}" -c "select starts_at = '$NEW'::timestamptz and status::text = 'scheduled' from public.booking_meetings where id='$MID'")" = t ] || fail "G: o encontro movido deveria seguir agendado no horário novo (aula confirmada nunca é apagada nem devolvida)"
+  [ "$("${PSQL[@]}" -c "select status::text from public.bookings where id='$BK'")" = confirmed ] || fail "G: a reserva deveria seguir confirmada"
+  [ "$("${PSQL[@]}" -c "select count(*) from public.audit_logs where action='instructor.schedule_saved' and (new_state->>'conflicting_meetings')::int >= 1 and created_at > now() - interval '1 minute'")" -ge 1 ] || fail "G: a edição deveria ter contado o encontro movido como conflito"
+  n="$("${PSQL[@]}" -c "select count(*) from public.booking_meetings a join public.bookings ba on ba.id=a.booking_id join public.booking_meetings b on b.id>a.id and b.booking_id<>a.booking_id join public.bookings bb on bb.id=b.booking_id and bb.instructor_id=ba.instructor_id where ba.instructor_id='$A1' and a.status<>'cancelled' and b.status<>'cancelled' and ba.status='confirmed' and bb.status='confirmed' and a.starts_at>now() and tstzrange(a.starts_at,a.starts_at+make_interval(mins=>a.minutes),'[)') && tstzrange(b.starts_at,b.starts_at+make_interval(mins=>b.minutes),'[)')")"
+  [ "$n" = 0 ] || fail "G: sobreposição de encontros confirmados do instrutor: $n"
+  "${PSQL[@]}" -c "$(as $A1 "select public.save_my_weekly_schedule('$days'::jsonb, 0);")" >/dev/null
+  echo "PASS G: a edição de agenda esperou (Lock observado) o aceite do reagendamento; o encontro movido ficou agendado e contado como conflito, sem sobreposição"
+fi
 
 [ "$(deadlocks)" = "$dl0" ] || fail "deadlock detectado"
 if grep -qi "deadlock" "$out"/*.err 2>/dev/null; then fail "deadlock nas conexões"; fi

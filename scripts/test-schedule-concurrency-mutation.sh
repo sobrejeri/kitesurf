@@ -19,4 +19,18 @@ grep -q "o bloqueio ficou ESPERANDO por lock\|o bloqueio deveria ser recusado po
 rm -f "$orig.mut.out"
 "${PSQL[@]}" -f "$orig" >/dev/null
 OFFSET_BASE=220 ONLY=A bash "$ROOT/scripts/test-schedule-concurrency.sh" >/dev/null || { echo "FAIL: com o lock restaurado o cenário A deveria passar" >&2; exit 1; }
+# segunda mutação: sem o lock da linha do instrutor em respond_meeting_change, o cenário F (a resposta tem de ESPERAR a edição de agenda) deve falhar
+SIG2='public.respond_meeting_change(uuid,boolean)'
+orig2="$(mktemp)"; trap '"${PSQL[@]}" -f "$orig" >/dev/null 2>&1 || true; "${PSQL[@]}" -f "$orig2" >/dev/null 2>&1 || true; rm -f "$orig" "$orig2"' EXIT
+"${PSQL[@]}" -c "select pg_get_functiondef('$SIG2'::regprocedure) || ';'" > "$orig2"
+grep -q "PERFORM 1 FROM public.instructors WHERE id=b.instructor_id FOR UPDATE;" "$orig2" || { echo "FAIL: não achei o lock do instrutor em respond_meeting_change" >&2; exit 1; }
+sed 's/PERFORM 1 FROM public.instructors WHERE id=b.instructor_id FOR UPDATE;/PERFORM 1;/' "$orig2" | "${PSQL[@]}" -f - >/dev/null
+if CHANGE_BASE=50 ONLY=F bash "$ROOT/scripts/test-schedule-concurrency.sh" >"$orig.mut2.out" 2>&1; then
+  echo "FAIL: sem o lock em respond_meeting_change o cenário F deveria falhar" >&2; cat "$orig.mut2.out" >&2; exit 1
+fi
+grep -q "a resposta ficou ESPERANDO\|o aceite deveria ser recusado" "$orig.mut2.out" || { echo "FAIL: o cenário F falhou por outro motivo (fixture?):" >&2; cat "$orig.mut2.out" >&2; exit 1; }
+rm -f "$orig.mut2.out"
+"${PSQL[@]}" -f "$orig2" >/dev/null
+CHANGE_BASE=60 ONLY=F bash "$ROOT/scripts/test-schedule-concurrency.sh" >/dev/null || { echo "FAIL: com o lock restaurado o cenário F deveria passar" >&2; exit 1; }
+echo "PASS: mutação em respond_meeting_change — sem o lock o cenário F falha; com o lock restaurado passa"
 echo "PASS: mutação — sem o lock da linha do instrutor o cenário A falha; com o lock restaurado passa"
