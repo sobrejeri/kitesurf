@@ -18,10 +18,23 @@ export function groupInstructorLessons(bookings: readonly Booking[]): LessonGrou
       if (group) groups[group].push({ booking, meeting });
     }
   }
-  groups.proximas.sort((a, b) => a.meeting.starts_at.localeCompare(b.meeting.starts_at));
-  groups.andamento.sort((a, b) => a.meeting.starts_at.localeCompare(b.meeting.starts_at));
-  groups.concluidas.sort((a, b) => b.meeting.starts_at.localeCompare(a.meeting.starts_at));
+  groups.proximas.sort((a, b) => Date.parse(a.meeting.starts_at) - Date.parse(b.meeting.starts_at));
+  groups.andamento.sort((a, b) => Date.parse(a.meeting.starts_at) - Date.parse(b.meeting.starts_at));
+  groups.concluidas.sort((a, b) => Date.parse(b.meeting.starts_at) - Date.parse(a.meeting.starts_at));
   return groups;
+}
+
+/** Dashboard: active classes first, then future classes. Keep overdue records separate. */
+export function instructorTodayLessons(groups: LessonGroups, now: number) {
+  return {
+    upcoming: [...groups.andamento, ...groups.proximas.filter(({ meeting }) => Date.parse(meeting.starts_at) >= now)],
+    overdue: groups.proximas.filter(({ meeting }) => Date.parse(meeting.starts_at) < now),
+  };
+}
+
+/** Past scheduled lessons remain accessible for recording. */
+export function nextScheduledInstructorLesson(groups: LessonGroups, now: number) {
+  return groups.proximas.find(({ meeting }) => Date.parse(meeting.starts_at) >= now);
 }
 
 export function resolveInstructorLessonTab(

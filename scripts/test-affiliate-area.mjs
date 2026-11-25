@@ -83,6 +83,11 @@ const promote = read('src/app/afiliado/(app)/divulgacao/page.tsx');
 assert.ok(promote.includes("partner.status === 'approved'") && promote.includes('<ReferralQR') && promote.includes('referralMessages(link)'),
   'Link, QR and messages show only for an approved affiliate');
 
+const referrals = read('src/app/afiliado/(app)/indicacoes/page.tsx');
+assert.match(referrals, /const approved = partner\?\.status === 'approved'/);
+assert.match(referrals, /action=\{approved\s*\? <ButtonLink href="\/afiliado\/divulgacao"[^]*?: <ButtonLink href="\/afiliado\/perfil"/,
+  'Pending affiliates must be directed to their profile before sharing');
+
 // 5. Installable app.
 function pngSize(path) {
   const buffer = readFileSync(path);

@@ -18,10 +18,11 @@ const makeQuery = (rows, error = null) => ({
   eq() { return this; },
   lte() { return this; },
   gt() { return this; },
+  gte(column, value) { assert.equal(column, 'created_at'); assert.equal(value, '2026-11-13T11:00:00Z'); return this; },
   order() { return this; },
   limit(n) { assert.equal(n, 20); return Promise.resolve({ data: Array.isArray(rows) ? rows.slice(0, n) : rows, error }); },
 });
-async function invoke({ enabled = 'true', authorization = 'Bearer ' + TOKEN,
+async function invoke({ enabled = 'true', activatedAt = '2026-11-13T11:00:00Z', authorization = 'Bearer ' + TOKEN,
   secret = 'test-only-secret', expired = [], active = [], expiredError = null,
   activeError = null, rpcErrors = {} } = {}) {
   const calls = [];
@@ -40,6 +41,7 @@ async function invoke({ enabled = 'true', authorization = 'Bearer ' + TOKEN,
   };
   const env = {
     QUEUE_WORKER_ENABLED: enabled,
+    QUEUE_WORKER_ACTIVATED_AT: activatedAt,
     QUEUE_WORKER_TOKEN: TOKEN,
     NEXT_PUBLIC_SUPABASE_URL: SUPABASE_URL,
     SUPABASE_SECRET_KEY: secret,
@@ -80,6 +82,13 @@ for (const authorization of [null, '', 'Bearer wrong', 'Basic ' + TOKEN]) {
 const missingSecret = await invoke({ secret: '' });
 assert.equal(missingSecret.status, 503);
 assert.equal(missingSecret.selections, 0);
+
+for (const activatedAt of ['', 'invalid-date', '2999-01-01T00:00:00Z']) {
+  const denied = await invoke({ activatedAt });
+  assert.equal(denied.status, 503, 'Invalid activation cutoff must fail closed');
+  assert.equal(denied.selections, 0);
+  assert.deepEqual(denied.calls, []);
+}
 
 const ok = await invoke({ expired: [{ id: 'expired-a' }], active: [{ id: 'active-b' }] });
 assert.equal(ok.status, 200);

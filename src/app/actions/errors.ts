@@ -11,6 +11,10 @@ const KNOWN: readonly [RegExp, string][] = [
     'O prazo de confirmação expirou ou a aula não está disponível. Confira a reserva ou procure um novo horário.'],
   [/Student already has a lesson at the selected time/i,
     'Você já tem uma aula ou uma busca de instrutor nesse horário. Escolha outro dia ou horário sem sobreposição.'],
+  [/Student already has a meeting in this time slot/i,
+    'Você já tem outro encontro nesse horário. Escolha um horário que não se sobreponha às suas aulas.'],
+  [/Only one meeting per local calendar day is allowed/i,
+    'Escolha apenas um encontro por dia. Distribua as horas em datas diferentes.'],
   [/Overlapping meetings/i,
     'Há dois encontros no mesmo horário. Ajuste as datas e os horários para continuar.'],
   [/Invalid meeting date or hours/i,
@@ -32,8 +36,8 @@ const KNOWN: readonly [RegExp, string][] = [
   [/Only scheduled confirmed meetings may be changed|Meeting no longer eligible for change/i,
     'Apenas aulas agendadas de reservas confirmadas podem ser reagendadas.'],
 
-  [/Meeting day has not arrived/i,
-    'Este encontro só pode ser iniciado a partir do dia agendado. Confira a data da aula.'],
+  [/Meeting start window has not opened|Meeting day has not arrived/i,
+    'Este encontro só pode ser iniciado a partir de 24 horas antes do horário agendado. Confira a data e a hora da aula.'],
   [/Finish the previous meeting first/i,
     'Conclua e registre o encontro anterior antes de iniciar o próximo.'],
   [/Select valid kite skills for the minutes taught/i,
@@ -98,6 +102,13 @@ export function friendlyError(
     return 'A função necessária no Supabase não está disponível ou está desatualizada. Avise a administração para verificar as migrações.';
   }
   if (error?.code === '42501') return 'Você não tem permissão para esta operação. Entre novamente ou contate a administração.';
+  // Concorrência: o banco desfaz uma das duas operações (deadlock 40P01 ou "tente de novo" 40001); nada é perdido, basta repetir.
+  if (error?.code === '40P01' || error?.code === '40001' || /Booking changed, try again|deadlock detected/i.test(message)) {
+    return 'Muita gente usando ao mesmo tempo. Nada foi perdido: tente de novo em alguns segundos.';
+  }
+  if (error?.hint === 'STUDENT_MEETING_CONFLICT') {
+    return 'Você já tem outro encontro nesse horário. Escolha um horário que não se sobreponha às suas aulas.';
+  }
   if (error?.hint === 'NO_INSTRUCTOR') {
     return 'Nenhum instrutor disponível para essa praia e horário. Escolha outro horário ou tente outra praia.';
   }

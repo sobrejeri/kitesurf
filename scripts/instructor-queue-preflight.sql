@@ -10,9 +10,9 @@ SELECT
   (SELECT count(*) FROM public.instructors WHERE status = 'approved') AS approved_instructors,
   (SELECT count(*) FROM public.instructor_requests WHERE status = 'searching') AS searching_requests,
   (SELECT count(*) FROM public.instructor_requests WHERE status = 'searching' AND expires_at <= now()) AS overdue_searches,
-  (SELECT count(*) FROM public.instructor_offers WHERE status = 'pending') AS pending_offers,
-  (SELECT count(*) FROM public.instructor_offers WHERE status = 'pending' AND expires_at <= now()) AS overdue_offers,
-  (SELECT count(*) FROM public.instructor_offers WHERE status = 'pending' AND expires_at IS NULL) AS pending_offers_without_deadline;
+  (SELECT count(*) FROM public.instructor_offers WHERE status IN ('offered', 'suggested')) AS pending_offers,
+  (SELECT count(*) FROM public.instructor_offers WHERE status IN ('offered', 'suggested') AND expires_at <= now()) AS overdue_offers,
+  (SELECT count(*) FROM public.instructor_offers WHERE status IN ('offered', 'suggested') AND expires_at IS NULL) AS pending_offers_without_deadline;
 
 -- An absent pg_cron job table does not prove an external scheduler is absent.
 -- Inspect Render scheduled jobs / external triggers separately before enabling anything.

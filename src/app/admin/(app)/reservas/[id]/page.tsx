@@ -9,6 +9,8 @@ import { Badge } from '@/components/ui';
 import { requireRole } from '@/lib/auth';
 import { LEVEL_LABELS, MEETING_STATUS_LABELS, getBookingForViewer } from '@/lib/data';
 import { formatDateLong, formatMinutes, formatMoney, formatTime } from '@/lib/format';
+import { getMeetingKiteSkills } from '@/lib/meeting-skills';
+import { KITE_CURRICULA } from '@/lib/kite-steps';
 
 export const metadata: Metadata = { title: 'Reserva' };
 
@@ -32,9 +34,22 @@ export default async function AdminBookingPage({ params }: { params: Promise<{ i
   if (!UUID.test(id)) notFound();
   const booking = await getBookingForViewer(id, viewer);
   if (!booking) notFound();
+  // Reuse the authenticated, RLS-scoped skill reader. Do not bypass RLS with a service key.
+  const skillResult = await getMeetingKiteSkills(booking.booking_meetings.map((meeting) => meeting.id));
+  const curriculum = KITE_CURRICULA[booking.level];
 
   const status = BOOKING_STATUS[booking.status];
   const awaiting = booking.status === 'awaiting_payment';
+  // A registered encounter is not necessarily a fully delivered lesson.
+  // Keep this separate from the encounter-count progress shown on the list.
+  const contractedMinutes = Math.max(0, Math.round(booking.total_hours * 60));
+  const deliveredMinutes = booking.booking_meetings
+    .filter((meeting) => meeting.status === 'done')
+    .reduce((sum, meeting) => sum + Math.max(0, meeting.done_minutes || 0), 0);
+  const remainingMinutes = Math.max(0, contractedMinutes - deliveredMinutes);
+  const deliveredPercent = contractedMinutes
+    ? Math.min(100, Math.round((deliveredMinutes / contractedMinutes) * 10000) / 100)
+    : 0;
 
   return (
     <>
@@ -82,21 +97,68 @@ export default async function AdminBookingPage({ params }: { params: Promise<{ i
           </Panel>
         </div>
 
+        <section className="rounded-[16px] border border-line bg-surface p-4 lg:col-span-2" aria-label="Saldo de horas da reserva">
+          <h2 className="text-[16px] font-semibold text-ink">Horas contratadas e realizadas</h2>
+          <p className="mt-2 text-[14px] text-label">
+            {formatMinutes(deliveredMinutes)} realizados de {formatMinutes(contractedMinutes)} contratados
+          </p>
+          <div role="progressbar" aria-label="Minutos realizados" aria-valuemin={0} aria-valuemax={100} aria-valuenow={deliveredPercent} className="mt-2 h-2 overflow-hidden rounded-full bg-track">
+            <div className="h-full bg-brand-bar" style={{ width: `${deliveredPercent}%` }} />
+          </div>
+          <p className="mt-2 text-[13px] font-semibold text-ink">
+            {remainingMinutes > 0 ? `${formatMinutes(remainingMinutes)} ainda não realizados` : 'Carga horária contratada realizada'}
+          </p>
+          <p className="mt-1 text-[12px] text-muted">Encontros registrados e minutos realizados são indicadores diferentes. Este saldo é informativo; não agenda reposição automaticamente.</p>
+        </section>
+
         <Panel title="Encontros" className="lg:col-span-2">
           <ul className="grid gap-2">
             {booking.booking_meetings.map((meeting) => (
-              <li key={meeting.id} className="flex items-center justify-between gap-3 rounded-[14px] border border-line px-4 py-3">
-                <span>
-                  <strong className="block text-[14px] font-semibold text-ink">
-                    {formatDateLong(meeting.starts_at)} · {formatTime(meeting.starts_at)}
-                  </strong>
-                  <span className="text-[12px] text-muted">
-                    {formatMinutes(meeting.minutes)}
-                    {meeting.status === 'done' ? ` · ${formatMinutes(meeting.done_minutes)} realizados` : ''}
-                  </span>
-                  {meeting.note ? <span className="mt-1 block text-[12px] text-label">{meeting.note}</span> : null}
-                </span>
-                <Badge tone={meeting.status === 'done' ? 'quiet' : 'brand'}>{MEETING_STATUS_LABELS[meeting.status]}</Badge>
+              <li key={meeting.id}>
+                <details className="group rounded-[14px] border border-line">
+                  <summary className="flex min-h-16 cursor-pointer list-none items-center justify-between gap-3 rounded-[14px] px-4 py-3 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand [&::-webkit-details-marker]:hidden">
+                    <span className="min-w-0">
+                      <strong className="block text-[14px] font-semibold text-ink">
+                        {formatDateLong(meeting.starts_at)} · {formatTime(meeting.starts_at)}
+                      </strong>
+                      <span className="block text-[12px] text-muted">
+                        {formatMinutes(meeting.minutes)}
+                        {meeting.status === 'done' ? ` · ${formatMinutes(meeting.done_minutes)} realizados` : ''}
+                      </span>
+                    </span>
+                    <span className="flex shrink-0 items-center gap-2">
+                      <Badge tone={meeting.status === 'done' ? 'quiet' : 'brand'}>{MEETING_STATUS_LABELS[meeting.status]}</Badge>
+                      <span aria-hidden="true" className="text-label transition-transform group-open:rotate-180">⌄</span>
+                    </span>
+                  </summary>
+                  <div className="border-t border-line px-4 pb-4 pt-3 text-[13px]">
+                    <dl className="grid gap-2">
+                      <div className="flex justify-between gap-3"><dt className="text-muted">Duração prevista</dt><dd className="text-ink">{formatMinutes(meeting.minutes)}</dd></div>
+                      <div className="flex justify-between gap-3"><dt className="text-muted">Tempo registrado</dt><dd className="text-ink">{meeting.status === 'done' ? formatMinutes(meeting.done_minutes) : 'Ainda não registrado'}</dd></div>
+                      <div className="flex justify-between gap-3"><dt className="text-muted">Situação</dt><dd className="text-ink">{MEETING_STATUS_LABELS[meeting.status]}</dd></div>
+                    </dl>
+                    <p className="mt-3 text-[12px] text-muted">Observação do encontro</p>
+                    <p className="mt-1 whitespace-pre-wrap text-ink">{meeting.note?.trim() || 'Nenhuma observação registrada.'}</p>
+                    <section className="mt-3 border-t border-line pt-3" aria-label="Evolução por habilidade">
+                      <h3 className="text-[13px] font-semibold text-ink">Evolução por habilidade</h3>
+                      {!skillResult.ready ? (
+                        <p className="mt-2 text-[12px] text-muted">O detalhamento não está disponível para esta sessão. Verifique a permissão de leitura do Admin antes da homologação.</p>
+                      ) : (() => {
+                        const rows = skillResult.rows.filter((row) => row.meeting_id === meeting.id);
+                        return rows.length ? (
+                          <ul className="mt-2 grid gap-2">
+                            {rows.map((row) => (
+                              <li key={row.step_number} className="flex items-start justify-between gap-3 text-[12px]">
+                                <span className="text-ink">{curriculum.find((step) => step.id === row.step_number)?.title ?? `Etapa ${row.step_number}`}</span>
+                                <span className="shrink-0 font-semibold text-label">{row.result === 'mastered' ? 'Concluída' : 'Em desenvolvimento'}</span>
+                              </li>
+                            ))}
+                          </ul>
+                        ) : <p className="mt-2 text-[12px] text-muted">Nenhuma habilidade registrada para este encontro.</p>;
+                      })()}
+                    </section>
+                  </div>
+                </details>
               </li>
             ))}
           </ul>

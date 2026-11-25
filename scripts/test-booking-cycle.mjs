@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
-import { activeBookingStageMeetingIds, activeStudentBookings, bookingIsFinished, selectedStudentBooking, evolutionBookingStatus } from '../src/lib/booking-cycle.ts';
+import { activeBookingStageMeetingIds, activeStudentBookings, bookingBalanceMinutes, bookingIsFinished, selectedStudentBooking, evolutionBookingStatus } from '../src/lib/booking-cycle.ts';
 
 // A meeting entry is a bare status string (one contracted hour, fully recorded
 // when done) or an object carrying its own minutes/done_minutes for balance cases.
@@ -48,6 +48,22 @@ assert.deepEqual(
   activeStudentBookings([completed, ongoingB, ongoingA, anotherCompleted, waitingPayment]).map(b=>b.id),
   ['B','A'], // earliest remaining scheduled meeting on A is Nov 5, B on Nov 4
 );
+// Two local offsets can invert the ISO text order: 13:00Z is earlier than
+// 10:30-03:00 (13:30Z), even though "10:30" sorts first as text.
+const offsetEarlier = booking('offset-early', 'confirmed',
+  ['2026-11-26T13:00:00+00:00'], ['scheduled']);
+const offsetLater = booking('offset-late', 'confirmed',
+  ['2026-11-26T10:30:00-03:00'], ['scheduled']);
+assert.deepEqual(activeStudentBookings([offsetLater, offsetEarlier]).map((b) => b.id),
+  ['offset-early', 'offset-late'],
+  'Student next booking must sort by absolute time, regardless of ISO offset');
+// Also select the earliest *meeting* inside a booking, not its earliest text.
+const multiOffset = booking('multi-offset', 'confirmed',
+  ['2026-11-26T10:30:00-03:00', '2026-11-26T13:00:00Z'],
+  ['scheduled', 'scheduled']);
+assert.deepEqual(activeStudentBookings([offsetLater, multiOffset]).map((b) => b.id),
+  ['multi-offset', 'offset-late'],
+  'The earliest UTC meeting determines the booking position');
 assert.equal(activeStudentBookings([completed, anotherCompleted, waitingPayment]).length, 0);
 assert.equal(ongoingA.booking_meetings[0].status, 'done'); // day 1 stays complete
 assert.equal(ongoingA.booking_meetings[1].status, 'scheduled'); // day 2 stays scheduled
@@ -106,6 +122,58 @@ assert.deepEqual(
   ['four-hours-0', 'four-hours-1'],
 );
 console.log('PASS: four-hour package advances across two meetings and retains evolution in history');
+
+// VNT-1008 regression: two 120-minute encounters recorded as 110 + 115
+// must retain 15 contracted minutes without falsely marking the booking complete.
+// This is a pure-data regression, not an authenticated E2E approval.
+const vnt1008Partial = booking('VNT-1008', 'confirmed', dates, [
+  { status: 'done', minutes: 120, done_minutes: 110 },
+  { status: 'done', minutes: 120, done_minutes: 115 },
+], 4);
+assert.equal(bookingBalanceMinutes(vnt1008Partial), 15,
+  '225 recorded minutes out of 240 must leave exactly 15');
+assert.equal(bookingIsFinished(vnt1008Partial), false,
+  'An unfulfilled 15-minute balance must not be silently completed');
+assert.equal(evolutionBookingStatus(vnt1008Partial), 'Saldo a reagendar');
+assert.deepEqual(activeBookingStageMeetingIds(vnt1008Partial),
+  ['VNT-1008-0', 'VNT-1008-1'],
+  'Both recorded encounters must remain visible in student evolution');
+assert.deepEqual(activeStudentBookings([vnt1008Partial]).map((b) => b.id),
+  ['VNT-1008']);
+console.log('PASS: VNT-1008 partial delivery 110 + 115 leaves 15 minutes and preserves both stages');
+
+// A make-up reserves only the remaining 15 minutes; while it is scheduled,
+// the available balance is zero, but the booking remains active. Completing
+// the make-up must not erase the original two evolution stages.
+const makeUpScheduled = {
+  ...vnt1008Partial,
+  booking_meetings: [
+    ...vnt1008Partial.booking_meetings,
+    { id: 'VNT-1008-makeup', status: 'scheduled', minutes: 15, done_minutes: 0,
+      starts_at: '2026-11-25T12:00:00Z' },
+  ],
+};
+assert.equal(bookingBalanceMinutes(makeUpScheduled), 0,
+  'A scheduled 15-minute make-up reserves the balance without counting as taught');
+assert.equal(bookingIsFinished(makeUpScheduled), false,
+  'A make-up awaiting attendance must keep the reservation active');
+assert.equal(evolutionBookingStatus(makeUpScheduled), 'Em andamento');
+const makeUpDone = {
+  ...makeUpScheduled,
+  booking_meetings: makeUpScheduled.booking_meetings.map((meeting) =>
+    meeting.id === 'VNT-1008-makeup'
+      ? { ...meeting, status: 'done', done_minutes: 15 }
+      : meeting),
+};
+assert.equal(bookingBalanceMinutes(makeUpDone), 0);
+assert.equal(bookingIsFinished(makeUpDone), true);
+assert.equal(evolutionBookingStatus(makeUpDone), 'Concluída');
+assert.deepEqual(activeBookingStageMeetingIds(makeUpDone),
+  ['VNT-1008-0', 'VNT-1008-1', 'VNT-1008-makeup']);
+assert.deepEqual(activeStudentBookings([makeUpDone]), []);
+console.log('PASS: VNT-1008 15-minute make-up reserves balance then completes all evolution stages');
+
+
 
 const reservationPage = readFileSync('src/app/aluno/(app)/reserva/[id]/page.tsx', 'utf8');
 const actionsStart = reservationPage.indexOf('<nav aria-label="Ações da reserva"');

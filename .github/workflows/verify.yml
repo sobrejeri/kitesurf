@@ -23,10 +23,13 @@ jobs:
       - run: pnpm install --frozen-lockfile
       - run: pnpm typecheck
       - run: pnpm lint
+      - run: node scripts/test-pwa-offline.mjs
       - name: Verify student level is asked only at signup
         run: node scripts/test-auth-kite-level.mjs
       - name: Verify e-mail confirmation and password links return to the public site
         run: node --experimental-strip-types scripts/test-auth-redirect-origin.mjs
+      - name: Student meeting conflict message
+        run: node --experimental-strip-types scripts/test-student-conflict-message.mjs
       - name: Verify CPF/CNPJ registration for instructors and affiliates
         run: node --experimental-strip-types scripts/test-tax-id.mjs
       - name: Verify administrators need the authenticator-app code
@@ -89,6 +92,10 @@ jobs:
         run: node --experimental-strip-types scripts/test-student-app-screens.mjs
       - name: Verify student subpages clear the floating phone app bar
         run: node scripts/test-student-subpage-header-clearance.mjs
+      - name: Test 4h / 2-meeting booking Server Action and legacy queue fallback
+        run: node scripts/test-booking-four-hours-action.mjs
+      - name: Test instructor ordered presence and atomic skills Server Actions
+        run: node scripts/test-instructor-meeting-actions.mjs
       - name: Test student multi-booking and history separation
         run: node --experimental-strip-types scripts/test-booking-cycle.mjs
       - name: Test booking minute balance and make-up regressions
@@ -119,8 +126,13 @@ jobs:
         run: node --experimental-strip-types scripts/test-lesson-protection-policy.mjs
       - name: Guard read-only expiration scheduler preflight
         run: node scripts/test-expiration-scheduler-preflight.mjs
+      - name: Test offline queue executor dry-run, legacy exclusion and replay safety
+        run: node scripts/test-queue-offline-executor.mjs
+      - name: Test reschedule and cancellation Server Actions with invalid decision guard
+        run: node scripts/test-meeting-change-actions.mjs
       - name: Verify guarded offline queue batch selection
         run: node scripts/test-queue-batch.mjs
+      - run: node scripts/test-instructor-queue-preflight.mjs
       - name: Verify read-only instructor queue expiry readiness preflight
         run: node scripts/test-queue-expiry-preflight.mjs
       - name: Test overdue lesson protection monitoring

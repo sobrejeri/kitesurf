@@ -1,6 +1,8 @@
 import assert from 'node:assert/strict';
 import {
   groupInstructorLessons,
+  instructorTodayLessons,
+  nextScheduledInstructorLesson,
   resolveInstructorLessonTab,
   selectInstructorLesson,
   mayStartInstructorLesson,
@@ -60,3 +62,28 @@ assert.equal(resolveInstructorLessonTab(undefined,undefined,groupInstructorLesso
   booking('D', 'completed', [['done','02']]),
 ])), 'proximas', 'Without active class the initial tab must be safe');
 console.log('PASS: instructor tabs group meetings correctly and preserve ordered start eligibility');
+
+for (const [status, tab] of [['scheduled','proximas'], ['in_progress','andamento'], ['done','concluidas']]) {
+  const entries = groupInstructorLessons([{
+    status: 'confirmed',
+    booking_meetings: [
+      { id: 'later', starts_at: '2026-11-04T10:30:00-03:00', status },
+      { id: 'earlier', starts_at: '2026-11-04T13:00:00Z', status },
+    ],
+  }]);
+  const ids = entries[tab].map(({ meeting }) => meeting.id);
+  assert.deepEqual(ids, tab === 'concluidas' ? ['later', 'earlier'] : ['earlier', 'later']);
+}
+console.log('PASS: instructor tabs order equivalent time zones chronologically');
+
+const start = Date.parse('2026-11-05T14:00:00Z');
+assert.equal(nextScheduledInstructorLesson(groups, start)?.meeting.id, 'A-2');
+assert.equal(nextScheduledInstructorLesson(groups, start + 1)?.meeting.id, 'A-3');
+assert.equal(nextScheduledInstructorLesson(groups, Date.parse('2026-11-10')), undefined);
+console.log('PASS: the next lesson skips overdue unrecorded meetings and includes the exact start');
+
+const dashboard = instructorTodayLessons(groups, Date.parse('2026-11-05T14:00:00Z'));
+assert.deepEqual(dashboard.upcoming.map(({meeting})=>meeting.id), ['B-1','A-2','A-3']);
+assert.deepEqual(dashboard.overdue.map(({meeting})=>meeting.id), ['C-1']);
+assert.equal(instructorTodayLessons(groups, Date.parse('2026-11-10')).upcoming.length, 1, 'Only in-progress class remains after all scheduled starts');
+console.log('PASS: instructor dashboard prioritizes active/future lessons and preserves overdue access');

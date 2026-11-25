@@ -22,7 +22,7 @@ const own = [
     ['active-now', 'in_progress', '2026-11-02T15:00:00Z'],
   ]),
   booking('B', [
-    ['done-new', 'done', '2026-11-03T13:00:00Z'],
+    ['done-new', 'done', '2026-11-02T10:30:00-03:00'],
     ['cancelled', 'cancelled', '2026-11-04T13:00:00Z'],
   ]),
 ];

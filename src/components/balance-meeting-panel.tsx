@@ -76,10 +76,14 @@ export function BalanceMeetingPanel({
             </p>
           </ActionForm>
 
-          <ActionForm action={closeBookingBalance} submitLabel="Não quero usar este saldo — encerrar"
+          <ActionForm action={closeBookingBalance} submitLabel="Confirmar encerramento do saldo"
             submitVariant="ghost" className="mt-4 border-t border-line pt-4"
             submitClassName="!text-[12px]">
             <input type="hidden" name="bookingId" value={bookingId} />
+            <label className="flex items-start gap-2 text-[12px] leading-relaxed text-muted">
+              <input type="checkbox" name="confirmForfeit" value="yes" required className="mt-0.5 shrink-0" />
+              <span>Entendo que, ao encerrar esta reserva, abro mão dos {formatMinutes(balanceMinutes)} restantes e não poderei reagendá-los.</span>
+            </label>
           </ActionForm>
         </>
       )}

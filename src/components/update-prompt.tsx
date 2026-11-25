@@ -45,6 +45,11 @@ export function UpdatePrompt() {
 
   useEffect(() => {
     let active = true;
+    if (CURRENT !== 'dev' && 'serviceWorker' in navigator) {
+      void navigator.serviceWorker.register('/sw.js', { updateViaCache: 'none' }).catch(() => {
+        // Browsers with restricted storage can still use the online app.
+      });
+    }
 
     setLastSeen(storedValue(LAST_SEEN_KEY));
     setDismissed(storedValue(DISMISSED_KEY));

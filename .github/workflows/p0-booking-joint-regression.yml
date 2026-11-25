@@ -1,0 +1,37 @@
+name: VentoKite - joint P0 booking regression
+on:
+  push:
+    branches:
+      - fix/p0-student-meeting-overlap-guard
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  combined-booking-rules:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+      - name: Merge PR 296 into PR 298 in disposable runner only
+        shell: bash
+        run: |
+          set -euo pipefail
+          git config user.name "VentoKite CI"
+          git config user.email "ci@localhost"
+          git fetch origin refs/pull/296/head:refs/remotes/origin/p0-instructor-race
+          git merge --no-commit --no-ff refs/remotes/origin/p0-instructor-race
+          echo "Combined PR #296 and #298 in CI workspace only"
+          git diff --cached --stat
+      - name: Install isolated PostgreSQL
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y postgresql postgresql-client
+      - name: Run combined SQL, booking, queue, and concurrency regression
+        shell: bash
+        run: |
+          set -euo pipefail
+          PG_BIN="$(dirname "$(find /usr/lib/postgresql -name pg_ctl | sort -V | tail -1)")"
+          sudo -u runner env PG_BIN="$PG_BIN" RACE_ROUNDS=12 bash scripts/test-db.sh
