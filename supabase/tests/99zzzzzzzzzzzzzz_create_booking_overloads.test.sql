@@ -35,8 +35,11 @@ begin
   end if;
   if position('booking_meetings' in lower(pg_get_functiondef(
        'public.instructor_can_attend(uuid,jsonb)'::regprocedure))) = 0
+     -- #91: o bloqueio de horário agora vive em instructor_slot_open, chamada por instructor_can_attend.
+     or position('instructor_slot_open' in lower(pg_get_functiondef(
+       'public.instructor_can_attend(uuid,jsonb)'::regprocedure))) = 0
      or position('instructor_time_off' in lower(pg_get_functiondef(
-       'public.instructor_can_attend(uuid,jsonb)'::regprocedure))) = 0 then
+       'public.instructor_slot_open(uuid,timestamptz,timestamptz)'::regprocedure))) = 0 then
     raise exception 'Post-lock availability helper must check booking collisions and time off';
   end if;
 
