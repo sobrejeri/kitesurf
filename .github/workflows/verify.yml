@@ -86,6 +86,8 @@ jobs:
         run: node scripts/test-student-desktop.mjs
       - name: Test student schedule conflicts and evolution destinations
         run: node --experimental-strip-types scripts/test-student-schedule.mjs
+      - name: Test student view of interrupted lessons (flag off by default, no balance/make-up)
+        run: node --experimental-strip-types scripts/test-student-interruption-view.mjs
       - name: Test TOTP generator used by the authenticated E2E runner (RFC 6238 vectors)
         run: node scripts/test-e2e-totp.mjs
       - name: Test instructor agenda rules (shifts, breaks, time off, calendar views, Fortaleza day mapping)
