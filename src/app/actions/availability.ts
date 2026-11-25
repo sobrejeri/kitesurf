@@ -12,12 +12,13 @@ const AREAS = ['/instrutor/disponibilidade', '/instrutor/agenda'] as const;
 const refresh = () => AREAS.forEach((path) => revalidatePath(path));
 
 /** What a save/time-off RPC reports back: offers returned to the queue and confirmed classes now outside the schedule. */
-const Impact = z.object({ offers_advanced: z.number().int(), conflicting_meetings: z.number().int() }).partial();
+const Impact = z.object({ offers_advanced: z.number().int(), conflicting_meetings: z.number().int(), holds_cancelled: z.number().int() }).partial();
 function impactNote(data: unknown): string {
   const impact = Impact.safeParse(data);
   if (!impact.success) return '';
   const parts: string[] = [];
   if ((impact.data.offers_advanced ?? 0) > 0) parts.push(`${impact.data.offers_advanced} solicitação(ões) em aberto passaram para o próximo instrutor`);
+  if ((impact.data.holds_cancelled ?? 0) > 0) parts.push(`${impact.data.holds_cancelled} reserva(s) em pagamento que não cabiam mais foram canceladas (nada havia sido pago)`);
   if ((impact.data.conflicting_meetings ?? 0) > 0) {
     parts.push(`${impact.data.conflicting_meetings} aula(s) confirmada(s) ficaram fora do horário e continuam marcadas: combine o reagendamento pela aula`);
   }
@@ -122,12 +123,12 @@ export async function addInstructorExtraHours(_previous: ActionState, form: Form
     return { error: 'Informe a data e um horário inicial antes do final.' };
   }
   const supabase = await createSupabaseServerClient();
-  const { error } = await supabase.rpc('add_my_extra_hours', {
+  const { data, error } = await supabase.rpc('add_my_extra_hours', {
     p_day: parsed.data.day, p_opens: parsed.data.opens, p_closes: parsed.data.closes,
   });
   if (error) return { error: friendlyError(error) };
   refresh();
-  return { ok: 'Horário extra salvo para esse dia.' };
+  return { ok: `Horário extra salvo para esse dia.${impactNote(data)}` };
 }
 
 export async function removeInstructorExtraHours(_previous: ActionState, form: FormData): Promise<ActionState> {
