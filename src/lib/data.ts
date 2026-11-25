@@ -1,5 +1,6 @@
 import 'server-only';
 
+import { interruptionFlowEnabled } from '@/lib/meeting-interruption';
 import { createSupabaseServerClient } from './supabase/server';
 
 /**
@@ -37,6 +38,13 @@ export interface Meeting {
   status: MeetingStatus;
   done_minutes: number;
   note: string | null;
+  /** #93: só vêm do banco com a feature flag ligada e a migration 20261121120000 aplicada. */
+  planned_minutes?: number | null;
+  previous_done_minutes?: number;
+  remaining_minutes?: number | null;
+  interruption_state?: 'awaiting_resume' | 'resume_scheduled' | 'resumed' | null;
+  interruption_reason?: string | null;
+  interruption_count?: number;
 }
 
 export interface Booking {
@@ -212,8 +220,22 @@ export async function listBookingsForStudent(studentId: string): Promise<Student
   }));
 }
 
+const MEETING_COLUMNS = 'booking_meetings ( id, position, starts_at, minutes, status, done_minutes, note )';
+const MEETING_COLUMNS_WITH_INTERRUPTION = 'booking_meetings ( id, position, starts_at, minutes, status, done_minutes, note, planned_minutes, previous_done_minutes, remaining_minutes, interruption_state, interruption_reason, interruption_count )';
+
 export async function listBookingsForInstructor(instructorId: string): Promise<Booking[]> {
   const supabase = await createSupabaseServerClient();
+  // #93: com a flag ligada, tenta ler também as colunas de interrupção; se o banco ainda não as tem, segue com a leitura de sempre.
+  if (interruptionFlowEnabled() && BOOKING_COLUMNS.includes(MEETING_COLUMNS)) {
+    const extended = await supabase.from('bookings')
+      .select(BOOKING_COLUMNS.replace(MEETING_COLUMNS, MEETING_COLUMNS_WITH_INTERRUPTION))
+      .eq('instructor_id', instructorId)
+      .in('status', ['confirmed', 'completed', 'awaiting_payment'])
+      .order('created_at', { ascending: false })
+      .returns<RawBooking[]>();
+    if (!extended.error) return (extended.data ?? []).map(normalise);
+    console.warn('[instructor-bookings] Interruption columns unavailable; using the standard read', { code: extended.error.code });
+  }
   const read = (columns: string) => supabase
     .from('bookings')
     .select(columns)
