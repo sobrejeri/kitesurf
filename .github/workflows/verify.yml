@@ -86,6 +86,8 @@ jobs:
         run: node scripts/test-student-desktop.mjs
       - name: Test student schedule conflicts and evolution destinations
         run: node --experimental-strip-types scripts/test-student-schedule.mjs
+      - name: Test student view of interrupted lessons (flag off by default, no balance/make-up)
+        run: node --experimental-strip-types scripts/test-student-interruption-view.mjs
       - name: Test real admin agenda date ranges
         run: node --experimental-strip-types scripts/test-admin-agenda-range.mjs
       - name: Test per-level quote selection and exact money inputs
