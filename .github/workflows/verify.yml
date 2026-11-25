@@ -82,6 +82,8 @@ jobs:
         run: node scripts/test-student-desktop.mjs
       - name: Test student schedule conflicts and evolution destinations
         run: node --experimental-strip-types scripts/test-student-schedule.mjs
+      - name: Test instructor request inbox refreshes by itself (single-instructor visibility)
+        run: node --experimental-strip-types scripts/test-instructor-offer-visibility.mjs
       - name: Test real admin agenda date ranges
         run: node --experimental-strip-types scripts/test-admin-agenda-range.mjs
       - name: Test per-level quote selection and exact money inputs

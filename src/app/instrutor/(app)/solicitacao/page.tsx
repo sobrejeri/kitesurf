@@ -4,6 +4,7 @@ import { respondToInstructorOffer } from '@/app/actions/offers';
 import { respondBookingReassignment } from '@/app/actions/meeting-change';
 import { suggestAlternativeDate } from '@/app/actions/suggestions';
 import { ActionForm } from '@/components/action-form';
+import { InstructorOfferPoller } from '@/components/instructor/offer-poller';
 import { Badge, ButtonLink, Card, Note, PageHeader } from '@/components/ui';
 import { requireRole } from '@/lib/auth';
 import { LEVEL_LABELS, type LessonLevel } from '@/lib/data-labels';
@@ -49,6 +50,7 @@ export default async function RequestPage() {
     <>
       <PageHeader title="Novas solicitações" eyebrow="Sua vez na fila"
         lead="Aceite ou recuse propostas. A recusa e a expiração não alteram sua prioridade." />
+      <div className="mb-4"><InstructorOfferPoller /></div>
       {reassignments.length ? (
         <section className="mb-6 grid gap-3">
           <h2 className="text-[19px] font-bold text-ink">Reservas para assumir · {reassignments.length}</h2>
@@ -95,7 +97,7 @@ export default async function RequestPage() {
       {(offers??[]).length === 0 && reassignments.length===0 ? (
         <Card className="py-12 text-center">
           <p className="text-[16px] font-semibold text-ink">Nenhuma proposta aguardando resposta.</p>
-          <p className="mt-2 text-[13px] text-muted">Mantenha seu cadastro e disponibilidade atualizados.</p>
+          <p className="mt-2 text-[13px] text-muted">Mantenha seu cadastro e disponibilidade atualizados. Uma solicitação só chega se a praia, o idioma, o transporte de apoio e o horário combinarem com o seu perfil e com a sua agenda.</p>
           <ButtonLink href="/instrutor/disponibilidade" variant="ghost" className="mt-4">Configurar disponibilidade</ButtonLink>
         </Card>
       ) : (
