@@ -15,6 +15,7 @@
  * fictício local: a primeira execução no app de teste pode ajustar seletores. FAIL aqui é informação, não homologação.
  */
 import { requireUniqueTarget, requireUuid } from './unique-target.mjs';
+import { offerForRequest, meetingForBooking } from './booking-targets.mjs';
 
 const MONTHS_PT = (year, month) => new Intl.DateTimeFormat('pt-BR', { month: 'long', year: 'numeric' }).format(new Date(year, month - 1, 1));
 const pad = (n) => String(n).padStart(2, '0');
@@ -119,9 +120,8 @@ export async function runPriorityScenario({ sessions, browser, BASE, WRITE, env,
   await step('P2', async () => {
     const accepted = await until(async () => {
       await instructor.goto(`${BASE}/instrutor/solicitacao`, { waitUntil: 'networkidle' });
-      const card = instructor.locator(`[data-request-id="${state.requestId}"]`);
-      if (await card.count() === 0) return false;
-      await requireUniqueTarget(card, 'oferta da solicitação');
+      const card = await offerForRequest(instructor, state.requestId, { allowAbsent: true });
+      if (!card) return false;
       const button = await requireUniqueTarget(card.getByRole('button', { name: 'Aceitar aula' }), 'botão de aceite');
       await button.click();
       return instructor.getByText(/Oferta aceita/).first().waitFor({ timeout: 20000 }).then(() => true, () => false);
@@ -155,9 +155,9 @@ export async function runPriorityScenario({ sessions, browser, BASE, WRITE, env,
 
   await step('P4', async () => {
     await instructor.goto(`${BASE}/instrutor/aula?aba=proximas`, { waitUntil: 'networkidle' });
-    let card = await requireUniqueTarget(instructor.locator(`[data-booking-id="${state.bookingId}"][data-meeting-position="1"]`), 'primeiro encontro');
+    let card = await meetingForBooking(instructor, state.bookingId, 1);
     await (await requireUniqueTarget(card.locator('a'), 'abrir encontro')).click();
-    card = await requireUniqueTarget(instructor.locator(`[data-booking-id="${state.bookingId}"][data-meeting-position="1"]`), 'primeiro encontro aberto');
+    card = await meetingForBooking(instructor, state.bookingId, 1);
     const meetingInput = await requireUniqueTarget(card.locator('form:has(input[name="presenceCode"]) input[name="meetingId"]'), 'identificador do encontro');
     state.meetingId = requireUuid(await meetingInput.inputValue(), 'encontro');
     await (await requireUniqueTarget(card.locator('input[name="presenceCode"]'), 'código de presença')).fill(state.code);
@@ -168,9 +168,9 @@ export async function runPriorityScenario({ sessions, browser, BASE, WRITE, env,
 
   await step('P5', async () => {
     await instructor.goto(`${BASE}/instrutor/aula?aba=andamento`, { waitUntil: 'networkidle' });
-    let card = await requireUniqueTarget(instructor.locator(`[data-booking-id="${state.bookingId}"][data-meeting-position="1"]`), 'primeiro encontro em andamento');
+    let card = await meetingForBooking(instructor, state.bookingId, 1);
     await (await requireUniqueTarget(card.locator('a'), 'abrir encontro em andamento')).click();
-    card = await requireUniqueTarget(instructor.locator(`[data-booking-id="${state.bookingId}"][data-meeting-position="1"]`), 'primeiro encontro aberto');
+    card = await meetingForBooking(instructor, state.bookingId, 1);
     const meetingInput = await requireUniqueTarget(card.locator('form:has(input[name="doneMinutes"]) input[name="meetingId"]'), 'identificador do encontro');
     if (requireUuid(await meetingInput.inputValue(), 'encontro') !== state.meetingId) throw new Error('encontro alterado entre início e registro');
     await (await requireUniqueTarget(card.locator('input[name="doneMinutes"]'), 'minutos')).fill(String(doneMinutes));
