@@ -1,0 +1,26 @@
+name: Isolated CAS live probe
+on:
+  push:
+    branches: [test/multi-agent-cas-20261126]
+    paths: [.github/workflows/cas-live-isolated.yml]
+  workflow_dispatch:
+permissions: {}
+jobs:
+  probe:
+    if: github.repository == 'sobrejeri/kitesurf' && github.ref == 'refs/heads/test/multi-agent-cas-20261126'
+    runs-on: ubuntu-latest
+    timeout-minutes: 3
+    permissions:
+      contents: write
+    steps:
+      - name: Check out reviewed probe at fixed commit
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+        with:
+          ref: 38e08bb1077582e6c2c4ce3288293783fe5ec029
+          persist-credentials: false
+          sparse-checkout: ops/multi-agent/cas-live-probe.mjs
+          sparse-checkout-cone-mode: false
+      - name: Run isolated concurrent writes
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+        run: node ops/multi-agent/cas-live-probe.mjs
