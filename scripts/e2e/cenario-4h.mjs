@@ -14,6 +14,8 @@
  * Os seletores vêm do código do app (lesson-builder, lesson-date-picker, aula/page, reserva/[id]); só foram exercitados contra um backend
  * fictício local: a primeira execução no app de teste pode ajustar seletores. FAIL aqui é informação, não homologação.
  */
+import { requireUniqueTarget, requireUuid } from './unique-target.mjs';
+
 const MONTHS_PT = (year, month) => new Intl.DateTimeFormat('pt-BR', { month: 'long', year: 'numeric' }).format(new Date(year, month - 1, 1));
 const pad = (n) => String(n).padStart(2, '0');
 const minutes = (value) => { const h = Math.floor(value / 60); const r = value % 60; return h === 0 ? `${r}min` : r === 0 ? `${h}h` : `${h}h ${r}min`; };
@@ -110,14 +112,19 @@ export async function runPriorityScenario({ sessions, browser, BASE, WRITE, env,
     await student.getByRole('button', { name: 'Continuar' }).click();
     await Promise.all([student.waitForURL(/\/aluno\/solicitacao\//, { timeout: 60000 }), student.getByRole('button', { name: 'Confirmar e buscar instrutor' }).click()]);
     state.requestUrl = student.url();
+    state.requestId = requireUuid(new URL(state.requestUrl).pathname.split('/').filter(Boolean).at(-1), 'solicitação');
     return state.requestUrl.replace(BASE, '');
   });
 
   await step('P2', async () => {
     const accepted = await until(async () => {
       await instructor.goto(`${BASE}/instrutor/solicitacao`, { waitUntil: 'networkidle' });
-      const button = instructor.getByRole('button', { name: 'Aceitar aula' }).first();
-      if (await button.count()) { await button.click(); return instructor.getByText(/Oferta aceita/).first().waitFor({ timeout: 20000 }).then(() => true, () => false); }
+      const card = instructor.locator(`[data-request-id="${state.requestId}"]`);
+      if (await card.count() === 0) return false;
+      await requireUniqueTarget(card, 'oferta da solicitação');
+      const button = await requireUniqueTarget(card.getByRole('button', { name: 'Aceitar aula' }), 'botão de aceite');
+      await button.click();
+      return instructor.getByText(/Oferta aceita/).first().waitFor({ timeout: 20000 }).then(() => true, () => false);
       return false;
     }, { timeout: 100_000, every: 5000 });
     if (!accepted) throw new Error('nenhuma oferta aceitável apareceu para o instrutor em 100 s (ver elegibilidade, agenda, fila e expiração)');
@@ -133,6 +140,7 @@ export async function runPriorityScenario({ sessions, browser, BASE, WRITE, env,
     if (!link) throw new Error('o botão "Ver minha reserva" não apareceu depois do aceite');
     await link.click(); await student.waitForURL(/\/aluno\/reserva\//, { timeout: 30000 });
     state.bookingUrl = student.url();
+    state.bookingId = requireUuid(new URL(state.bookingUrl).pathname.split('/').filter(Boolean).at(-1), 'reserva');
     const confirm = student.getByRole('button', { name: /Confirmar aula sem cobrança|Confirmar pagamento de teste/ }).first();
     if (await confirm.count()) {
       await confirm.click();
@@ -147,21 +155,31 @@ export async function runPriorityScenario({ sessions, browser, BASE, WRITE, env,
 
   await step('P4', async () => {
     await instructor.goto(`${BASE}/instrutor/aula?aba=proximas`, { waitUntil: 'networkidle' });
-    await instructor.locator('input[name="presenceCode"]').first().fill(state.code);
-    await instructor.getByRole('button', { name: 'Confirmar presença e iniciar' }).first().click();
+    let card = await requireUniqueTarget(instructor.locator(`[data-booking-id="${state.bookingId}"][data-meeting-position="1"]`), 'primeiro encontro');
+    await (await requireUniqueTarget(card.locator('a'), 'abrir encontro')).click();
+    card = await requireUniqueTarget(instructor.locator(`[data-booking-id="${state.bookingId}"][data-meeting-position="1"]`), 'primeiro encontro aberto');
+    const meetingInput = await requireUniqueTarget(card.locator('form:has(input[name="presenceCode"]) input[name="meetingId"]'), 'identificador do encontro');
+    state.meetingId = requireUuid(await meetingInput.inputValue(), 'encontro');
+    await (await requireUniqueTarget(card.locator('input[name="presenceCode"]'), 'código de presença')).fill(state.code);
+    await (await requireUniqueTarget(card.getByRole('button', { name: 'Confirmar presença e iniciar' }), 'iniciar encontro')).click();
     await instructor.getByText(/Presença confirmada/).first().waitFor({ timeout: 20000 });
     await shot(instructor, 'P4-inicio');
   });
 
   await step('P5', async () => {
     await instructor.goto(`${BASE}/instrutor/aula?aba=andamento`, { waitUntil: 'networkidle' });
-    await instructor.locator('input[name="doneMinutes"]').first().fill(String(doneMinutes));
+    let card = await requireUniqueTarget(instructor.locator(`[data-booking-id="${state.bookingId}"][data-meeting-position="1"]`), 'primeiro encontro em andamento');
+    await (await requireUniqueTarget(card.locator('a'), 'abrir encontro em andamento')).click();
+    card = await requireUniqueTarget(instructor.locator(`[data-booking-id="${state.bookingId}"][data-meeting-position="1"]`), 'primeiro encontro aberto');
+    const meetingInput = await requireUniqueTarget(card.locator('form:has(input[name="doneMinutes"]) input[name="meetingId"]'), 'identificador do encontro');
+    if (requireUuid(await meetingInput.inputValue(), 'encontro') !== state.meetingId) throw new Error('encontro alterado entre início e registro');
+    await (await requireUniqueTarget(card.locator('input[name="doneMinutes"]'), 'minutos')).fill(String(doneMinutes));
     // uma etapa "Praticada" e uma "Concluída" (os rádios step1..step6 existem quando a migration de competências está aplicada)
-    const radios = await instructor.locator('input[type="radio"][name="step1"]').count();
+    const radios = await card.locator('input[type="radio"][name="step1"]').count();
     if (radios === 0) throw new Error('sem os campos de etapas (step1..): migration de competências ausente ou tela diferente');
-    await instructor.locator('input[type="radio"][name="step1"][value="mastered"]').check();
-    await instructor.locator('input[type="radio"][name="step2"][value="practiced"]').check();
-    await instructor.getByRole('button', { name: 'Concluir e registrar encontro' }).first().click();
+    await (await requireUniqueTarget(card.locator('input[type="radio"][name="step1"][value="mastered"]'), 'etapa 1')).check();
+    await (await requireUniqueTarget(card.locator('input[type="radio"][name="step2"][value="practiced"]'), 'etapa 2')).check();
+    await (await requireUniqueTarget(card.getByRole('button', { name: 'Concluir e registrar encontro' }), 'registrar encontro')).click();
     await instructor.getByText(/Encontro registrado|Aula registrada/).first().waitFor({ timeout: 20000 });
     await shot(instructor, 'P5-registro');
   });

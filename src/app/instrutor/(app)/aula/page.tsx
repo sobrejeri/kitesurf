@@ -186,7 +186,7 @@ export default async function RunLessonPage({
               {dayHeading ? (
                 <h2 className="px-1 pt-2 text-[12px] font-semibold uppercase tracking-[.08em] text-subtle first:pt-0">{dayHeading}</h2>
               ) : null}
-              <div id={`aula-${meeting.id}`}
+              <div id={`aula-${meeting.id}`} data-booking-id={booking.id} data-meeting-position={meeting.position}
                 className={'grid gap-2 scroll-mt-28 rounded-[24px] transition-colors ' +
                   (expanded
                     ? 'bg-brand-tint p-1.5 ring-2 ring-brand/70 shadow-search'
