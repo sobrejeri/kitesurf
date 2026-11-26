@@ -118,16 +118,15 @@ export async function runPriorityScenario({ sessions, browser, BASE, WRITE, env,
   });
 
   await step('P2', async () => {
-    const accepted = await until(async () => {
+    const card = await until(async () => {
       await instructor.goto(`${BASE}/instrutor/solicitacao`, { waitUntil: 'networkidle' });
-      const card = await offerForRequest(instructor, state.requestId, { allowAbsent: true });
-      if (!card) return false;
-      const button = await requireUniqueTarget(card.getByRole('button', { name: 'Aceitar aula' }), 'botão de aceite');
-      await button.click();
-      return instructor.getByText(/Oferta aceita/).first().waitFor({ timeout: 20000 }).then(() => true, () => false);
-      return false;
+      return offerForRequest(instructor, state.requestId, { allowAbsent: true });
     }, { timeout: 100_000, every: 5000 });
-    if (!accepted) throw new Error('nenhuma oferta aceitável apareceu para o instrutor em 100 s (ver elegibilidade, agenda, fila e expiração)');
+    if (!card) throw new Error('nenhuma oferta aceitável apareceu para o instrutor em 100 s (ver elegibilidade, agenda, fila e expiração)');
+    const button = await requireUniqueTarget(card.getByRole('button', { name: 'Aceitar aula' }), 'botão de aceite');
+    // Uma resposta ausente não prova que a gravação falhou: nunca clicar novamente.
+    await button.click();
+    await instructor.getByText(/Oferta aceita/).first().waitFor({ timeout: 20000 });
     await shot(instructor, 'P2-aceite');
   });
 
