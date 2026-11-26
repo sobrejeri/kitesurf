@@ -59,8 +59,8 @@ record('M2', 'Fila A→B→C com 3 instrutores (#92)', 'BLOQUEADO', 'depende de 
 
 for (const session of Object.values(sessions)) await session.context.close();
 await browser.close();
-const summary = { quando: new Date().toISOString(), base: BASE, gravou_dados: WRITE, total: results.length, PASS: results.filter((r) => r.status === 'PASS').length, FAIL: results.filter((r) => r.status === 'FAIL').length, BLOQUEADO: results.filter((r) => r.status === 'BLOQUEADO').length };
+const summary = { quando: new Date().toISOString(), base: BASE, escrita_habilitada: WRITE, gravacoes_confirmadas: 'não verificadas pelo runner', total: results.length, PASS: results.filter((r) => r.status === 'PASS').length, FAIL: results.filter((r) => r.status === 'FAIL').length, BLOQUEADO: results.filter((r) => r.status === 'BLOQUEADO').length };
 writeFileSync(join(OUT, 'resultado.json'), JSON.stringify({ summary, results }, null, 2));
-writeFileSync(join(OUT, 'resultado.md'), `# E2E ${summary.quando}\n\nBase: ${BASE} · gravou dados: ${WRITE ? 'sim' : 'não'}\n\nPASS ${summary.PASS} · FAIL ${summary.FAIL} · BLOQUEADO ${summary.BLOQUEADO}\n\n| ID | Cenário | Resultado | Detalhe |\n|---|---|---|---|\n${results.map((r) => `| ${r.id} | ${r.titulo} | ${r.status} | ${r.detalhe.replace(/\|/g, '/')} |`).join('\n')}\n`);
+writeFileSync(join(OUT, 'resultado.md'), `# E2E ${summary.quando}\n\nBase: ${BASE} · escrita habilitada: ${WRITE ? 'sim' : 'não'} · gravações: não verificadas pelo runner\n\nPASS ${summary.PASS} · FAIL ${summary.FAIL} · BLOQUEADO ${summary.BLOQUEADO}\n\n| ID | Cenário | Resultado | Detalhe |\n|---|---|---|---|\n${results.map((r) => `| ${r.id} | ${r.titulo} | ${r.status} | ${r.detalhe.replace(/\|/g, '/')} |`).join('\n')}\n`);
 console.log(`\nPASS ${summary.PASS} · FAIL ${summary.FAIL} · BLOQUEADO ${summary.BLOQUEADO} — relatório em ${OUT}/resultado.md`);
 process.exit(summary.FAIL > 0 ? 1 : 0);
