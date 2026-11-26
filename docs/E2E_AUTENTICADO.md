@@ -1,5 +1,7 @@
 # E2E autenticado (contas fictícias) — como rodar e o que prova
 
+> **Bloqueio de segurança:** o cenário P de escrita está desabilitado antes de criar a solicitação. Os seletores de oferta e aula ainda não comprovam o vínculo com a reserva criada e poderiam atingir outro registro. As variáveis de escrita não removem o bloqueio. É necessário identificar a solicitação e os dois encontros de forma inequívoca, adicionar regressões e revisar o fluxo antes de habilitá-lo.
+
 **O que é:** `scripts/e2e/run.mjs`, um roteiro em navegador real (Playwright/Chromium) que entra com contas **fictícias** de cada perfil e devolve PASS / FAIL / BLOQUEADO por cenário, com capturas. É o primeiro passo para tirar as frentes de "0/16 homologadas".
 **O que NÃO é:** não roda no CI (precisa de credenciais), não abre nenhuma tela de pagamento e **não substitui** o roteiro manual de reserva/fila. Validei o próprio script apenas contra um backend fictício local (login, telas de entrada, e a montagem de 4 h em 2 encontros na tela real do aluno, sem enviar); ainda **não foi executado contra o app de teste real**.
 
