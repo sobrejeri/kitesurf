@@ -86,6 +86,8 @@ jobs:
         run: node scripts/test-e2e-totp.mjs
       - name: Test E2E priority scenario helpers (Fortaleza dates, expected balance)
         run: node scripts/test-e2e-scenario-lib.mjs
+      - name: E2E unique target checks
+        run: node scripts/test-e2e-unique-target.mjs
       - name: Test real admin agenda date ranges
         run: node --experimental-strip-types scripts/test-admin-agenda-range.mjs
       - name: Test per-level quote selection and exact money inputs
