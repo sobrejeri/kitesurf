@@ -68,6 +68,12 @@ export async function runPriorityScenario({ sessions, browser, BASE, WRITE, env,
   if (!WRITE || env.E2E_CONFIRM_NO_CHARGE !== 'sim') return blockAll('grava dados de TESTE: rode com E2E_WRITE=sim e E2E_CONFIRM_NO_CHARGE=sim, só com contas fictícias');
   if (!sessions.aluno || !sessions.instrutor) return blockAll('precisa das sessões de aluno e instrutor (credenciais fictícias)');
 
+  // A oferta e os formulários de aula ainda são escolhidos pela posição na tela,
+  // sem comprovar vínculo com a solicitação/reserva criada. Não criar sequer a
+  // solicitação enquanto o fluxo completo não identificar cada item de forma
+  // inequívoca. Uma flag de ambiente não deve contornar esta proteção.
+  return blockAll('segurança: identificação inequívoca da oferta e dos encontros ainda não implementada; cenário desabilitado antes de qualquer gravação');
+
   const student = sessions.aluno.page;
   const instructor = sessions.instrutor.page;
   await student.setViewportSize({ width: 1280, height: 900 });
