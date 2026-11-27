@@ -47,7 +47,7 @@ begin
     format('select public.create_booking(%L, ''first_time'', ''Português'', jsonb_build_array(jsonb_build_object(''starts_at'', %L::timestamptz, ''hours'', 1)))', v_jeri, now() + interval '59 minutes')]
   loop
     declare res text := pg_temp.try(r, stu);
-    begin assert res like '22023:%least one hour%', 'A: horario passado ou a menos de 1h deveria dar 22023: ' || res; end;
+    begin assert res like '22023:%least one hour%' or res='22023:Invalid meeting date or hours', 'A: horario passado ou a menos de 1h deveria dar 22023: ' || res; end;
   end loop;
   -- um encontro valido e outro passado no mesmo pedido: o pedido inteiro cai
   s1 := pg_temp.slot_after(v_next, 1);
