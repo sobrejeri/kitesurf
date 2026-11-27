@@ -29,6 +29,10 @@ insert into auth.users (id, email, raw_user_meta_data) values
 update public.profiles set role = 'admin' where id = '00000000-0000-0000-0000-0000000d6008';
 update public.instructors set status = 'approved', approved_at = now() where id in ('00000000-0000-0000-0000-0000000d6006', '00000000-0000-0000-0000-0000000d6007');
 
+-- O stub isolado não inclui os privilégios da API Storage do Supabase.
+grant usage on schema storage to authenticated;
+grant select, insert, update, delete on storage.objects to authenticated;
+
 do $$
 declare
   o1 text := '00000000-0000-0000-0000-0000000d6001'; o2 text := '00000000-0000-0000-0000-0000000d6002'; mg text := '00000000-0000-0000-0000-0000000d6003';
@@ -126,9 +130,20 @@ begin
   begin perform public.record_instructor_payment(link, 100, 'boleto', 'BOL-1'); raise exception 'bad method'; exception when check_violation then null; end;
   begin perform public.record_instructor_payment(link, 100, 'pix', 'x'); raise exception 'short reference'; exception when check_violation then null; end;
   begin perform public.confirm_instructor_payment(pay1); raise exception 'the school confirmed for the instructor'; exception when insufficient_privilege then null; end;
+  assert public.business_payment_receipt_access(pay1::text || '/comprovante', true), 'finance can attach to its payment';
+  assert not public.business_payment_receipt_access(pay1::text || '/other', true)
+     and not public.business_payment_receipt_access('../comprovante', true), 'invalid paths are rejected';
+  insert into storage.objects (bucket_id, name) values ('vento-business-payment-receipts', pay1::text || '/comprovante');
+  update storage.objects set name = pay1::text || '/renomeado' where bucket_id = 'vento-business-payment-receipts' and name = pay1::text || '/comprovante';
+  get diagnostics n = row_count; assert n = 0, 'receipt cannot be replaced';
+  delete from storage.objects where bucket_id = 'vento-business-payment-receipts' and name = pay1::text || '/comprovante';
+  get diagnostics n = row_count; assert n = 0, 'receipt cannot be deleted';
   perform pg_temp.reset();
-  perform pg_temp.act_as(mg); begin perform public.record_instructor_payment(link, 100, 'pix', 'PIX-M'); raise exception 'manager recorded a payment'; exception when insufficient_privilege then null; end; perform pg_temp.reset();
+  perform pg_temp.act_as(mg); begin perform public.record_instructor_payment(link, 100, 'pix', 'PIX-M'); raise exception 'manager recorded a payment'; exception when insufficient_privilege then null; end;
+  assert public.business_payment_receipt_access(pay1::text || '/comprovante', false) and not public.business_payment_receipt_access(pay1::text || '/comprovante', true), 'manager can read but not upload';
+  perform pg_temp.reset();
   perform pg_temp.act_as(at_); begin perform public.record_instructor_payment(link, 100, 'pix', 'PIX-T'); raise exception 'attendant recorded a payment'; exception when insufficient_privilege then null; end;
+  assert not public.business_payment_receipt_access(pay1::text || '/comprovante', false), 'attendant cannot read receipt';
   assert (select count(*) from public.company_instructor_payments) = 0, 'the attendant does not read payments'; perform pg_temp.reset();
 
   -- 4. O instrutor vê o que lhe devem e confirma o recebimento, uma vez.
@@ -136,6 +151,8 @@ begin
   select * into r from public.my_company_earnings();
   assert (r.due_cents, r.paid_cents, r.balance_cents, r.unconfirmed_cents) = (28600, 28600, 0, 28600) and r.company_name = 'Escola FA', 'the instructor sees the totals';
   assert (select count(*) from public.company_instructor_payments) = 2, 'and the payment records';
+  assert (select count(*) from storage.objects where bucket_id = 'vento-business-payment-receipts' and name = pay1::text || '/comprovante') = 1, 'instructor can read own receipt through RLS';
+  assert not public.business_payment_receipt_access(pay1::text || '/comprovante', true), 'instructor cannot upload receipt';
   perform public.confirm_instructor_payment(pay1);
   begin perform public.confirm_instructor_payment(pay1); raise exception 'confirmed twice'; exception when object_not_in_prerequisite_state then null; end;
   begin perform public.void_instructor_payment(pay2, 'Instrutor anulando'); raise exception 'the instructor voided'; exception when insufficient_privilege then null; end;
@@ -145,6 +162,7 @@ begin
   begin perform public.confirm_instructor_payment(pay2); raise exception 'another instructor confirmed'; exception when insufficient_privilege then null; end;
   begin perform public.instructor_balance(link); raise exception 'another instructor read the balance'; exception when insufficient_privilege then null; end;
   assert (select count(*) from public.company_instructor_payments) = 0 and (select count(*) from public.my_company_earnings()) = 0, 'another instructor sees nothing';
+  assert (select count(*) from storage.objects where bucket_id = 'vento-business-payment-receipts') = 0, 'another instructor cannot read the receipt';
   perform pg_temp.reset();
 
   -- 5. Anulação: só registro não confirmado, com motivo; libera o saldo; o registro fica.
@@ -152,6 +170,7 @@ begin
   begin perform public.void_instructor_payment(pay1, 'Anular confirmado'); raise exception 'voided a confirmed payment'; exception when object_not_in_prerequisite_state then null; end;
   begin perform public.void_instructor_payment(pay2, 'x'); raise exception 'void without reason'; exception when invalid_parameter_value then null; end;
   perform public.void_instructor_payment(pay2, 'Referência digitada errada');
+  assert not public.business_payment_receipt_access(pay2::text || '/comprovante', true), 'voided payments cannot receive new attachments';
   begin perform public.void_instructor_payment(pay2, 'Anulando de novo'); raise exception 'voided twice'; exception when object_not_in_prerequisite_state then null; end;
   select * into r from public.instructor_balance(link); assert (r.due_cents, r.paid_cents, r.balance_cents, r.unconfirmed_cents) = (28600, 20000, 8600, 0), 'a voided record no longer counts';
   pay3 := public.record_instructor_payment(link, 8600, 'ted', 'TED-9922');
@@ -183,6 +202,8 @@ begin
     and (select count(*) from public.company_due_payments) = 0 and (select count(*) from public.company_instructor_payments where company_id = a) = 0
     and (select count(*) from public.company_finance_summary(a, today - 2, today)) = 0, 'B sees nothing of A';
   begin perform public.record_instructor_payment(link, 1, 'pix', 'PIX-B'); raise exception 'B recorded a payment in A'; exception when insufficient_privilege then null; end;
+  assert (select count(*) from storage.objects where bucket_id = 'vento-business-payment-receipts') = 0, 'another school cannot read the receipt';
+  begin insert into storage.objects (bucket_id, name) values ('vento-business-payment-receipts', pay1::text || '/comprovante'); raise exception 'other school uploaded'; exception when insufficient_privilege then null; end;
   begin perform public.instructor_balance(link); raise exception 'B read a balance of A'; exception when insufficient_privilege then null; end;
   begin perform public.record_due_payment(d2, 100, today); raise exception 'B paid an account of A'; exception when insufficient_privilege then null; end;
   perform pg_temp.reset();
@@ -192,6 +213,7 @@ begin
   begin perform public.company_instructor_due_cents(link); raise exception 'internal function callable'; exception when insufficient_privilege then null; end;
   perform pg_temp.reset();
   execute 'set role anon';
+  begin perform public.business_payment_receipt_access(pay1::text || '/comprovante', false); raise exception 'anon checked receipt'; exception when insufficient_privilege then null; end;
   begin perform count(*) from public.company_instructor_payments; raise exception 'anon read payments'; exception when insufficient_privilege then null; end;
   begin perform public.my_company_earnings(); raise exception 'anon called earnings'; exception when insufficient_privilege then null; end;
   perform pg_temp.reset();
@@ -200,6 +222,9 @@ begin
   assert not exists (select 1 from public.company_instructor_links l where public.company_instructor_paid_cents(l.id) > public.company_instructor_due_cents(l.id)), 'nobody was paid above what is owed';
   assert not exists (select 1 from public.company_dues d where (select coalesce(sum(cents), 0) from public.company_due_payments p where p.due_id = d.id) > d.cents), 'no account paid above its amount';
 end $$;
+
+revoke select, insert, update, delete on storage.objects from authenticated;
+revoke usage on schema storage from authenticated;
 
 do $$ declare t text; f text; begin
   foreach t in array array['company_fin_entries','company_dues','company_due_payments','company_instructor_payments'] loop
