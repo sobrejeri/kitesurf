@@ -24,6 +24,8 @@ jobs:
       - run: pnpm typecheck
       - run: pnpm lint
       - run: node scripts/test-pwa-offline.mjs
+      - name: Test passive PWA push receiver and safe notification clicks
+        run: node scripts/test-pwa-push.mjs
       - name: Verify student level is asked only at signup
         run: node scripts/test-auth-kite-level.mjs
       - name: Verify e-mail confirmation and password links return to the public site
