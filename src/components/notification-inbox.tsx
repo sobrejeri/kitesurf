@@ -2,6 +2,7 @@ import Link from 'next/link';
 
 import { markNotificationRead } from '@/app/actions/notifications';
 import { ActionForm } from '@/components/action-form';
+import { PushSubscriptionControls } from '@/components/push-subscription-controls';
 import { Icon, type IconName } from '@/components/icon';
 import { StudentPageTitle } from '@/components/student/page-title';
 import { Note, PageHeader } from '@/components/ui';
@@ -39,6 +40,7 @@ export async function NotificationInbox({area}:{area:Area}) {
       {area==='aluno'
         ? <StudentPageTitle title="Notificações" subtitle={summary}/>
         : <PageHeader title="Notificações" lead={summary}/>}
+      <PushSubscriptionControls />
       {error?<Note tone="warning">As notificações dependem da migração 16 do Supabase.</Note>:notices.length===0?(
         <div className="vento-inbox-empty grid place-items-center gap-2 rounded-card border border-dashed border-line-ghost bg-surface px-6 py-10 text-center">
           <span className="grid h-12 w-12 place-items-center rounded-full bg-brand-soft text-brand" aria-hidden="true">

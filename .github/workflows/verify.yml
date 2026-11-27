@@ -24,6 +24,10 @@ jobs:
       - run: pnpm typecheck
       - run: pnpm lint
       - run: node scripts/test-pwa-offline.mjs
+      - name: Test safe Portuguese weak-password guidance
+        run: node --experimental-strip-types scripts/test-auth-weak-password.mjs
+      - name: Test push subscription consent, ownership inputs, revocation and logout
+        run: node scripts/test-push-subscriptions.mjs
       - name: Test passive push receiver privacy and navigation
         run: node scripts/test-pwa-push.mjs
       - name: Test read-only Storage probe safeguards
@@ -36,6 +40,10 @@ jobs:
         run: node --experimental-strip-types scripts/test-student-conflict-message.mjs
       - name: Verify CPF/CNPJ registration for instructors and affiliates
         run: node --experimental-strip-types scripts/test-tax-id.mjs
+      - name: Test instructor support vehicle metadata without changing pricing or eligibility
+        run: node scripts/test-instructor-support-vehicle.mjs
+      - name: Test read-only Admin vehicle metadata with role and second factor
+        run: node scripts/test-admin-support-vehicle.mjs
       - name: Verify administrators need the authenticator-app code
         run: node --experimental-strip-types scripts/test-admin-second-factor.mjs
       - name: Test Admin booking progress calculations

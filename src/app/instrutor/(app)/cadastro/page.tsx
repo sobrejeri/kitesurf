@@ -4,6 +4,7 @@ import { updateInstructorProfile } from '@/app/actions/instructor';
 import { saveInstructorPersonal, uploadInstructorAvatar } from '@/app/actions/instructor-profile';
 import { ActionForm } from '@/components/action-form';
 import { InstructorCompletionPanel } from '@/components/instructor/completion-panel';
+import { InstructorSupportVehiclePanel } from '@/components/instructor/support-vehicle-panel';
 import { VerifiedInstructorBadge } from '@/components/instructor/verified-badge';
 import { Icon } from '@/components/icon';
 import { InstructorMultiSelect } from '@/components/instructor/instructor-multi-select';
@@ -240,6 +241,8 @@ export default async function InstructorProfileFormPage() {
             </div>
           </details>
         </Card>
+
+        <InstructorSupportVehiclePanel instructorId={viewer.id}/>
 
         <Card className="!p-4 sm:!p-6">
           <details className="group">
