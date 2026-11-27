@@ -1,27 +1,30 @@
 import 'server-only';
-import { buildTestOrder } from './pagarme-test-order.mjs';
+import { isValidTestOrderEnvelope } from './pagarme-test-request-envelope.mjs';
 
 /** Prepared server transport, not connected to any route. The caller must
  * durably reserve a test attempt before calling, use the same stored request
  * key, and persist/reconcile the result. No automatic retries or state writes.
  * An injected transport is mandatory: importing this module cannot call a PSP.
  */
-export async function submitTestOrder({ snapshot, method, secret, requestKey, send }) {
-  const request = buildTestOrder(snapshot, method, secret);
-  // Bind reconciliation to the values actually sent, not to a caller-owned
-  // object that could change while the network request is in flight.
-  const expectedBookingId = request.payload.code;
-  const expectedAmountCents = request.payload.items[0].amount;
-  const expectedCustomerId = request.payload.customer_id;
-  if (typeof requestKey !== 'string' || !/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/.test(requestKey)
-      || typeof send !== 'function') throw new Error('Stored test attempt and transport required');
+export async function submitTestOrder({ envelope, secret, send }) {
+  if (typeof secret !== 'string' || !/^sk_test_[A-Za-z0-9]+$/.test(secret)) throw new Error('Pagar.me test key required');
+  // Copy primitive fields once; all validation, network and response checks
+  // use this copy, never a caller-owned object after I/O begins.
+  const request = envelope && { ...envelope };
+  if (!isValidTestOrderEnvelope(request) || typeof send !== 'function') throw new Error('Valid stored test envelope and transport required');
+  const payload = JSON.parse(request.body);
+  const expectedBookingId = payload?.code;
+  const expectedAmountCents = payload?.items?.[0]?.amount;
+  const expectedCustomerId = payload?.customer_id;
+  if (typeof expectedBookingId !== 'string' || typeof expectedCustomerId !== 'string'
+      || !Number.isSafeInteger(expectedAmountCents) || expectedAmountCents < 1) throw new Error('Invalid test order body');
   try {
     const response = await send(request.endpoint, {
       method: 'POST', redirect: 'error', cache: 'no-store', signal: AbortSignal.timeout(15000),
       headers: { 'Content-Type': 'application/json', Accept: 'application/json',
         Authorization: `Basic ${Buffer.from(`${secret}:`).toString('base64')}`,
-        'Idempotency-Key': requestKey },
-      body: JSON.stringify(request.payload),
+        'Idempotency-Key': request.requestKey },
+      body: request.body,
     });
     if (!response.ok) return { kind: 'unknown' };
     const data = await response.json();

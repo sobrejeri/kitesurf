@@ -28,7 +28,7 @@ export function prepareTestOrderEnvelope({ snapshot, method, secret, requestKey 
     requestHash: hash(requestKey, request.endpoint, body) });
 }
 
-function valid(envelope) {
+export function isValidTestOrderEnvelope(envelope) {
   if (!envelope || typeof envelope !== 'object' || Object.keys(envelope).length !== 5
       || envelope.version !== 1 || typeof envelope.requestKey !== 'string' || !UUID.test(envelope.requestKey)
       || envelope.endpoint !== ENDPOINT || typeof envelope.body !== 'string'
@@ -43,7 +43,7 @@ function valid(envelope) {
  * Caller must perform this comparison under the same DB lock as reservation.
  */
 export function matchesTestOrderEnvelope(stored, prepared) {
-  return valid(stored) && valid(prepared)
+  return isValidTestOrderEnvelope(stored) && isValidTestOrderEnvelope(prepared)
     && stored.requestKey === prepared.requestKey && stored.endpoint === prepared.endpoint
     && stored.body === prepared.body && stored.requestHash === prepared.requestHash;
 }
