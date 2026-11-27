@@ -168,7 +168,9 @@ begin
  ('00000000-0000-0000-0000-0000000000b1','booking','renewal race','/aluno/avisos');
  execute 'set local role vento_push_dispatcher';j:=public.claim_push_dispatch(cutoff);
  target:=public.prepare_push_dispatch((j->>'id')::uuid,(j->>'leaseToken')::uuid,cutoff);execute 'reset role';
- update public.push_subscriptions set updated_at=now() where id=sub;
+ update public.push_subscriptions set updated_at=updated_at where id=sub;
+ assert(select dispatch_version>(select target_version from public.push_outbox where id=(j->>'id')::uuid)
+   from public.push_subscriptions where id=sub),'row generation advances even with equal timestamps';
  execute 'set local role vento_push_dispatcher';
  perform public.settle_push_dispatch((j->>'id')::uuid,(j->>'leaseToken')::uuid,'gone',404,0);execute 'reset role';
  assert(select revoked_at is null and p256dh is not null from public.push_subscriptions where id=sub),'old 404 cannot revoke renewed keys';

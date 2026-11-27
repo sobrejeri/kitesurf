@@ -7,6 +7,19 @@ do $$ begin
 end $$;
 grant usage on schema public to vento_push_dispatcher;
 
+-- Timestamp equality is not a fencing token: now() is transaction-stable.
+-- An unforgeable row generation changes on every renewal/revocation/update.
+alter table public.push_subscriptions add column dispatch_version bigint not null default 1 check(dispatch_version>0);
+create function public.bump_push_subscription_version() returns trigger
+language plpgsql security invoker set search_path='' as $$
+begin
+  new.dispatch_version:=old.dispatch_version+1;
+  return new;
+end $$;
+revoke all on function public.bump_push_subscription_version() from public,anon,authenticated,vento_push_dispatcher;
+create trigger push_subscription_dispatch_version before update on public.push_subscriptions
+  for each row execute function public.bump_push_subscription_version();
+
 create table public.push_dispatch_settings (
   singleton boolean primary key default true check(singleton),
   enabled boolean not null default false,
@@ -42,6 +55,7 @@ create table public.push_outbox (
   claimed_at timestamptz,
   attempt_started boolean not null default false,
   target_updated_at timestamptz,
+  target_version bigint,
   accepted_at timestamptz,
   last_http_status integer,
   created_at timestamptz not null default now(),
@@ -80,9 +94,9 @@ create trigger enqueue_push_notice after insert on public.app_notifications
 -- Internal target helper. Never grant directly, even to the worker.
 create function public.push_dispatch_target(p_id uuid)
 returns table(notification_id uuid,endpoint text,p256dh text,auth_secret text,
-  target_updated_at timestamptz,href text,ttl integer)
+  target_updated_at timestamptz,target_version bigint,href text,ttl integer)
 language sql stable security invoker set search_path='' as $$
-  select n.id,s.endpoint,s.p256dh,s.auth_secret,s.updated_at,
+  select n.id,s.endpoint,s.p256dh,s.auth_secret,s.updated_at,s.dispatch_version,
     case p.role when 'student' then '/aluno/avisos' when 'instructor' then '/instrutor/avisos'
       when 'admin' then '/admin/avisos' when 'partner' then '/afiliado/inicio' end,
     greatest(1,least(900,floor(extract(epoch from(q.expires_at-now())))::integer))
@@ -125,6 +139,19 @@ begin
     cfg.rate_claims:=0;
   end if;
   if cfg.rate_claims>=100 then return null; end if;
+  -- Finish deferred 404/410 retirements without waiting on Auth/logout locks.
+  -- Only the same subscription version may be cleared. No outbox row is locked
+  -- while waiting on another table; all cross-table retirement locks SKIP LOCKED.
+  update public.push_subscriptions s set revoked_at=now(),p256dh=null,auth_secret=null,updated_at=now()
+    where s.id in (
+      select sub.id from public.push_subscriptions sub
+      where sub.revoked_at is null and exists(
+        select 1 from public.push_outbox old
+        where old.subscription_id=sub.id and old.recipient_id=sub.owner_id
+          and old.status='dead' and old.last_http_status in (404,410)
+          and old.target_version=sub.dispatch_version)
+      order by sub.id for update of sub skip locked limit 100
+    );
   update public.push_outbox set
     status=case when attempt_started then 'unknown' else 'pending' end,
     lease_token=null,lease_until=null
@@ -180,7 +207,7 @@ begin
   end if;
   perform public.validate_push_subscription_input(target.endpoint,target.p256dh,target.auth_secret);
   update public.push_outbox set attempts=attempts+1,attempt_started=true,
-    target_updated_at=target.target_updated_at where id=job.id;
+    target_updated_at=target.target_updated_at,target_version=target.target_version where id=job.id;
   return jsonb_build_object('id',job.id,'notificationId',target.notification_id,
     'subscription',jsonb_build_object('endpoint',target.endpoint,
       'keys',jsonb_build_object('p256dh',target.p256dh,'auth',target.auth_secret)),
@@ -211,8 +238,15 @@ begin
   end if;
   if p_outcome='gone' then
     -- Do not revoke a renewed subscription due to an older in-flight response.
-    update public.push_subscriptions set revoked_at=now(),p256dh=null,auth_secret=null,updated_at=now()
-      where id=job.subscription_id and owner_id=job.recipient_id and updated_at=job.target_updated_at;
+    update public.push_subscriptions s set revoked_at=now(),p256dh=null,auth_secret=null,updated_at=now()
+      where s.id in (
+        select sub.id from public.push_subscriptions sub
+        where sub.id=job.subscription_id and sub.owner_id=job.recipient_id
+          and sub.dispatch_version=job.target_version
+        for update of sub skip locked
+      );
+    -- If Auth/logout/renewal owns that row, claim's bounded cleanup will retry
+    -- retirement later. Never wait on subscription while holding an outbox lock.
   end if;
   update public.push_outbox set status=final_status,
     next_attempt_at=coalesce(next_time,next_attempt_at),last_http_status=p_status,

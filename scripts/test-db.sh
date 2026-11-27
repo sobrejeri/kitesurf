@@ -89,3 +89,6 @@ bash "$ROOT/scripts/test-rehearse-chain.sh"
 
 # #96: real two-connection push lease/attempt race in this disposable cluster.
 PG_TEST_SOCKET="$DATA" PG_TEST_PORT="$PORT" bash "$ROOT/scripts/test-push-outbox-concurrency.sh"
+
+# #96: gone settlement cannot block Auth logout; retire skipped targets later.
+PG_TEST_SOCKET="$DATA" PG_TEST_PORT="$PORT" bash "$ROOT/scripts/test-push-outbox-retirement.sh"

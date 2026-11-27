@@ -4,7 +4,7 @@ Implementação preparada em branch própria sobre as subscriptions #370. Nenhum
 
 ## Fluxo e autorização
 
-Um trigger de `app_notifications` cria no máximo um job por aviso/subscription. Só enfileira quando os dois gates do banco estão ON, depois do corte de ativação, com assinatura do destinatário, sessão Auth existente/ativa, consentimento anterior ao aviso e assinatura não revogada/expirada. Não faz backfill. Uma renovação de consentimento invalida jobs de avisos anteriores a `subscription.updated_at`.
+Um trigger de `app_notifications` cria no máximo um job por aviso/subscription. Só enfileira quando os dois gates do banco estão ON, depois do corte de ativação, com assinatura do destinatário, sessão Auth existente/ativa, consentimento anterior ao aviso e assinatura não revogada/expirada. Não faz backfill. Uma renovação de consentimento invalida jobs de avisos anteriores a `subscription.updated_at`. Uma geração `dispatch_version` monotônica avança em todo UPDATE: empates de timestamp transacional não permitem revogar chaves renovadas. Em 404/410 a revogação usa FOR UPDATE SKIP LOCKED para não manter outbox e esperar locks de Auth/logout; quando pulada, a próxima chamada de claim tenta concluir até 100 revogações pendentes da mesma geração, também sem esperar locks.
 
 `claim_push_dispatch` emite lease de dois minutos com token aleatório. O bloqueio da configuração serializa os budgets de todos os workers: 100 claims globais e cinco por destinatário por minuto. A linha do job também é travada; outro worker não recebe o mesmo lease. `prepare_push_dispatch` confere novamente gate, titularidade, sessão, expiração, leitura do aviso e versão da assinatura, e grava a intenção antes de devolver material criptográfico ao worker. Um token só prepara uma tentativa.
 
@@ -36,7 +36,7 @@ Executável: `node scripts/push-dispatcher/run.mjs`. Sem opt-in devolve apenas c
 | Resultado | Comportamento |
 |---|---|
 | HTTP 201 | `accepted`: aceito pelo serviço push; não significa entrega ao aparelho ou leitura |
-| HTTP 404/410 | Job terminal; revoga assinatura e apaga keys só se a versão ainda for a usada na tentativa |
+| HTTP 404/410 | Job terminal; revoga assinatura e apaga keys só se a geração ainda for a usada na tentativa. Lock concorrente é pulado; cleanup limitado da próxima invocação conclui a revogação |
 | HTTP 408/429/500/502/503/504 | Até cinco tentativas; backoff 30, 60, 120, 240 segundos, respeitando Retry-After limitado a 3600 s e a validade do job |
 | Outros 3xx/4xx | Terminal; não segue redirects |
 | Timeout/socket perdido/sucesso não reconhecido | `unknown`, sem repetição automática |
@@ -58,6 +58,8 @@ Revalidação ocorre imediatamente antes da tentativa. Não é possível recolhe
 - `scripts/test-push-dispatcher.mjs`: OFF sem efeitos/segredos, preview, privacidade, destinos/DNS, claims concorrentes simulados, retry/gone/unknown e criptografia real do pacote com HTTP simulado.
 - `supabase/tests/96_push_outbox.test.sql`: PostgreSQL descartável, grants/RLS, gates, ownership, dedup, tokens/fencing/replay, renovação/revogação, backoff/cap e budgets.
 - `scripts/test-push-outbox-concurrency.sh`: duas conexões reais no cluster descartável: um lease e uma preparação. Não envia push.
+- `scripts/test-push-outbox-retirement.sh`: lock concorrente na subscription, settlement gone termina durante o lock; cascade de logout realmente apaga a sessão e o job, sem deadlock. Outra variante prova cleanup posterior das keys.
+- O ensaio de restore agora reproduz os papéis não internos e seus atributos do cluster descartável antes das ACLs, sem copiar hashes de senha. Isso não equivale a restaurar backup de produção.
 
 Fontes primárias consultadas: [RFC8030](https://www.rfc-editor.org/rfc/rfc8030), [RFC8291](https://www.rfc-editor.org/rfc/rfc8291), [web-push oficial](https://github.com/web-push-libs/web-push), [funções Supabase](https://supabase.com/docs/guides/database/functions). O código instalado de web-push4.0.0 foi inspecionado: faz uma chamada https.request, sem follow de redirects. Changelog Supabase consultado; CLI2.122.1 foi fixada para gerar o arquivo, sem migrar configuração v3.
 
