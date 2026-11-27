@@ -156,7 +156,20 @@ SQL
 # ---- 4. backup e restauração ----
 DUMP="$A/backup.dump"
 "$PG_BIN/pg_dump" -h "$A" -p "$PA" -U postgres -d postgres -Fc --no-owner -f "$DUMP"
-"${QB[@]}" -c "create role anon nologin; create role authenticated nologin;"
+# A database dump includes ACLs but not cluster roles. Reproduce the disposable
+# source's non-builtin roles with their attributes, never their password hashes.
+"${SA[@]}" -c "
+select format('create role %I with %s %s %s %s %s %s %s;',rolname,
+ case when rolsuper then 'superuser' else 'nosuperuser' end,
+ case when rolcreatedb then 'createdb' else 'nocreatedb' end,
+ case when rolcreaterole then 'createrole' else 'nocreaterole' end,
+ case when rolcanlogin then 'login' else 'nologin' end,
+ case when rolinherit then 'inherit' else 'noinherit' end,
+ case when rolreplication then 'replication' else 'noreplication' end,
+ case when rolbypassrls then 'bypassrls' else 'nobypassrls' end)
+from pg_roles where rolname !~ '^pg_' and rolname<>'postgres' order by rolname
+" >"$A/roles-without-passwords.sql"
+"${QB[@]}" -f "$A/roles-without-passwords.sql"
 "$PG_BIN/pg_restore" -h "$B" -p "$PB" -U postgres -d postgres --no-owner --exit-on-error "$DUMP"
 
 fingerprint() { "$@" <<'SQL'

@@ -90,3 +90,12 @@ bash "$ROOT/scripts/test-rehearse-chain.sh"
 # #90: the official migration is installed by the migration loop above.
 "${PSQL[@]}" -f "$ROOT/supabase/reconciliation/90_request_input_guard.regression.sql"
 bash "$ROOT/scripts/test-request-input-migration.sh"
+
+# #96: real two-connection push lease/attempt race in this disposable cluster.
+PG_TEST_SOCKET="$DATA" PG_TEST_PORT="$PORT" bash "$ROOT/scripts/test-push-outbox-concurrency.sh"
+
+# #96: gone settlement cannot block Auth logout; retire skipped targets later.
+PG_TEST_SOCKET="$DATA" PG_TEST_PORT="$PORT" bash "$ROOT/scripts/test-push-outbox-retirement.sh"
+
+# #96: claim skips parent deletion rather than waiting on a recipient FK.
+PG_TEST_SOCKET="$DATA" PG_TEST_PORT="$PORT" bash "$ROOT/scripts/test-push-outbox-profile-deletion.sh"

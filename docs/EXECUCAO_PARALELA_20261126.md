@@ -1,5 +1,12 @@
 # VentoKite — execução simultânea de 26/11/2026
 
+## Atualização de 27/11 — código e evidência mais recentes
+
+- Principal `45c4ce579ec98bbf10ef5a6392ca887398f1e859` inclui #386, preparação de sender/dispatcher **OFF**. A integração de código não aplica o schema push remoto, não configura chaves e não envia notificações. Ledger remoto continua **11**; veículo está habilitado para homologação, push/sender/interrupção/3B/checkout real permanecem desligados.
+- Veículo P2 (#383), testado pelo responsável no runtime `545200eb`: **Buggy → SUV → Buggy sem reload**, com resumo, seletor e sucesso corretos. Uma linha de veículo e três auditorias; hash dos outros dados `7447fdbfe5dbc00f92c65c945e3d7034`, idêntico. [Evidência #99, comentário 7208029678](https://github.com/sobrejeri/kitesurf/issues/99#issuecomment-7208029678).
+- #381 conferida após reload no voucher real VNT-1018: “Registrar imprevisto ou ausência” aponta para o relato em `/aluno/ocorrencias`. Render `dep-dc4e8r29lscs73e8df20` estava LIVE em `39320c77` nessa verificação. O rótulo não implementa cancelamento; o fluxo completo segue em #94.
+- A preparação E2E #387 preserva o gate P incondicional. Helpers, mocks, fixtures e CI não equivalem a login real, execução autenticada do runner ou homologação integral; permanece **0/16**.
+
 Escopo vigente: 16 frentes (#87–#100, #102 e #103), prontas para integrar checkout. #101 real e #104 laboratório 3D ficam fora desta entrega. Pagamentos reais, Protege 3B e scheduler permanecem desligados.
 
 ## Estado atual após a release #379
