@@ -281,8 +281,8 @@ BEGIN
             IF booking_row.student_id IS DISTINCT FROM student
               OR booking_row.level IS DISTINCT FROM lesson_level
               OR booking_row.total_hours IS DISTINCT FROM 4
-              OR (SELECT count(*) FROM public.booking_meetings WHERE booking_id=booking_row.id)<>2
-              OR (SELECT sum(minutes) FROM public.booking_meetings WHERE booking_id=booking_row.id)<>240 THEN
+              OR (SELECT count(*) FROM public.booking_meetings m WHERE m.booking_id=booking_row.id)<>2
+              OR (SELECT sum(minutes) FROM public.booking_meetings m WHERE m.booking_id=booking_row.id)<>240 THEN
               RAISE EXCEPTION 'Valid 4h/2-day booking lost owner, level or duration';
             END IF;
             EXECUTE 'reset role';
