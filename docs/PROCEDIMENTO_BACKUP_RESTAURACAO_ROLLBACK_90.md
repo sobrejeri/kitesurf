@@ -66,6 +66,12 @@ As duas rotinas usam `90-source-guard.sh`: a referência precisa ser exatamente 
 
 `bash scripts/test-90-source-guard.sh` valida essas recusas sem acessar banco ou rede. Esse teste não comprova que existe backup nem que um backup real foi restaurado; o ensaio em PostgreSQL descartável continua separado da homologação de recuperação do Supabase.
 
+Listas separadas por vírgula em `PGHOST` e `PGPORT` também são recusadas: o libpq permite múltiplos destinos e um socket local seguido de um host remoto poderia causar fallback para outro projeto.
+
+A restauração também verifica o destino antes de inicializar ou acessar PostgreSQL: recusa `PGHOSTADDR`, `PGSERVICE` e `PGSERVICEFILE`, caminhos com espaços/aspas/vírgulas e portas não numéricas ou fora da faixa. O teste usa executáveis PostgreSQL inertes que apenas sinalizam invocação, para comprovar a parada antes de qualquer conexão. Isso evita que `-h` com socket Unix seja sobreposto por `PGHOSTADDR`. Os caminhos de backup e restauração devem ser absolutos e conter somente letras ASCII, números, ponto, barra, hífen ou sublinhado.
+
+Segmentos `.` e `..` são recusados. O parent de `RESTORE_DIR` deve existir e é resolvido para seu caminho real. `RESTORE_DIR` funciona como prefixo: o cluster efetivo é um diretório novo criado exclusivamente por `mktemp`, com sufixo aleatório. O cleanup confere a identidade do diretório criado e recusa remover um caminho substituído ou symlink. Com `KEEP_RUNNING=1`, use o caminho efetivo mostrado no comando final para parar e remover o cluster. Os testes incluem sentinela preexistente com traversal de parent e com parent symlink, usando apenas comandos inertes.
+
 ### Preservação no ensaio de rollback
 
 O ensaio captura antes da aplicação a contagem e uma impressão digital determinística de todas as colunas de reservas e encontros. Depois do rollback compara com essa captura anterior; uma alteração de conteúdo com a mesma quantidade de linhas também é detectada. `scripts/test-90-booking-preservation.sh` verifica esse comportamento em cluster Unix descartável, sem exportar dados remotos. Isso valida o mecanismo de comparação, não substitui executar o ensaio completo nem restaurar um backup real.
