@@ -32,6 +32,11 @@ for testfile in "$ROOT"/supabase/tests/[2-9]*.test.sql; do
   "${PSQL[@]}" -f "$testfile"
 done
 
+# Run the 4h/two-day input matrix before the stateful concurrency suites below
+# consume the shared instructor's finite scheduling horizon. Its SQL transaction
+# rolls all fixture changes back, so later tests see the same seed state.
+"${PSQL[@]}" -f "$ROOT/supabase/reconciliation/90_request_input_guard.regression.sql"
+
 # Run actual two-connection race only in this disposable database, after rule fixtures.
 PG_TEST_SOCKET="$DATA" PG_TEST_PORT="$PORT" bash "$ROOT/scripts/test-concurrent-instructor-booking.sh"
 
@@ -87,8 +92,7 @@ bash "$ROOT/scripts/test-rehearse-chain.sh"
 # #90: test the migration already loaded by the standard disposable migration loop.
 "${PSQL[@]}" -f "$ROOT/supabase/reconciliation/90_request_distinct_civil_days.test.sql"
 
-# #90: the official migration is installed by the migration loop above.
-"${PSQL[@]}" -f "$ROOT/supabase/reconciliation/90_request_input_guard.regression.sql"
+# #90: independently exercise installation and upgrade in disposable clusters.
 bash "$ROOT/scripts/test-request-input-migration.sh"
 
 # #96: real two-connection push lease/attempt race in this disposable cluster.
