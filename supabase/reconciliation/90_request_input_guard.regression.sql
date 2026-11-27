@@ -46,5 +46,5 @@ BEGIN
       END IF;
     END LOOP;
   END LOOP;
-END $;
+END $$;
 ROLLBACK;
