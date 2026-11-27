@@ -8,7 +8,7 @@ Escopo vigente: 16 frentes (#87–#100, #102 e #103), prontas para integrar chec
 - #360 integrada: 82f17e99cb96d7ac8c812e91704b09649c935aa1, Render dep-dc4d7ojbc2fs739lfucg LIVE; /api/version conferido. CI combinado 45918774210 success (76 etapas). Absorve #301/#342/#345/#358/#359; não integrar essas PRs novamente.
 - Navegador real desktop: sessões Aluno, Instrutor, Admin e Afiliado acessíveis. Não equivale à homologação de todas as ações/perfis/aparelhos.
 - VNT-1008: leitura autenticada confirmou dois encontros concluídos, 110+115=225 minutos de 240 e saldo15. Nenhuma escrita nessa reserva nesta execução.
-- VNT-1017: solicitação e9354877-8dc6-4a69-a4b6-28b199f26e9d, reserva b1cbdfe3-e16d-4ec8-a896-7db4189bc9a3. Criada pelo Aluno em UI real, oferta apareceu no Instrutor sem recarregar; aceite único e confirmação sem cobrança. Dois encontros de2h, 01/12 e03/12/2026 às09h Fortaleza. Banco confirmed,240min, aulas120000centavos+transporte40000=total160000; soma das partes160000. Não foram iniciados encontros futuros nem alteradas suas datas.
+- VNT-1017: solicitação e9354877-8dc6-4a69-a4b6-28b199f26e9d, reserva b1cbdfe3-e16d-4ec8-a896-7db4189bc9a3. Criada pelo Aluno em UI real, oferta apareceu no Instrutor sem recarregar; aceite único e confirmação sem cobrança. Dois encontros de2h, 01/12 e03/12/2026 às09h Fortaleza. Banco confirmed,240min, aulas120000centavos+transporte40000=total160000; soma das partes160000. Nenhum encontro foi iniciado antecipadamente. Em teste posterior desta mesma execução, o Aluno solicitou adiar somente o segundo encontro de 03/12 para 07/12 às 09h e o Instrutor aprovou. Os dois perfis e o banco confirmaram a mudança, preservando o UUID do encontro, o primeiro dia, os 240 minutos e o total de 160000 centavos.
 - Afiliado fictício: dados de homologação completados, aprovação pelo Admin com justificativa auditável, selo/link/QR liberados. Sem alteração de comissão, banco de recebimento ou repasse. Não usar essa aprovação de teste como evidência comercial.
 - UI publicada: Bronze removido mantendo Iniciante; inbox mostra atualização e requisitos de elegibilidade. HTTP /aluno/aulas confirma geolocation=(self) e demais recursos fechados.
 - Supabase correto qadkqjfmmnxvovyyhqxw: ledger9; RLS de todas as tabelas public ativa; seis buckets privados. start_meeting(uuid,text) nega anon/authenticated, start_ordered_meeting permite authenticated. Sem DDL remoto nesta rodada.
@@ -40,7 +40,7 @@ As equipes são agentes internos desta execução. Não declarar Claude Code ext
 | #91 | UI rejeitou encontros sobrepostos; suites de concorrência existentes | Concorrência autenticada e agenda por instrutor real |
 | #92 | Inbox atualizado e aceite reais | A→B→C offline com3 instrutores fictícios e executor identificado |
 | #93 | VNT-1008 lida225/15; runner segundo encontro implementado | Executar runner revisado no horário permitido, preservar idempotência |
-| #94 | Suites SQL/E2E preparadas | Reagendamento/cancelamento bilateral autenticado e expiração |
+| #94 | Adiamento bilateral autenticado da VNT-1017 aprovado, sem mudar horas/preços; datas anteriores bloqueadas na UI | Cancelamento, expiração e fallback autenticados; regressões de conflito |
 | #95 | Isolamento SQL integrado/LIVE | Multi-conversa/anexos/gestos/estado de conexão no navegador e aparelho |
 | #96 | Avisos internos e receptor push testado em código | Subscribe/RLS/VAPID/remetente/retry/executor/aparelhos |
 | #97 | Admin autenticado aprovou afiliado fictício | Decisões/documentos/preços/relatórios/fila/ocorrências completos |
@@ -55,3 +55,8 @@ Total de homologação integral continua0/16. Isso não mede percentual de códi
 ## Próximo lote de código
 
 Consolidação do receptor push passivo #363, do probe somente leitura #362 e da mensagem de perfil aprovado #365. Verificar CI combinado e SHA LIVE antes de marcar publicado. Receptor passivo não significa envio push disponível. Não ativar scheduler, financeiro ou3B.
+
+
+## Validação combinada do segundo lote
+
+CI 45920032955 do código eaf958a: success, 78 etapas, incluindo push, cinco testes do probe Storage, typecheck, lint, build e SQL isolado. Esta atualização documental registra o adiamento posterior da VNT-1017. O SHA final e o deploy do segundo lote ainda devem ser conferidos antes de declarar publicado.
