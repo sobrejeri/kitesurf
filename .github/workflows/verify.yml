@@ -90,6 +90,8 @@ jobs:
         run: node scripts/test-e2e-unique-target.mjs
       - name: E2E booking target isolation
         run: node scripts/test-e2e-booking-targets.mjs
+      - name: E2E single acceptance and bound confirmation
+        run: node scripts/test-e2e-accept-once.mjs
       - name: Test real admin agenda date ranges
         run: node --experimental-strip-types scripts/test-admin-agenda-range.mjs
       - name: Test per-level quote selection and exact money inputs

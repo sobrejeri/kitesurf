@@ -1,6 +1,6 @@
 # E2E autenticado (contas fictícias) — como rodar e o que prova
 
-> **Bloqueio de segurança:** o cenário P de escrita está desabilitado antes de criar a solicitação. Os seletores de oferta e aula ainda não comprovam o vínculo com a reserva criada e poderiam atingir outro registro. As variáveis de escrita não removem o bloqueio. É necessário identificar a solicitação e os dois encontros de forma inequívoca, adicionar regressões e revisar o fluxo antes de habilitá-lo.
+> **Bloqueio de segurança:** o cenário P de escrita está desabilitado antes de criar a solicitação. A oferta agora é vinculada à solicitação, o aceite exige o link da reserva na página dessa solicitação e os dois encontros recebem UUIDs distintos antes do primeiro início. Os testes desses protocolos usam páginas simuladas; ainda não comprovam o DOM real nem a jornada completa. As variáveis de escrita não removem o bloqueio. Falta concluir o percurso do segundo encontro, revisar a pilha e executar o E2E autenticado antes de habilitá-lo.
 
 **O que é:** `scripts/e2e/run.mjs`, um roteiro em navegador real (Playwright/Chromium) que entra com contas **fictícias** de cada perfil e devolve PASS / FAIL / BLOQUEADO por cenário, com capturas. É o primeiro passo para tirar as frentes de "0/16 homologadas".
 **O que NÃO é:** não roda no CI (precisa de credenciais), não abre nenhuma tela de pagamento e **não substitui** o roteiro manual de reserva/fila. Validei o próprio script apenas contra um backend fictício local (login, telas de entrada, e a montagem de 4 h em 2 encontros na tela real do aluno, sem enviar); ainda **não foi executado contra o app de teste real**.
@@ -42,3 +42,11 @@ Recusa host fora da lista; não envia credenciais a nada além do formulário de
 ## Varredura de telas (`scripts/e2e/crawl.mjs`)
 Visita **todas as telas estáticas** de cada área (descobertas em `src/app`; rotas com `[id]` são puladas) em 390 px e 1280 px, só por GET: não clica nem envia formulários. Por tela aponta erro HTTP, rolagem horizontal, erros de console, requisições que falharam, imagens quebradas ou sem `alt`, botões/links/campos sem nome acessível, alvos de toque menores que 40 px no celular, `lang` e título ausentes. Saída em `crawl-out/telas.md`. As mesmas variáveis do E2E valem. Tela sem sessão do perfil fica BLOQUEADO.
 Na primeira rodada, contra o backend fictício, a varredura achou alvos de toque pequenos (corrigidos em outra PR). Avisos de `NaN` no console e o 404 de `/instrutor/checkin` vieram do backend fictício e da tela que exige parâmetro; confirme no app de teste.
+
+## Regressões do protocolo de aceite e confirmação (#103)
+
+`scripts/test-e2e-accept-once.mjs` usa relógio determinístico e páginas simuladas para provar que resposta tardia, ausência de resposta e exceção no clique nunca repetem o aceite. A confirmação exige a página da solicitação correta e um único link da reserva, com origem, rota e UUID validados. P3 exige estado exato `Confirmada` no voucher dessa reserva e códigos de presença consistentes; texto genérico ou ausência do botão não bastam.
+
+`scripts/test-e2e-booking-targets.mjs` também confere que os dois encontros da reserva possuem UUIDs válidos e distintos antes do início. Ausência, duplicidade, identidade inválida e repetição do mesmo encontro em posições diferentes são recusadas. Esses testes não executam os formulários do app real.
+
+O segundo encontro continua sem percurso de início/registro no runner. Seu horário padrão é dois dias após o primeiro, podendo estar fora da janela permitida quando o roteiro for executado; não adiantar datas nem contornar a regra para obter PASS.
