@@ -48,4 +48,16 @@ env -i "PATH=$PATH" BACKUP_DIR=/tmp/backup RESTORE_DIR=/tmp/restore PORT=54802 b
 for bad in 'RESTORE_DIR=/tmp/local,remote' 'RESTORE_DIR=/tmp/space dir' 'PORT=54802,5432' 'PORT=99999'; do
   if env -i "PATH=$PATH" BACKUP_DIR=/tmp/backup RESTORE_DIR=/tmp/restore "$bad" bash "$restore_guard" >/dev/null 2>&1; then echo 'FAIL: restore accepted unsafe target' >&2; exit 1; fi
 done
+mkdir "$W/existing"
+printf 'preserve\n' > "$W/existing/sentinel"
+# The old mkdir -p followed by cleanup resolved this target to existing/.
+if env -i "PATH=$W/bin:$PATH" "BACKUP_DIR=$W/backup" "RESTORE_DIR=$W/missing/../existing" "PG_BIN=$W/bin" "CANARY_FILE=$W/invoked" \
+    bash "$ROOT/scripts/ops/90-restore-local.sh" >/dev/null 2>&1; then echo 'FAIL: restore accepted traversal' >&2; exit 1; fi
+[[ -f "$W/existing/sentinel" && ! -e "$W/invoked" ]] || { echo 'FAIL: traversal affected preexisting data or ran PostgreSQL' >&2; exit 1; }
+ln -s "$W/existing" "$W/linked-parent"
+# Canonical parent symlinks are safe: only a fresh mktemp child can be cleaned.
+if env -i "PATH=$W/bin:$PATH" "BACKUP_DIR=$W/backup" "RESTORE_DIR=$W/linked-parent/newcluster" "PG_BIN=$W/bin" "CANARY_FILE=$W/invoked" \
+    bash "$ROOT/scripts/ops/90-restore-local.sh" >/dev/null 2>&1; then echo 'FAIL: inert initdb unexpectedly succeeded' >&2; exit 1; fi
+[[ -f "$W/existing/sentinel" && -f "$W/invoked" ]] || { echo 'FAIL: parent-symlink rehearsal did not preserve sentinel' >&2; exit 1; }
+[[ -z "$(find "$W/existing" -maxdepth 1 -name 'newcluster.*' -print)" ]] || { echo 'FAIL: owned temporary cluster not cleaned' >&2; exit 1; }
 printf '%s\n' 'PASS: Kitesurf direct/pooler/local source checks reject alternate projects and libpq overrides (offline)'
