@@ -60,7 +60,7 @@ async function openMeeting(page, number) {
   const header = page.locator('button[aria-expanded]', { hasText: `Encontro ${number}` }).first();
   if ((await header.getAttribute('aria-expanded')) === 'false') await header.click();
 }
-export async function runPriorityScenario({ sessions, browser, BASE, WRITE, env, record, shot, resumeCheckpoint, checkpointStore, evidence }) {
+export async function runPriorityScenario({ sessions, browser, BASE, WRITE, env, record, shot, resumeCheckpoint, loadCheckpoint, checkpointStore, evidence }) {
   const ids = ['P1', 'P2', 'P3', 'P4', 'P5', 'P6', 'P7', 'P8', 'P9'];
   const titles = {
     P1: 'Aluno monta 4 h em 2 encontros e pede instrutor', P2: 'Instrutor recebe e aceita', P3: 'Aluno vê a reserva, confirma sem cobrança e lê o código',
@@ -82,7 +82,8 @@ export async function runPriorityScenario({ sessions, browser, BASE, WRITE, env,
   await student.setViewportSize({ width: 1280, height: 900 });
   await instructor.setViewportSize({ width: 1280, height: 900 });
   const { first, second } = defaultMeetings(Date.now(), env);
-  const resumed = resumeCheckpoint ? validateCheckpoint(resumeCheckpoint, BASE) : null;
+  const rawCheckpoint=typeof loadCheckpoint==='function'?await loadCheckpoint():resumeCheckpoint;
+  const resumed = rawCheckpoint ? validateCheckpoint(rawCheckpoint, BASE) : null;
   const doneMinutes = resumed?.firstDoneMinutes ?? Number(env.E2E_DONE_MINUTES ?? 110);
   const secondDoneMinutes = resumed?.secondDoneMinutes ?? Number(env.E2E_SECOND_DONE_MINUTES ?? 115);
   finalBalance(doneMinutes,secondDoneMinutes); // Validate both durations before creating any request.

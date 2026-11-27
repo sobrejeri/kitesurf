@@ -96,6 +96,8 @@ jobs:
         run: node scripts/test-e2e-second-meeting.mjs
       - name: E2E durable checkpoint lock, CAS and cross-process exclusion
         run: node scripts/test-e2e-checkpoint-store.mjs
+      - name: E2E CLI reports with blocked and unread resume checkpoints
+        run: node scripts/test-e2e-run-report.mjs
       - name: Test real admin agenda date ranges
         run: node --experimental-strip-types scripts/test-admin-agenda-range.mjs
       - name: Test per-level quote selection and exact money inputs

@@ -59,7 +59,7 @@ for (const [area, session] of Object.entries(sessions)) {
 // ---- P: cenário prioritário (4 h em 2 encontros, aceite, presença, minutos e competências, evolução e saldo) ------------------
 await runPriorityScenario({
   sessions,browser,BASE,WRITE,env:process.env,record,shot,
-  resumeCheckpoint:process.env.E2E_RESUME_CHECKPOINT ? checkpointStore.load(BASE) : null,
+  loadCheckpoint:process.env.E2E_RESUME_CHECKPOINT ? ()=>checkpointStore.load(BASE) : null,
   checkpointStore,evidence,
 });
 

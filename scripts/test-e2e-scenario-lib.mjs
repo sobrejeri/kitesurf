@@ -27,6 +27,7 @@ await runPriorityScenario({
   sessions: { aluno: { page: forbiddenPage }, instrutor: { page: forbiddenPage } },
   BASE: 'https://example.invalid', WRITE: true, env: { E2E_CONFIRM_NO_CHARGE: 'sim' },
   resumeCheckpoint: forbiddenPage, checkpointStore:forbiddenPage,evidence,
+  loadCheckpoint:()=>{throw Error('checkpoint lido antes da proteção');},
   record: (...args) => results.push(args), shot: () => { throw new Error('captura inesperada'); },
 });
 assert.equal(results.length, 9);
