@@ -141,6 +141,8 @@ jobs:
         run: node scripts/verify-postgrest-relationships.mjs
       - name: Verify sandbox allocation in integer cents
         run: node scripts/test-sandbox-allocation.mjs
+      - name: Verify instructor external payment confirmation
+        run: node scripts/test-instructor-company-payments.mjs
       - name: Verify sandbox payment event idempotency and transitions
         run: node scripts/test-sandbox-payment-events.mjs
       - name: Verify sandbox boleto order payload
