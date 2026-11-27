@@ -16,4 +16,12 @@ A proposta de tabela `pagarme_test_attempts` não expõe escrita a usuários e n
 
 O módulo de transporte preparado é exclusivo do servidor e exige transporte injetado explicitamente; nenhuma rota o chama. Usa chave de teste, correlação de reserva/cliente/valor e a chave idempotente da tentativa persistida. Falha de rede, resposta não reconhecida ou erro HTTP produz resultado desconhecido sem repetição automática. Mesmo uma observação de pedido pago ainda exige conciliação e persistência antes de qualquer efeito. Os testes usam somente respostas simuladas.
 
+## Contrato para preservar o pedido da tentativa
+
+O helper `prepareTestOrderEnvelope` prepara, exclusivamente no servidor, uma representação canônica do corpo e um hash SHA-256 ligado à chave da tentativa, à versão do contrato e ao endpoint. Chaves de objetos são ordenadas; a ordem de arrays é preservada. O envelope guarda o corpo completo, incluindo cliente, identificador do cartão e recebedores/opções, mas exclui a chave secreta. Esse conteúdo deve permanecer privado e fora de logs.
+
+Na futura persistência operacional, armazenar o envelope de forma imutável junto da tentativa, na mesma transação que verifica autorização e elegibilidade. Uma tentativa existente só pode ser reutilizada quando a comparação do envelope sob lock for idêntica. Alterar valor, divisão, recebedor, responsabilidade, cliente, cartão, método, destino ou chave exige bloquear a reutilização e reconciliar a tentativa anterior. Não reconstruir um pedido antigo com configuração financeira atual.
+
+Nenhuma tabela/RPC ou ativação foi adicionada para esse helper. Ele não prova que os dados são exclusivamente de teste, não autentica pagamentos e não altera o transporte existente. A conexão operacional continua condicionada à comprovação de ambiente, reservas, clientes e recebedores segregados de produção.
+
 Referências: https://docs.pagar.me/reference/criar-pedido-2 ; https://docs.pagar.me/reference/pix-2 ; https://docs.pagar.me/reference/split-1 ; https://docs.pagar.me/docs/simulador-pix ; https://docs.pagar.me/reference/autentica%C3%A7%C3%A3o-2
