@@ -1,6 +1,7 @@
 // Funções puras do cenário prioritário do E2E (datas em Fortaleza, saldo esperado). O cenário em si não roda no CI.
 import assert from 'node:assert/strict';
 import { defaultMeetings, expectedBalance, fortalezaLocal, runPriorityScenario } from './e2e/cenario-4h.mjs';
+import {createWriteEvidence} from './e2e/write-evidence.mjs';
 
 assert.equal(fortalezaLocal(Date.parse('2026-11-26T02:30:00Z')), '2026-11-25T23:30');
 assert.equal(fortalezaLocal(Date.parse('2026-11-26T03:00:00Z')), '2026-11-26T00:00');
@@ -21,12 +22,15 @@ assert.deepEqual(expectedBalance(60), { done: '1h', scheduled: '2h', available: 
 // enquanto o runner não souber vincular oferta e encontros à reserva criada.
 const results = [];
 const forbiddenPage = new Proxy({}, { get() { throw new Error('navegador acessado antes da proteção'); } });
+const evidence=createWriteEvidence();
 await runPriorityScenario({
   sessions: { aluno: { page: forbiddenPage }, instrutor: { page: forbiddenPage } },
   BASE: 'https://example.invalid', WRITE: true, env: { E2E_CONFIRM_NO_CHARGE: 'sim' },
-  resumeCheckpoint: forbiddenPage, saveCheckpoint: () => { throw new Error('checkpoint gravado antes da proteção'); },
+  resumeCheckpoint: forbiddenPage, checkpointStore:forbiddenPage,evidence,
   record: (...args) => results.push(args), shot: () => { throw new Error('captura inesperada'); },
 });
 assert.equal(results.length, 9);
 assert.ok(results.every((item) => item[2] === 'BLOQUEADO' && item[3].includes('identificação inequívoca')));
+assert.equal(evidence.summary(true).gravou_dados,false,'all blocked with write flags must report no verified writes');
+assert.equal(evidence.summary(true).tentativas_sem_confirmacao,0);
 console.log('E2E scenario helpers passed (Fortaleza dates, expected balance).');

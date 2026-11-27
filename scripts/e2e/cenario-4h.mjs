@@ -18,8 +18,8 @@
  */
 import { requireUniqueTarget, requireUuid } from './unique-target.mjs';
 import { offerForRequest, meetingForBooking, meetingIdsForBooking } from './booking-targets.mjs';
-import { acceptOfferOnce, bookingForRequest, presenceCodeForConfirmedBooking } from './accept-offer-once.mjs';
-import { blocked, validateCheckpoint, finalBalance, continueSecondMeeting, secondMeetingBrowserAdapter } from './second-meeting.mjs';
+import { acceptOfferOnce, bookingForRequest, presenceCodeForConfirmedBooking, verifyCheckpointBooking } from './accept-offer-once.mjs';
+import { blocked, validateCheckpoint, finalBalance, continueSecondMeeting, secondMeetingBrowserAdapter, meetingStartFromCard, recordedMinutesFromCard } from './second-meeting.mjs';
 
 const MONTHS_PT = (year, month) => new Intl.DateTimeFormat('pt-BR', { month: 'long', year: 'numeric' }).format(new Date(year, month - 1, 1));
 const pad = (n) => String(n).padStart(2, '0');
@@ -60,7 +60,7 @@ async function openMeeting(page, number) {
   const header = page.locator('button[aria-expanded]', { hasText: `Encontro ${number}` }).first();
   if ((await header.getAttribute('aria-expanded')) === 'false') await header.click();
 }
-export async function runPriorityScenario({ sessions, browser, BASE, WRITE, env, record, shot, resumeCheckpoint, saveCheckpoint }) {
+export async function runPriorityScenario({ sessions, browser, BASE, WRITE, env, record, shot, resumeCheckpoint, checkpointStore, evidence }) {
   const ids = ['P1', 'P2', 'P3', 'P4', 'P5', 'P6', 'P7', 'P8', 'P9'];
   const titles = {
     P1: 'Aluno monta 4 h em 2 encontros e pede instrutor', P2: 'Instrutor recebe e aceita', P3: 'Aluno vê a reserva, confirma sem cobrança e lê o código',
@@ -76,6 +76,7 @@ export async function runPriorityScenario({ sessions, browser, BASE, WRITE, env,
   // contornar esta proteção, que continua anterior a qualquer uso do navegador.
   return blockAll('segurança: identificação inequívoca e retomada aguardam revisão e validação em navegador; cenário desabilitado antes de qualquer gravação');
 
+  if(typeof checkpointStore?.initialize!=='function' || typeof checkpointStore?.withLease!=='function')throw blocked('runner exige journal com lock e CAS');
   const student = sessions.aluno.page;
   const instructor = sessions.instrutor.page;
   await student.setViewportSize({ width: 1280, height: 900 });
@@ -85,16 +86,15 @@ export async function runPriorityScenario({ sessions, browser, BASE, WRITE, env,
   const doneMinutes = resumed?.firstDoneMinutes ?? Number(env.E2E_DONE_MINUTES ?? 110);
   const secondDoneMinutes = resumed?.secondDoneMinutes ?? Number(env.E2E_SECOND_DONE_MINUTES ?? 115);
   finalBalance(doneMinutes,secondDoneMinutes); // Validate both durations before creating any request.
-  const state = resumed ? { checkpoint: resumed, bookingId: resumed.bookingId, bookingUrl: new URL('/aluno/reserva/'+resumed.bookingId, BASE).href, meetingIds: resumed.meetingIds } : {};
+  const state = resumed ? { checkpoint: resumed, requestId:resumed.requestId, bookingId: resumed.bookingId, bookingUrl: new URL('/aluno/reserva/'+resumed.bookingId, BASE).href, meetingIds: resumed.meetingIds } : {};
   const ensureCheckpoint = async () => {
-    if (typeof saveCheckpoint !== 'function') throw blocked('configure persistência do checkpoint antes de retomar');
     if (!state.checkpoint) {
       state.checkpoint = validateCheckpoint({
-        version:1, baseOrigin:new URL(BASE).origin, bookingId:state.bookingId,
-        meetingIds:state.meetingIds, secondStartsAt:second+'-03:00',
+        version:2,revision:0, baseOrigin:new URL(BASE).origin, requestId:state.requestId,bookingId:state.bookingId,
+        meetingIds:state.meetingIds, secondStartsAt:state.secondStartsAt,
         firstDoneMinutes:doneMinutes, secondDoneMinutes, stage:'first-recorded',
       },BASE);
-      await saveCheckpoint(state.checkpoint);
+      await checkpointStore.initialize(state.checkpoint,BASE);
     }
   };
   let broken = null;
@@ -125,14 +125,20 @@ export async function runPriorityScenario({ sessions, browser, BASE, WRITE, env,
     await student.getByText('4h de 4h distribuídas').first().waitFor({ timeout: 10000 });
     await shot(student, 'P1-montagem');
     await student.getByRole('button', { name: 'Continuar' }).click();
+    const attempt=evidence?.attempt('P1');
     await Promise.all([student.waitForURL(/\/aluno\/solicitacao\//, { timeout: 60000 }), student.getByRole('button', { name: 'Confirmar e buscar instrutor' }).click()]);
     state.requestUrl = student.url();
     state.requestId = requireUuid(new URL(state.requestUrl).pathname.split('/').filter(Boolean).at(-1), 'solicitação');
+    const target=new URL(state.requestUrl);
+    if(target.origin!==new URL(BASE).origin || target.pathname!=='/aluno/solicitacao/'+state.requestId)throw blocked('destino da solicitação inválido');
+    if(attempt)evidence.confirm(attempt,{requestId:state.requestId});
     return state.requestUrl.replace(BASE, '');
   });
 
   await step('P2', async () => {
+    let attempt;
     const accepted = await acceptOfferOnce({
+      beforeClick:()=>{ attempt=evidence?.attempt('P2',{requestId:state.requestId}); },
       findOffer: async () => {
         await instructor.goto(`${BASE}/instrutor/solicitacao`, { waitUntil: 'networkidle' });
         return offerForRequest(instructor, state.requestId, { allowAbsent: true });
@@ -144,6 +150,7 @@ export async function runPriorityScenario({ sessions, browser, BASE, WRITE, env,
     });
     state.bookingId = accepted.bookingId;
     state.bookingUrl = accepted.bookingUrl;
+    if(attempt)evidence.confirm(attempt,{bookingId:state.bookingId});
     await shot(instructor, 'P2-aceite');
   });
 
@@ -153,13 +160,16 @@ export async function runPriorityScenario({ sessions, browser, BASE, WRITE, env,
     if (!accepted || accepted.bookingId !== state.bookingId) throw new Error('reserva alterada depois do aceite');
     await student.goto(state.bookingUrl, { waitUntil: 'networkidle' });
     const confirm = student.getByRole('button', { name: /^(Confirmar aula sem cobrança|Confirmar pagamento de teste)$/ });
+    let attempt;
     if (await confirm.count()) {
+      attempt=evidence?.attempt('P3',{requestId:state.requestId,bookingId:state.bookingId});
       await (await requireUniqueTarget(confirm, 'confirmar reserva sem cobrança')).click();
     }
     // Never infer success from toast text or absence of a confirmation button.
     // Reload the bound booking and require its exact persisted status instead.
     await student.goto(state.bookingUrl, { waitUntil: 'networkidle' });
     state.code = await presenceCodeForConfirmedBooking(student);
+    if(attempt)evidence.confirm(attempt);
     await shot(student, 'P3-reserva');
     return 'reserva confirmada e código consistente lido (4 dígitos)';
   });
@@ -167,6 +177,8 @@ export async function runPriorityScenario({ sessions, browser, BASE, WRITE, env,
   await step('P4', async () => {
     await instructor.goto(`${BASE}/instrutor/aula?aba=proximas`, { waitUntil: 'networkidle' });
     state.meetingIds = await meetingIdsForBooking(instructor, state.bookingId);
+    state.secondStartsAt=await meetingStartFromCard(await meetingForBooking(instructor,state.bookingId,2));
+    if(state.secondStartsAt!==new Date(second+'-03:00').toISOString())throw blocked('segundo encontro tem data diferente da solicitação montada');
     let card = await meetingForBooking(instructor, state.bookingId, 1);
     await (await requireUniqueTarget(card.locator('a'), 'abrir encontro')).click();
     card = await meetingForBooking(instructor, state.bookingId, 1);
@@ -174,6 +186,7 @@ export async function runPriorityScenario({ sessions, browser, BASE, WRITE, env,
     state.meetingId = requireUuid(await meetingInput.inputValue(), 'encontro');
     if (state.meetingId !== state.meetingIds[1]) throw new Error('formulário não corresponde ao primeiro encontro identificado');
     await (await requireUniqueTarget(card.locator('input[name="presenceCode"]'), 'código de presença')).fill(state.code);
+    state.firstStartAttempt=evidence?.attempt('P4',{requestId:state.requestId,bookingId:state.bookingId,meetingId:state.meetingId});
     await (await requireUniqueTarget(card.getByRole('button', { name: 'Confirmar presença e iniciar' }), 'iniciar encontro')).click();
     await instructor.getByText(/Presença confirmada/).first().waitFor({ timeout: 20000 });
     await shot(instructor, 'P4-inicio');
@@ -192,8 +205,14 @@ export async function runPriorityScenario({ sessions, browser, BASE, WRITE, env,
     if (radios === 0) throw new Error('sem os campos de etapas (step1..): migration de competências ausente ou tela diferente');
     await (await requireUniqueTarget(card.locator('input[type="radio"][name="step1"][value="mastered"]'), 'etapa 1')).check();
     await (await requireUniqueTarget(card.locator('input[type="radio"][name="step2"][value="practiced"]'), 'etapa 2')).check();
+    const attempt=evidence?.attempt('P5',{requestId:state.requestId,bookingId:state.bookingId,meetingId:state.meetingId});
     await (await requireUniqueTarget(card.getByRole('button', { name: 'Concluir e registrar encontro' }), 'registrar encontro')).click();
     await instructor.getByText(/Encontro registrado|Aula registrada/).first().waitFor({ timeout: 20000 });
+    await instructor.goto(`${BASE}/instrutor/aula?aba=concluidas&aula=${state.meetingId}`,{waitUntil:'networkidle'});
+    const completed=await meetingForBooking(instructor,state.bookingId,1);
+    if(await completed.getAttribute('id')!=='aula-'+state.meetingId || await recordedMinutesFromCard(completed)!==doneMinutes)throw blocked('primeiro registro não comprovado no encontro correto');
+    if(state.firstStartAttempt)evidence.confirm(state.firstStartAttempt);
+    if(attempt)evidence.confirm(attempt);
     await ensureCheckpoint();
     await shot(instructor, 'P5-registro');
   });
@@ -221,7 +240,8 @@ export async function runPriorityScenario({ sessions, browser, BASE, WRITE, env,
     const checkpoint = state.checkpoint;
     const adapter = secondMeetingBrowserAdapter({ page:instructor,base:BASE,checkpoint });
     state.checkpoint = await continueSecondMeeting({
-      checkpoint,base:BASE,stopAfterStart,...adapter,
+      checkpoint,base:BASE,stopAfterStart,...adapter,checkpointStore,evidence,
+      verifyRequest:()=>verifyCheckpointBooking(student,BASE,checkpoint),
       start:async () => {
         // A PIN is read only if this exact scheduled meeting is eligible now.
         // It is never stored in the resumable checkpoint.
@@ -229,7 +249,6 @@ export async function runPriorityScenario({ sessions, browser, BASE, WRITE, env,
         const code = await presenceCodeForConfirmedBooking(student);
         await secondMeetingBrowserAdapter({page:instructor,base:BASE,checkpoint,code}).start();
       },
-      persist:async (updated) => { await saveCheckpoint(updated); state.checkpoint=updated; },
     });
     return 'checkpoint '+state.checkpoint.stage+'; mesmos IDs preservados';
   };

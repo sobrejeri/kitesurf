@@ -22,9 +22,20 @@ export async function bookingForRequest(page, base, requestId) {
   return { bookingId: requireUuid(match[1], 'reserva'), bookingUrl: target.href };
 }
 
+export async function verifyCheckpointBooking(page,base,checkpoint) {
+  const requestId=requireUuid(checkpoint.requestId,'solicitação da retomada');
+  await page.goto(new URL('/aluno/solicitacao/'+requestId,base).href,{waitUntil:'networkidle'});
+  const accepted=await bookingForRequest(page,base,requestId);
+  if(!accepted || accepted.bookingId!==checkpoint.bookingId) {
+    throw Object.assign(new Error('solicitação não comprova a reserva do checkpoint'),{code:'E2E_BLOCKED'});
+  }
+  return {baseOrigin:new URL(page.url()).origin,requestId,bookingId:accepted.bookingId};
+}
+
 export async function acceptOfferOnce({
   findOffer, readAcceptedBooking, timeout = 100_000, confirmationTimeout = 60_000,
   every = 4000, now = Date.now, sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms)),
+  beforeClick = () => {},
 }) {
   const poll = async (read, duration) => {
     const end = now() + duration;
@@ -40,6 +51,7 @@ export async function acceptOfferOnce({
   const button = await requireUniqueTarget(card.getByRole('button', { name: 'Aceitar aula', exact: true }), 'botão de aceite');
   // Click is deliberately outside both read-only polling loops. A timeout or
   // lost response leaves an unknown result; neither is permission to click again.
+  await beforeClick();
   await button.click();
   const booking = await poll(readAcceptedBooking, confirmationTimeout);
   if (!booking) throw new Error('resultado do aceite não confirmado; não repetir a gravação');
