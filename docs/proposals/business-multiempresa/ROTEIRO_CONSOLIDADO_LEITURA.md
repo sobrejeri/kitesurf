@@ -7,7 +7,7 @@ A ponta usada é `1b318eb47a564742279fe96887d1d615b77d28d1` da PR #297, que incl
 1. Identifique o projeto e confirme que é o destino isolado autorizado. Não instalar a pilha no Turiva nem no Kitesurf ativo.
 2. Fixe o SHA da pilha revisada. Não use a soma das primeiras PRs sem as correções de convites, agenda e cupom da #293.
 3. Guarde o snapshot de contagens de perfis/reservas, catálogo, ledger e fingerprints das funções. Ledger e objetos precisam ser conciliados antes de executar DDL; presença de função não prova migration aplicada.
-4. Confirme no Auth que a confirmação de e-mail está habilitada. O SQL verifica o helper `auth_email` e seu filtro de e-mail confirmado; ele não consegue provar configuração do provedor ou login real.
+4. Confirme no Auth que a confirmação de e-mail está habilitada. O SQL informa apenas se o texto de `auth_email` menciona `email_confirmed_at`. Isso é indício para revisão: comentário ou condição invertida também podem corresponder. A validação de destinatário/e-mail confirmado depende dos testes comportamentais da fase 1 e de Auth real.
 5. Confirme backup/recuperação conforme decisão do responsável. Este roteiro não exporta nem restaura backup.
 
 ## Executar o verificador
@@ -33,7 +33,9 @@ psql "$BUSINESS_TEST_DATABASE_URL" -X -v ON_ERROR_STOP=1 \
 
 No editor SQL, execute `SET vento.business.expected_phase = '3';` antes do arquivo. Valores aceitos: 1 a 7; sem configuração usa 7. Execute fora de outra transação.
 
-O verificador recusa tabela/função/trigger ausente, RLS desligada, escrita direta por cliente, leitura anônima, grants de função inesperados (incluindo PUBLIC), modo DEFINER/INVOKER divergente, search_path ausente e bucket de fechamento público ou incompleto. A saída PASS informa o número de objetos efetivamente conferidos. A lista possui 45 tabelas, 114 funções distintas e 27 gatilhos no conjunto das sete fases. Não exige tabelas vazias: também serve após a criação de dados fictícios.
+O verificador recusa tabela/função/trigger ausente, gatilho habilitado somente para replica (R), RLS desligada, escrita direta por cliente, leitura anônima, grants de função inesperados (incluindo PUBLIC), tipos de argumentos ou modo DEFINER/INVOKER divergentes, search_path diferente de vazio e bucket de fechamento público ou incompleto. A saída PASS informa o número de objetos efetivamente conferidos. A lista possui 45 tabelas, 114 funções distintas e 27 gatilhos no conjunto das sete fases. Não exige tabelas vazias: também serve após a criação de dados fictícios. Gatilhos aceitos: O (origin) e A (always); R (replica) e D (disabled) são recusados.
+
+A verificação compara nome único e tipos de entrada, mas não prova nomes/defaults/parâmetros de saída ou semântica do corpo. A consulta de fingerprints cobre somente as definições das sete funções listadas, sem proprietário/ACL: não é um snapshot da instalação inteira. Os grants conferidos separadamente também não provam os predicados das policies. Manter testes de comportamento, revisão de políticas, baseline/ledger e snapshot de dados.
 
 Se falhar, guarde mensagem e SHA e interrompa a próxima fase. Não use reversões destrutivas ou reaplique a pilha inteira para contornar divergência. Os arquivos antigos de verificação por fase continuam úteis para revisão detalhada; seus exemplos de RPC que geram erro esperado não são parte deste verificador automatizado.
 
@@ -57,4 +59,4 @@ Registre por entrega: fase, SHA, CI, projeto, snapshot antes/depois, resultado d
 
 ## Validação automatizada deste roteiro
 
-`scripts/test-db.sh` executa o verificador ao final das suítes da ponta #297. O teste usa PostgreSQL descartável do CI e valida o SQL contra os objetos reais dessas migrations. Não houve execução local nesta sessão porque o executor não possui PostgreSQL/Docker; consulte o CI da PR para o resultado efetivo.
+`scripts/test-db.sh` executa o verificador ao final das suítes da ponta #297. Também chama `scripts/test-business-readonly-preflight.sh`: no cluster descartável, configura ENABLE REPLICA, exige recusa, confere ENABLE ALWAYS e O, troca o search_path para public, exige recusa e restaura o estado. A rotina de mutação recusa hosts TCP e exige o socket e PG_VERSION do diretório temporário criado por test-db.sh; ela nunca deve ser executada contra banco gerenciado. O teste usa PostgreSQL descartável do CI e valida o SQL contra os objetos reais dessas migrations. Não houve execução local nesta sessão porque o executor não possui PostgreSQL/Docker; consulte o CI da PR para o resultado efetivo.

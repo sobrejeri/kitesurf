@@ -89,3 +89,6 @@ bash "$ROOT/scripts/test-business-public-order-race.sh"
 
 # Business consolidated catalogue/ACL preflight: read-only, no application RPC.
 "${PSQL[@]}" -f "$ROOT/docs/proposals/business-multiempresa/VERIFICACAO_consolidada_somente_leitura.sql"
+
+# Mutation probes only against this script's temporary local cluster.
+PG_TEST_SOCKET="$DATA" PG_TEST_PORT="$PORT" bash "$ROOT/scripts/test-business-readonly-preflight.sh"
