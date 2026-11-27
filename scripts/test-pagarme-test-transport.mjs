@@ -27,6 +27,25 @@ assert.equal(sent.options.headers.Authorization, `Basic ${Buffer.from(`${secret}
 assert.equal(JSON.stringify(result).includes(secret), false);
 await assert.rejects(() => submit({ snapshot, method: { type: 'pix' }, secret: 'sk_live_FORBIDDEN', requestKey, send }), /test key/);
 assert.equal(calls, 1);
+// A caller may reuse its snapshot object while I/O is pending. The response
+// must stay bound to the values serialized into the submitted order.
+for (const useSentValues of [true, false]) {
+  const mutable = structuredClone(snapshot);
+  const output = await submit({ snapshot: mutable, method: { type: 'pix' }, secret, requestKey,
+    send: async (_url, options) => {
+      const body = JSON.parse(options.body);
+      mutable.bookingId = '33333333-3333-4333-8333-333333333333';
+      mutable.amountCents = 1;
+      mutable.customerId = 'cus_other';
+      await Promise.resolve();
+      return { ok: true, async json() { return {
+        id: 'or_mutation', code: useSentValues ? body.code : mutable.bookingId,
+        amount: useSentValues ? body.items[0].amount : mutable.amountCents,
+        customer: { id: useSentValues ? body.customer_id : mutable.customerId }, currency: 'BRL', status: 'pending',
+      }; } };
+    } });
+  assert.equal(output.kind, useSentValues ? 'observed' : 'unknown');
+}
 for (const failed of [async () => { throw Error('sensitive provider error'); }, async () => ({ ok: false }),
   async () => ({ ok: true, async json() { throw Error('malformed JSON'); } }),
   async () => ({ ok: true, async json() { return { id: 'or_wrong', amount: 1 }; } })]) {
