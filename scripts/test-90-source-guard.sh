@@ -60,4 +60,13 @@ if env -i "PATH=$W/bin:$PATH" "BACKUP_DIR=$W/backup" "RESTORE_DIR=$W/linked-pare
     bash "$ROOT/scripts/ops/90-restore-local.sh" >/dev/null 2>&1; then echo 'FAIL: inert initdb unexpectedly succeeded' >&2; exit 1; fi
 [[ -f "$W/existing/sentinel" && -f "$W/invoked" ]] || { echo 'FAIL: parent-symlink rehearsal did not preserve sentinel' >&2; exit 1; }
 [[ -z "$(find "$W/existing" -maxdepth 1 -name 'newcluster.*' -print)" ]] || { echo 'FAIL: owned temporary cluster not cleaned' >&2; exit 1; }
+rm -f "$W/invoked"
+mkdir "$W/space parent" "$W/quote'parent"
+ln -s "$W/space parent" "$W/simple-space-alias"
+ln -s "$W/quote'parent" "$W/simple-quote-alias"
+for alias in simple-space-alias simple-quote-alias; do
+  if env -i "PATH=$W/bin:$PATH" "BACKUP_DIR=$W/backup" "RESTORE_DIR=$W/$alias/newcluster" "PG_BIN=$W/bin" "CANARY_FILE=$W/invoked" \
+      bash "$ROOT/scripts/ops/90-restore-local.sh" >/dev/null 2>&1; then echo 'FAIL: canonical unsafe parent accepted' >&2; exit 1; fi
+done
+[[ ! -e "$W/invoked" ]] || { echo 'FAIL: unsafe canonical parent reached PostgreSQL' >&2; exit 1; }
 printf '%s\n' 'PASS: Kitesurf direct/pooler/local source checks reject alternate projects and libpq overrides (offline)'

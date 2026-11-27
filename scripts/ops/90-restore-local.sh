@@ -16,6 +16,10 @@ guard_local_restore_target
 RESTORE_PARENT="$(realpath -e -- "$(dirname -- "$RESTORE_DIR")")"
 [ -d "$RESTORE_PARENT" ] || { echo 'Parent local de restore inexistente.' >&2; exit 2; }
 RESTORE_PREFIX="$RESTORE_PARENT/$(basename -- "$RESTORE_DIR")"
+RESTORE_DIR="$RESTORE_PREFIX"
+BACKUP_DIR="$(realpath -e -- "$BACKUP_DIR")"
+# A simple symlink input may resolve to a path containing unsafe characters.
+guard_local_restore_target
 PG_BIN="${PG_BIN:-$(dirname "$(command -v pg_ctl || ls /usr/lib/postgresql/*/bin/pg_ctl | tail -1)")}"
 PORT="${PORT:-54790}"
 ( cd "$BACKUP_DIR" && sha256sum -c sha256.txt ) || { echo "SHA-256 não confere: backup corrompido ou alterado. Parei." >&2; exit 1; }
