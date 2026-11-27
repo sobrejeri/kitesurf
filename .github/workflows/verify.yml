@@ -157,6 +157,8 @@ jobs:
         run: |
           npm ci --prefix scripts/push-dispatcher --ignore-scripts --no-audit --no-fund
           node scripts/test-push-dispatcher.mjs
+      - name: Presence fixture clock remains valid across Fortaleza midnight
+        run: node scripts/test-presence-fixture-midnight.mjs
       - run: pnpm build
       - name: Run isolated database migrations and SQL assertions
         # Avoid Ubuntu apt mirrors: their DNS can fail on hosted runners.
