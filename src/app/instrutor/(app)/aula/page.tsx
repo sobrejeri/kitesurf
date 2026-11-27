@@ -22,6 +22,9 @@ import { listPendingBalanceRequestsForInstructor } from '@/lib/balance-requests'
 import { InstructorBalanceRequests, type PendingBalanceItem } from '@/components/instructor/balance-requests';
 import { groupInstructorLessons, nextScheduledInstructorLesson, resolveInstructorLessonTab, selectInstructorLesson, mayStartInstructorLesson } from '@/lib/instructor-lesson-tabs';
 import { getBookingLevelAssessments } from '@/lib/booking-level-assessments';
+import { CompletionChoice } from '@/components/instructor/completion-choice';
+import { ResumeScheduler } from '@/components/instructor/resume-scheduler';
+import { fortalezaLocalInput, interruptionBadge, interruptionFlowEnabled, MAX_RESUME_DAYS } from '@/lib/meeting-interruption';
 
 
 export const metadata: Metadata = { title: 'Aulas do instrutor' };
@@ -47,6 +50,8 @@ export default async function RunLessonPage({
   searchParams: Promise<{ aba?: string; aula?: string }>;
 }) {
   const viewer = await requireRole(['instructor'], '/instrutor/aula');
+  // #93: fluxo de interrupção/retomada. DESLIGADO por padrão; com a flag desligada esta tela é exatamente a de antes.
+  const flowOn = interruptionFlowEnabled();
   const [bookings, studentPhotos, params] = await Promise.all([
     listBookingsForInstructor(viewer.id),
     getInstructorStudentAvatarUrls(),
@@ -170,7 +175,7 @@ export default async function RunLessonPage({
             const actionLabel = expanded ? 'Fechar detalhes'
               : meeting.status === 'done' ? 'Ver detalhes'
                 : meeting.status === 'in_progress' ? 'Continuar aula'
-                  : mayStartInstructorLesson({ booking, meeting }, todayInCeara, cearaDay)
+                  : mayStartInstructorLesson({ booking, meeting }, todayInCeara, cearaDay, Date.now())
                     ? 'Abrir e iniciar'
                     : Date.parse(meeting.starts_at) - Date.now() <= 24*3600000
                       ? 'Preparar aula' : 'Ver agendamento';
@@ -212,6 +217,10 @@ export default async function RunLessonPage({
                     <div className="mt-1.5 flex flex-wrap items-center gap-1.5">
                       <span className="text-[11.5px] text-subtle">{booking.code}</span>
                       {booking.is_test ? <Badge tone="warning">Aula teste</Badge> : null}
+                      {flowOn ? (() => {
+                        const flag = interruptionBadge(meeting.interruption_state);
+                        return flag ? <Badge tone={flag.tone}>{flag.label}</Badge> : null;
+                      })() : null}
                       {expanded ? (
                         <span className="rounded-full border border-brand-focus bg-brand-soft px-2 py-0.5 text-[10px] font-bold text-brand">
                           Detalhes abertos
@@ -247,7 +256,7 @@ export default async function RunLessonPage({
                 <>
       {selected ? (() => {
         const { booking, meeting } = selected;
-        const canStart = mayStartInstructorLesson(selected, todayInCeara, cearaDay);
+        const canStart = mayStartInstructorLesson(selected, todayInCeara, cearaDay, Date.now());
         const studentName = booking.student?.full_name?.trim() || 'Aluno';
         return (
           <Card as="section" className="!rounded-[18px] !border-brand-reserved !bg-brand-wash">
@@ -281,7 +290,7 @@ export default async function RunLessonPage({
                 {LEVEL_LABELS[booking.level]} · {booking.language} · {booking.beach?.name ?? 'Praia'}
               </p>
               {booking.is_test ? <div className="mt-2"><Badge tone="warning">AULA TESTE</Badge></div> : null}
-              {meeting.status === 'scheduled' ? (
+              {meeting.status === 'scheduled' && !(flowOn && meeting.interruption_state) ? (
                 <MeetingChangePanel
                   bookingId={booking.id}
                   meeting={meeting}
@@ -325,8 +334,39 @@ export default async function RunLessonPage({
                   até registrar a conclusão, este encontro continuará na aba Em aula.
                 </Note>
               ) : null}
+            {flowOn && meeting.status === 'scheduled'
+              && (meeting.interruption_state === 'awaiting_resume' || meeting.interruption_state === 'resume_scheduled') ? (
+              <div className="mt-4 grid gap-3 rounded-[16px] border border-line bg-surface p-4">
+                <div className="flex flex-wrap items-center gap-2">
+                  <h3 className="text-[16px] font-bold text-ink">Aula interrompida</h3>
+                  {(() => {
+                    const flag = interruptionBadge(meeting.interruption_state);
+                    return flag ? <Badge tone={flag.tone}>{flag.label}</Badge> : null;
+                  })()}
+                </div>
+                <p className="text-[13px] text-label">
+                  Motivo: {meeting.interruption_reason ?? '—'}. Ministrados até agora: {formatMinutes(meeting.previous_done_minutes ?? 0)};
+                  restam {formatMinutes(meeting.remaining_minutes ?? 0)} para continuar, no mesmo encontro e sem nova cobrança.
+                </p>
+                {meeting.interruption_state === 'resume_scheduled' ? (
+                  <p className="text-[13px] font-semibold text-ink">
+                    Continuidade marcada para {formatDateLong(meeting.starts_at)} · {formatTime(meeting.starts_at)}. Use o mesmo código de presença para retomar.
+                  </p>
+                ) : (
+                  <p className="text-[13px] text-muted">Combine com o aluno pelo chat da reserva e agende a continuidade abaixo.</p>
+                )}
+                <ResumeScheduler meetingId={meeting.id}
+                  min={fortalezaLocalInput(Date.now() + 60_000)} max={fortalezaLocalInput(Date.now() + MAX_RESUME_DAYS * 86_400_000)}
+                  defaultValue={meeting.interruption_state === 'resume_scheduled' ? fortalezaLocalInput(Date.parse(meeting.starts_at)) : undefined}
+                  rescheduling={meeting.interruption_state === 'resume_scheduled'} />
+              </div>
+            ) : null}
             <div className="mt-5 border-t border-line pt-5">
-              {meeting.status === 'scheduled' && !canStart ? (
+              {meeting.status === 'scheduled' && flowOn && meeting.interruption_state === 'awaiting_resume' ? (
+                <Note title="Continuidade ainda não agendada">
+                  Para retomar esta aula, agende a data da continuidade acima. O código de presença só é pedido depois disso.
+                </Note>
+              ) : meeting.status === 'scheduled' && !canStart ? (
                 <Note tone="warning">
                   Você pode consultar os detalhes e preparar a aula com antecedência.
                   O início real exige o dia agendado, o código de presença e a conclusão
@@ -341,6 +381,10 @@ export default async function RunLessonPage({
                     </Field>
                   </div>
                 </ActionForm>
+              ) : flowOn && skills.ready ? (
+                <CompletionChoice meetingId={meeting.id} minutes={meeting.minutes}
+                  plannedMinutes={meeting.planned_minutes ?? meeting.minutes} previousDone={meeting.previous_done_minutes ?? 0}
+                  steps={KITE_CURRICULA[booking.level].map((step) => ({ id: step.id, title: step.title }))} />
               ) : (
                 <ActionForm action={skills.ready ? recordMeetingWithSkills : recordMeeting}
                   submitLabel="Concluir e registrar encontro" className="grid gap-4">
