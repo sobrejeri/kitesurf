@@ -7,6 +7,8 @@
 set -euo pipefail
 ROOT="$(cd "$(dirname "$0")/../.." && pwd)"
 : "${BACKUP_DIR:?}" "${RESTORE_DIR:?}"
+source "$ROOT/scripts/ops/90-restore-target-guard.sh"
+guard_local_restore_target
 [ "$(id -u)" != "0" ] || { echo "Rode como usuário não-root." >&2; exit 2; }
 [ -d "$BACKUP_DIR" ] || { echo "BACKUP_DIR inexistente." >&2; exit 2; }
 [ ! -e "$RESTORE_DIR" ] || { echo "RESTORE_DIR já existe: use uma pasta nova." >&2; exit 2; }

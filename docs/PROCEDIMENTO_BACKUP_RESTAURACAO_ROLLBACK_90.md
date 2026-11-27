@@ -68,6 +68,8 @@ As duas rotinas usam `90-source-guard.sh`: a referência precisa ser exatamente 
 
 Listas separadas por vírgula em `PGHOST` e `PGPORT` também são recusadas: o libpq permite múltiplos destinos e um socket local seguido de um host remoto poderia causar fallback para outro projeto.
 
+A restauração também verifica o destino antes de inicializar ou acessar PostgreSQL: recusa `PGHOSTADDR`, `PGSERVICE` e `PGSERVICEFILE`, caminhos com espaços/aspas/vírgulas e portas não numéricas ou fora da faixa. O teste usa executáveis PostgreSQL inertes que apenas sinalizam invocação, para comprovar a parada antes de qualquer conexão. Isso evita que `-h` com socket Unix seja sobreposto por `PGHOSTADDR`. Os caminhos de backup e restauração devem ser absolutos e conter somente letras ASCII, números, ponto, barra, hífen ou sublinhado.
+
 ### Preservação no ensaio de rollback
 
 O ensaio captura antes da aplicação a contagem e uma impressão digital determinística de todas as colunas de reservas e encontros. Depois do rollback compara com essa captura anterior; uma alteração de conteúdo com a mesma quantidade de linhas também é detectada. `scripts/test-90-booking-preservation.sh` verifica esse comportamento em cluster Unix descartável, sem exportar dados remotos. Isso valida o mecanismo de comparação, não substitui executar o ensaio completo nem restaurar um backup real.
