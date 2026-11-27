@@ -20,4 +20,9 @@ reject PGHOST=db.qadkqjfmmnxvovyyhqxw.supabase.co PGDATABASE=postgresql://evil.t
 reject PGHOST=/tmp/local-test ALLOW_LOCAL_SOURCE=1 PGDATABASE=postgresql://evil.test/postgres
 reject PGHOST=db.qadkqjfmmnxvovyyhqxw.supabase.co PGPORT=6543
 reject PGHOST=/tmp/local-test
+reject PGHOST=/tmp/nonexistent,db.other.supabase.co ALLOW_LOCAL_SOURCE=1
+reject PGHOST=/tmp/local-test,db.qadkqjfmmnxvovyyhqxw.supabase.co ALLOW_LOCAL_SOURCE=1
+reject PGHOST=/tmp/local-test ALLOW_LOCAL_SOURCE=1 PGPORT=54801,5432
+reject PGHOST=db.qadkqjfmmnxvovyyhqxw.supabase.co,db.other.supabase.co
+reject PGHOST=db.qadkqjfmmnxvovyyhqxw.supabase.co PGPORT=5432,5432
 printf '%s\n' 'PASS: Kitesurf direct/pooler/local source checks reject alternate projects and libpq overrides (offline)'
