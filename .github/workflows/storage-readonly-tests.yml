@@ -1,0 +1,21 @@
+name: Storage read-only probe tests
+on:
+  pull_request:
+    paths: ['scripts/e2e/storage-readonly*', '.github/workflows/storage-readonly-tests.yml']
+  push:
+    branches: [test/storage-http-readonly-20261126]
+    paths: ['scripts/e2e/storage-readonly*', '.github/workflows/storage-readonly-tests.yml']
+permissions:
+  contents: read
+jobs:
+  probe-safety:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - run: node --test scripts/e2e/storage-readonly.test.mjs
