@@ -14,11 +14,12 @@
 #  G) aceite do reagendamento em curso x edição de agenda que fecha o dia novo: a edição ESPERA (Lock), depois vale; o encontro movido NÃO é apagado nem
 #     devolvido: fica agendado e é contado como conflito (aula confirmada fora da agenda é só listada). Sem deadlock nem sobreposição.
 # Ordem de locks: linha do instrutor primeiro. Nenhum deadlock (pg_stat_database.deadlocks não muda).
-# ONLY=A|B|C roda um só cenário (usado pelo teste de mutação, que espera FALHA no A quando o lock é removido).
+# H) FOR NO KEY UPDATE é compatível com a FK, mas o lock explícito FOR UPDATE deve esperar; a mutação verifica essa distinção.
+# ONLY=A|...|H roda um só cenário.
 set -euo pipefail
 : "${PG_TEST_SOCKET:?}"; : "${PG_TEST_PORT:?}"
 PSQL=(psql -X -h "$PG_TEST_SOCKET" -p "$PG_TEST_PORT" -U postgres -d postgres -v ON_ERROR_STOP=1 -Atq)
-ONLY="${ONLY:-ABCDEFG}"
+ONLY="${ONLY:-ABCDEFGH}"
 CH="${CHANGE_BASE:-20}"   # dia dos cenários F/G: o reagendamento exige a nova data em até 90 dias
 OFF="${OFFSET_BASE:-120}"   # dia inicial dos cenários (cada execução usa dias próprios: as reservas são confirmadas no banco descartável e não se repetem)
 A1=00000000-0000-0000-0000-0000000000a1; B1=00000000-0000-0000-0000-0000000000b1
@@ -168,6 +169,17 @@ if [[ "$ONLY" == *G* ]]; then
   [ "$n" = 0 ] || fail "G: sobreposição de encontros confirmados do instrutor: $n"
   "${PSQL[@]}" -c "$(as $A1 "select public.save_my_weekly_schedule('$days'::jsonb, 0);")" >/dev/null
   echo "PASS G: a edição de agenda esperou (Lock observado) o aceite do reagendamento; o encontro movido ficou agendado e contado como conflito, sem sobreposição"
+fi
+
+if [[ "$ONLY" == *H* ]]; then
+  S="$(loc $((OFF+6)) '10:00')"; E="$(loc $((OFF+6)) '11:00')"
+  bg conc-h1 "begin; select id from public.instructors where id='$A1' for no key update; select pg_sleep(4); commit;"
+  wait_state "H: instrutor protegido por NO KEY UPDATE" "$(sleeping conc-h1)"
+  bg conc-h2 "$(as $A1 "select public.add_my_time_off('$S','$E','block','lock-isolation-${OFF}');")"
+  wait_state "H: bloqueio precisa do lock explicito FOR UPDATE" "$(blocked conc-h2)"
+  wait_rc conc-h1; wait_rc conc-h2
+  [ "$(cat "$out/conc-h2.rc")" = 0 ] || fail "H: bloqueio livre deveria concluir depois do lock: $(cat "$out/conc-h2.err")"
+  echo "PASS H: bloqueio espera FOR UPDATE explicito; FK compativel nao mascara a prova"
 fi
 
 [ "$(deadlocks)" = "$dl0" ] || fail "deadlock detectado"

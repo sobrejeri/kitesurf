@@ -2,14 +2,15 @@
 
 ## Retomada atual — 26/11/2026
 
-Leia primeiro [a execução paralela atual](./EXECUCAO_PARALELA_20261126.md) e a [issue mestre #105](https://github.com/sobrejeri/kitesurf/issues/105). Os registros seguintes são históricos e não substituem essas evidências.
+Leia primeiro [a execução paralela atual](./EXECUCAO_PARALELA_20261126.md) e a [issue mestre #105](https://github.com/sobrejeri/kitesurf/issues/105). Os registros seguintes são históricos.
 
-- Escopo: **16 frentes**, sem checkout real (#101) nem laboratório 3D (#104); **0/16 integralmente homologadas**, com entregas e testes parciais reais já registrados.
-- Kitesurf `qadkqjfmmnxvovyyhqxw`: **ledger10**, conciliação de entradas #90 aplicada. Mapping remoto `20261127012854 / vento_90_validate_request_and_booking_input` ↔ arquivo local `20261127004852_validate_request_and_booking_input.sql`; hashes e preservação constam no documento atual. **Não reaplicar migrations antigas nem usar db push para duplicar essa equivalência.**
-- Produção #369: `03dff66eb40380a468f55e883716175aa8f44484` LIVE e conferida por versão. Após o DDL, **VNT-1018** foi confirmada pelo fluxo autenticado: 2h em 08/12/2026 às09h Fortaleza, total60000centavos e soma das partes igual, sem cobrança. A regressão SQL remota com claims não equivale a login/navegador.
-- **HIBP ON**, persistido; Advisors sem aviso HIBP, mantendo os avisos intencionais de quatro funções anon e83 authenticated. As contas extras necessárias aos cenários entre titulares e à fila continuam ausentes; não declarar isolamento HTTP ou A→B→C real sem elas.
-- Preservar dados, checkout/Protege3B/scheduler desligados e flags novas OFF. Conferir CI, SHA LIVE e estado real antes de cada próxima alteração; não reiniciar pelas pendências antigas deste histórico.
-
+- Escopo: **16 frentes**, sem checkout real (#101) nem laboratório 3D (#104); **0/16 integralmente homologadas**.
+- **Ledger com 11 migrations** no Kitesurf: entradas #90 aplicadas em `20261127012854` (arquivo local `20261127004852`) e veículo em `20261127014108 / instructor_support_vehicle_profile` (arquivo `20261127010004`). **Não reaplicar migrations antigas nem usar db push para duplicar os mappings.** Hashes e contagens históricas estão no documento de execução.
+- Último runtime LIVE verificado: #379, `be8f31e358f5b95cd42314eb60a2b581bf117b74`, deploy `dep-dc4dvfnvdc3s73bhmthg`. Git posterior `7b81205595c91fba6a83cc25f40854e67a224950` inclui a evidência/script SQL remoto #378.
+- **Veículo habilitado para homologação:** Instrutor salvou buggy fictício de quatro passageiros, recarregou e Admin AAL2 viu; uma linha/uma auditoria. Dados anteriores preservados. [Evidência #99](https://github.com/sobrejeri/kitesurf/issues/99#issuecomment-7207564379). Push e dispatcher continuam OFF, sem schema remoto de push nem chaves; interrupção/3B/checkout também desligados.
+- **VNT-1006:** PIN errado recusado, correto iniciou o segundo encontro; registro de 115 minutos + 120 anteriores = **235/240, saldo 5**, com Pilotagem praticada. Voucher/evolução/banco conferidos; valor de 120000 centavos e outras reservas/encontros preservados. [Evidência #93](https://github.com/sobrejeri/kitesurf/issues/93#issuecomment-7207609955). Repetir start/record sobre done foi recusado com SQLSTATE 55000 em transação ROLLBACK, hash igual: **não foi corrida paralela nem execução do runner**.
+- VNT-1018 pós-DDL foi confirmada pelo fluxo autenticado: 2h em 08/12/2026 às 09h Fortaleza, total 60000 centavos e soma das partes igual, sem cobrança. A regressão SQL remota com claims não equivale a login/navegador.
+- **HIBP ON** persistido; a última consulta de Advisors registrada no lote #369 estava sem aviso HIBP e com os avisos intencionais de quatro funções anon e 83 authenticated (antes do DDL de veículo). Contas extras para cenários entre titulares/fila ainda ausentes. Conferir CI, SHA LIVE e estado real antes de alterar; não reiniciar pelas retomadas antigas.
 
 ## Continuidade em 21/11 — solicitação aceita e agenda do instrutor
 

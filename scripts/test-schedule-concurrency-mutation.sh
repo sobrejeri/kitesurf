@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# #91 — teste de MUTAÇÃO do lock: remove da add_my_time_off o lock da linha do instrutor e exige que o cenário A de
+# #91 — teste de MUTAÇÃO do lock: remove da add_my_time_off o lock da linha do instrutor e exige que o cenário H de
 # scripts/test-schedule-concurrency.sh FALHE (prova de que o teste detecta a falta do lock). Restaura a função ao final.
 # Só roda no banco descartável do scripts/test-db.sh (último passo: a função é alterada e restaurada).
 set -euo pipefail
@@ -11,14 +11,14 @@ orig="$(mktemp)"; trap '"${PSQL[@]}" -f "$orig" >/dev/null 2>&1 || true; rm -f "
 "${PSQL[@]}" -c "select pg_get_functiondef('$SIG'::regprocedure) || ';'" > "$orig"
 grep -q "perform 1 from public.instructors where id = uid for update;" "$orig" || { echo "FAIL: não achei o lock da linha do instrutor em add_my_time_off" >&2; exit 1; }
 sed 's/perform 1 from public.instructors where id = uid for update;/perform 1;/' "$orig" | "${PSQL[@]}" -f - >/dev/null
-# com o lock removido o cenário A DEVE falhar, e pelo motivo certo: o bloqueio não ficou esperando a reserva (não pode ser falha de fixture)
-if OFFSET_BASE=200 ONLY=A bash "$ROOT/scripts/test-schedule-concurrency.sh" >"$orig.mut.out" 2>&1; then
-  echo "FAIL: sem o lock o cenário A deveria falhar (o teste não detecta a falta do lock)" >&2; cat "$orig.mut.out" >&2; exit 1
+# com o lock removido o cenário H DEVE falhar, e pelo motivo certo: o bloqueio não ficou esperando o lock explícito (não pode ser falha de fixture)
+if OFFSET_BASE=200 ONLY=H bash "$ROOT/scripts/test-schedule-concurrency.sh" >"$orig.mut.out" 2>&1; then
+  echo "FAIL: sem o lock o cenário H deveria falhar (o teste não detecta a falta do lock)" >&2; cat "$orig.mut.out" >&2; exit 1
 fi
-grep -q "o bloqueio ficou ESPERANDO por lock\|o bloqueio deveria ser recusado por reserva em pagamento\|bloqueio criado junto com a reserva" "$orig.mut.out" || { echo "FAIL: o cenário A falhou por outro motivo (fixture?), não pela falta do lock:" >&2; cat "$orig.mut.out" >&2; exit 1; }
+grep -q "H: bloqueio precisa do lock explicito FOR UPDATE" "$orig.mut.out" || { echo "FAIL: o cenário H falhou por outro motivo (fixture?), não pela falta do lock:" >&2; cat "$orig.mut.out" >&2; exit 1; }
 rm -f "$orig.mut.out"
 "${PSQL[@]}" -f "$orig" >/dev/null
-OFFSET_BASE=220 ONLY=A bash "$ROOT/scripts/test-schedule-concurrency.sh" >/dev/null || { echo "FAIL: com o lock restaurado o cenário A deveria passar" >&2; exit 1; }
+OFFSET_BASE=220 ONLY=H bash "$ROOT/scripts/test-schedule-concurrency.sh" >/dev/null || { echo "FAIL: com o lock restaurado o cenário H deveria passar" >&2; exit 1; }
 # segunda mutação: sem o lock da linha do instrutor em respond_meeting_change, o cenário F (a resposta tem de ESPERAR a edição de agenda) deve falhar
 SIG2='public.respond_meeting_change(uuid,boolean)'
 orig2="$(mktemp)"; trap '"${PSQL[@]}" -f "$orig" >/dev/null 2>&1 || true; "${PSQL[@]}" -f "$orig2" >/dev/null 2>&1 || true; rm -f "$orig" "$orig2"' EXIT
@@ -33,4 +33,4 @@ rm -f "$orig.mut2.out"
 "${PSQL[@]}" -f "$orig2" >/dev/null
 CHANGE_BASE=60 ONLY=F bash "$ROOT/scripts/test-schedule-concurrency.sh" >/dev/null || { echo "FAIL: com o lock restaurado o cenário F deveria passar" >&2; exit 1; }
 echo "PASS: mutação em respond_meeting_change — sem o lock o cenário F falha; com o lock restaurado passa"
-echo "PASS: mutação — sem o lock da linha do instrutor o cenário A falha; com o lock restaurado passa"
+echo "PASS: mutação — sem o lock da linha do instrutor o cenário H falha; com o lock restaurado passa"
