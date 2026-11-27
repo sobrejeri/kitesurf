@@ -77,6 +77,8 @@ PG_TEST_SOCKET="$DATA" PG_TEST_PORT="$PORT" bash "$ROOT/scripts/test-schedule-co
 
 # #91: rollback exato da migration da agenda v2 (funções substituídas, ACL, gatilhos novos).
 bash "$ROOT/scripts/test-91-rollback.sh"
+# Apply agenda after the complete current baseline, preserving guard90 and revoked starter.
+bash "$ROOT/scripts/test-schedule-upgrade.sh"
 
 # P2-1: pagar uma reserva e criar outra com o mesmo instrutor (mesmo aluno) ao mesmo tempo não pode dar deadlock.
 PG_TEST_SOCKET="$DATA" PG_TEST_PORT="$PORT" bash "$ROOT/scripts/test-payment-lock-order.sh"
