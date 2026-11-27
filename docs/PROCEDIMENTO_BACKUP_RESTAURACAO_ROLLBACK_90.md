@@ -65,3 +65,9 @@ Exportação, restauração com SHA-256 e impressões digitais idênticas; dump 
 As duas rotinas usam `90-source-guard.sh`: a referência precisa ser exatamente a do Kitesurf, o banco deve ser `postgres`, o host direto deve corresponder ao projeto, ou o pooler Supabase deve usar `postgres.<referência>`. Conexões remotas usam porta de sessão 5432. `PGHOSTADDR`, `PGSERVICE`, `PGSERVICEFILE` e URLs em `PGDATABASE` são recusados para impedir que parâmetros alternativos desviem a conexão. Uma origem local exige `ALLOW_LOCAL_SOURCE=1` e continua restrita a `PGDATABASE=postgres`.
 
 `bash scripts/test-90-source-guard.sh` valida essas recusas sem acessar banco ou rede. Esse teste não comprova que existe backup nem que um backup real foi restaurado; o ensaio em PostgreSQL descartável continua separado da homologação de recuperação do Supabase.
+
+### Preservação no ensaio de rollback
+
+O ensaio captura antes da aplicação a contagem e uma impressão digital determinística de todas as colunas de reservas e encontros. Depois do rollback compara com essa captura anterior; uma alteração de conteúdo com a mesma quantidade de linhas também é detectada. `scripts/test-90-booking-preservation.sh` verifica esse comportamento em cluster Unix descartável, sem exportar dados remotos. Isso valida o mecanismo de comparação, não substitui executar o ensaio completo nem restaurar um backup real.
+
+Achado ainda aberto: `pg_dump`, a captura dos IDs de Auth e as impressões digitais da exportação são executados em transações separadas. Escritas concorrentes na origem podem produzir artefatos de instantes diferentes e uma divergência de restauração. Este procedimento ainda exige uma estratégia de snapshot consistente testada antes de declarar a exportação homologada sob concorrência; esta alteração não modifica o mecanismo de exportação.

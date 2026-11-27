@@ -1,0 +1,22 @@
+name: Rollback booking fingerprint regression
+on:
+  pull_request:
+    paths:
+      - 'scripts/ops/90-booking-fingerprint.sql'
+      - 'scripts/test-90-booking-preservation.sh'
+      - 'scripts/test-90-ops.sh'
+      - '.github/workflows/rollback-booking-preservation.yml'
+permissions:
+  contents: read
+jobs:
+  disposable-postgres:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+      - name: Verify full-row booking preservation without remote data
+        run: |
+          docker run --rm --user postgres \
+            -v "$PWD:/workspace:ro" -w /workspace \
+            -e LC_ALL=C.UTF-8 postgres:16 \
+            bash scripts/test-90-booking-preservation.sh
