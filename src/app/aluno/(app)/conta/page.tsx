@@ -15,6 +15,7 @@ import { ButtonLink } from '@/components/ui';
 import { requireRole } from '@/lib/auth';
 import { listBookingsForStudent } from '@/lib/data';
 import { formatDateLong, formatMinutes } from '@/lib/format';
+import {businessCoreEnabled} from '@/lib/business/core-feature';
 
 export const metadata: Metadata = { title: 'Meu perfil' };
 
@@ -108,6 +109,7 @@ export default async function AccountPage() {
             </div>
           </dl>
           <div className="mt-5 flex flex-wrap items-center justify-center gap-3 sm:justify-start">
+            {businessCoreEnabled()?<ButtonLink href="/aluno/empresa" variant="ghost" size="sm">Empresas</ButtonLink>:null}
             <ButtonLink href="/aluno/recuperar" variant="ghost" size="sm">
               Redefinir senha por e-mail
             </ButtonLink>

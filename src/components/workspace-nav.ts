@@ -1,4 +1,5 @@
 import type { WorkspaceNavItem } from './shells';
+import {businessCoreEnabled} from '@/lib/business/core-feature';
 
 /**
  * Every page of the workspaces (Instrutor, Admin, Afiliado), in menu order. One list feeds the
@@ -7,6 +8,7 @@ import type { WorkspaceNavItem } from './shells';
  * presentation only: each route still checks the role on the server.
  */
 export const INSTRUCTOR_NAV: readonly WorkspaceNavItem[] = [
+  ...(businessCoreEnabled()?[{group:'Trabalho',label:'Empresas',href:'/instrutor/empresa',icon:'users' as const}]:[]),
   { group: 'Trabalho', label: 'Meu dia', href: '/instrutor/hoje', icon: 'sun', tab: true },
   { group: 'Trabalho', label: 'Receber solicitação', href: '/instrutor/solicitacao', icon: 'bell' },
   { group: 'Trabalho', label: 'Realizar e registrar aula', href: '/instrutor/aula', icon: 'kite', tab: true },
@@ -26,6 +28,7 @@ export const INSTRUCTOR_NAV: readonly WorkspaceNavItem[] = [
 ];
 
 export const ADMIN_NAV: readonly WorkspaceNavItem[] = [
+  ...(businessCoreEnabled()?[{group:'Pessoas',label:'Empresas',href:'/admin/empresas',icon:'users' as const}]:[]),
   { group: 'Operação', label: 'Visão geral', href: '/admin/visao', icon: 'chart', tab: true },
   { group: 'Operação', label: 'Agenda de aulas', href: '/admin/agenda', icon: 'calendar' },
   { group: 'Operação', label: 'Reservas', href: '/admin/reservas', icon: 'book', tab: true },
@@ -52,6 +55,7 @@ export const ADMIN_NAV: readonly WorkspaceNavItem[] = [
 ];
 
 export const AFFILIATE_NAV: readonly WorkspaceNavItem[] = [
+  ...(businessCoreEnabled()?[{group:'Conta',label:'Empresas',href:'/afiliado/empresa',icon:'users' as const}]:[]),
   { group: 'Indicações', label: 'Início', href: '/afiliado/inicio', icon: 'home', tab: true },
   { group: 'Indicações', label: 'Divulgar', href: '/afiliado/divulgacao', icon: 'link', tab: true },
   { group: 'Indicações', label: 'Minhas indicações', href: '/afiliado/indicacoes', icon: 'chart', tab: true },
