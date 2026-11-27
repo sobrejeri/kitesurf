@@ -197,6 +197,15 @@ DECLARE
   after_counts jsonb;
 BEGIN
   SELECT id INTO STRICT beach FROM public.beaches WHERE slug='prea';
+  -- Synthetic completed history authorizes the actual preferred-instructor
+  -- branch. Copy only the disposable suite's fixture shape; no gateway is used.
+  INSERT INTO public.bookings
+  SELECT (jsonb_populate_record(NULL::public.bookings,to_jsonb(b)||jsonb_build_object(
+    'id',gen_random_uuid(),'code','VNT-QA-LEVEL-HISTORY',
+    'student_id',student,'instructor_id',instructor,'partner_id',NULL,
+    'status','completed','confirmed_at',now()))).*
+  FROM public.bookings b ORDER BY b.id LIMIT 1;
+  IF NOT FOUND THEN RAISE EXCEPTION 'Missing synthetic booking history fixture'; END IF;
   -- Find two free local days with the real availability helper. No fixed-date
   -- dependence on the earlier race suite, no trigger disabling or fake RPC.
   WITH candidates AS (
