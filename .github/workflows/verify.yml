@@ -141,6 +141,8 @@ jobs:
         run: node scripts/verify-postgrest-relationships.mjs
       - name: Verify sandbox allocation in integer cents
         run: node scripts/test-sandbox-allocation.mjs
+      - name: Verify instructor external payment confirmation
+        run: node scripts/test-instructor-company-payments.mjs
       - name: Verify sandbox payment event idempotency and transitions
         run: node scripts/test-sandbox-payment-events.mjs
       - name: Verify sandbox boleto order payload
@@ -154,6 +156,8 @@ jobs:
       - name: Verify sandbox financial CSV formula injection safety
         run: node scripts/test-sandbox-finance-csv.mjs
       - run: pnpm build
+      - name: Verify private Business payment receipt uploads
+        run: node scripts/test-business-receipt-upload.mjs
       - name: Run isolated database migrations and SQL assertions
         # Avoid Ubuntu apt mirrors: their DNS can fail on hosted runners.
         # The official PostgreSQL image has all required server/client tools.
