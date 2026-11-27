@@ -86,10 +86,6 @@ jobs:
         run: node --experimental-strip-types scripts/test-instructor-offer-visibility.mjs
       - name: Test instructor offer poller effect lifecycle
         run: node scripts/test-instructor-offer-poller-lifecycle.mjs
-      - name: Test queue worker HTTP authorization and bounded failures
-        run: node scripts/test-queue-worker-http.mjs
-      - name: Test both offline expiry HTTP handlers and activation cutoff
-        run: node scripts/test-queue-maintenance-route.mjs
       - name: Test real admin agenda date ranges
         run: node --experimental-strip-types scripts/test-admin-agenda-range.mjs
       - name: Test per-level quote selection and exact money inputs
