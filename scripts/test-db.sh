@@ -86,3 +86,7 @@ bash "$ROOT/scripts/test-rehearse-chain.sh"
 
 # #90: test the migration already loaded by the standard disposable migration loop.
 "${PSQL[@]}" -f "$ROOT/supabase/reconciliation/90_request_distinct_civil_days.test.sql"
+
+# #90: the official migration is installed by the migration loop above.
+"${PSQL[@]}" -f "$ROOT/supabase/reconciliation/90_request_input_guard.regression.sql"
+bash "$ROOT/scripts/test-request-input-migration.sh"
