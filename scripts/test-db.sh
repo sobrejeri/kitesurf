@@ -90,3 +90,6 @@ bash "$ROOT/scripts/test-rehearse-chain.sh"
 # #90: the official migration is installed by the migration loop above.
 "${PSQL[@]}" -f "$ROOT/supabase/reconciliation/90_request_input_guard.regression.sql"
 bash "$ROOT/scripts/test-request-input-migration.sh"
+
+# #89: preserve both known payment-function baselines while rejecting NULL instructor.
+bash "$ROOT/scripts/test-test-payment-instructor-migration.sh"
