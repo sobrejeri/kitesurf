@@ -82,7 +82,7 @@ for mode in replay observed; do
   [ "$before_data" = "$(data_snapshot "$db")" ] || { echo "FAIL regression cleanup $mode"; exit 1; }
   echo "PASS: request input migration $mode baseline, data/ACL/defaults/OID preserved, 132 RPC matrix calls"
 done
-for mutation in body acl defaults service_role helper; do
+for mutation in body acl defaults default_value service_role helper; do
   db="request90_drift_$mutation"
   sql postgres -c "CREATE DATABASE $db TEMPLATE request90_base"
   case "$mutation" in
@@ -99,6 +99,13 @@ DO $$ DECLARE d text; BEGIN
  d:=pg_get_functiondef('public.create_booking(uuid,public.lesson_level,text,jsonb,text,boolean)'::regprocedure);
  EXECUTE replace(d,'p_with_transport boolean)','p_with_transport boolean DEFAULT false)');
 END $$;
+SQL
+      ;;
+    default_value) sql "$db" <<'SQL'
+DO $ DECLARE d text; BEGIN
+ d:=pg_get_functiondef('public.create_instructor_request(uuid,public.lesson_level,text,jsonb,text,boolean)'::regprocedure);
+ EXECUTE replace(d,'p_with_transport boolean DEFAULT false','p_with_transport boolean DEFAULT true');
+END $;
 SQL
       ;;
     service_role) sql "$db" -c "REVOKE EXECUTE ON FUNCTION public.create_booking(uuid,public.lesson_level,text,jsonb,text,boolean) FROM service_role";;

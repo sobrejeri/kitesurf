@@ -58,7 +58,7 @@ Sem ativação de checkout ou Protege 3B.
 percorre o replay do repositório e a fixture das definições observadas. Em ambos,
 compara hashes de dados e metadados antes/depois, preservando service_role, OIDs
 e defaults, e roda 132 chamadas (60 inválidas, 48 reservas válidas e 24 níveis
-inelegíveis). Também injeta cinco divergências: corpo, ACL, defaults,
+inelegíveis). Também injeta seis divergências: corpo, ACL, quantidade e valor dos defaults,
 service_role revogado e helper preexistente. Cada recusa deve preservar dados
 e catálogo, sem helper parcial.
 
