@@ -1,5 +1,16 @@
 # VentoKite — comando mestre de continuidade entre conversas
 
+## Retomada atual — 26/11/2026
+
+Leia primeiro [a execução paralela atual](./EXECUCAO_PARALELA_20261126.md) e a [issue mestre #105](https://github.com/sobrejeri/kitesurf/issues/105). Os registros seguintes são históricos e não substituem essas evidências.
+
+- Escopo: **16 frentes**, sem checkout real (#101) nem laboratório 3D (#104); **0/16 integralmente homologadas**, com entregas e testes parciais reais já registrados.
+- Kitesurf `qadkqjfmmnxvovyyhqxw`: **ledger10**, conciliação de entradas #90 aplicada. Mapping remoto `20261127012854 / vento_90_validate_request_and_booking_input` ↔ arquivo local `20261127004852_validate_request_and_booking_input.sql`; hashes e preservação constam no documento atual. **Não reaplicar migrations antigas nem usar db push para duplicar essa equivalência.**
+- Produção #369: `03dff66eb40380a468f55e883716175aa8f44484` LIVE e conferida por versão. Após o DDL, **VNT-1018** foi confirmada pelo fluxo autenticado: 2h em 08/12/2026 às09h Fortaleza, total60000centavos e soma das partes igual, sem cobrança. A regressão SQL remota com claims não equivale a login/navegador.
+- **HIBP ON**, persistido; Advisors sem aviso HIBP, mantendo os avisos intencionais de quatro funções anon e83 authenticated. As contas extras necessárias aos cenários entre titulares e à fila continuam ausentes; não declarar isolamento HTTP ou A→B→C real sem elas.
+- Preservar dados, checkout/Protege3B/scheduler desligados e flags novas OFF. Conferir CI, SHA LIVE e estado real antes de cada próxima alteração; não reiniciar pelas pendências antigas deste histórico.
+
+
 ## Continuidade em 21/11 — solicitação aceita e agenda do instrutor
 
 O pedido aceito abre a reserva pelo botão “Ver minha reserva”. A própria reserva exibe a confirmação quando aplicável. O destaque de próxima aula ignora encontros passados ainda sem registro. As listas do instrutor usam o instante de início para ordenar encontros com fusos diferentes. No painel do Kitesurf foram verificados oito backups físicos concluídos, o mais recente de 21/11 às 02h05 de Fortaleza. O ensaio de recuperação de uma cópia real em destino isolado segue pendente.

@@ -6,6 +6,7 @@ import { savePartnerPayout, savePartnerProfile } from '@/app/actions/partner-pro
 import { ActionForm } from '@/components/action-form';
 import { AdminTitle, Panel } from '@/components/admin/kit';
 import { Icon } from '@/components/icon';
+import { PushSubscriptionControls } from '@/components/push-subscription-controls';
 import { VerifiedVentoBadge } from '@/components/verified-badge';
 import { PartnerPayoutFields } from '@/components/partner/payout-fields';
 import { PartnerAvatarUploader } from '@/components/partner/avatar-uploader';
@@ -87,6 +88,7 @@ export default async function AffiliateProfilePage(){
   }
   return <>
     <AdminTitle title="Meu perfil" subtitle="Seus dados, foto e conta para receber as comissões."/>
+    <PushSubscriptionControls />
 
     <div className="grid gap-4 lg:grid-cols-[minmax(0,1fr)_minmax(0,1fr)]">
       <Card className="!p-5">

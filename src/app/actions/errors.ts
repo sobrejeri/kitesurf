@@ -93,6 +93,10 @@ const KNOWN: readonly [RegExp, string][] = [
 export function friendlyError(
   error: { message?: string; code?: string; hint?: string; details?: string } | null | undefined,
 ): string {
+  // Auth error codes are stable; provider wording may change or carry details.
+  if (error?.code === 'weak_password') {
+    return 'Escolha uma senha mais forte e diferente das que você já usa.';
+  }
   const message = error?.message ?? '';
   for (const [pattern, text] of KNOWN) if (pattern.test(message)) return text;
 
