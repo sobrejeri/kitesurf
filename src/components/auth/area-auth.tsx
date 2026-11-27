@@ -131,7 +131,7 @@ export function AreaSignup({ area }: { area: Exclude<AppArea, 'admin'> }) {
             hint="Autoavaliação inicial. Seu instrutor poderá reavaliar após a aula.">
             <select name="kiteLevel" required defaultValue="" className={inputClass}>
               <option value="" disabled>Selecione seu nível</option>
-              <option value="first_time">Iniciante · Bronze</option>
+              <option value="first_time">Iniciante</option>
               <option value="returning">Intermediário · Prata</option>
               <option value="improving">Avançado · Ouro</option>
             </select>

@@ -2,8 +2,8 @@
 import type { LessonLevel } from '@/lib/data-labels';
 
 export const KITE_LEVELS: readonly LessonLevel[] = ['first_time','returning','improving'];
-export const KITE_LEVEL_BADGES: Record<LessonLevel, {label:string;metal:string;detail:string; className:string}> = {
-  first_time: {label:'Iniciante',metal:'Bronze',detail:'Controle e segurança',className:'border-[#be8854] bg-[#392a24] text-[#f8bc82]'},
+export const KITE_LEVEL_BADGES: Record<LessonLevel, {label:string;metal:string|null;detail:string; className:string}> = {
+  first_time: {label:'Iniciante',metal:null,detail:'Controle e segurança',className:'border-line bg-brand-tint text-brand'},
   returning: {label:'Intermediário',metal:'Prata',detail:'Autonomia e navegação',className:'border-[#9bacbf] bg-[#293847] text-[#d5e4f2]'},
   improving: {label:'Avançado',metal:'Ouro',detail:'Performance e especialização',className:'border-[#cda347] bg-[#48381d] text-[#f8dd84]'},
 };

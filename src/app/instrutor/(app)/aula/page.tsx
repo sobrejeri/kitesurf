@@ -560,7 +560,7 @@ export default async function RunLessonPage({
                   <input name="meetingId" type="hidden" value={meeting.id}/>
                   <Field label="Nível demonstrado pelo aluno">
                     <select name="kiteLevel" className={inputClass} defaultValue={booking.level}>
-                      <option value="first_time">Iniciante · Bronze</option>
+                      <option value="first_time">Iniciante</option>
                       <option value="returning">Intermediário · Prata</option>
                       <option value="improving">Avançado · Ouro</option>
                     </select>
