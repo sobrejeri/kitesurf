@@ -63,6 +63,7 @@ create table public.push_outbox (
   check((status='leased' and lease_token is not null and lease_until is not null)
     or (status<>'leased' and lease_token is null and lease_until is null))
 );
+create index push_outbox_subscription_version on public.push_outbox(subscription_id,recipient_id,target_version);
 create index push_outbox_due on public.push_outbox(next_attempt_at,id) where status='pending';
 create index push_outbox_recipient_rate on public.push_outbox(recipient_id,claimed_at);
 alter table public.push_outbox enable row level security;
