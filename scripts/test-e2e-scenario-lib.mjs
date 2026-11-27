@@ -24,8 +24,9 @@ const forbiddenPage = new Proxy({}, { get() { throw new Error('navegador acessad
 await runPriorityScenario({
   sessions: { aluno: { page: forbiddenPage }, instrutor: { page: forbiddenPage } },
   BASE: 'https://example.invalid', WRITE: true, env: { E2E_CONFIRM_NO_CHARGE: 'sim' },
+  resumeCheckpoint: forbiddenPage, saveCheckpoint: () => { throw new Error('checkpoint gravado antes da proteção'); },
   record: (...args) => results.push(args), shot: () => { throw new Error('captura inesperada'); },
 });
-assert.equal(results.length, 6);
+assert.equal(results.length, 9);
 assert.ok(results.every((item) => item[2] === 'BLOQUEADO' && item[3].includes('identificação inequívoca')));
 console.log('E2E scenario helpers passed (Fortaleza dates, expected balance).');

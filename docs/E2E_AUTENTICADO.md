@@ -1,6 +1,6 @@
 # E2E autenticado (contas fictícias) — como rodar e o que prova
 
-> **Bloqueio de segurança:** o cenário P de escrita está desabilitado antes de criar a solicitação. A oferta agora é vinculada à solicitação, o aceite exige o link da reserva na página dessa solicitação e os dois encontros recebem UUIDs distintos antes do primeiro início. Os testes desses protocolos usam páginas simuladas; ainda não comprovam o DOM real nem a jornada completa. As variáveis de escrita não removem o bloqueio. Falta concluir o percurso do segundo encontro, revisar a pilha e executar o E2E autenticado antes de habilitá-lo.
+> **Bloqueio de segurança:** o cenário P de escrita está desabilitado antes de criar a solicitação. A oferta agora é vinculada à solicitação, o aceite exige o link da reserva na página dessa solicitação e os dois encontros recebem UUIDs distintos antes do primeiro início. Os testes desses protocolos usam páginas simuladas; ainda não comprovam o DOM real nem a jornada completa. As variáveis de escrita não removem o bloqueio. O percurso do segundo encontro e sua retomada estão implementados como código nesta pilha. Faltam revisão e execução autenticada no DOM real antes de habilitá-lo.
 
 **O que é:** `scripts/e2e/run.mjs`, um roteiro em navegador real (Playwright/Chromium) que entra com contas **fictícias** de cada perfil e devolve PASS / FAIL / BLOQUEADO por cenário, com capturas. É o primeiro passo para tirar as frentes de "0/16 homologadas".
 **O que NÃO é:** não roda no CI (precisa de credenciais), não abre nenhuma tela de pagamento e **não substitui** o roteiro manual de reserva/fila. Validei o próprio script apenas contra um backend fictício local (login, telas de entrada, e a montagem de 4 h em 2 encontros na tela real do aluno, sem enviar); ainda **não foi executado contra o app de teste real**.
@@ -49,4 +49,16 @@ Na primeira rodada, contra o backend fictício, a varredura achou alvos de toque
 
 `scripts/test-e2e-booking-targets.mjs` também confere que os dois encontros da reserva possuem UUIDs válidos e distintos antes do início. Ausência, duplicidade, identidade inválida e repetição do mesmo encontro em posições diferentes são recusadas. Esses testes não executam os formulários do app real.
 
-O segundo encontro continua sem percurso de início/registro no runner. Seu horário padrão é dois dias após o primeiro, podendo estar fora da janela permitida quando o roteiro for executado; não adiantar datas nem contornar a regra para obter PASS.
+O segundo encontro usa as etapas P7 (início), P8 (registro) e P9 (saldo final). Seu horário padrão é dois dias após o primeiro, podendo estar fora da janela permitida quando o roteiro for executado; nesse caso registra BLOQUEADO e preserva o checkpoint. Não adiantar datas nem contornar a regra para obter PASS.
+
+## Segundo encontro e retomada explícita (implementado, ainda bloqueado para escrita)
+
+O padrão do cenário passa a registrar 110 minutos no primeiro encontro e 115 no segundo: total 225/240, saldo 15. As variáveis são `E2E_DONE_MINUTES` e `E2E_SECOND_DONE_MINUTES`, ambas limitadas a 1–120 minutos por encontro.
+
+O runner salva `E2E_OUT/priority-checkpoint.json` antes de tentar o segundo início. O arquivo contém somente versão, origem do ambiente, reserva, UUIDs dos dois encontros, data do segundo, minutos esperados e etapa; não contém PIN, senha, cookie ou token. A retomada é explícita por `E2E_RESUME_CHECKPOINT=/caminho/priority-checkpoint.json`. Ela não recria solicitação/reserva nem reexecuta P1–P6.
+
+Antes de cada clique, o protocolo grava sua intenção no checkpoint. Se uma resposta se perder, a retomada primeiro consulta o mesmo encontro. Um início já comprovado não é repetido; um registro já comprovado somente é conferido. Se o resultado de uma tentativa continuar desconhecido, fica BLOQUEADO para reconciliação, sem novo clique automático. Falha ao persistir o checkpoint impede o clique.
+
+O segundo início exige primeiro encontro registrado com os minutos esperados, mesmos UUIDs, horário dentro de 24h **e** presença do formulário de início autorizado pelo próprio app. O formulário também precisa apontar ao UUID do segundo encontro. Essa verificação não troca datas, não altera agenda e não amplia permissões. O backend mantém a decisão final de elegibilidade.
+
+`scripts/test-e2e-second-meeting.mjs` exerce com adaptador simulado: janela futura, formulário indisponível, reserva/encontro divergente, resposta perdida, retomada após início ou conclusão, resultado desconhecido, falha de persistência, minutos divergentes e saldo 225/15. Não representa execução real de formulário. O bloqueio global permanece antes de qualquer acesso ao navegador, inclusive com checkpoint de retomada.

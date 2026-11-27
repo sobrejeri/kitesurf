@@ -8,7 +8,7 @@
  *  - cenários que GRAVAM dados (reserva de teste, aceite, registro de aula) só com E2E_WRITE=sim E E2E_CONFIRM_NO_CHARGE=sim, e usam só as contas informadas;
  *  - credenciais só por variável de ambiente; não são impressas nem gravadas. As capturas são salvas localmente: use contas fictícias.
  */
-import { writeFileSync } from 'node:fs';
+import { readFileSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { ACCOUNTS, BASE, OUT, VIEWPORTS, WRITE, browser, login, overflow, record, results, shot } from './common.mjs';
 import { runPriorityScenario } from './cenario-4h.mjs';
@@ -52,7 +52,11 @@ for (const [area, session] of Object.entries(sessions)) {
 }
 
 // ---- P: cenário prioritário (4 h em 2 encontros, aceite, presença, minutos e competências, evolução e saldo) ------------------
-await runPriorityScenario({ sessions, browser, BASE, WRITE, env: process.env, record, shot });
+await runPriorityScenario({
+  sessions,browser,BASE,WRITE,env:process.env,record,shot,
+  resumeCheckpoint:process.env.E2E_RESUME_CHECKPOINT ? JSON.parse(readFileSync(process.env.E2E_RESUME_CHECKPOINT,'utf8')) : null,
+  saveCheckpoint:(checkpoint) => writeFileSync(join(OUT,'priority-checkpoint.json'),JSON.stringify(checkpoint,null,2),{mode:0o600}),
+});
 
 // ---- Demais roteiros: manuais (ver docs) ------------------------------------------------------------------------------------------
 record('M2', 'Fila A→B→C com 3 instrutores (#92)', 'BLOQUEADO', 'depende de 3 instrutores aprovados e do agendador no projeto de teste');
