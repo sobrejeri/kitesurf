@@ -48,7 +48,10 @@ const deps = {
 };
 const module = { exports: {} };
 vm.runInNewContext(transpile(readFileSync(new URL('../src/app/actions/booking.ts', import.meta.url), 'utf8')), {
-  module, exports: module.exports, Date, JSON, console: { error() {} },
+  // Fixed clock keeps the historical future-date fixture valid as CI dates advance.
+  module, exports: module.exports,
+  Date: class extends Date { static now() { return Date.parse('2026-11-19T08:00:00-03:00'); } },
+  JSON, console: { error() {} },
   require(id) {
     if (!(id in deps)) throw new Error('Unexpected import: ' + id);
     return deps[id];
