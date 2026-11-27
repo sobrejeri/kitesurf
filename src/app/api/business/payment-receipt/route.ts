@@ -65,9 +65,13 @@ export async function GET(request: Request) {
     if (downloaded.error || !downloaded.data || downloaded.data.size < 1 || downloaded.data.size > LIMIT) {
       return NextResponse.json({ error: 'Comprovante não encontrado.' }, { status: 404 });
     }
+    const file = downloaded.data;
+    const prefix = new Uint8Array(await file.slice(0, 16).arrayBuffer());
+    if (!signature(prefix, file.type)) return NextResponse.json({ error: 'Não foi possível abrir este comprovante.' }, { status: 404 });
+    const extension = file.type === 'application/pdf' ? 'pdf' : file.type === 'image/jpeg' ? 'jpg' : 'png';
     return new Response(downloaded.data, { headers: {
       'Content-Type': 'application/octet-stream',
-      'Content-Disposition': 'attachment; filename="comprovante"',
+      'Content-Disposition': `attachment; filename="comprovante.${extension}"`,
       'Cache-Control': 'private, no-store, max-age=0',
       'X-Content-Type-Options': 'nosniff',
       'Referrer-Policy': 'no-referrer',

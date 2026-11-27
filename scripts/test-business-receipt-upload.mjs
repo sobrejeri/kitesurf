@@ -9,9 +9,9 @@ const code = ts.transpileModule(readFileSync('src/app/api/business/payment-recei
 const module = { exports: {} };
 let viewer = { id: 'owner' }, access = true, accessError = null, uploadError = null, downloadError = null;
 let uploads = [];
-let downloads = 0, lastWrite, selectedArea;
+let downloads = 0, lastWrite, selectedArea, downloadFile = new Blob(['%PDF-1.7'], { type: 'application/pdf' });
 const bucket = { async upload(path, file, options) { uploads.push({ path, file, options }); return { error: uploadError }; },
-  async download() { downloads++; return { data: downloadError ? null : new Blob(['%PDF-1.7']), error: downloadError }; } };
+  async download() { downloads++; return { data: downloadError ? null : downloadFile, error: downloadError }; } };
 const db = { async rpc(name, args) { assert.equal(name, 'business_payment_receipt_access'); lastWrite = args.p_write; return { data: access, error: accessError }; },
   auth: { async getClaims() { return { data: viewer ? { claims: { sub: viewer.id } } : null, error: null }; } },
   storage: { from(name) { assert.equal(name, 'vento-business-payment-receipts'); return bucket; } } };
@@ -56,9 +56,10 @@ access = true; downloadError = { message: 'not found' }; assert.equal((await get
 downloadError = null; const response = await get(getRequest);
 assert.equal(response.status, 200); assert.equal(lastWrite, false);
 assert.equal(selectedArea, 'instrutor');
-assert.equal(response.headers.get('content-disposition'), 'attachment; filename="comprovante"');
+assert.equal(response.headers.get('content-disposition'), 'attachment; filename="comprovante.pdf"');
 assert.equal(response.headers.get('content-type'), 'application/octet-stream');
 assert.match(response.headers.get('cache-control'), /no-store/);
 assert.equal(response.headers.get('x-content-type-options'), 'nosniff');
 assert.equal(await response.text(), '%PDF-1.7');
+downloadFile = new Blob(['wrong'], { type: 'application/pdf' }); assert.equal((await get(getRequest)).status, 404);
 console.log('PASS: receipt upload and private download gates, access control, content checks and safe response headers');
