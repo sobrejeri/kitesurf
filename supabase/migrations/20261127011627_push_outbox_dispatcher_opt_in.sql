@@ -156,9 +156,13 @@ begin
   update public.push_outbox set
     status=case when attempt_started then 'unknown' else 'pending' end,
     lease_token=null,lease_until=null
-    where status='leased' and lease_until<=now();
+    where id in (select q.id from public.push_outbox q
+      where q.status='leased' and q.lease_until<=now()
+      order by q.id for update of q skip locked limit 100);
   update public.push_outbox set status='dead'
-    where status='pending' and (expires_at<=now() or attempts>=5);
+    where id in (select q.id from public.push_outbox q
+      where q.status='pending' and (q.expires_at<=now() or q.attempts>=5)
+      order by q.id for update of q skip locked limit 100);
   for job in select * from public.push_outbox
     where status='pending' and next_attempt_at<=now() and created_at>=cfg.activated_at
     order by next_attempt_at,id for update skip locked limit 100
@@ -167,6 +171,11 @@ begin
       update public.push_outbox set status='dead' where id=job.id;
       continue;
     end if;
+    -- Parent FK validation must never wait on a deleting profile while q is
+    -- locked. If deletion already owns the parent, skip; if we get KEY SHARE,
+    -- a later delete waits before entering its cascades.
+    perform 1 from public.profiles where id=job.recipient_id for key share skip locked;
+    if not found then continue; end if;
     insert into public.push_dispatch_recipient_rates(recipient_id) values(job.recipient_id)
       on conflict(recipient_id) do update set
         rate_claims=case when public.push_dispatch_recipient_rates.rate_window<=now()-interval '1 minute'

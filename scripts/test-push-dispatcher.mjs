@@ -91,6 +91,16 @@ const send=await createWebPushTransport({PUSH_VAPID_SUBJECT:'mailto:test@example
  }}),
 });
 await send(minimal);assert.ok(encrypted,'real pinned library encrypted payload without HTTP');
+const otherPair=webpush.generateVAPIDKeys();
+const correctEnv={PUSH_VAPID_SUBJECT:'mailto:test@example.invalid',PUSH_VAPID_PUBLIC_KEY:vapid.publicKey,PUSH_VAPID_PRIVATE_KEY:vapid.privateKey};
+const mismatched={...correctEnv,PUSH_VAPID_PRIVATE_KEY:otherPair.privateKey};
+await assert.rejects(createWebPushTransport(mismatched),error=>error.code==='INVALID_VAPID');
+await assert.rejects(createWebPushTransport({...correctEnv,PUSH_VAPID_SUBJECT:'https://example.invalid/contact'}),error=>error.code==='INVALID_VAPID');
+let invalidPairRequests=0;
+await assert.rejects(main({...configured,...mismatched,PUSH_DISPATCH_DRY_RUN:'false'},
+ {fetchImpl:()=>{invalidPairRequests++;throw Error('no RPC permitted for an invalid VAPID pair');}}),error=>error.code==='INVALID_VAPID');
+assert.equal(invalidPairRequests,0,'mismatched VAPID rejected before any claim');
+
 const source=readFileSync(new URL('./push-dispatcher/node_modules/web-push/src/web-push-lib.js',import.meta.url),'utf8');
 assert.ok(source.includes('https.request('));assert.ok(!source.includes('follow-redirects'),'pinned sender does not follow redirects');
 console.log('PASS: push dispatcher OFF/dry-run/privacy/endpoint+DNS gates/claims/retry/gone/ambiguous outcomes; real encryption with mocked transport, zero push HTTP.');

@@ -1,5 +1,6 @@
 import https from 'node:https';
 import dns from 'node:dns';
+import {createECDH} from 'node:crypto';
 import { BlockList,isIP } from 'node:net';
 import { ENDPOINT,safeError } from './core.mjs';
 const blocked4=new BlockList();
@@ -29,6 +30,17 @@ export function guardedLookup(expected,lookup=dns.lookup){
 export async function createWebPushTransport(env,{load=()=>import('web-push')}={}){
   const details={subject:env.PUSH_VAPID_SUBJECT,publicKey:env.PUSH_VAPID_PUBLIC_KEY,privateKey:env.PUSH_VAPID_PRIVATE_KEY};
   if(typeof details.subject!=='string'||!/^mailto:[^@\s]+@[^@\s]+\.[^@\s]+$/.test(details.subject))throw safeError('INVALID_VAPID');
+  // A valid-looking pair can still contain keys from different identities.
+  // Derive rather than trusting getVapidHeaders' format-only validation.
+  try{
+    if(typeof details.privateKey!=='string'||!/^[A-Za-z0-9_-]{43}$/.test(details.privateKey))throw new Error();
+    const privateBytes=Buffer.from(details.privateKey,'base64url');
+    if(privateBytes.length!==32||privateBytes.toString('base64url')!==details.privateKey)throw new Error();
+    try{
+      const pair=createECDH('prime256v1');pair.setPrivateKey(privateBytes);
+      if(pair.getPublicKey().toString('base64url')!==details.publicKey)throw new Error();
+    }finally{privateBytes.fill(0);}
+  }catch{throw safeError('INVALID_VAPID');}
   const webpush=await load();
   try{webpush.getVapidHeaders('https://fcm.googleapis.com',details.subject,details.publicKey,details.privateKey,'aes128gcm');}
   catch{throw safeError('INVALID_VAPID');}
