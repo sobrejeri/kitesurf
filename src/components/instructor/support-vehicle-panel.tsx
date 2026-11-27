@@ -24,7 +24,8 @@ export async function InstructorSupportVehiclePanel({ instructorId }: { instruct
       <p className="mt-3 text-[12px] leading-relaxed text-muted">Cadastre o veículo que acompanha suas aulas. A disponibilidade segue sua agenda de instrutor.</p>
       <ActionForm action={saveInstructorSupportVehicle} submitLabel="Salvar veículo" wideSubmit className="mt-4 grid gap-4">
         <Field label="Tipo do veículo">
-          <select name="vehicleType" required defaultValue={vehicle?.vehicle_type ?? ''} className={inputClass}>
+          {/* Refresh the saved default after revalidation without remounting ActionForm or losing its result. */}
+          <select key={vehicle?.vehicle_type ?? 'new-vehicle'} name="vehicleType" required defaultValue={vehicle?.vehicle_type ?? ''} className={inputClass}>
             <option value="" disabled>Selecionar tipo</option>
             {Object.entries(SUPPORT_VEHICLE_TYPES).map(([value, label]) => <option key={value} value={value}>{label}</option>)}
           </select>
