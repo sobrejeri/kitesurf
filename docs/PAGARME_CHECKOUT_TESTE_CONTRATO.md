@@ -22,6 +22,8 @@ O helper `prepareTestOrderEnvelope` prepara, exclusivamente no servidor, uma rep
 
 Na futura persistência operacional, armazenar o envelope de forma imutável junto da tentativa, na mesma transação que verifica autorização e elegibilidade. Uma tentativa existente só pode ser reutilizada quando a comparação do envelope sob lock for idêntica. Alterar valor, divisão, recebedor, responsabilidade, cliente, cartão, método, destino ou chave exige bloquear a reutilização e reconciliar a tentativa anterior. Não reconstruir um pedido antigo com configuração financeira atual.
 
-Nenhuma tabela/RPC ou ativação foi adicionada para esse helper. Ele não prova que os dados são exclusivamente de teste, não autentica pagamentos e não altera o transporte existente. A conexão operacional continua condicionada à comprovação de ambiente, reservas, clientes e recebedores segregados de produção.
+O transporte preparatório agora recebe somente um envelope validado, copia os campos primitivos antes da rede e envia exatamente seu corpo canônico e sua chave. A verificação da resposta usa reserva, valor e cliente extraídos desse mesmo corpo. Ele não reconstrói o pedido com um snapshot ou configuração corrente. O hash garante integridade e comparação do conteúdo, não autorização: o chamador deve obter o envelope de persistência confiável, nunca aceitar corpo/hash do navegador como prova.
+
+Nenhuma tabela/RPC, rota ou ativação foi adicionada para esse helper. Ele não prova que os dados são exclusivamente de teste nem autentica pagamentos. A conexão operacional continua condicionada à comprovação de ambiente, reservas, clientes e recebedores segregados de produção e à gravação autorizada e imutável antes do envio.
 
 Referências: https://docs.pagar.me/reference/criar-pedido-2 ; https://docs.pagar.me/reference/pix-2 ; https://docs.pagar.me/reference/split-1 ; https://docs.pagar.me/docs/simulador-pix ; https://docs.pagar.me/reference/autentica%C3%A7%C3%A3o-2
