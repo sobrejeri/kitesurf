@@ -65,6 +65,33 @@ DECLARE
   after_counts jsonb;
   checked integer := 0;
 BEGIN
+  -- The patch must retain the entry-point permissions and legacy delegation.
+  FOREACH rpc IN ARRAY ARRAY[
+    'public.create_instructor_request(uuid,public.lesson_level,text,jsonb,text,boolean)',
+    'public.create_instructor_request_with_preference(uuid,public.lesson_level,text,jsonb,text,boolean,uuid)',
+    'public.create_booking(uuid,public.lesson_level,text,jsonb,text,boolean)',
+    'public.create_booking(uuid,public.lesson_level,text,jsonb,text)'
+  ] LOOP
+    IF NOT has_function_privilege('authenticated',rpc,'EXECUTE')
+      OR has_function_privilege('anon',rpc,'EXECUTE')
+      OR EXISTS (
+        SELECT 1 FROM pg_proc p,
+          LATERAL aclexplode(coalesce(p.proacl,acldefault('f',p.proowner))) acl
+        WHERE p.oid=rpc::regprocedure AND acl.grantee=0 AND acl.privilege_type='EXECUTE'
+      ) THEN
+      RAISE EXCEPTION 'Unexpected RPC execution privileges: %',rpc;
+    END IF;
+    IF (SELECT prosecdef FROM pg_proc WHERE oid=rpc::regprocedure)
+      IS DISTINCT FROM (rpc <> 'public.create_booking(uuid,public.lesson_level,text,jsonb,text)') THEN
+      RAISE EXCEPTION 'Unexpected RPC security mode: %',rpc;
+    END IF;
+  END LOOP;
+  IF has_function_privilege('authenticated',
+      'public.validate_booking_input(uuid,public.lesson_level,text,jsonb)','EXECUTE')
+    OR has_function_privilege('anon',
+      'public.validate_booking_input(uuid,public.lesson_level,text,jsonb)','EXECUTE') THEN
+    RAISE EXCEPTION 'Internal validator must not be directly executable';
+  END IF;
   SELECT coalesce(assessed_kite_level,self_reported_kite_level)
     INTO STRICT lvl FROM public.profiles WHERE id=student AND role='student';
   IF lvl IS NULL THEN RAISE EXCEPTION 'Synthetic student must have a level'; END IF;
