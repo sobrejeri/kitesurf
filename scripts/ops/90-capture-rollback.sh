@@ -5,9 +5,8 @@ set -euo pipefail
 ROOT="$(cd "$(dirname "$0")/../.." && pwd)"
 : "${OUT_FILE:?}"; [ ! -e "$OUT_FILE" ] || { echo "OUT_FILE já existe." >&2; exit 2; }
 [ "${CONFIRM_READONLY_EXPORT:-}" = "sim" ] || { echo "Defina CONFIRM_READONLY_EXPORT=sim." >&2; exit 2; }
-REF="${EXPECTED_PROJECT_REF:?}"; HOST="${PGHOST:-}"
-if [[ "$HOST" == /* ]]; then [ "${ALLOW_LOCAL_SOURCE:-}" = "1" ] || { echo "Origem local só com ALLOW_LOCAL_SOURCE=1." >&2; exit 2; }
-else case "$HOST${PGUSER:-}" in *"$REF"*) ;; *) echo "Host/usuário sem a referência $REF: recusado." >&2; exit 2;; esac; fi
+source "$ROOT/scripts/ops/90-source-guard.sh"
+guard_kitesurf_source
 case "$(cd "$(dirname "$OUT_FILE")" && pwd)" in "$ROOT"|"$ROOT"/*) echo "OUT_FILE dentro do repositório: recusado." >&2; exit 2;; esac
 export PGOPTIONS="-c default_transaction_read_only=on"
 umask 077
