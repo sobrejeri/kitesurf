@@ -57,11 +57,6 @@ async function openMeeting(page, number) {
   const header = page.locator('button[aria-expanded]', { hasText: `Encontro ${number}` }).first();
   if ((await header.getAttribute('aria-expanded')) === 'false') await header.click();
 }
-async function until(fn, { timeout = 90_000, every = 4000 } = {}) {
-  const end = Date.now() + timeout;
-  for (;;) { const value = await fn(); if (value) return value; if (Date.now() > end) return null; await new Promise((resolve) => setTimeout(resolve, every)); }
-}
-
 export async function runPriorityScenario({ sessions, browser, BASE, WRITE, env, record, shot }) {
   const ids = ['P1', 'P2', 'P3', 'P4', 'P5', 'P6'];
   const titles = {
