@@ -1,5 +1,5 @@
 import assert from 'node:assert/strict';
-import { acceptOfferOnce, bookingForRequest, presenceCodeForConfirmedBooking } from './e2e/accept-offer-once.mjs';
+import { acceptOfferOnce, bookingForRequest, presenceCodeForConfirmedBooking,verifyCheckpointBooking } from './e2e/accept-offer-once.mjs';
 const requestId = 'aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa';
 const bookingId = 'bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb';
 const base = 'https://example.invalid';
@@ -16,6 +16,15 @@ await assert.rejects(bookingForRequest(requestPage({ path: '/aluno/solicitacao/'
 for (const href of [null, 'https://attacker.invalid/aluno/reserva/' + bookingId, '/aluno/reserva/bad-id', '/aluno/reserva/' + bookingId + '?other=1']) {
   await assert.rejects(bookingForRequest(requestPage({ href }), base, requestId));
 }
+
+for(const count of [0,1]) {
+  const page=requestPage({count});
+  page.goto=async(url)=>assert.equal(url,base+'/aluno/solicitacao/'+requestId);
+  if(count)assert.deepEqual(await verifyCheckpointBooking(page,base,{requestId,bookingId}),{baseOrigin:base,requestId,bookingId});
+  else await assert.rejects(verifyCheckpointBooking(page,base,{requestId,bookingId}),/não comprova/);
+}
+const foreign=requestPage({href:'/aluno/reserva/'+requestId});foreign.goto=async()=>{};
+await assert.rejects(verifyCheckpointBooking(foreign,base,{requestId,bookingId}),/não comprova/);
 
 function harness({ appearsAt = 2, acceptedAt = 4, duplicateButtons = false, clickError = false } = {}) {
   let time = 0, clicks = 0, searches = 0, reads = 0;

@@ -3,29 +3,36 @@ import { continueSecondMeeting, validateCheckpoint, finalBalance } from './e2e/s
 const base = 'https://example.invalid';
 const now = Date.parse('2026-11-27T12:00:00Z');
 const checkpoint = {
-  version: 1, baseOrigin: base,
+  version: 2, revision:0, baseOrigin: base, requestId:'dddddddd-dddd-dddd-dddd-dddddddddddd',
   bookingId: 'aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa',
   meetingIds: { 1: 'bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb', 2: 'cccccccc-cccc-cccc-cccc-cccccccccccc' },
-  secondStartsAt: '2026-11-27T12:00:00-03:00',
+  secondStartsAt: '2026-11-27T15:00:00.000Z',
   firstDoneMinutes: 110, secondDoneMinutes: 115, stage: 'first-recorded',
 };
 function harness(options = {}) {
   let saved = structuredClone(options.checkpoint ?? checkpoint), starts = 0, records = 0;
   let status = options.status ?? 'scheduled';
   const intents = [];
+  let leased=false;
   const inspect = async () => ({
     bookingId: options.bookingId ?? checkpoint.bookingId,
     first: { id: checkpoint.meetingIds[1], status: 'done', doneMinutes: options.firstMinutes ?? 110 },
     second: { id: options.secondId ?? checkpoint.meetingIds[2], status,
-      canStart: options.canStart ?? true, doneMinutes: status === 'done' ? (options.secondMinutes ?? 115) : null },
+      canStart: options.canStart ?? true, startsAt:options.actualStartsAt ?? saved.secondStartsAt, doneMinutes: status === 'done' ? (options.secondMinutes ?? 115) : null },
   });
   return {
     options: {
       checkpoint: saved, base, inspect, now: () => now,
-      persist: async (value) => {
-        if (options.persistError) throw new Error('disk unavailable');
-        saved = structuredClone(value); intents.push(value.stage);
-      },
+      verifyRequest:async()=>({baseOrigin:base,requestId:options.requestId ?? saved.requestId,bookingId:saved.bookingId}),
+      checkpointStore:{withLease:async(expected,origin,fn)=>{
+        if(leased)throw Object.assign(new Error('checkpoint locked'),{code:'E2E_BLOCKED'});
+        leased=true;
+        try{return await fn({read:()=>structuredClone(saved),compareAndSwap:async(previous,value)=>{
+          if(options.persistError)throw new Error('disk unavailable');
+          assert.deepEqual(previous,saved);assert.equal(value.revision,saved.revision+1);
+          saved=structuredClone(value);intents.push(value.stage);
+        }});}finally{leased=false;}
+      }},
       start: async () => {
         assert.equal(saved.stage,'second-start-attempted');
         starts += 1; if (!options.startUnchanged) status = 'in_progress';
@@ -56,11 +63,13 @@ await continueSecondMeeting({ ...staged.options, checkpoint:afterStart });
 assert.equal(staged.state().starts,1); assert.equal(staged.state().records,1);
 
 for (const config of [
-  { checkpoint: { ...checkpoint,secondStartsAt:'2026-11-30T12:00:00-03:00' } },
+  { checkpoint: { ...checkpoint,secondStartsAt:'2026-11-30T15:00:00.000Z' } },
   { canStart:false },
   { secondId:'dddddddd-dddd-dddd-dddd-dddddddddddd' },
   { bookingId:'dddddddd-dddd-dddd-dddd-dddddddddddd' },
   { firstMinutes:109 },
+  {requestId:'eeeeeeee-eeee-eeee-eeee-eeeeeeeeeeee'},
+  {actualStartsAt:'2026-11-27T16:00:00.000Z'},
 ]) {
   const h=harness(config);
   await assert.rejects(continueSecondMeeting(h.options),e=>e.code==='E2E_BLOCKED');
@@ -92,7 +101,8 @@ await assert.rejects(continueSecondMeeting(wrongDone.options),/divergem/);
 const noDisk = harness({persistError:true});
 await assert.rejects(continueSecondMeeting(noDisk.options),/disk unavailable/);
 assert.equal(noDisk.state().starts,0); assert.equal(noDisk.state().records,0);
-await assert.rejects(continueSecondMeeting({...harness().options,persist:null}),/persistência/);
+await assert.rejects(continueSecondMeeting({...harness().options,checkpointStore:null}),/lock e CAS/);
+await assert.rejects(continueSecondMeeting({...harness().options,verifyRequest:null}),/revalidar/);
 for (const raw of [
   {...checkpoint,baseOrigin:'https://another.invalid'},
   {...checkpoint,meetingIds:{1:checkpoint.meetingIds[1],2:checkpoint.meetingIds[1]}},
@@ -105,7 +115,7 @@ console.log('PASS: second meeting resumes the same IDs, respects time/app gates,
 // Exercise the actual DOM adapter against a small stateful page model, not only
 // the injected protocol callbacks. Every navigation must retain explicit IDs.
 import { secondMeetingBrowserAdapter } from './e2e/second-meeting.mjs';
-function browserModel({ wrongForm = false, wrongDomId = false, canStart = true } = {}) {
+function browserModel({ wrongForm = false, wrongDomId = false, wrongDate=false,canStart = true } = {}) {
   const state = { second:'scheduled', done:0, input:null, code:null, clicks:[],urls:[] };
   let current = { position:1, tab:'concluidas' };
   const locator = ({ count=1, value=null, text=null, fill,click,check, id=null } = {}) => ({
@@ -114,7 +124,7 @@ function browserModel({ wrongForm = false, wrongDomId = false, canStart = true }
   });
   const card = (position) => ({
     count:async()=>1,
-    getAttribute:async()=> 'aula-'+(wrongDomId && position===2 ? checkpoint.meetingIds[1] : checkpoint.meetingIds[position]),
+    getAttribute:async(name)=>name==='data-meeting-starts-at'?(wrongDate?'2026-11-27T16:00:00.000Z':checkpoint.secondStartsAt): 'aula-'+(wrongDomId && position===2 ? checkpoint.meetingIds[1] : checkpoint.meetingIds[position]),
     getByText(label,{exact}) {
       assert.equal(label,'Tempo realizado');assert.equal(exact,true);
       return {...locator(), locator(parent) {
@@ -149,6 +159,7 @@ function browserModel({ wrongForm = false, wrongDomId = false, canStart = true }
     },
   });
   return {state,page:{
+    url:()=>state.urls.at(-1),
     goto:async(url)=>{
       state.urls.push(url);const u=new URL(url);
       const position=Object.entries(checkpoint.meetingIds).find(([,id])=>id===u.searchParams.get('aula'))?.[0];
@@ -167,13 +178,13 @@ function browserModel({ wrongForm = false, wrongDomId = false, canStart = true }
 }
 const actualAdapter=browserModel();
 const adapterArgs=secondMeetingBrowserAdapter({page:actualAdapter.page,base,checkpoint,code:'1234'});
-await continueSecondMeeting({...adapterArgs,base,checkpoint,now:()=>now,persist:async()=>{}});
+await continueSecondMeeting({...harness().options,...adapterArgs,base,checkpoint,now:()=>now});
 assert.deepEqual(actualAdapter.state.clicks,['Confirmar presença e iniciar','Concluir e registrar encontro']);
 assert.equal(actualAdapter.state.done,115);
-for (const config of [{wrongForm:true},{wrongDomId:true},{canStart:false}]) {
+for (const config of [{wrongForm:true},{wrongDomId:true},{wrongDate:true},{canStart:false}]) {
   const model=browserModel(config);
   const io=secondMeetingBrowserAdapter({page:model.page,base,checkpoint,code:'1234'});
-  await assert.rejects(continueSecondMeeting({...io,base,checkpoint,now:()=>now,persist:async()=>{}}),e=>e.code==='E2E_BLOCKED');
+  await assert.rejects(continueSecondMeeting({...harness().options,...io,base,checkpoint,now:()=>now}),e=>e.code==='E2E_BLOCKED');
   assert.deepEqual(model.state.clicks,[]);
 }
 console.log('PASS: browser adapter retains booking/meeting IDs and never submits a mismatched form.');

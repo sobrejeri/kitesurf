@@ -6,18 +6,20 @@ export function blocked(message) {
 }
 const stages = ['first-recorded', 'second-start-attempted', 'second-started', 'second-record-attempted', 'complete'];
 export function validateCheckpoint(raw, base) {
-  const keys = ['version','baseOrigin','bookingId','meetingIds','secondStartsAt','firstDoneMinutes','secondDoneMinutes','stage'];
+  const keys = ['version','revision','baseOrigin','requestId','bookingId','meetingIds','secondStartsAt','firstDoneMinutes','secondDoneMinutes','stage'];
   if (!raw || typeof raw !== 'object' || Array.isArray(raw)
     || Object.keys(raw).sort().join() !== keys.sort().join()
-    || raw.version !== 1 || !stages.includes(raw.stage)) throw blocked('checkpoint inválido');
+    || raw.version !== 2 || !Number.isSafeInteger(raw.revision) || raw.revision<0
+    || !stages.includes(raw.stage)) throw blocked('checkpoint inválido');
   const origin = new URL(base).origin;
   if (raw.baseOrigin !== origin) throw blocked('checkpoint pertence a outro ambiente');
+  requireUuid(raw.requestId, 'solicitação do checkpoint');
   requireUuid(raw.bookingId, 'reserva do checkpoint');
   if (!raw.meetingIds || Object.keys(raw.meetingIds).sort().join() !== '1,2') throw blocked('checkpoint exige dois encontros');
   const ids = [1,2].map((position) => requireUuid(raw.meetingIds[position], 'encontro do checkpoint'));
   if (ids[0] === ids[1]) throw blocked('checkpoint repete o mesmo encontro');
-  if (!/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}(:\d{2})?-03:00$/.test(raw.secondStartsAt)
-    || !Number.isFinite(Date.parse(raw.secondStartsAt))) throw blocked('data do segundo encontro inválida');
+  if (typeof raw.secondStartsAt!=='string' || !Number.isFinite(Date.parse(raw.secondStartsAt))
+    || new Date(raw.secondStartsAt).toISOString()!==raw.secondStartsAt) throw blocked('data do segundo encontro inválida');
   for (const key of ['firstDoneMinutes','secondDoneMinutes']) {
     if (!Number.isSafeInteger(raw[key]) || raw[key] < 1 || raw[key] > 120) throw blocked('minutos fora do encontro contratado');
   }
@@ -32,6 +34,7 @@ export function finalBalance(first, second) {
 function validateObserved(observed, checkpoint) {
   if (observed.bookingId !== checkpoint.bookingId || observed.first.id !== checkpoint.meetingIds[1]
     || observed.second.id !== checkpoint.meetingIds[2]) throw blocked('identidade observada diverge do checkpoint');
+  if(observed.second.startsAt!==checkpoint.secondStartsAt)throw blocked('data real do segundo encontro diverge do checkpoint');
   if (observed.first.status !== 'done' || observed.first.doneMinutes !== checkpoint.firstDoneMinutes) {
     throw blocked('primeiro encontro não comprova o registro esperado');
   }
@@ -48,16 +51,25 @@ function validateObserved(observed, checkpoint) {
  * start form must allow starting the exact second meeting.
  */
 export async function continueSecondMeeting({
-  checkpoint: raw, base, inspect, start, record, persist, now = Date.now, stopAfterStart = false,
+  checkpoint: raw, base, inspect, start, record, checkpointStore, verifyRequest,
+  evidence, now = Date.now, stopAfterStart = false,
 }) {
-  let checkpoint = validateCheckpoint(raw, base);
-  if (typeof persist !== 'function') throw blocked('retomada exige persistência do checkpoint antes de gravar');
+  const expected = validateCheckpoint(raw, base);
+  if (typeof checkpointStore?.withLease !== 'function') throw blocked('retomada exige lock e CAS persistentes antes de gravar');
+  if(typeof verifyRequest!=='function')throw blocked('retomada exige revalidar a solicitação e sua reserva');
+  return checkpointStore.withLease(expected,base,async(lease)=>{
+  let checkpoint=validateCheckpoint(await lease.read(),base);
   const save = async (stage) => {
-    const updated = { ...checkpoint, stage };
-    await persist(updated);
+    const updated = { ...checkpoint, stage,revision:checkpoint.revision+1 };
+    await lease.compareAndSwap(checkpoint,updated);
     checkpoint = updated;
   };
-  const read = async () => validateObserved(await inspect(), checkpoint);
+  const binding = async () => {
+    const actual=await verifyRequest();
+    if(actual?.baseOrigin!==checkpoint.baseOrigin || actual.requestId!==checkpoint.requestId
+      || actual.bookingId!==checkpoint.bookingId)throw blocked('solicitação não comprova a mesma reserva do checkpoint');
+  };
+  const read = async () => { await binding();return validateObserved(await inspect(), checkpoint); };
   let observed = await read();
   if (observed.second.status === 'done') {
     await save('complete'); return checkpoint;
@@ -69,9 +81,11 @@ export async function continueSecondMeeting({
       throw blocked('segundo encontro fora da janela autorizada; retome este checkpoint na data permitida');
     }
     await save('second-start-attempted');
+    const attempt=evidence?.attempt('P7',{requestId:checkpoint.requestId,bookingId:checkpoint.bookingId,meetingId:checkpoint.meetingIds[2]});
     await start();
     observed = await read();
     if (observed.second.status === 'scheduled') throw blocked('início ainda não comprovado; não repetir');
+    if(attempt)evidence.confirm(attempt);
   }
   if (observed.second.status === 'done') {
     await save('complete'); return checkpoint;
@@ -81,12 +95,22 @@ export async function continueSecondMeeting({
   }
   await save('second-started');
   if (stopAfterStart) return checkpoint;
+  await binding();
   await save('second-record-attempted');
+  const attempt=evidence?.attempt('P8',{requestId:checkpoint.requestId,bookingId:checkpoint.bookingId,meetingId:checkpoint.meetingIds[2]});
   await record(checkpoint.secondDoneMinutes);
   observed = await read();
   if (observed.second.status !== 'done') throw blocked('registro ainda não comprovado; retome somente para conferir o mesmo encontro');
+  if(attempt)evidence.confirm(attempt);
   await save('complete');
   return checkpoint;
+  });
+}
+
+export async function meetingStartFromCard(card) {
+  const value=await card.getAttribute('data-meeting-starts-at');
+  if(typeof value!=='string' || !Number.isFinite(Date.parse(value)))throw blocked('encontro sem data real válida no DOM');
+  return new Date(value).toISOString();
 }
 
 const parseMinutes = (text) => {
@@ -94,21 +118,24 @@ const parseMinutes = (text) => {
   if (!match || (!match[1] && !match[2])) throw blocked('tempo realizado não reconhecido');
   return Number(match[1] ?? 0)*60+Number(match[2] ?? 0);
 };
+export async function recordedMinutesFromCard(card) {
+  const label=await requireUniqueTarget(card.getByText('Tempo realizado',{exact:true}),'tempo realizado do encontro');
+  const value=await requireUniqueTarget(label.locator('..').locator('strong'),'minutos registrados');
+  return parseMinutes(await value.innerText());
+}
 export function secondMeetingBrowserAdapter({ page, base, checkpoint, code }) {
   const open = async (position, tab) => {
     const id = checkpoint.meetingIds[position];
     await page.goto(base+'/instrutor/aula?aba='+tab+'&aula='+id, { waitUntil: 'networkidle' });
+    if(new URL(page.url()).origin!==checkpoint.baseOrigin)throw blocked('página do instrutor pertence a outro ambiente');
     const candidates = page.locator('[data-booking-id="'+checkpoint.bookingId+'"][data-meeting-position="'+position+'"]');
     if (await candidates.count() === 0) return null;
     const card = await meetingForBooking(page, checkpoint.bookingId, position);
     if (await card.getAttribute('id') !== 'aula-'+id) throw blocked('encontro da tela não corresponde ao checkpoint');
+    if(position===2 && await meetingStartFromCard(card)!==checkpoint.secondStartsAt)throw blocked('data real do segundo encontro diverge do checkpoint');
     return card;
   };
-  const completedMinutes = async (card) => {
-    const label = await requireUniqueTarget(card.getByText('Tempo realizado', { exact: true }), 'tempo realizado do encontro');
-    const value = await requireUniqueTarget(label.locator('..').locator('strong'), 'minutos registrados');
-    return parseMinutes(await value.innerText());
-  };
+  const completedMinutes = recordedMinutesFromCard;
   return {
     inspect: async () => {
       const first = await open(1, 'concluidas');
@@ -119,7 +146,7 @@ export function secondMeetingBrowserAdapter({ page, base, checkpoint, code }) {
         if (!second) continue;
         return { bookingId: checkpoint.bookingId,
           first: { id: checkpoint.meetingIds[1], status: 'done', doneMinutes: firstMinutes },
-          second: { id: checkpoint.meetingIds[2], status,
+          second: { id: checkpoint.meetingIds[2], status,startsAt:await meetingStartFromCard(second),
             doneMinutes: status === 'done' ? await completedMinutes(second) : null,
             canStart: status === 'scheduled' && await second.locator('form:has(input[name="presenceCode"]) input[name="meetingId"]').count() === 1,
           },
