@@ -4,5 +4,5 @@ import { requireRole } from '@/lib/auth';
 export const metadata:Metadata={title:'Empresas'};
 export default async function CompaniesPage() {
   await requireRole(['admin'],'/admin/empresas');
-  return <BusinessCompanyWorkspace/>;
+  return <BusinessCompanyWorkspace area="admin"/>;
 }
