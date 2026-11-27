@@ -15,7 +15,7 @@
  * fictício local: a primeira execução no app de teste pode ajustar seletores. FAIL aqui é informação, não homologação.
  */
 import { requireUniqueTarget, requireUuid } from './unique-target.mjs';
-import { offerForRequest, meetingForBooking } from './booking-targets.mjs';
+import { offerForRequest, meetingForBooking, meetingIdsForBooking } from './booking-targets.mjs';
 import { acceptOfferOnce, bookingForRequest, presenceCodeForConfirmedBooking } from './accept-offer-once.mjs';
 
 const MONTHS_PT = (year, month) => new Intl.DateTimeFormat('pt-BR', { month: 'long', year: 'numeric' }).format(new Date(year, month - 1, 1));
@@ -153,11 +153,13 @@ export async function runPriorityScenario({ sessions, browser, BASE, WRITE, env,
 
   await step('P4', async () => {
     await instructor.goto(`${BASE}/instrutor/aula?aba=proximas`, { waitUntil: 'networkidle' });
+    state.meetingIds = await meetingIdsForBooking(instructor, state.bookingId);
     let card = await meetingForBooking(instructor, state.bookingId, 1);
     await (await requireUniqueTarget(card.locator('a'), 'abrir encontro')).click();
     card = await meetingForBooking(instructor, state.bookingId, 1);
     const meetingInput = await requireUniqueTarget(card.locator('form:has(input[name="presenceCode"]) input[name="meetingId"]'), 'identificador do encontro');
     state.meetingId = requireUuid(await meetingInput.inputValue(), 'encontro');
+    if (state.meetingId !== state.meetingIds[1]) throw new Error('formulário não corresponde ao primeiro encontro identificado');
     await (await requireUniqueTarget(card.locator('input[name="presenceCode"]'), 'código de presença')).fill(state.code);
     await (await requireUniqueTarget(card.getByRole('button', { name: 'Confirmar presença e iniciar' }), 'iniciar encontro')).click();
     await instructor.getByText(/Presença confirmada/).first().waitFor({ timeout: 20000 });
