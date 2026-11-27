@@ -47,4 +47,92 @@ BEGIN
     END LOOP;
   END LOOP;
 END $$;
+
+-- Exercise the public RPCs under authenticated claims, not only the trigger fixture.
+-- Each failure runs in a subtransaction. Unexpected SQLSTATEs are deliberately
+-- not caught: cast failures/permission errors must not masquerade as validation.
+DO $rpc_regression$
+DECLARE
+  student uuid := '00000000-0000-0000-0000-0000000000b2';
+  beach uuid;
+  lvl public.lesson_level;
+  valid_slots jsonb;
+  sample record;
+  rpc text;
+  msg text;
+  rejected boolean;
+  before_counts jsonb;
+  after_counts jsonb;
+  checked integer := 0;
+BEGIN
+  SELECT coalesce(assessed_kite_level,self_reported_kite_level)
+    INTO STRICT lvl FROM public.profiles WHERE id=student AND role='student';
+  IF lvl IS NULL THEN RAISE EXCEPTION 'Synthetic student must have a level'; END IF;
+  SELECT id INTO STRICT beach FROM public.beaches WHERE slug='prea';
+  valid_slots := jsonb_build_array(jsonb_build_object(
+    'starts_at',now()+interval '30 days','hours',2));
+  SELECT jsonb_build_array(
+    (SELECT count(*) FROM public.bookings),
+    (SELECT count(*) FROM public.booking_meetings),
+    (SELECT count(*) FROM public.instructor_requests),
+    (SELECT count(*) FROM public.instructor_offers),
+    (SELECT count(*) FROM public.audit_logs)) INTO before_counts;
+  PERFORM set_config('request.jwt.claim.sub',student::text,true);
+  EXECUTE 'set local role authenticated';
+
+  FOR sample IN
+    SELECT * FROM (VALUES
+      ('language unknown','invalid-language',lvl,valid_slots,'Invalid language'),
+      ('language absent',NULL::text,lvl,valid_slots,'Invalid language'),
+      ('level absent','Português',NULL::public.lesson_level,valid_slots,'Lesson level is not eligible'),
+      ('meetings absent','Português',lvl,NULL::jsonb,'Invalid meetings'),
+      ('meetings object','Português',lvl,'{}'::jsonb,'Invalid meetings'),
+      ('meetings empty','Português',lvl,'[]'::jsonb,'Invalid meeting count'),
+      ('date absent','Português',lvl,'[{"hours":2}]'::jsonb,'Invalid meeting fields'),
+      ('hours absent','Português',lvl,jsonb_build_array(jsonb_build_object('starts_at',now()+interval '30 days')),'Invalid meeting fields'),
+      ('date null','Português',lvl,'[{"starts_at":null,"hours":2}]'::jsonb,'Invalid meeting fields'),
+      ('hours text','Português',lvl,jsonb_build_array(jsonb_build_object('starts_at',now()+interval '30 days','hours','2')),'Invalid meeting fields'),
+      ('date invalid','Português',lvl,'[{"starts_at":"not-a-date","hours":2}]'::jsonb,'Invalid meeting date or hours'),
+      ('date infinite','Português',lvl,'[{"starts_at":"infinity","hours":2}]'::jsonb,'Invalid meeting date or hours'),
+      ('hours fractional','Português',lvl,jsonb_build_array(jsonb_build_object('starts_at',now()+interval '30 days','hours',1.5)),'Invalid meeting date or hours'),
+      ('hours zero','Português',lvl,jsonb_build_array(jsonb_build_object('starts_at',now()+interval '30 days','hours',0)),'Invalid meeting date or hours'),
+      ('date past','Português',lvl,jsonb_build_array(jsonb_build_object('starts_at',now()-interval '1 day','hours',2)),'Invalid meeting date or hours')
+    ) AS cases(label,language,level,slots,expected_message)
+  LOOP
+    FOREACH rpc IN ARRAY ARRAY[
+      'SELECT public.create_instructor_request($1,$2,$3,$4,NULL::text,false)',
+      'SELECT public.create_instructor_request_with_preference($1,$2,$3,$4,NULL::text,false,NULL::uuid)',
+      'SELECT public.create_booking($1,$2,$3,$4,NULL::text,false)',
+      'SELECT public.create_booking($1,$2,$3,$4,NULL::text)'
+    ] LOOP
+      rejected := false;
+      BEGIN
+        EXECUTE rpc USING beach,sample.level,sample.language,sample.slots;
+      EXCEPTION WHEN invalid_parameter_value THEN
+        GET STACKED DIAGNOSTICS msg = MESSAGE_TEXT;
+        IF msg IS DISTINCT FROM sample.expected_message THEN
+          RAISE EXCEPTION 'Wrong validation for % via %: %',sample.label,rpc,msg;
+        END IF;
+        rejected := true;
+      END;
+      IF NOT rejected THEN
+        RAISE EXCEPTION 'Invalid input accepted: % via %',sample.label,rpc;
+      END IF;
+      checked := checked+1;
+    END LOOP;
+  END LOOP;
+  EXECUTE 'reset role';
+  SELECT jsonb_build_array(
+    (SELECT count(*) FROM public.bookings),
+    (SELECT count(*) FROM public.booking_meetings),
+    (SELECT count(*) FROM public.instructor_requests),
+    (SELECT count(*) FROM public.instructor_offers),
+    (SELECT count(*) FROM public.audit_logs)) INTO after_counts;
+  IF before_counts IS DISTINCT FROM after_counts THEN
+    RAISE EXCEPTION 'Rejected RPC inputs left persisted rows: % -> %',before_counts,after_counts;
+  END IF;
+  IF checked <> 60 THEN RAISE EXCEPTION 'Incomplete RPC matrix: %',checked; END IF;
+  RAISE NOTICE 'PASS: 60 invalid-input calls across four authenticated RPC signatures; no residual rows';
+END $rpc_regression$;
+
 ROLLBACK;
