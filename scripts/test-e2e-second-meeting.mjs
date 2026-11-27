@@ -101,3 +101,79 @@ for (const raw of [
   {...checkpoint,secondStartsAt:'not-a-date'},
 ]) assert.throws(()=>validateCheckpoint(raw,base));
 console.log('PASS: second meeting resumes the same IDs, respects time/app gates, never repeats ambiguous writes; 110+115=225/240 with 15 minutes remaining.');
+
+// Exercise the actual DOM adapter against a small stateful page model, not only
+// the injected protocol callbacks. Every navigation must retain explicit IDs.
+import { secondMeetingBrowserAdapter } from './e2e/second-meeting.mjs';
+function browserModel({ wrongForm = false, wrongDomId = false, canStart = true } = {}) {
+  const state = { second:'scheduled', done:0, input:null, code:null, clicks:[],urls:[] };
+  let current = { position:1, tab:'concluidas' };
+  const locator = ({ count=1, value=null, text=null, fill,click,check, id=null } = {}) => ({
+    count:async()=>count, inputValue:async()=>value, innerText:async()=>text, waitFor:async()=>{},
+    getAttribute:async()=>id, fill:async(v)=>fill?.(v), click:async()=>click?.(),check:async()=>check?.(),
+  });
+  const card = (position) => ({
+    count:async()=>1,
+    getAttribute:async()=> 'aula-'+(wrongDomId && position===2 ? checkpoint.meetingIds[1] : checkpoint.meetingIds[position]),
+    getByText(label,{exact}) {
+      assert.equal(label,'Tempo realizado');assert.equal(exact,true);
+      return {...locator(), locator(parent) {
+        assert.equal(parent,'..'); return { locator(tag) {
+          assert.equal(tag,'strong');return locator({text:position===1?'1h 50min':'1h 55min'});
+        }};
+      }};
+    },
+    locator(selector) {
+      if (selector.includes('form:has(input[name="presenceCode"])')) {
+        return locator({count:canStart?1:0,value:wrongForm?checkpoint.meetingIds[1]:checkpoint.meetingIds[2]});
+      }
+      if (selector.includes('form:has(input[name="doneMinutes"])')) {
+        return locator({value:wrongForm?checkpoint.meetingIds[1]:checkpoint.meetingIds[2]});
+      }
+      if (selector==='input[name="presenceCode"]') return locator({fill:v=>{state.code=v;}});
+      if (selector==='input[name="doneMinutes"]') return locator({fill:v=>{state.input=v;}});
+      if (selector.startsWith('input[type="radio"]')) return locator({check:()=>{}});
+      throw new Error('unexpected card selector '+selector);
+    },
+    getByRole(role,{name,exact}) {
+      assert.equal(role,'button');assert.equal(exact,true);
+      return locator({click:()=>{
+        assert.equal(position,2,'the first meeting must never be clicked on resume');
+        state.clicks.push(name);
+        if (name==='Confirmar presença e iniciar') {
+          assert.equal(state.code,'1234');state.second='in_progress';
+        } else if(name==='Concluir e registrar encontro') {
+          assert.equal(state.input,'115');state.second='done';state.done=115;
+        } else throw new Error('unexpected button '+name);
+      }});
+    },
+  });
+  return {state,page:{
+    goto:async(url)=>{
+      state.urls.push(url);const u=new URL(url);
+      const position=Object.entries(checkpoint.meetingIds).find(([,id])=>id===u.searchParams.get('aula'))?.[0];
+      assert.ok(position,'navigation must retain a checkpoint meeting UUID');
+      current={position:Number(position),tab:u.searchParams.get('aba')};
+    },
+    locator(selector) {
+      assert.ok(selector.includes('[data-booking-id="'+checkpoint.bookingId+'"]'));
+      const position=Number(/data-meeting-position="(\d+)"/.exec(selector)?.[1]);
+      assert.equal(position,current.position);
+      const actualStatus=position===1?'done':state.second;
+      const tabStatus={concluidas:'done',andamento:'in_progress',proximas:'scheduled'}[current.tab];
+      return actualStatus===tabStatus?card(position):locator({count:0});
+    },
+  }};
+}
+const actualAdapter=browserModel();
+const adapterArgs=secondMeetingBrowserAdapter({page:actualAdapter.page,base,checkpoint,code:'1234'});
+await continueSecondMeeting({...adapterArgs,base,checkpoint,now:()=>now,persist:async()=>{}});
+assert.deepEqual(actualAdapter.state.clicks,['Confirmar presença e iniciar','Concluir e registrar encontro']);
+assert.equal(actualAdapter.state.done,115);
+for (const config of [{wrongForm:true},{wrongDomId:true},{canStart:false}]) {
+  const model=browserModel(config);
+  const io=secondMeetingBrowserAdapter({page:model.page,base,checkpoint,code:'1234'});
+  await assert.rejects(continueSecondMeeting({...io,base,checkpoint,now:()=>now,persist:async()=>{}}),e=>e.code==='E2E_BLOCKED');
+  assert.deepEqual(model.state.clicks,[]);
+}
+console.log('PASS: browser adapter retains booking/meeting IDs and never submits a mismatched form.');

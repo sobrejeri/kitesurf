@@ -134,7 +134,11 @@ export function secondMeetingBrowserAdapter({ page, base, checkpoint, code }) {
       if (await id.inputValue() !== checkpoint.meetingIds[2]) throw blocked('formulário de início aponta para outro encontro');
       if (!/^\d{4}$/.test(code)) throw blocked('código de presença inválido');
       await (await requireUniqueTarget(card.locator('input[name="presenceCode"]'), 'presença do segundo encontro')).fill(code);
-      await (await requireUniqueTarget(card.getByRole('button', { name: 'Confirmar presença e iniciar', exact: true }), 'iniciar segundo encontro')).click();
+      const button = await requireUniqueTarget(card.getByRole('button', { name: 'Confirmar presença e iniciar', exact: true }), 'iniciar segundo encontro');
+      await button.click();
+      // Give this form's response time to settle before the read-only reload.
+      // Disappearance is synchronization only; inspect() must prove the state.
+      await button.waitFor({state:'detached',timeout:20_000}).catch(()=>{});
     },
     record: async (doneMinutes) => {
       const card = await open(2, 'andamento');
@@ -144,7 +148,9 @@ export function secondMeetingBrowserAdapter({ page, base, checkpoint, code }) {
       await (await requireUniqueTarget(card.locator('input[name="doneMinutes"]'), 'minutos do segundo encontro')).fill(String(doneMinutes));
       await (await requireUniqueTarget(card.locator('input[type="radio"][name="step1"][value="mastered"]'), 'etapa 1 do segundo encontro')).check();
       await (await requireUniqueTarget(card.locator('input[type="radio"][name="step2"][value="practiced"]'), 'etapa 2 do segundo encontro')).check();
-      await (await requireUniqueTarget(card.getByRole('button', { name: 'Concluir e registrar encontro', exact: true }), 'registrar segundo encontro')).click();
+      const button = await requireUniqueTarget(card.getByRole('button', { name: 'Concluir e registrar encontro', exact: true }), 'registrar segundo encontro');
+      await button.click();
+      await button.waitFor({state:'detached',timeout:20_000}).catch(()=>{});
     },
   };
 }
