@@ -1,9 +1,10 @@
 'use client';
 
 import { useState } from 'react';
+import type { AppArea } from '@/lib/app-areas';
 
 /** Render only for a real authorized payment; never pass a demo record. */
-export function PaymentReceiptUpload({ paymentId }: { paymentId: string }) {
+export function PaymentReceiptUpload({ paymentId, area }: { paymentId: string; area: AppArea }) {
   const [busy, setBusy] = useState(false);
   const [message, setMessage] = useState('');
   return <form className="grid gap-2" onSubmit={async (event) => {
@@ -14,7 +15,7 @@ export function PaymentReceiptUpload({ paymentId }: { paymentId: string }) {
     body.set('paymentId', paymentId);
     setBusy(true); setMessage('');
     try {
-      const response = await fetch('/api/business/payment-receipt', { method: 'POST', body });
+      const response = await fetch(`/api/business/payment-receipt?area=${encodeURIComponent(area)}`, { method: 'POST', body });
       const result = await response.json();
       setMessage(response.ok && result.ok ? 'Comprovante enviado.' : (typeof result.error === 'string' ? result.error : 'Não foi possível enviar o comprovante.'));
       if (response.ok && result.ok) form.reset();

@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server';
-import { getViewer } from '@/lib/auth';
 import { businessReceiptsEnabled } from '@/lib/business/payment-receipt-feature';
 import { createSupabaseServerClient } from '@/lib/supabase/server';
+import { isArea } from '@/lib/app-areas';
 
 export const runtime = 'nodejs';
 const LIMIT = 5 * 1024 * 1024;
@@ -25,8 +25,11 @@ export async function POST(request: Request) {
   const header = request.headers.get('content-length');
   const length = header && /^\d+$/.test(header) ? Number(header) : NaN;
   if (!Number.isSafeInteger(length) || length < 1 || length > LIMIT + 64 * 1024) return NextResponse.json({ error: 'Confira o tamanho do arquivo (até 5 MB).' }, { status: 413 });
-  const viewer = await getViewer();
-  if (!viewer) return NextResponse.json({ error: 'Entre novamente para enviar o comprovante.' }, { status: 401 });
+  const area = new URL(request.url).searchParams.get('area');
+  if (!area || !isArea(area)) return NextResponse.json({ error: 'Área inválida.' }, { status: 400 });
+  const db = await createSupabaseServerClient(area);
+  const claims = await db.auth.getClaims();
+  if (claims.error || !claims.data?.claims?.sub) return NextResponse.json({ error: 'Entre novamente para enviar o comprovante.' }, { status: 401 });
   let form: FormData;
   try { form = await request.formData(); } catch { return NextResponse.json({ error: 'Não foi possível ler o arquivo.' }, { status: 400 }); }
   const paymentId = form.get('paymentId'); const file = form.get('file');
@@ -35,11 +38,39 @@ export async function POST(request: Request) {
   }
   const bytes = new Uint8Array(await file.slice(0, 16).arrayBuffer());
   if (!signature(bytes, file.type)) return NextResponse.json({ error: 'O arquivo não corresponde a um PDF, JPG ou PNG.' }, { status: 400 });
-  const db = await createSupabaseServerClient();
   const path = `${paymentId}/comprovante`;
   const access = await db.rpc('business_payment_receipt_access', { p_name: path, p_write: true });
   if (access.error || access.data !== true) return NextResponse.json({ error: 'Não foi possível enviar para este pagamento.' }, { status: 403 });
   const uploaded = await db.storage.from(BUCKET).upload(path, file, { contentType: file.type, upsert: false, cacheControl: '0' });
   if (uploaded.error) return NextResponse.json({ error: 'Não foi possível enviar. Verifique se já existe comprovante para este pagamento.' }, { status: 409 });
   return NextResponse.json({ ok: true });
+}
+
+/** Stream only an authorized file as an attachment, never as executable content. */
+export async function GET(request: Request) {
+  if (!businessReceiptsEnabled()) return NextResponse.json({ error: 'Comprovantes ainda não disponíveis.' }, { status: 503 });
+  const params = new URL(request.url).searchParams;
+  const paymentId = params.get('paymentId');
+  if (!paymentId || !UUID.test(paymentId)) return NextResponse.json({ error: 'Comprovante não encontrado.' }, { status: 404 });
+  const area = params.get('area');
+  if (!area || !isArea(area)) return NextResponse.json({ error: 'Comprovante não encontrado.' }, { status: 404 });
+  try {
+    const db = await createSupabaseServerClient(area);
+    const claims = await db.auth.getClaims();
+    if (claims.error || !claims.data?.claims?.sub) return NextResponse.json({ error: 'Entre novamente para consultar o comprovante.' }, { status: 401 });
+    const path = `${paymentId}/comprovante`;
+    const access = await db.rpc('business_payment_receipt_access', { p_name: path, p_write: false });
+    if (access.error || access.data !== true) return NextResponse.json({ error: 'Comprovante não encontrado.' }, { status: 404 });
+    const downloaded = await db.storage.from(BUCKET).download(path);
+    if (downloaded.error || !downloaded.data || downloaded.data.size < 1 || downloaded.data.size > LIMIT) {
+      return NextResponse.json({ error: 'Comprovante não encontrado.' }, { status: 404 });
+    }
+    return new Response(downloaded.data, { headers: {
+      'Content-Type': 'application/octet-stream',
+      'Content-Disposition': 'attachment; filename="comprovante"',
+      'Cache-Control': 'private, no-store, max-age=0',
+      'X-Content-Type-Options': 'nosniff',
+      'Referrer-Policy': 'no-referrer',
+    } });
+  } catch { return NextResponse.json({ error: 'Comprovante não encontrado.' }, { status: 404 }); }
 }
