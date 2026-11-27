@@ -94,6 +94,24 @@ jobs:
         run: node scripts/test-student-desktop.mjs
       - name: Test student schedule conflicts and evolution destinations
         run: node --experimental-strip-types scripts/test-student-schedule.mjs
+      - name: Test TOTP generator used by the authenticated E2E runner (RFC 6238 vectors)
+        run: node scripts/test-e2e-totp.mjs
+      - name: Test E2E priority scenario helpers (Fortaleza dates, expected balance)
+        run: node scripts/test-e2e-scenario-lib.mjs
+      - name: E2E unique target checks
+        run: node scripts/test-e2e-unique-target.mjs
+      - name: E2E booking target isolation
+        run: node scripts/test-e2e-booking-targets.mjs
+      - name: E2E single acceptance and bound confirmation
+        run: node scripts/test-e2e-accept-once.mjs
+      - name: E2E bound second meeting resume and ambiguous write safety
+        run: node scripts/test-e2e-second-meeting.mjs
+      - name: E2E durable checkpoint lock, CAS and cross-process exclusion
+        run: node scripts/test-e2e-checkpoint-store.mjs
+      - name: E2E CLI reports with blocked and unread resume checkpoints
+        run: node scripts/test-e2e-run-report.mjs
+      - name: Test E2E origin guards, redaction and capture masking
+        run: node scripts/test-e2e-security.mjs
       - name: Test instructor request inbox refreshes by itself (single-instructor visibility)
         run: node --experimental-strip-types scripts/test-instructor-offer-visibility.mjs
       - name: Test instructor offer poller effect lifecycle

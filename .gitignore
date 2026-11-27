@@ -14,3 +14,7 @@ coverage/
 
 # Generated at build by next.config
 public/version.json
+
+# Private authenticated E2E screenshots, reports and portable checkpoints.
+e2e-out/
+crawl-out/

@@ -110,6 +110,7 @@ export default async function RequestPage() {
           ) : null}
           {(offers??[]).map(offer=>offer.request ? (
             <Card key={offer.id} className="max-w-3xl">
+              <div data-request-id={offer.request.id}>
               <div className="flex flex-wrap items-center justify-between gap-2">
                 <strong className="text-[17px] text-ink">{names.get(offer.request.beach_id)??'Praia cadastrada'}</strong>
                 <Badge tone="warning">Aguardando resposta</Badge>
@@ -148,6 +149,7 @@ export default async function RequestPage() {
                     O aluno precisará aceitar antes de você confirmar.</p>
                 </ActionForm>
               </details>
+              </div>
             </Card>
           ):null)}
         </div>
