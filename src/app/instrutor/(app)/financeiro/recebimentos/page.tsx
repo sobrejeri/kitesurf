@@ -18,17 +18,22 @@ export default async function CompanyPaymentsPage() {
   }
   const supabase = await createSupabaseServerClient();
   const { data, error } = await supabase.from('company_instructor_payments')
-    .select('id,instructor_id,cents,method,reference,paid_on,confirmed_at,voided_at')
+    .select('id,instructor_id,company_id,link_id,cents,method,reference,paid_on,confirmed_at,voided_at')
     .eq('instructor_id', viewer.id).order('paid_on', { ascending: false }).limit(100);
+  const { data: earnings, error: earningsError } = await supabase.rpc('my_company_earnings');
+  const names = new Map<string, { companyId: string; name: string }>();
+  for (const item of earnings ?? []) if (typeof item.link_id === 'string' && typeof item.company_id === 'string' && typeof item.company_name === 'string' && item.company_name.trim()) names.set(item.link_id, { companyId: item.company_id, name: item.company_name });
   const invalidOwner = data?.some((payment) => payment.instructor_id !== viewer.id) ?? false;
-  const safeData = invalidOwner ? [] : data ?? [];
+  const invalidCompany = data?.some((payment) => names.get(payment.link_id)?.companyId !== payment.company_id) ?? false;
+  const safeData = invalidOwner || invalidCompany ? [] : data ?? [];
   const methods: Record<string, string> = { pix: 'Pix', ted: 'Transferência', cash: 'Dinheiro' };
   return <>
     <AdminTitle title="Recebimentos de escolas" subtitle="Confira os pagamentos que você recebeu diretamente das escolas." />
     <Note className="mt-4">Confirme somente quando o dinheiro tiver chegado a você. O VentoKite não faz essa transferência.</Note>
     <Panel title="Registros de recebimento" className="mt-4">
-      {error || invalidOwner ? <Note tone="warning">Não foi possível carregar os recebimentos. Tente novamente mais tarde.</Note> : !safeData.length ? <EmptyState>Nenhum recebimento registrado para você.</EmptyState> : <ul className="grid gap-3">{safeData.map((p) => <li key={p.id} className="rounded-[14px] border border-line p-4">
+      {error || earningsError || invalidOwner || invalidCompany ? <Note tone="warning">Não foi possível carregar os recebimentos. Tente novamente mais tarde.</Note> : !safeData.length ? <EmptyState>Nenhum recebimento registrado para você.</EmptyState> : <ul className="grid gap-3">{safeData.map((p) => <li key={p.id} className="rounded-[14px] border border-line p-4">
         <div className="flex flex-wrap justify-between gap-2"><strong>{formatMoney(p.cents)}</strong><span>{p.voided_at ? 'Cancelado' : p.confirmed_at ? 'Confirmado' : 'Aguardando sua confirmação'}</span></div>
+        <p className="mt-1 font-semibold">{names.get(p.link_id)?.name}</p>
         <p className="mt-1 text-sm text-muted">{methods[p.method] ?? 'Outro'} · {p.paid_on.split('-').reverse().join('/')} · Referência: {p.reference}</p>
         {!p.confirmed_at && !p.voided_at ? <ActionForm action={confirmCompanyPayment} submitLabel="Confirmar recebimento" className="mt-3 grid gap-2">
           <input type="hidden" name="paymentId" value={p.id} />

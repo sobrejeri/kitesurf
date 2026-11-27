@@ -54,7 +54,7 @@ try {
   const React = nodeRequire('react');
   const render = nodeRequire('react-dom/server').renderToStaticMarkup;
   let pageRows = [], listError = null;
-  const pageDb = { from(name) { assert.equal(name, 'company_instructor_payments'); return {
+  const pageDb = { async rpc(name) { assert.equal(name, 'my_company_earnings'); return { data: [{ link_id: 'link', company_id: 'company', company_name: 'Escola teste' }], error: null }; }, from(name) { assert.equal(name, 'company_instructor_payments'); return {
     select() { return this; }, eq(key, value) { assert.equal(key, 'instructor_id'); assert.equal(value, 'instructor-owner'); return this; },
     order() { return this; }, async limit() { return { data: pageRows, error: listError }; },
   }; } };
@@ -80,8 +80,9 @@ try {
   process.env.NEXT_PUBLIC_VENTO_BUSINESS_PAYMENTS_ENABLED = 'true';
   pageRows = [{ id, instructor_id: 'other', cents: 500, method: 'pix', paid_on: '2026-11-27', reference: 'outro-dado-privado' }];
   const hidden = render(await page()); assert.match(hidden, /Não foi possível carregar/); assert.doesNotMatch(hidden, /outro-dado-privado/);
-  pageRows = [{ id, instructor_id: 'instructor-owner', cents: 500, method: 'pix', paid_on: '2026-11-27', reference: 'ref-teste', confirmed_at: null, voided_at: null }];
-  const shown = render(await page()); assert.match(shown, /ref-teste/); assert.match(shown, /Confirmo que recebi/);
+  pageRows = [{ id, instructor_id: 'instructor-owner', link_id: 'link', company_id: 'company', cents: 500, method: 'pix', paid_on: '2026-11-27', reference: 'ref-teste', confirmed_at: null, voided_at: null }];
+  const shown = render(await page()); assert.match(shown, /ref-teste/); assert.match(shown, /Escola teste/); assert.match(shown, /Confirmo que recebi/);
+  pageRows[0].company_id = 'other'; assert.match(render(await page()), /Não foi possível carregar/);
   role = 'admin'; const beforeAdmin = clients; assert.match(render(await page()), /próprio instrutor/); assert.equal(clients, beforeAdmin);
   console.log('PASS: disabled and foreign-owner page fail closed; own pending payment rendered (mock database)');
   console.log('PASS: feature gate, owner, explicit acknowledgment, final states and RPC failures (mock database)');
