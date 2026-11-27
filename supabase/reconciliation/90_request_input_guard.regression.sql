@@ -162,4 +162,177 @@ BEGIN
   RAISE NOTICE 'PASS: 60 invalid-input calls across four authenticated RPC signatures; no residual rows';
 END $rpc_regression$;
 
+-- Deterministic coverage: the same isolated synthetic student explicitly visits
+-- every profile level, both self-report and assessment taking precedence.
+-- Each successful booking is rolled back before the next matrix cell.
+INSERT INTO auth.users(id,email,raw_user_meta_data) VALUES(
+  '00000000-0000-0000-0000-000000009090',
+  'request-guard-matrix@example.invalid',
+  '{"full_name":"Request guard matrix","kite_level":"first_time"}'
+);
+DO $valid_rpc_matrix$
+DECLARE
+  student constant uuid := '00000000-0000-0000-0000-000000009090';
+  instructor constant uuid := '00000000-0000-0000-0000-0000000000a1';
+  beach uuid;
+  first_slot timestamptz;
+  second_slot timestamptz;
+  slots jsonb;
+  profile_level public.lesson_level;
+  lesson_level public.lesson_level;
+  assessed boolean;
+  rpc text;
+  should_reject boolean;
+  msg text;
+  returned_id uuid;
+  booking_id uuid;
+  offer_id uuid;
+  assigned uuid;
+  booking_row public.bookings;
+  price_row public.price_versions;
+  expected_rate integer;
+  accepted integer := 0;
+  denied integer := 0;
+  before_counts jsonb;
+  after_counts jsonb;
+BEGIN
+  SELECT id INTO STRICT beach FROM public.beaches WHERE slug='prea';
+  -- Synthetic completed history authorizes the actual preferred-instructor
+  -- branch. Copy only the disposable suite's fixture shape; no gateway is used.
+  INSERT INTO public.bookings
+  SELECT (jsonb_populate_record(NULL::public.bookings,to_jsonb(b)||jsonb_build_object(
+    'id',gen_random_uuid(),'code','VNT-QA-LEVEL-HISTORY',
+    'student_id',student,'instructor_id',instructor,'partner_id',NULL,
+    'status','completed','confirmed_at',now()))).*
+  FROM public.bookings b ORDER BY b.id LIMIT 1;
+  IF NOT FOUND THEN RAISE EXCEPTION 'Missing synthetic booking history fixture'; END IF;
+  -- Find two free local days with the real availability helper. No fixed-date
+  -- dependence on the earlier race suite, no trigger disabling or fake RPC.
+  WITH candidates AS (
+    SELECT (date_trunc('day',now() AT TIME ZONE 'America/Fortaleza')
+      +make_interval(days=>d,hours=>h)) AT TIME ZONE 'America/Fortaleza' st
+    FROM generate_series(21,60) d CROSS JOIN generate_series(8,14) h
+  ), available AS (
+    SELECT st,(st AT TIME ZONE 'America/Fortaleza')::date local_day
+    FROM candidates c
+    WHERE public.instructor_can_attend(instructor,
+      jsonb_build_array(jsonb_build_object('starts_at',st,'hours',2)))
+    AND NOT EXISTS (
+      SELECT 1 FROM public.instructor_offers o
+      JOIN public.instructor_requests r ON r.id=o.request_id
+      CROSS JOIN LATERAL jsonb_array_elements(r.meetings) m
+      WHERE o.instructor_id=instructor AND o.status='offered'
+        AND o.expires_at>now() AND r.status='searching'
+        AND tstzrange((m->>'starts_at')::timestamptz,
+          (m->>'starts_at')::timestamptz+make_interval(hours=>(m->>'hours')::integer),'[)')
+          && tstzrange(c.st,c.st+interval '2 hours','[)')
+    )
+  )
+  SELECT a.st,b.st INTO first_slot,second_slot
+  FROM available a JOIN available b ON b.local_day>a.local_day
+  WHERE public.instructor_can_attend(instructor,jsonb_build_array(
+    jsonb_build_object('starts_at',a.st,'hours',2),
+    jsonb_build_object('starts_at',b.st,'hours',2)))
+  ORDER BY a.st,b.st LIMIT 1;
+  IF first_slot IS NULL THEN RAISE EXCEPTION 'No eligible two-day fixture'; END IF;
+  slots := jsonb_build_array(jsonb_build_object('starts_at',first_slot,'hours',2),
+    jsonb_build_object('starts_at',second_slot,'hours',2));
+  SELECT jsonb_build_array(
+    (SELECT count(*) FROM public.bookings),(SELECT count(*) FROM public.booking_meetings),
+    (SELECT count(*) FROM public.instructor_requests),(SELECT count(*) FROM public.instructor_offers),
+    (SELECT count(*) FROM public.audit_logs)) INTO before_counts;
+
+  FOREACH assessed IN ARRAY ARRAY[false,true] LOOP
+    FOREACH profile_level IN ARRAY enum_range(NULL::public.lesson_level) LOOP
+      UPDATE public.profiles SET
+        self_reported_kite_level=CASE WHEN assessed THEN
+          CASE WHEN profile_level='improving' THEN 'first_time'::public.lesson_level ELSE 'improving'::public.lesson_level END
+          ELSE profile_level END,
+        assessed_kite_level=CASE WHEN assessed THEN profile_level ELSE NULL END
+        WHERE id=student;
+      FOREACH lesson_level IN ARRAY enum_range(NULL::public.lesson_level) LOOP
+        should_reject := (profile_level='returning' AND lesson_level='first_time')
+          OR (profile_level='improving' AND lesson_level<>'improving');
+        FOREACH rpc IN ARRAY ARRAY[
+          'SELECT public.create_instructor_request($1,$2,$3,$4,NULL::text,false)',
+          'SELECT public.create_instructor_request_with_preference($1,$2,$3,$4,NULL::text,false,$5)',
+          'SELECT public.create_booking($1,$2,$3,$4,NULL::text,false)',
+          'SELECT public.create_booking($1,$2,$3,$4,NULL::text)'
+        ] LOOP
+          BEGIN
+            PERFORM set_config('request.jwt.claim.sub',student::text,true);
+            EXECUTE 'set local role authenticated';
+            EXECUTE rpc INTO returned_id USING beach,lesson_level,'Português',slots,instructor;
+            IF should_reject THEN
+              RAISE EXCEPTION 'Ineligible level accepted: assessed=% profile=% lesson=% rpc=%',
+                assessed,profile_level,lesson_level,rpc;
+            END IF;
+            IF returned_id IS NULL THEN RAISE EXCEPTION 'RPC returned no identity: %',rpc; END IF;
+            -- Check owner visibility through RLS before using postgres to inspect.
+            IF strpos(rpc,'create_instructor_request')>0 THEN
+              IF NOT EXISTS(SELECT 1 FROM public.instructor_requests
+                WHERE id=returned_id AND student_id=student AND level=lesson_level) THEN
+                RAISE EXCEPTION 'Student cannot read its own valid request';
+              END IF;
+              EXECUTE 'reset role';
+              SELECT id,instructor_id INTO STRICT offer_id,assigned
+                FROM public.instructor_offers WHERE request_id=returned_id AND status='offered';
+              IF strpos(rpc,'with_preference')>0 AND assigned IS DISTINCT FROM instructor THEN
+                RAISE EXCEPTION 'Eligible preferred instructor was not selected';
+              END IF;
+              PERFORM set_config('request.jwt.claim.sub',assigned::text,true);
+              EXECUTE 'set local role authenticated';
+              booking_id := public.accept_instructor_offer(offer_id);
+              EXECUTE 'reset role';
+              PERFORM set_config('request.jwt.claim.sub',student::text,true);
+              EXECUTE 'set local role authenticated';
+            ELSE
+              booking_id := returned_id;
+            END IF;
+            SELECT * INTO STRICT booking_row FROM public.bookings WHERE id=booking_id;
+            IF booking_row.student_id IS DISTINCT FROM student
+              OR booking_row.level IS DISTINCT FROM lesson_level
+              OR booking_row.total_hours IS DISTINCT FROM 4
+              OR (SELECT count(*) FROM public.booking_meetings m WHERE m.booking_id=booking_row.id)<>2
+              OR (SELECT sum(minutes) FROM public.booking_meetings m WHERE m.booking_id=booking_row.id)<>240 THEN
+              RAISE EXCEPTION 'Valid 4h/2-day booking lost owner, level or duration';
+            END IF;
+            EXECUTE 'reset role';
+            SELECT * INTO STRICT price_row FROM public.price_versions WHERE id=booking_row.price_version_id;
+            expected_rate := CASE lesson_level WHEN 'first_time' THEN price_row.hourly_rate_cents
+              WHEN 'returning' THEN coalesce(price_row.intermediate_hourly_cents,price_row.hourly_rate_cents)
+              WHEN 'improving' THEN coalesce(price_row.advanced_hourly_cents,price_row.hourly_rate_cents) END;
+            IF booking_row.hourly_rate_cents IS DISTINCT FROM expected_rate
+              OR booking_row.total_cents IS DISTINCT FROM expected_rate*4
+              OR booking_row.total_cents IS DISTINCT FROM
+                booking_row.partner_cents+booking_row.platform_cents+booking_row.instructor_net_cents THEN
+              RAISE EXCEPTION 'Valid booking pricing/split snapshot diverged';
+            END IF;
+            accepted := accepted+1;
+            -- Roll back this successful case, including offers and audit rows.
+            RAISE SQLSTATE 'ZT001' USING MESSAGE='rollback successful matrix case';
+          EXCEPTION
+            WHEN SQLSTATE 'ZT001' THEN NULL;
+            WHEN invalid_parameter_value THEN
+              GET STACKED DIAGNOSTICS msg=MESSAGE_TEXT;
+              IF NOT should_reject OR msg IS DISTINCT FROM 'Lesson level is not eligible' THEN RAISE; END IF;
+              denied := denied+1;
+          END;
+        END LOOP;
+      END LOOP;
+    END LOOP;
+  END LOOP;
+  IF accepted<>48 OR denied<>24 THEN
+    RAISE EXCEPTION 'Incomplete valid/level matrix: accepted %, denied %',accepted,denied;
+  END IF;
+  SELECT jsonb_build_array(
+    (SELECT count(*) FROM public.bookings),(SELECT count(*) FROM public.booking_meetings),
+    (SELECT count(*) FROM public.instructor_requests),(SELECT count(*) FROM public.instructor_offers),
+    (SELECT count(*) FROM public.audit_logs)) INTO after_counts;
+  IF before_counts IS DISTINCT FROM after_counts THEN
+    RAISE EXCEPTION 'Level matrix left residual rows: % -> %',before_counts,after_counts;
+  END IF;
+  RAISE NOTICE 'PASS: deterministic self-reported/assessed level matrix; 48 valid 4h bookings, 24 denied; all four RPCs; no residual rows';
+END $valid_rpc_matrix$;
+
 ROLLBACK;
