@@ -7,6 +7,7 @@ import ts from 'typescript';
 
 const env = {};
 let schemaMissing = false;
+let extendedError = null;
 let permissionDenied = false;
 const reads = [];
 const studentId = 'student-owner';
@@ -36,7 +37,8 @@ function query(table) {
       return { data: null, error: { code: '42501', message: 'permission denied' } };
     }
     const extended = read.columns.includes('interruption_state');
-    if (extended && schemaMissing) return { data: null, error: { code: '42703', message: 'column interruption_state does not exist' } };
+    if (extended && extendedError) return { data: null, error: extendedError };
+    if (extended && schemaMissing) return { data: null, error: { code: typeof schemaMissing === 'string' ? schemaMissing : '42703', message: 'column interruption_state does not exist' } };
     const meeting = { ...baseMeeting, ...(extended ? extension : {}) };
     if (table === 'bookings') {
       const data = read.columns.includes('booking_meetings') ? { ...raw, booking_meetings: [meeting] } : { ...raw };
@@ -107,7 +109,32 @@ assert.ok(result.every((r) => r.booking_meetings[0].interruption_state === undef
 assert.equal(reads.filter((r) => r.columns.includes('interruption_state')).length, 3);
 assert.equal(await data.getBookingForViewer(bookingId, { id: 'other-student', role: 'student' }), null,
   'missing-column fallback must retain ownership enforcement');
+schemaMissing = 'PGRST204';
+reads.length = 0;
+result = await exercise();
+assert.ok(result.every((r) => r.booking_meetings[0].interruption_state === undefined));
+assert.equal(reads.filter((r) => r.columns.includes('interruption_state')).length, 3,
+  'known PostgREST missing-column cache errors retain the scoped fallback');
 schemaMissing = false;
+for (const error of [
+  { code: '42501', message: 'permission denied' },
+  { code: '42703', message: 'column unrelated_field does not exist' },
+  { code: 'PGRST201', message: 'ambiguous relationship' },
+]) {
+  extendedError = error;
+  for (const read of [
+    () => data.listBookingsForStudent(studentId),
+    () => data.listBookingsForInstructor(instructorId),
+    () => data.getBookingForViewer(bookingId, { id: studentId, role: 'student' }),
+  ]) {
+    reads.length = 0;
+    await assert.rejects(read, 'extended permission/unknown errors must fail even when legacy would succeed');
+    const meetingReads = reads.filter((r) => r.table === 'booking_meetings' || r.columns.includes('booking_meetings'));
+    assert.equal(meetingReads.length, 1, 'must not retry the legacy read after an unrelated error');
+    assert.ok(meetingReads[0].columns.includes('interruption_state'));
+  }
+}
+extendedError = null;
 permissionDenied = true;
 for (const read of [
   () => data.listBookingsForStudent(studentId),

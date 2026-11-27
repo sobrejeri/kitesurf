@@ -176,6 +176,7 @@ export async function listBookingsForStudent(studentId: string): Promise<Student
           .select(`${baseColumns}, planned_minutes, previous_done_minutes, remaining_minutes, interruption_state, interruption_reason, interruption_count`)
           .in('booking_id', bookingIds).returns<StudentMeetingRow[]>();
         if (!extended.error) return extended;
+        if (!missingInterruptionColumn(extended.error)) return extended;
         console.warn('[student-bookings] Interruption columns unavailable; using the standard read', { code: extended.error.code });
       }
       return supabase.from('booking_meetings').select(baseColumns).in('booking_id', bookingIds).returns<StudentMeetingRow[]>();
@@ -230,6 +231,11 @@ export async function listBookingsForStudent(studentId: string): Promise<Student
 const MEETING_COLUMNS = 'booking_meetings ( id, position, starts_at, minutes, status, done_minutes, note )';
 const MEETING_COLUMNS_WITH_INTERRUPTION = 'booking_meetings ( id, position, starts_at, minutes, status, done_minutes, note, planned_minutes, previous_done_minutes, remaining_minutes, interruption_state, interruption_reason, interruption_count )';
 
+function missingInterruptionColumn(error: { code?: string; message?: string } | null): boolean {
+  return Boolean(error && (error.code === '42703' || error.code === 'PGRST204')
+    && /\b(planned_minutes|previous_done_minutes|remaining_minutes|interruption_state|interruption_reason|interruption_count)\b/i.test(error.message ?? ''));
+}
+
 export async function listBookingsForInstructor(instructorId: string): Promise<Booking[]> {
   const supabase = await createSupabaseServerClient();
   // #93: com a flag ligada, tenta ler também as colunas de interrupção; se o banco ainda não as tem, segue com a leitura de sempre.
@@ -241,6 +247,7 @@ export async function listBookingsForInstructor(instructorId: string): Promise<B
       .order('created_at', { ascending: false })
       .returns<RawBooking[]>();
     if (!extended.error) return (extended.data ?? []).map(normalise);
+    if (!missingInterruptionColumn(extended.error)) throw extended.error;
     console.warn('[instructor-bookings] Interruption columns unavailable; using the standard read', { code: extended.error.code });
   }
   const read = (columns: string) => supabase
@@ -318,6 +325,7 @@ export async function getBookingForViewer(
       const allowedExtended = viewer.role === 'admin' || row.student_id === viewer.id || row.instructor_id === viewer.id;
       return allowedExtended ? normalise(row) : null;
     }
+    if (!missingInterruptionColumn(extended.error)) throw extended.error;
     console.warn('[booking-viewer] Interruption columns unavailable; using the standard read', { code: extended.error.code });
   }
   const result = await read(BOOKING_COLUMNS);
