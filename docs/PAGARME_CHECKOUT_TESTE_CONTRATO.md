@@ -14,4 +14,6 @@ Faltam persistência isolada de tentativas, idempotência e concorrência, trata
 
 A proposta de tabela `pagarme_test_attempts` não expõe escrita a usuários e não altera reservas. O índice impede novas tentativas para reservas com resultado pendente, desconhecido, aprovado ou reembolsado. Antes de ligar qualquer escrita ou transporte é necessário isolar o banco de testes ou provar que as reservas e recebedores são exclusivamente de teste; este esquema sozinho não distingue uma reserva real de uma fictícia. O estado de teste não é prova de transação no Pagar.me.
 
+O módulo de transporte preparado é exclusivo do servidor e exige transporte injetado explicitamente; nenhuma rota o chama. Usa chave de teste, correlação de reserva/cliente/valor e a chave idempotente da tentativa persistida. Falha de rede, resposta não reconhecida ou erro HTTP produz resultado desconhecido sem repetição automática. Mesmo uma observação de pedido pago ainda exige conciliação e persistência antes de qualquer efeito. Os testes usam somente respostas simuladas.
+
 Referências: https://docs.pagar.me/reference/criar-pedido-2 ; https://docs.pagar.me/reference/pix-2 ; https://docs.pagar.me/reference/split-1 ; https://docs.pagar.me/docs/simulador-pix ; https://docs.pagar.me/reference/autentica%C3%A7%C3%A3o-2
