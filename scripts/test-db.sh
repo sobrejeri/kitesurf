@@ -86,3 +86,9 @@ bash "$ROOT/scripts/test-rehearse-chain.sh"
 
 # Loja pública do Business (aluno/visitante): 20 pedidos anônimos simultâneos do mesmo telefone criam exatamente 3 (cluster próprio).
 bash "$ROOT/scripts/test-business-public-order-race.sh"
+
+# Business consolidated catalogue/ACL preflight: read-only, no application RPC.
+"${PSQL[@]}" -f "$ROOT/docs/proposals/business-multiempresa/VERIFICACAO_consolidada_somente_leitura.sql"
+
+# Mutation probes only against this script's temporary local cluster.
+PG_TEST_SOCKET="$DATA" PG_TEST_PORT="$PORT" bash "$ROOT/scripts/test-business-readonly-preflight.sh"
