@@ -86,3 +86,12 @@ bash "$ROOT/scripts/test-rehearse-chain.sh"
 
 # #90: test the migration already loaded by the standard disposable migration loop.
 "${PSQL[@]}" -f "$ROOT/supabase/reconciliation/90_request_distinct_civil_days.test.sql"
+
+# #96: real two-connection push lease/attempt race in this disposable cluster.
+PG_TEST_SOCKET="$DATA" PG_TEST_PORT="$PORT" bash "$ROOT/scripts/test-push-outbox-concurrency.sh"
+
+# #96: gone settlement cannot block Auth logout; retire skipped targets later.
+PG_TEST_SOCKET="$DATA" PG_TEST_PORT="$PORT" bash "$ROOT/scripts/test-push-outbox-retirement.sh"
+
+# #96: claim skips parent deletion rather than waiting on a recipient FK.
+PG_TEST_SOCKET="$DATA" PG_TEST_PORT="$PORT" bash "$ROOT/scripts/test-push-outbox-profile-deletion.sh"

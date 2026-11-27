@@ -205,9 +205,11 @@ begin
     join public.bookings b on b.id = bm.booking_id
     where b.code = 'VNT-1001' and bm.position = 1;
 
-  -- The original booking starts in two days; move this disposable fixture
-  -- inside the allowed 24-hour window without changing production rules.
-  update public.booking_meetings set starts_at = now() + interval '1 hour'
+  -- The historical upgrade harness still has the civil-day start rule.
+  -- Use this transaction's current instant: +1h crosses Fortaleza midnight
+  -- after 23:00 and would test date rejection instead of the intended PIN.
+  -- The same instant is also valid under the newer 24-hour rule.
+  update public.booking_meetings set starts_at = now()
     where id = m;
 
   -- RPC privileges are verified separately by the dedicated 89m regression
