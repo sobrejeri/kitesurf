@@ -143,6 +143,8 @@ jobs:
         run: node scripts/test-sandbox-webhook-inbox.mjs
       - name: Verify sandbox financial CSV formula injection safety
         run: node scripts/test-sandbox-finance-csv.mjs
+      - name: Verify Kitesurf backup source guard without database access
+        run: bash scripts/test-90-source-guard.sh
       - run: pnpm build
       - name: Run isolated database migrations and SQL assertions
         # Avoid Ubuntu apt mirrors: their DNS can fail on hosted runners.

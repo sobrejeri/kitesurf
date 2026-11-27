@@ -59,3 +59,9 @@ Exportação, restauração com SHA-256 e impressões digitais idênticas; dump 
 - O ensaio usa um stub do Supabase (papéis `anon`, `authenticated`, `service_role`, `auth.uid()`); extensões, Storage, `auth` completo e Realtime não são reproduzidos.
 - A ACL real pode ter papéis que não existem no clone (`supabase_admin`, etc.): o rollback zera e reaplica apenas papéis que existem; confira `proacl` no passo 3 contra o remoto.
 - Hashes brutos do D1 divergem de propósito em seis funções (comentários e histórico); o D7 normalizado já as reconheceu. Isto não autoriza aplicar nada além das três migrations.
+
+### Validação de origem antes de exportar ou capturar rollback
+
+As duas rotinas usam `90-source-guard.sh`: a referência precisa ser exatamente a do Kitesurf, o banco deve ser `postgres`, o host direto deve corresponder ao projeto, ou o pooler Supabase deve usar `postgres.<referência>`. Conexões remotas usam porta de sessão 5432. `PGHOSTADDR`, `PGSERVICE`, `PGSERVICEFILE` e URLs em `PGDATABASE` são recusados para impedir que parâmetros alternativos desviem a conexão. Uma origem local exige `ALLOW_LOCAL_SOURCE=1` e continua restrita a `PGDATABASE=postgres`.
+
+`bash scripts/test-90-source-guard.sh` valida essas recusas sem acessar banco ou rede. Esse teste não comprova que existe backup nem que um backup real foi restaurado; o ensaio em PostgreSQL descartável continua separado da homologação de recuperação do Supabase.

@@ -4,6 +4,7 @@
 # Nada toca em Supabase real. Rode como usuário não-root com LANG=C.UTF-8.
 set -euo pipefail
 ROOT="$(cd "$(dirname "$0")/.." && pwd)"
+bash "$ROOT/scripts/test-90-source-guard.sh"
 PG_BIN="${PG_BIN:-$(dirname "$(command -v pg_ctl || ls /usr/lib/postgresql/*/bin/pg_ctl | tail -1)")}"
 [ "$(id -u)" != "0" ] || { echo "Rode como usuário não-root." >&2; exit 1; }
 W="$(mktemp -d)"; A="$W/src"; PA="${PORT_A:-54801}"
@@ -36,8 +37,8 @@ export PGHOST="$A" PGPORT="$PA" PGUSER=postgres PGDATABASE=postgres
 OUT="$W/bkp"
 # recusas fail-closed
 ! OUT_DIR="$OUT" CONFIRM_READONLY_EXPORT=sim EXPECTED_PROJECT_REF=qadkqjfmmnxvovyyhqxw bash "$ROOT/scripts/ops/90-export-logical-backup.sh" >/dev/null 2>&1 || { echo "FAIL: exportou de origem local sem ALLOW_LOCAL_SOURCE"; exit 1; }
-! OUT_DIR="$W/b2" CONFIRM_READONLY_EXPORT=nao ALLOW_LOCAL_SOURCE=1 EXPECTED_PROJECT_REF=x bash "$ROOT/scripts/ops/90-export-logical-backup.sh" >/dev/null 2>&1 || { echo "FAIL: exportou sem confirmação"; exit 1; }
-! OUT_DIR="$ROOT/_nao_pode" CONFIRM_READONLY_EXPORT=sim ALLOW_LOCAL_SOURCE=1 EXPECTED_PROJECT_REF=x bash "$ROOT/scripts/ops/90-export-logical-backup.sh" >/dev/null 2>&1 || { echo "FAIL: exportou para dentro do repositório"; exit 1; }
+! OUT_DIR="$W/b2" CONFIRM_READONLY_EXPORT=nao ALLOW_LOCAL_SOURCE=1 EXPECTED_PROJECT_REF=qadkqjfmmnxvovyyhqxw bash "$ROOT/scripts/ops/90-export-logical-backup.sh" >/dev/null 2>&1 || { echo "FAIL: exportou sem confirmação"; exit 1; }
+! OUT_DIR="$ROOT/_nao_pode" CONFIRM_READONLY_EXPORT=sim ALLOW_LOCAL_SOURCE=1 EXPECTED_PROJECT_REF=qadkqjfmmnxvovyyhqxw bash "$ROOT/scripts/ops/90-export-logical-backup.sh" >/dev/null 2>&1 || { echo "FAIL: exportou para dentro do repositório"; exit 1; }
 ! PGHOST=db.outroprojeto.supabase.co OUT_DIR="$W/b3" CONFIRM_READONLY_EXPORT=sim EXPECTED_PROJECT_REF=qadkqjfmmnxvovyyhqxw bash "$ROOT/scripts/ops/90-export-logical-backup.sh" >/dev/null 2>&1 || { echo "FAIL: aceitou host de outro projeto"; exit 1; }
 echo "PASS: recusas (origem local sem permissão, sem confirmação, dentro do repositório, outro projeto)"
 OUT_DIR="$OUT" CONFIRM_READONLY_EXPORT=sim ALLOW_LOCAL_SOURCE=1 EXPECTED_PROJECT_REF=qadkqjfmmnxvovyyhqxw bash "$ROOT/scripts/ops/90-export-logical-backup.sh" | tail -6
@@ -51,7 +52,7 @@ if BACKUP_DIR="$W/bkp_ruim" RESTORE_DIR="$W/rst2" PORT=54803 bash "$ROOT/scripts
 echo "PASS: dump adulterado é recusado pelo SHA-256"
 
 echo "== C. captura do rollback, aplicação da cadeia e rollback =="
-OUT_FILE="$W/rollback_90.sql" CONFIRM_READONLY_EXPORT=sim ALLOW_LOCAL_SOURCE=1 EXPECTED_PROJECT_REF=x bash "$ROOT/scripts/ops/90-capture-rollback.sh"
+OUT_FILE="$W/rollback_90.sql" CONFIRM_READONLY_EXPORT=sim ALLOW_LOCAL_SOURCE=1 EXPECTED_PROJECT_REF=qadkqjfmmnxvovyyhqxw bash "$ROOT/scripts/ops/90-capture-rollback.sh"
 for f in 20261116160000_create_booking_legacy_safe_delegate 20261116170000_create_booking_six_args_no_defaults 20261124080301_guard_request_distinct_civil_days; do "${Q[@]}" -1 -f "$M/$f.sql" >/dev/null 2>&1; v="${f%%_*}"; "${Q[@]}" -c "insert into supabase_migrations.schema_migrations values ('$v','x')"; done
 AFTER_APPLY="$(state)"; [ "$AFTER_APPLY" != "$BEFORE" ] || { echo "FAIL: a cadeia não alterou create_booking"; exit 1; }
 "${S[@]}" -c "select count(*) from pg_trigger where tgname='request_00_distinct_civil_days'" | grep -qx 1

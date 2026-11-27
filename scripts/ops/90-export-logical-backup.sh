@@ -4,7 +4,7 @@
 #
 # Conexão: variáveis padrão do libpq (PGHOST, PGPORT, PGUSER, PGDATABASE, PGPASSWORD ou ~/.pgpass). Nada de URL com senha na linha de comando.
 #   Use a conexão direta ou o pooler em modo sessão (porta 5432). Não use o pooler em modo transação (6543) para pg_dump.
-# Exige: CONFIRM_READONLY_EXPORT=sim, EXPECTED_PROJECT_REF=qadkqjfmmnxvovyyhqxw (o host ou o usuário precisa conter a referência; recusa a Turiva e qualquer outro),
+# Exige: CONFIRM_READONLY_EXPORT=sim, EXPECTED_PROJECT_REF=qadkqjfmmnxvovyyhqxw (host direto ou pooler/usuário exatos; recusa outro projeto),
 #        OUT_DIR=<pasta nova, fora de qualquer repositório git>.
 # O que sai: public.dump (formato custom, schema public com dados e permissões), auth_user_ids.csv (SÓ ids, sem e-mail nem hash de senha), manifest.txt.
 # Não inclui: Storage (arquivos), o schema auth além dos ids, segredos. Ver docs/PROCEDIMENTO_BACKUP_RESTAURACAO_ROLLBACK_90.md.
@@ -12,14 +12,9 @@ set -euo pipefail
 ROOT="$(cd "$(dirname "$0")/../.." && pwd)"
 : "${OUT_DIR:?defina OUT_DIR (pasta nova, fora do repositório)}"
 [ "${CONFIRM_READONLY_EXPORT:-}" = "sim" ] || { echo "Defina CONFIRM_READONLY_EXPORT=sim (esta rotina só lê o banco)." >&2; exit 2; }
-REF="${EXPECTED_PROJECT_REF:-}"
-[ -n "$REF" ] || { echo "Defina EXPECTED_PROJECT_REF (referência do projeto Kitesurf)." >&2; exit 2; }
-HOST="${PGHOST:-}"; USER_="${PGUSER:-}"
-if [[ "$HOST" == /* ]]; then
-  [ "${ALLOW_LOCAL_SOURCE:-}" = "1" ] || { echo "Origem em socket local só com ALLOW_LOCAL_SOURCE=1 (uso em teste)." >&2; exit 2; }
-else
-  case "$HOST$USER_" in *"$REF"*) ;; *) echo "Nem PGHOST nem PGUSER contêm a referência $REF: recusado (outro projeto?)." >&2; exit 2;; esac
-fi
+source "$ROOT/scripts/ops/90-source-guard.sh"
+guard_kitesurf_source
+REF="$EXPECTED_PROJECT_REF"
 case "$(cd "$(dirname "$OUT_DIR")" 2>/dev/null && pwd)/$(basename "$OUT_DIR")" in "$ROOT"/*) echo "OUT_DIR dentro do repositório: recusado (o dump não pode ser commitado)." >&2; exit 2;; esac
 if git -C "$(dirname "$OUT_DIR")" rev-parse --git-dir >/dev/null 2>&1; then echo "OUT_DIR está dentro de um repositório git: recusado." >&2; exit 2; fi
 [ ! -e "$OUT_DIR" ] || { echo "OUT_DIR já existe: use uma pasta nova (nunca sobrescreve backup)." >&2; exit 2; }
