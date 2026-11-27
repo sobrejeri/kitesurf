@@ -319,7 +319,7 @@ export default async function BookingPage({ params }: { params: Promise<{ id: st
                 href="/aluno/ocorrencias"
                 className="mx-auto inline-flex min-h-11 items-center justify-center px-2 py-2 text-center text-[13px] font-medium leading-snug text-[#73e1eb] underline underline-offset-4 transition-colors hover:text-white focus-visible:rounded-lg focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#73e1eb]"
               >
-                Imprevistos, cancelamento ou ausência
+                Registrar imprevisto ou ausência
               </Link>
             </nav>
             </div>
