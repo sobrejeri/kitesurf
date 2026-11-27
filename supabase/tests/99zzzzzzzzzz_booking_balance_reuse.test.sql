@@ -32,7 +32,15 @@ BEGIN
   SELECT id INTO v_mid FROM public.booking_meetings WHERE booking_id=v_bid;
   SELECT presence_code INTO v_pin FROM public.bookings WHERE id=v_bid;
   -- Deliver the meeting short, inside the rollback, by dating it in the past.
-  UPDATE public.booking_meetings SET starts_at=now()-interval '2 hours' WHERE id=v_mid;
+  -- Place each prior short lesson in its own past slot. A 120-minute
+  -- meeting ending now overlaps the later 30-minute make-up at now-10m;
+  -- the guard must reject that, so keep fixtures chronologically distinct.
+  UPDATE public.booking_meetings
+     SET starts_at = now() - interval '4 hours' -
+       ((SELECT count(*) FROM public.booking_meetings m
+           JOIN public.bookings b ON b.id=m.booking_id
+          WHERE b.student_id=p_student AND m.id<>v_mid) * interval '6 hours')
+   WHERE id=v_mid;
   PERFORM pg_temp.act_as(p_instructor);
   PERFORM public.start_ordered_meeting(v_mid,v_pin);
   PERFORM public.record_meeting(v_mid,p_done_minutes,'short record for balance test');
@@ -234,14 +242,20 @@ BEGIN
   v_bid:=public.create_admin_test_booking(v_instructor,
     '00000000-0000-0000-0000-0000000000f3',v_beach,
     jsonb_build_array(
-      jsonb_build_object('starts_at',to_char((((now() AT TIME ZONE 'America/Fortaleza')::date+45)::timestamp+interval '9 hours'),'YYYY-MM-DD"T"HH24:MI:SS')||'-03:00','hours',2),
-      jsonb_build_object('starts_at',to_char((((now() AT TIME ZONE 'America/Fortaleza')::date+46)::timestamp+interval '9 hours'),'YYYY-MM-DD"T"HH24:MI:SS')||'-03:00','hours',2)));
+      jsonb_build_object('starts_at',to_char((((now() AT TIME ZONE 'America/Fortaleza')::date+58)::timestamp+interval '9 hours'),'YYYY-MM-DD"T"HH24:MI:SS')||'-03:00','hours',2),
+      jsonb_build_object('starts_at',to_char((((now() AT TIME ZONE 'America/Fortaleza')::date+59)::timestamp+interval '9 hours'),'YYYY-MM-DD"T"HH24:MI:SS')||'-03:00','hours',2)));
   PERFORM pg_temp.reset();
   ASSERT (SELECT count(*) FROM public.booking_meetings WHERE booking_id=v_bid)=2,
     'Four paid hours must create exactly two meetings';
   SELECT presence_code INTO v_pin FROM public.bookings WHERE id=v_bid;
+  -- Preserve chronological separation when replaying the two completed meetings:
+  -- each 120-minute lesson must not overlap the other under the student guard.
+  v_total:=0;
   FOR v_mid IN SELECT id FROM public.booking_meetings WHERE booking_id=v_bid ORDER BY starts_at,id LOOP
-    UPDATE public.booking_meetings SET starts_at=now()-interval '2 hours' WHERE id=v_mid;
+    UPDATE public.booking_meetings
+       SET starts_at=now() - interval '5 hours' + (v_total * interval '3 hours')
+     WHERE id=v_mid;
+    v_total:=v_total+1;
     PERFORM pg_temp.act_as(v_instructor);
     PERFORM public.start_ordered_meeting(v_mid,v_pin);
     PERFORM public.record_meeting(v_mid,120,'two-meeting four-hour regression');

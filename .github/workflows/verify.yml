@@ -154,6 +154,8 @@ jobs:
       - name: Verify sandbox financial CSV formula injection safety
         run: node scripts/test-sandbox-finance-csv.mjs
       - run: pnpm build
+      - name: Verify private Business payment receipt uploads
+        run: node scripts/test-business-receipt-upload.mjs
       - name: Run isolated database migrations and SQL assertions
         # Avoid Ubuntu apt mirrors: their DNS can fail on hosted runners.
         # The official PostgreSQL image has all required server/client tools.
