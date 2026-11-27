@@ -7,7 +7,10 @@ export function KiteLevelMedal({
   compact = false,
 }: {level:LessonLevel;assessed?:boolean;compact?:boolean}) {
   const badge = KITE_LEVEL_BADGES[level];
-  const description = `${badge.label} · ${badge.metal} · ${assessed ? 'Avaliado por instrutor' : 'Nível informado'}`;
+  const description = [badge.label, badge.metal, assessed ? 'Avaliado por instrutor' : 'Nível informado'].filter(Boolean).join(' · ');
+
+  // Iniciantes mantêm o nível, sem medalha. Prata e Ouro continuam disponíveis.
+  if (compact && !badge.metal) return null;
 
   if (compact) {
     const colors: Record<LessonLevel, { ribbon: string; disc: string; light: string; rim: string; star: string }> = {
@@ -49,8 +52,8 @@ export function KiteLevelMedal({
   return (
     <span className={'inline-flex items-center gap-1.5 rounded-full border px-2.5 py-1 text-[11px] font-bold ' + badge.className}
       title={assessed ? 'Nível avaliado por instrutor após aula' : 'Nível informado pelo aluno'}>
-      <span aria-hidden="true">✦</span>
-      {badge.label} · {badge.metal}
+      {badge.metal ? <span aria-hidden="true">✦</span> : null}
+      {badge.label}{badge.metal ? ` · ${badge.metal}` : ''}
       {assessed ? <span className="text-[10px]" aria-label="Avaliado por instrutor">✓</span> : null}
     </span>
   );

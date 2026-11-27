@@ -69,6 +69,9 @@ echo "PASS: ${RACE_ROUNDS:-12} repeated concurrent booking rounds, never two acc
 # sobrepostas ao mesmo tempo. Roda por último: consome dias livres do instrutor de fixture.
 PG_TEST_SOCKET="$DATA" PG_TEST_PORT="$PORT" bash "$ROOT/scripts/test-p0-booking-concurrency.sh"
 
+# #92: um instrutor só com a linha travada na hora da solicitação (oferta nasce depois, sem esperar, sem duplicar).
+PG_TEST_SOCKET="$DATA" PG_TEST_PORT="$PORT" bash "$ROOT/scripts/test-single-instructor-request-lock.sh"
+
 # P2-1: pagar uma reserva e criar outra com o mesmo instrutor (mesmo aluno) ao mesmo tempo não pode dar deadlock.
 PG_TEST_SOCKET="$DATA" PG_TEST_PORT="$PORT" bash "$ROOT/scripts/test-payment-lock-order.sh"
 

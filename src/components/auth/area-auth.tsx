@@ -100,7 +100,7 @@ export function AreaLogin({
       {info.signup ? (
         <p className="mt-5 text-center text-[14px] text-label">
           Ainda não tem conta?{' '}
-          <Link href={`/${area}/criar-conta`} className="font-semibold text-brand">
+          <Link href={`/${area}/criar-conta`} className="inline-flex min-h-11 items-center px-1 font-semibold text-brand">
             Criar conta
           </Link>
         </p>
@@ -131,7 +131,7 @@ export function AreaSignup({ area }: { area: Exclude<AppArea, 'admin'> }) {
             hint="Autoavaliação inicial. Seu instrutor poderá reavaliar após a aula.">
             <select name="kiteLevel" required defaultValue="" className={inputClass}>
               <option value="" disabled>Selecione seu nível</option>
-              <option value="first_time">Iniciante · Bronze</option>
+              <option value="first_time">Iniciante</option>
               <option value="returning">Intermediário · Prata</option>
               <option value="improving">Avançado · Ouro</option>
             </select>
@@ -146,7 +146,7 @@ export function AreaSignup({ area }: { area: Exclude<AppArea, 'admin'> }) {
       </ActionForm>
       <p className="mt-5 text-center text-[14px] text-label">
         Já tem conta?{' '}
-        <Link href={`/${area}/entrar`} className="font-semibold text-brand">
+        <Link href={`/${area}/entrar`} className="inline-flex min-h-11 items-center px-1 font-semibold text-brand">
           Entrar
         </Link>
       </p>

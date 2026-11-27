@@ -39,7 +39,7 @@ export async function PasswordReset({ area }: { area: AppArea }) {
   return <RecoveryFrame area={area} title="Nova senha">
     {error || !data.user ? <>
       <Note tone="warning">Abra o link recebido por e-mail antes de escolher sua nova senha.</Note>
-      <Link href={`/${area}/recuperar`} className="mt-4 inline-block text-[14px] text-brand underline">Solicitar novo link</Link>
+      <Link href={`/${area}/recuperar`} className="mt-2 inline-flex min-h-11 items-center text-[14px] text-brand underline">Solicitar novo link</Link>
     </> : <ActionForm action={setRecoveredPassword} submitLabel="Salvar nova senha" className="grid gap-4" wideSubmit>
       <input type="hidden" name="area" value={area} />
       <Field label="Nova senha" hint="Pelo menos 8 caracteres."><input name="password" type="password" required minLength={8} maxLength={200} autoComplete="new-password" className={inputClass} /></Field>

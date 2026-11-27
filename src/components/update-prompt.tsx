@@ -134,7 +134,7 @@ export function UpdatePrompt() {
         <button
           type="button"
           onClick={acknowledge}
-          className="btn-primary press rounded-full px-4 py-2 !text-[13px] font-bold text-on-brand"
+          className="btn-primary press min-h-11 rounded-full px-4 py-2 !text-[13px] font-bold text-on-brand"
         >
           {needsReload ? 'Atualizar' : 'Entendi'}
         </button>
@@ -142,7 +142,7 @@ export function UpdatePrompt() {
           type="button"
           onClick={dismiss}
           aria-label="Agora não"
-          className="press grid h-8 w-8 shrink-0 place-items-center rounded-full text-muted"
+          className="press grid h-11 w-11 shrink-0 place-items-center rounded-full text-muted"
         >
           <Icon name="plus" className="!h-5 !w-5 rotate-45" />
         </button>
