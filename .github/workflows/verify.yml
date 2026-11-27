@@ -169,6 +169,8 @@ jobs:
         run: node scripts/test-sandbox-webhook-inbox.mjs
       - name: Verify sandbox financial CSV formula injection safety
         run: node scripts/test-sandbox-finance-csv.mjs
+      - name: Presence fixture clock remains valid across Fortaleza midnight
+        run: node scripts/test-presence-fixture-midnight.mjs
       - run: pnpm build
       - name: Run isolated database migrations and SQL assertions
         # Avoid Ubuntu apt mirrors: their DNS can fail on hosted runners.
