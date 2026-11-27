@@ -24,6 +24,8 @@ jobs:
       - run: pnpm typecheck
       - run: pnpm lint
       - run: node scripts/test-pwa-offline.mjs
+      - name: Test safe Portuguese weak-password guidance
+        run: node --experimental-strip-types scripts/test-auth-weak-password.mjs
       - name: Test passive push receiver privacy and navigation
         run: node scripts/test-pwa-push.mjs
       - name: Test read-only Storage probe safeguards
