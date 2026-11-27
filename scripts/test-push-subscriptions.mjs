@@ -71,17 +71,19 @@ assert.equal(h.checks(), 1);
 
 const componentSource = compile('src/components/push-subscription-controls.tsx');
 function controls({ enabled = 'true', permission = 'granted', existing = false, unsubscribe = true,
-  registerError = null, revokeError = null, key = p256dh, unsupported = false, permissionWork } = {}) {
+  registerError = null, revokeError = null, key = p256dh, unsupported = false, permissionWork, readyWork } = {}) {
   const calls = [];
   const states = [];
   let stateIndex = 0;
+  const timers = new Map();
+  let nextTimer = 0;
   const previous = { endpoint: valid.endpoint, async unsubscribe() { calls.push('previous.unsubscribe'); return unsubscribe; } };
   const created = { endpoint: valid.endpoint, toJSON: () => valid, async unsubscribe() { calls.push('created.unsubscribe'); return true; } };
   const manager = {
     async getSubscription() { calls.push('getSubscription'); return existing ? previous : null; },
     async subscribe(options) { assert.equal(options.userVisibleOnly, true); assert.equal(new Uint8Array(options.applicationServerKey).length, 65); calls.push('subscribe'); return created; },
   };
-  const navigator = unsupported ? {} : { serviceWorker: { ready: Promise.resolve({ pushManager: manager }) } };
+  const navigator = unsupported ? {} : { serviceWorker: { ready: readyWork ?? Promise.resolve({ pushManager: manager }) } };
   const node = (type, props) => ({ type, props });
   const api = load(componentSource, {
     react: { useRef: () => ({ current: false }), useState(initial) { const i = stateIndex++; states[i] = initial; return [initial, value => { states[i] = value; }]; } },
@@ -91,7 +93,9 @@ function controls({ enabled = 'true', permission = 'granted', existing = false, 
       async registerPushSubscription(input) { assert.deepEqual(input, valid); calls.push('register'); return registerError ? { error: registerError } : { ok: 'activated' }; },
       async revokePushSubscription(endpoint) { assert.equal(endpoint, valid.endpoint); calls.push('revoke'); return revokeError ? { error: revokeError } : { ok: 'revoked' }; },
     },
-  }, { navigator, window: unsupported ? {} : { PushManager: function () {}, Notification: {} },
+  }, { navigator, window: unsupported ? {} : { PushManager: function () {}, Notification: {},
+    setTimeout(callback, ms) { assert.equal(ms, 8000); const id = ++nextTimer; timers.set(id, callback); return id; },
+    clearTimeout(id) { timers.delete(id); } },
     Notification: { requestPermission() { calls.push('permission'); return permissionWork ?? Promise.resolve(permission); } },
     process: { env: { NEXT_PUBLIC_VENTO_PUSH_SUBSCRIPTIONS_ENABLED: enabled, NEXT_PUBLIC_VENTO_PUSH_VAPID_PUBLIC_KEY: key } },
   });
@@ -99,7 +103,8 @@ function controls({ enabled = 'true', permission = 'granted', existing = false, 
   const buttons = [];
   const walk = item => { if (!item || typeof item !== 'object') return; if (item.type === 'button') buttons.push(item); for (const child of [item.props?.children].flat()) walk(child); };
   walk(tree);
-  return { tree, calls, states, activate: () => buttons[0].props.onClick(), deactivate: () => buttons[1].props.onClick() };
+  return { tree, calls, states, timers, expireReadiness() { assert.equal(timers.size, 1); const [id, callback] = [...timers.entries()][0]; timers.delete(id); callback(); },
+    activate: () => buttons[0].props.onClick(), deactivate: () => buttons[1].props.onClick() };
 }
 let c = controls({ enabled: 'false' });
 assert.equal(c.tree, null); assert.deepEqual(c.calls, [], 'disabled feature has no permission/API side effects');
@@ -108,6 +113,7 @@ assert.deepEqual(c.calls, [], 'rendering never requests consent or creates a sub
 await c.activate();
 assert.deepEqual(c.calls, ['permission', 'getSubscription', 'subscribe', 'register']);
 assert.equal(c.states[1], 'activated');
+assert.equal(c.timers.size, 0, 'resolved readiness clears its timeout');
 c = controls({ permission: 'denied' }); await c.activate(); assert.deepEqual(c.calls, ['permission']);
 c = controls({ key: '' }); await c.activate(); assert.deepEqual(c.calls, []);
 c = controls({ unsupported: true }); await c.activate(); assert.deepEqual(c.calls, []);
@@ -128,6 +134,23 @@ c = controls({ existing: true }); await c.deactivate();
 assert.deepEqual(c.calls, ['getSubscription', 'revoke', 'previous.unsubscribe'], 'revoke in database before browser unsubscribe');
 c = controls({ existing: true, revokeError: 'revocation refused' }); await c.deactivate();
 assert.deepEqual(c.calls, ['getSubscription', 'revoke']); assert.equal(c.states[1], 'revocation refused');
+c = controls({ readyWork: new Promise(() => {}) });
+let stalled = c.activate(); await new Promise(setImmediate); c.expireReadiness(); await stalled;
+assert.equal(c.states[0], false, 'readiness timeout releases the disabled buttons');
+assert.ok(c.states[1].includes('Não foi possível'));
+stalled = c.activate(); await new Promise(setImmediate); c.expireReadiness(); await stalled;
+assert.equal(c.calls.filter(call => call === 'permission').length, 2, 'readiness timeout also releases the in-flight guard');
+assert.equal(c.calls.includes('subscribe'), false, 'late/unavailable readiness never creates a subscription');
+c = controls({ readyWork: new Promise(() => {}) });
+stalled = c.deactivate(); c.expireReadiness(); await stalled;
+assert.equal(c.states[0], false, 'disable readiness also has bounded waiting');
+let resolveLateWorker;
+c = controls({ readyWork: new Promise(resolve => { resolveLateWorker = resolve; }) });
+stalled = c.activate(); await new Promise(setImmediate); c.expireReadiness(); await stalled;
+resolveLateWorker({ pushManager: { async getSubscription() { throw new Error('late readiness must not continue activation'); } } });
+await new Promise(setImmediate);
+assert.equal(c.calls.includes('subscribe'), false);
+assert.equal(c.timers.size, 0);
 
 // Exercise the actual shared signOut action: current-session revocation precedes
 // auth signout, while a missing database migration cannot trap the user inside.

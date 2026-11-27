@@ -4,6 +4,15 @@ import { useRef, useState } from 'react';
 import { registerPushSubscription, revokePushSubscription } from '@/app/actions/push-subscriptions';
 import { decodePushKey } from '@/lib/push-subscription';
 
+function readyPushWorker(): Promise<ServiceWorkerRegistration> {
+  const pending = navigator.serviceWorker.ready;
+  return new Promise((resolve, reject) => {
+    const timer = window.setTimeout(() => reject(new Error('Worker unavailable')), 8_000);
+    pending.then(registration => { window.clearTimeout(timer); resolve(registration); },
+      error => { window.clearTimeout(timer); reject(error); });
+  });
+}
+
 export function PushSubscriptionControls() {
   const [busy, setBusy] = useState(false);
   const [message, setMessage] = useState('');
@@ -23,7 +32,7 @@ export function PushSubscriptionControls() {
       if (!key || key[0] !== 4) { setMessage('Os avisos neste dispositivo ainda não estão disponíveis.'); return; }
       // This call is reached only by the explicit activation button.
       if (await Notification.requestPermission() !== 'granted') { setMessage('Você pode permitir os avisos nas configurações do navegador.'); return; }
-      const registration = await navigator.serviceWorker.ready;
+      const registration = await readyPushWorker();
       const previous = await registration.pushManager.getSubscription();
       // Never silently reuse a browser endpoint that may belong to another account.
       if (previous && !await previous.unsubscribe()) { setMessage('Não foi possível ativar os avisos. Tente novamente.'); return; }
@@ -43,7 +52,7 @@ export function PushSubscriptionControls() {
     setBusy(true);
     try {
       if (!('serviceWorker' in navigator) || !('PushManager' in window)) { setMessage('Não há avisos ativos neste navegador.'); return; }
-      const subscription = await (await navigator.serviceWorker.ready).pushManager.getSubscription();
+      const subscription = await (await readyPushWorker()).pushManager.getSubscription();
       if (!subscription) { setMessage('Não há avisos ativos neste navegador.'); return; }
       const result = await revokePushSubscription(subscription.endpoint);
       if (result.error) { setMessage(result.error); return; }

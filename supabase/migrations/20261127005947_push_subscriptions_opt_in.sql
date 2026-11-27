@@ -51,6 +51,7 @@ create table public.push_subscriptions (
   )
 );
 create index push_subscriptions_owner_session on public.push_subscriptions(owner_id, session_id);
+create index push_subscriptions_session on public.push_subscriptions(session_id);
 alter table public.push_subscriptions enable row level security;
 create policy push_subscription_owner_read on public.push_subscriptions for select to authenticated
 using ((select auth.uid()) = owner_id);
