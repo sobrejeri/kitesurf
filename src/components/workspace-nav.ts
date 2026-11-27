@@ -1,4 +1,5 @@
 import type { WorkspaceNavItem } from './shells';
+import {businessCoreEnabled} from '../lib/business/core-feature.ts';
 
 /**
  * Every page of the workspaces (Instrutor, Admin, Afiliado), in menu order. One list feeds the
@@ -7,6 +8,7 @@ import type { WorkspaceNavItem } from './shells';
  * presentation only: each route still checks the role on the server.
  */
 export const INSTRUCTOR_NAV: readonly WorkspaceNavItem[] = [
+  ...(businessCoreEnabled()?[{group:'Trabalho',label:'Empresas',href:'/instrutor/empresa',icon:'users' as const}]:[]),
   { group: 'Trabalho', label: 'Meu dia', href: '/instrutor/hoje', icon: 'sun', tab: true },
   { group: 'Trabalho', label: 'Receber solicitação', href: '/instrutor/solicitacao', icon: 'bell' },
   { group: 'Trabalho', label: 'Realizar e registrar aula', href: '/instrutor/aula', icon: 'kite', tab: true },
@@ -33,6 +35,7 @@ export const ADMIN_NAV: readonly WorkspaceNavItem[] = [
   { group: 'Operação', label: 'Indicadores', href: '/admin/indicadores', icon: 'chart' },
   { group: 'Operação', label: 'Atendimento', href: '/admin/atendimento', icon: 'chat' },
   { group: 'Operação', label: 'Avisos da operação', href: '/admin/avisos', icon: 'bell' },
+  ...(businessCoreEnabled()?[{group:'Pessoas',label:'Empresas',href:'/admin/empresas',icon:'users' as const}]:[]),
   { group: 'Pessoas', label: 'Instrutores', href: '/admin/instrutores', icon: 'users', tab: true },
   { group: 'Pessoas', label: 'Validar documentos', href: '/admin/documentos', icon: 'file' },
   { group: 'Pessoas', label: 'Afiliados', href: '/admin/afiliados', icon: 'link' },
@@ -55,6 +58,7 @@ export const AFFILIATE_NAV: readonly WorkspaceNavItem[] = [
   { group: 'Indicações', label: 'Início', href: '/afiliado/inicio', icon: 'home', tab: true },
   { group: 'Indicações', label: 'Divulgar', href: '/afiliado/divulgacao', icon: 'link', tab: true },
   { group: 'Indicações', label: 'Minhas indicações', href: '/afiliado/indicacoes', icon: 'chart', tab: true },
+  ...(businessCoreEnabled()?[{group:'Conta',label:'Empresas',href:'/afiliado/empresa',icon:'users' as const}]:[]),
   { group: 'Conta', label: 'Meu perfil', href: '/afiliado/perfil', icon: 'user', tab: true },
   { group: 'Conta', label: 'Central do afiliado', href: '/afiliado/central', icon: 'grid' },
 ];

@@ -54,6 +54,10 @@ const pages = readdirSync('src/app/afiliado/(app)', { withFileTypes: true })
   .filter((entry) => entry.isDirectory()).map((entry) => `/afiliado/${entry.name}`);
 for (const page of pages) {
   if (page === '/afiliado/cadastro') continue; // first-time registration, reached by redirect
+  if (page === '/afiliado/empresa' && process.env.NEXT_PUBLIC_VENTO_BUSINESS_CORE_ENABLED !== 'true') {
+    assert.ok(!hrefs.includes(page), 'Business navigation stays hidden while its flag is off');
+    continue;
+  }
   assert.ok(hrefs.includes(page), `${page} is not reachable from the affiliate menu`);
 }
 const layout = read('src/app/afiliado/(app)/layout.tsx');
