@@ -24,6 +24,8 @@ jobs:
       - run: pnpm typecheck
       - run: pnpm lint
       - run: node scripts/test-pwa-offline.mjs
+      - name: Test push subscription consent, ownership inputs, revocation and logout
+        run: node scripts/test-push-subscriptions.mjs
       - name: Test passive push receiver privacy and navigation
         run: node scripts/test-pwa-push.mjs
       - name: Test read-only Storage probe safeguards
