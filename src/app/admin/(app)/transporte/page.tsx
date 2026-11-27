@@ -2,6 +2,7 @@ import type { Metadata } from 'next';
 import Link from 'next/link';
 
 import { AdminTitle, Metric, Panel, PhotoTile } from '@/components/admin/kit';
+import { AdminSupportVehiclePanel } from '@/components/admin/support-vehicle-panel';
 import { BOOKING_STATUS } from '@/components/admin/labels';
 import { Badge, EmptyState, Note } from '@/components/ui';
 import { requireRole } from '@/lib/auth';
@@ -87,6 +88,7 @@ export default async function TransportPage() {
           )}
         </Panel>
       </div>
+      <AdminSupportVehiclePanel/>
       <Note className="mt-4">
         O valor do transporte vai inteiro para o instrutor, sem comissão da plataforma nem do afiliado. A operação não controla agenda do veículo.
       </Note>

@@ -16,4 +16,12 @@ Antes de ligar a flag em um build: revisar a migration `20261127010004_instructo
 
 O teste SQL transacional cobre criação/atualização sem duplicata, validação, leitura cruzada, escrita direta negada, papéis não autorizados, identidade ausente, auditoria e preservação integral de instrutores/preços/reservas. O teste JS executa a ação e o painel reais com dependências simuladas, incluindo flag desligada, campos forjados e schema ausente.
 
-Ainda pendente para homologação #99: aplicação e conferência do schema real, cadastro autenticado no navegador com a flag habilitada em ambiente autorizado, capacidade no fluxo completo de contratação conforme regra a definir e instruções de embarque compartilhadas. Os testes simulados não comprovam esses cenários nem disponibilidade física do veículo.
+## Consulta operacional no Admin
+
+Admin → Transporte inclui um painel somente de leitura, com a mesma flag desligada por padrão. Quando habilitado em um build autorizado, exige Admin com segundo fator antes de criar o cliente Supabase RLS. Consulta apenas vínculo com o instrutor, tipo, identificação descritiva e capacidade. Não seleciona placa, documentos, contatos, nomes ou outros dados pessoais do motorista; o link abre o perfil administrativo já existente.
+
+O painel lista até 500 cadastros e avisa quando atinge esse limite. Também mostra cadastros cujo dono ainda não marcou a opção legada de oferecer transporte: cadastro descritivo e elegibilidade continuam independentes. Métricas, lista de instrutores elegíveis, tarifa global, reservas e agenda já existentes permanecem calculadas como antes. Capacidade é metadado para consulta; não equivale a contagem de vagas, bloqueio de assentos ou uma reserva de veículo.
+
+Flag desligada não faz consulta adicional. Erro de schema/permissão/conexão mostra mensagem segura sem detalhes internos; os controles e informações antigos de transporte continuam disponíveis. Nenhuma grant, policy ou migration nova foi adicionada para esta leitura.
+
+Ainda pendente para homologação #99: aplicação e conferência do schema real, cadastro e consulta Admin autenticados no navegador com a flag habilitada em ambiente autorizado, capacidade no fluxo completo de contratação conforme regra a definir e instruções de embarque compartilhadas. Os testes simulados não comprovam esses cenários nem disponibilidade física do veículo.
