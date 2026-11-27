@@ -6,7 +6,7 @@ CREATE TEMP TABLE request_guard_fixture (
 CREATE TRIGGER fixture_guard BEFORE INSERT ON request_guard_fixture
 FOR EACH ROW EXECUTE FUNCTION public.guard_request_input();
 DO $$
-DECLARE student uuid; lvl public.lesson_level; bad jsonb; rejected boolean;
+DECLARE student uuid; lvl public.lesson_level; bad jsonb; rejected boolean; candidate public.lesson_level; expected boolean;
 BEGIN
   SELECT id, coalesce(assessed_kite_level,self_reported_kite_level)
   INTO student,lvl FROM public.profiles WHERE role='student'
@@ -27,5 +27,24 @@ BEGIN
   EXCEPTION WHEN SQLSTATE '22023' THEN rejected:=true;
   END;
   IF NOT rejected THEN RAISE EXCEPTION 'Invalid language accepted'; END IF;
-END $$;
+  -- Exhaustively check the policy for each profile level present in the restore.
+  FOR student,lvl IN SELECT DISTINCT ON (coalesce(assessed_kite_level,self_reported_kite_level))
+    id,coalesce(assessed_kite_level,self_reported_kite_level)
+    FROM public.profiles WHERE role='student'
+    AND coalesce(assessed_kite_level,self_reported_kite_level) IS NOT NULL
+  LOOP
+    FOREACH candidate IN ARRAY enum_range(NULL::public.lesson_level) LOOP
+      expected := (lvl='returning' AND candidate='first_time')
+        OR (lvl='improving' AND candidate<>'improving');
+      rejected:=false;
+      BEGIN
+        INSERT INTO request_guard_fixture VALUES(student,candidate,'Português','[{"starts_at":"2030-01-01T09:00:00-03:00","hours":2}]');
+      EXCEPTION WHEN SQLSTATE '22023' THEN rejected:=true;
+      END;
+      IF rejected IS DISTINCT FROM expected THEN
+        RAISE EXCEPTION 'Level policy mismatch: % -> %',lvl,candidate;
+      END IF;
+    END LOOP;
+  END LOOP;
+END $;
 ROLLBACK;
