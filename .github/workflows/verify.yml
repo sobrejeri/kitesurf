@@ -184,8 +184,8 @@ jobs:
           npm ci --prefix scripts/push-dispatcher --ignore-scripts --no-audit --no-fund
           node scripts/test-push-dispatcher.mjs
       - run: pnpm build
-      - name: Verify Pagar.me test checkout contract without network
-        run: node scripts/test-pagarme-test-checkout.mjs
+      - name: Verify Pagar.me test API orders without network
+        run: node scripts/test-pagarme-test-order.mjs
       - name: Verify test checkout reconciliation without network
         run: node scripts/test-pagarme-test-reconciliation.mjs
       - name: Run isolated database migrations and SQL assertions

@@ -10,13 +10,13 @@ export function reconcilePagarmeTestObservation(attempt, observation) {
   if (!attempt || attempt.environment !== 'test' || !observation || observation.environment !== 'test') {
     throw new Error('Test environment required');
   }
-  if (typeof attempt.bookingId !== 'string' || typeof attempt.linkId !== 'string'
+  if (typeof attempt.bookingId !== 'string' || typeof attempt.orderId !== 'string'
       || !Number.isSafeInteger(attempt.amountCents) || attempt.amountCents < 1
-      || attempt.payment?.paymentId !== attempt.linkId
-      || attempt.payment?.method !== 'card' || attempt.payment?.payoutStatus !== 'not_started') {
+      || attempt.payment?.paymentId !== attempt.orderId
+      || !['card', 'pix'].includes(attempt.payment?.method) || attempt.payment?.payoutStatus !== 'not_started') {
     throw new Error('Invalid test attempt');
   }
-  if (observation.bookingId !== attempt.bookingId || observation.linkId !== attempt.linkId
+  if (observation.bookingId !== attempt.bookingId || observation.orderId !== attempt.orderId
       || observation.amountCents !== attempt.amountCents || observation.currency !== 'BRL') {
     throw new Error('Payment does not match the test attempt');
   }
@@ -27,7 +27,7 @@ export function reconcilePagarmeTestObservation(attempt, observation) {
   const previous = events.find((e) => e.eventId === observation.eventId);
   if (previous && previous.status !== observation.status) throw new Error('Event identifier collision');
   const payment = applySandboxPaymentEvent(attempt.payment, {
-    eventId: observation.eventId, paymentId: observation.linkId, status: observation.status,
+    eventId: observation.eventId, paymentId: observation.orderId, status: observation.status,
   });
   return { ...attempt, payment, events: previous ? [...events] : [...events, { eventId: observation.eventId, status: observation.status }] };
 }
