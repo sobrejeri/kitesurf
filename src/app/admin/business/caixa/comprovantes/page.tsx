@@ -4,8 +4,8 @@ import { PrintButton } from '@/components/business/print-button';
 import { DemoBanner, PageHead } from '@/components/business/kit';
 import { Note } from '@/components/ui';
 import { PRINT_PURPOSES, type PrintPurpose } from '@/lib/business/demo';
-import { thermalColumns, thermalReceipt, type ThermalWidth } from '@/lib/business/caixa';
-import { sampleReceipt } from '@/lib/business/receipts';
+import { thermalColumns, type ThermalWidth } from '@/lib/business/caixa';
+import { sampleThermalReceipt } from '@/lib/business/receipts';
 
 export const metadata = { title: 'Comprovantes térmicos' };
 
@@ -15,8 +15,7 @@ export default async function ThermalPreviewPage({ searchParams }: { searchParam
   const kind: PrintPurpose = PRINT_PURPOSES.some((p) => p.id === one(params.tipo)) ? (one(params.tipo) as PrintPurpose) : 'closing';
   const width: ThermalWidth = one(params.largura) === '58' ? 58 : 80;
   const caixa = /^cs-\d$/.test(one(params.caixa)) ? one(params.caixa) : 'cs-2';
-  const r = sampleReceipt(kind, caixa);
-  const text = thermalReceipt(r.title, r.rows, r.note, width);
+  const text = sampleThermalReceipt(kind, caixa, width);
   const href = (k: PrintPurpose, w: ThermalWidth) => `/admin/business/caixa/comprovantes?tipo=${k}&largura=${w}&caixa=${caixa}`;
   return (
     <>

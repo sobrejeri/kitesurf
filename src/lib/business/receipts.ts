@@ -1,9 +1,15 @@
-import { KIND_LABEL, METHOD_LABEL, closingSummary, sessionById } from './caixa.ts';
+import { KIND_LABEL, METHOD_LABEL, closingSummary, sessionById, thermalReceipt, type ThermalWidth } from './caixa.ts';
 import { CASH_MOVEMENTS, PRINT_PURPOSES, UNITS, type PrintPurpose } from './demo.ts';
 import { dayLabel } from './rules.ts';
 
 const money = (c: number) => `R$ ${Math.trunc(c / 100)},${String(c % 100).padStart(2, '0')}`;
 export interface ReceiptData { title: string; rows: [string, string][]; note: string }
+
+/** Make the demonstration unmistakable even after the paper is printed. */
+export function sampleThermalReceipt(kind: PrintPurpose, sessionId: string, width: ThermalWidth): string {
+  const receipt = sampleReceipt(kind, sessionId);
+  return thermalReceipt(`DEMONSTRAÇÃO - ${receipt.title}`, receipt.rows, receipt.note, width);
+}
 
 /** Example content for each thermal receipt, from the demonstration data. */
 export function sampleReceipt(kind: PrintPurpose, sessionId = 'cs-2'): ReceiptData {
