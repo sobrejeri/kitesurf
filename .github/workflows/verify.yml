@@ -172,6 +172,8 @@ jobs:
       - name: Presence fixture clock remains valid across Fortaleza midnight
         run: node scripts/test-presence-fixture-midnight.mjs
       - run: pnpm build
+      - name: Verify public storefront submission concurrency
+        run: node --experimental-strip-types scripts/test-public-store-submit.mjs
       - name: Run isolated database migrations and SQL assertions
         # Avoid Ubuntu apt mirrors: their DNS can fail on hosted runners.
         # The official PostgreSQL image has all required server/client tools.
