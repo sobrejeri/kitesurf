@@ -18,14 +18,21 @@ export function InstructorOfferPoller() {
 
   useEffect(() => {
     let active = true;
+    let cooldown: number | undefined;
     const poll = () => {
       if (!active || busy.current || document.visibilityState !== 'visible') return;
       busy.current = true;
-      try { router.refresh(); setLastCheck(new Date()); } finally { window.setTimeout(() => { busy.current = false; }, 1500); }
+      try { router.refresh(); setLastCheck(new Date()); } finally { cooldown = window.setTimeout(() => { busy.current = false; cooldown = undefined; }, 1500); }
     };
     document.addEventListener('visibilitychange', poll);
     const interval = window.setInterval(poll, OFFER_POLL_MS);
-    return () => { active = false; document.removeEventListener('visibilitychange', poll); window.clearInterval(interval); };
+    return () => {
+      active = false;
+      document.removeEventListener('visibilitychange', poll);
+      window.clearInterval(interval);
+      if (cooldown !== undefined) window.clearTimeout(cooldown);
+      busy.current = false;
+    };
   }, [router]);
 
   return (
@@ -35,3 +42,4 @@ export function InstructorOfferPoller() {
     </p>
   );
 }
+
