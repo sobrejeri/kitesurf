@@ -19,12 +19,12 @@
 set -euo pipefail
 : "${PG_TEST_SOCKET:?}"; : "${PG_TEST_PORT:?}"
 PSQL=(psql -X -h "$PG_TEST_SOCKET" -p "$PG_TEST_PORT" -U postgres -d postgres -v ON_ERROR_STOP=1 -Atq)
-ONLY="${ONLY:-ABCDEFGH}"
+ONLY="${ONLY:-ABCDEFGHI}"
 CH="${CHANGE_BASE:-20}"   # dia dos cenários F/G: o reagendamento exige a nova data em até 90 dias
 OFF="${OFFSET_BASE:-120}"   # dia inicial dos cenários (cada execução usa dias próprios: as reservas são confirmadas no banco descartável e não se repetem)
 A1=00000000-0000-0000-0000-0000000000a1; B1=00000000-0000-0000-0000-0000000000b1
 JERI="$("${PSQL[@]}" -c "select id from public.beaches where slug='jeri'")"
-out="$(mktemp -d)"; trap 'rm -rf "$out"' EXIT
+out="$(mktemp -d)"; trap '"${PSQL[@]}" -c "drop trigger if exists zz_schedule_confirmation_pause on public.bookings; drop function if exists public.zz_schedule_confirmation_pause()" >/dev/null 2>&1 || true; rm -rf "$out"' EXIT
 deadlocks() { "${PSQL[@]}" -c "select deadlocks from pg_stat_database where datname='postgres'"; }
 dl0="$(deadlocks)"
 as() { # as <uid> <sql...>: uma transação como esse usuário autenticado
@@ -180,6 +180,31 @@ if [[ "$ONLY" == *H* ]]; then
   wait_rc conc-h1; wait_rc conc-h2
   [ "$(cat "$out/conc-h2.rc")" = 0 ] || fail "H: bloqueio livre deveria concluir depois do lock: $(cat "$out/conc-h2.err")"
   echo "PASS H: bloqueio espera FOR UPDATE explicito; FK compativel nao mascara a prova"
+fi
+
+# I) Validation confirmation already owns the booking. The edit must reject from
+# a plain MVCC read, without waiting on that booking and reversing lock order.
+if [[ "$ONLY" == *I* ]]; then
+  S="$(loc $((OFF+8)) '10:00')"
+  BK="$("${PSQL[@]}" -c "$(as $B1 "select public.create_booking('$JERI','first_time','Português','[{\"starts_at\":\"$S\",\"hours\":1}]'::jsonb);")" | tail -1)"
+  [[ "$BK" =~ ^[0-9a-f-]{36}$ ]] || fail "I: pending fixture missing"
+  wd="$("${PSQL[@]}" -c "select extract(dow from '$S'::timestamptz at time zone 'America/Fortaleza')::int")"
+  short="$(echo "$days" | sed "s/{\"weekday\":$wd,\"opens\":\"08:00\",\"closes\":\"20:00\"}/{\"weekday\":$wd,\"opens\":\"08:00\",\"closes\":\"09:00\"}/")"
+  before="$("${PSQL[@]}" -c "select md5(jsonb_agg(to_jsonb(h) order by weekday)::text) from public.instructor_weekly_hours h where instructor_id='$A1'")"
+  "${PSQL[@]}" -c 'create function public.zz_schedule_confirmation_pause() returns trigger language plpgsql as $$ begin perform pg_sleep(4); return new; end $$;'
+  "${PSQL[@]}" -c "create trigger zz_schedule_confirmation_pause after update of status on public.bookings for each row when (new.id='$BK'::uuid and new.status='confirmed' and old.status='awaiting_payment') execute function public.zz_schedule_confirmation_pause()"
+  bg conc-i1 "$(as $B1 "select public.confirm_validation_lesson('$BK');")"
+  wait_state "I: validation owns booking before queue update" "$(sleeping conc-i1)"
+  bg conc-i2 "$(as $A1 "select public.save_my_weekly_schedule('$short'::jsonb,0);")"
+  wait_rc conc-i2
+  [ "$("${PSQL[@]}" -c "$(sleeping conc-i1)")" = t ] || fail "I: edit waited on booking while holding instructor"
+  grep -q "pending reservation" "$out/conc-i2.err" || fail "I: schedule edit must reject pending conflict: $(cat "$out/conc-i2.err")"
+  wait_rc conc-i1
+  [ "$(cat "$out/conc-i1.rc")" = 0 ] || fail "I: validation confirmation failed: $(cat "$out/conc-i1.err")"
+  [ "$("${PSQL[@]}" -c "select status::text from public.bookings where id='$BK'")" = confirmed ] || fail "I: confirmation not preserved"
+  [ "$("${PSQL[@]}" -c "select md5(jsonb_agg(to_jsonb(h) order by weekday)::text) from public.instructor_weekly_hours h where instructor_id='$A1'")" = "$before" ] || fail "I: schedule changed after rejection"
+  "${PSQL[@]}" -c 'drop trigger zz_schedule_confirmation_pause on public.bookings; drop function public.zz_schedule_confirmation_pause()'
+  echo "PASS I: edit rejects without booking lock; validation holding booking completes; no deadlock or schedule change"
 fi
 
 [ "$(deadlocks)" = "$dl0" ] || fail "deadlock detectado"

@@ -120,8 +120,9 @@ language plpgsql security definer set search_path = '' as $$
 declare o record; h record; v_advanced integer := 0; v_conflicts integer; v_buffer integer;
 begin
   -- Decisão do responsável (26/11): recusar a mudança, nunca cancelar uma retenção ativa.
-  -- O chamador já trava o instrutor. Trave/revalide a reserva antes de qualquer avanço de oferta;
-  -- uma recusa desfaz a edição de agenda inteira na transação da RPC.
+  -- O chamador já trava o instrutor. A leitura não trava a reserva: confirmação de validação
+  -- trava reserva antes de atualizar o instrutor. Só recusamos, sem mutar a retenção;
+  -- uma recusa desfaz a edição inteira antes de qualquer avanço de oferta.
   select coalesce(buffer_minutes,0) into v_buffer from public.instructor_schedule_settings where instructor_id=p_id;
   v_buffer:=coalesce(v_buffer,0);
   for h in select b.id from public.bookings b
@@ -136,7 +137,7 @@ begin
                                  and tstzrange(other.starts_at-make_interval(mins=>v_buffer),
                                    other.starts_at+make_interval(mins=>other.minutes+v_buffer),'[)')
                                    && tstzrange(m.starts_at,m.starts_at+make_interval(mins=>m.minutes),'[)'))))
-            order by b.id for update of b
+            order by b.id
   loop
     raise exception 'A pending reservation conflicts with the updated schedule' using errcode = '55000';
   end loop;
