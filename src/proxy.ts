@@ -1,7 +1,7 @@
 import { createServerClient } from '@supabase/ssr';
 import { NextResponse, type NextRequest } from 'next/server';
 
-import { AREA_HEADER, areaFromPath, loginPath, sessionCookieName } from '@/lib/app-areas';
+import { AREA_HEADER, areaFromParam, areaFromPath, loginPath, sessionCookieName } from '@/lib/app-areas';
 import { supabaseConfig } from '@/lib/env';
 
 /**
@@ -24,7 +24,11 @@ function isPublic(pathname: string): boolean {
 
 export async function proxy(request: NextRequest) {
   const pathname = request.nextUrl.pathname;
-  const area = areaFromPath(pathname);
+  // This private API serves school owners and instructors in different app
+  // sessions. The chosen area selects a cookie only; Storage RLS authorizes it.
+  const area = pathname === '/api/business/payment-receipt'
+    ? areaFromParam(request.nextUrl.searchParams.get('area')) ?? areaFromPath(pathname)
+    : areaFromPath(pathname);
 
   // Overwritten on every request, so a client cannot choose it. It only picks
   // which session cookie to read; it grants nothing.
