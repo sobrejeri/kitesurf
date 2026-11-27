@@ -45,11 +45,10 @@ export default async function AvailabilityPage() {
     <>
       <PageHeader eyebrow="Sua disponibilidade" title="Dias e turnos"
         lead="A busca de instrutores, a fila e os reagendamentos respeitam os dias, turnos, pausas e bloqueios registrados aqui." />
-      {!ready ? (
-        <Note tone="warning">Para ativar a agenda real, execute a migração de disponibilidade no Supabase. Nenhuma informação será simulada.</Note>
+      {!v2 ? (
+        <Note tone="warning">A edição da disponibilidade está temporariamente indisponível. Consulte sua agenda e tente novamente mais tarde.</Note>
       ) : (
         <div className="grid max-w-3xl grid-cols-[minmax(0,1fr)] gap-4">
-          {!v2 ? <Note tone="warning">As pausas e os horários extras dependem da migração da agenda v2 no Supabase. Os turnos continuam funcionando.</Note> : null}
           {conflictRows.length > 0 ? (
             <Note tone="warning" icon="info">
               <strong className="block">{conflictRows.length} aula(s) confirmada(s) estão fora do seu horário atual.</strong>

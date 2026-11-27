@@ -34,7 +34,11 @@ assert.ok(r.ok && r.days.length === 0);
 // calendário (novembro de 2026 começa num domingo)
 assert.equal(weekdayOf('2026-11-01'), 0);
 assert.equal(addDays('2026-11-30', 1), '2026-12-01');
-assert.equal(isDayKey('2026-02-30'), false);
+for (const invalid of ['2026-02-30', '2026-13-01', '2026-00-01', '2026-11-00', '', null, undefined]) {
+  assert.equal(isDayKey(invalid), false);
+}
+assert.equal(wholeDaysToRange('2026-13-01', '2026-12-24'), null);
+assert.equal(wholeDaysToRange('2026-12-24', '2026-00-01'), null);
 assert.equal(isDayKey('2026-11-24'), true);
 let v = viewRange('2026-11-24', 'day');
 assert.deepEqual([v.first, v.last, v.previous, v.next], ['2026-11-24', '2026-11-25', '2026-11-23', '2026-11-25']);

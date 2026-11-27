@@ -50,6 +50,8 @@ export default async function InstructorAgendaPage({ searchParams }: { searchPar
   }));
 
   const now = Date.now();
+  const rangeStart = Date.parse(range.startsAt);
+  const rangeEnd = Date.parse(range.endsAt);
   const entries: AgendaEntry[] = bookings
     .filter((b) => b.status === 'confirmed' || (b.status === 'awaiting_payment' && now - new Date(b.created_at).getTime() < HOLD_MS))
     .flatMap((b) => b.booking_meetings
@@ -63,15 +65,18 @@ export default async function InstructorAgendaPage({ searchParams }: { searchPar
           : '/instrutor/agenda',
         state: b.status === 'awaiting_payment' ? 'hold' : m.status === 'in_progress' ? 'in_progress' : 'scheduled',
       })))
-    .filter((entry) => entry.startsAt >= range.startsAt && entry.startsAt < range.endsAt && new Date(entry.startsAt).getTime() + entry.minutes * 60_000 > 0)
-    .sort((a, b) => a.startsAt.localeCompare(b.startsAt));
+    .filter((entry) => {
+      const startsAt = Date.parse(entry.startsAt);
+      return startsAt >= rangeStart && startsAt < rangeEnd;
+    })
+    .sort((a, b) => Date.parse(a.startsAt) - Date.parse(b.startsAt));
 
   const shifts = new Map<number, DayShift>();
   for (const shift of shiftResult.data ?? []) shifts.set(shift.weekday, { weekday: shift.weekday, opens: hhmm(shift.opens_at), closes: hhmm(shift.closes_at), breaks: [] });
   for (const pause of pauseResult.data ?? []) shifts.get(pause.weekday)?.breaks.push({ from: hhmm(pause.starts_at), to: hhmm(pause.ends_at) });
   const extras = new Map<string, AgendaExtra>((extraResult.data ?? []).map((row) => [row.day, { day: row.day, opens: hhmm(row.opens_at), closes: hhmm(row.closes_at) }]));
-  const visibleBlocks = blocks.filter((item) => item.startsAt < range.endsAt && item.endsAt > range.startsAt);
-  const timeOffReady = !offRows.error;
+  const visibleBlocks = blocks.filter((item) => Date.parse(item.startsAt) < rangeEnd && Date.parse(item.endsAt) > rangeStart);
+  const timeOffReady = !offResult.error && !pauseResult.error && !extraResult.error;
 
   return (
     <>
@@ -105,7 +110,7 @@ export default async function InstructorAgendaPage({ searchParams }: { searchPar
         <Card>
           <h2 className="text-[18px] font-bold">Folga, férias ou bloqueio</h2>
           {!timeOffReady ? (
-            <Note tone="warning" className="mt-3">Execute a migração de disponibilidade para ativar os bloqueios reais.</Note>
+            <Note tone="warning" className="mt-3">O registro de bloqueios está temporariamente indisponível. Consulte os horários e tente novamente mais tarde.</Note>
           ) : (
             <>
               <p className="mt-1 text-[12px] text-muted">Nenhuma aula confirmada é apagada: se houver aula no período, o sistema recusa e você combina o reagendamento.</p>

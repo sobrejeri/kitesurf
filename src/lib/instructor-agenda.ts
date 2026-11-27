@@ -73,7 +73,9 @@ const stampOf = (key: string) => Date.parse(`${key}T00:00:00Z`);
 const keyOf = (stamp: number) => new Date(stamp).toISOString().slice(0, 10);
 
 export function isDayKey(value: string | null | undefined): value is string {
-  return Boolean(value && DAY_KEY.test(value) && keyOf(stampOf(value)) === value);
+  if (!value || !DAY_KEY.test(value)) return false;
+  const stamp = stampOf(value);
+  return Number.isFinite(stamp) && keyOf(stamp) === value;
 }
 export const addDays = (key: string, days: number) => keyOf(stampOf(key) + days * DAY_MS);
 export const weekdayOf = (key: string) => new Date(stampOf(key)).getUTCDay();
