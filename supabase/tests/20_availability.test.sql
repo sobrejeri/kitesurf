@@ -1,6 +1,10 @@
 -- Tests for saved instructor schedules, ownership and time-off rules.
 -- Runs after 10_rules.test.sql in the same throwaway DATABASE.
 \set ON_ERROR_STOP on
+begin;
+-- Isolate unrelated pending holds from earlier disposable fixtures.
+-- Calendar RPCs never cancel them; this is synthetic test setup only.
+update public.bookings set status='cancelled',cancelled_at=now() where status='awaiting_payment';
 
 create function pg_temp.act_as(uid text) returns void language plpgsql as $$
 begin
@@ -76,3 +80,4 @@ begin
   exception when invalid_parameter_value then null; end;
   perform pg_temp.reset();
 end $$;
+rollback;

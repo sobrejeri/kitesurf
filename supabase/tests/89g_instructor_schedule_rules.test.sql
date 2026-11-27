@@ -7,6 +7,9 @@
 --  E) horário recusado continua recusado pela RPC create_booking (não só pela função auxiliar)
 \set ON_ERROR_STOP on
 begin;
+-- Isolate unrelated pending holds from earlier disposable fixtures.
+-- Calendar RPCs never cancel them; this is synthetic test setup only.
+update public.bookings set status='cancelled',cancelled_at=now() where status='awaiting_payment';
 
 create function pg_temp.try(q text, who uuid) returns text language plpgsql as $$
 declare st text; msg text;

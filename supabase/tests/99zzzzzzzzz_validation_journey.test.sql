@@ -1,6 +1,9 @@
 -- Whole no-checkout journey in an isolated transaction, never live production.
 \set ON_ERROR_STOP on
 BEGIN;
+-- Isolate unrelated pending holds from earlier disposable fixtures.
+-- Calendar RPCs never cancel them; this is synthetic test setup only.
+update public.bookings set status='cancelled',cancelled_at=now() where status='awaiting_payment';
 CREATE FUNCTION pg_temp.act_as(uid uuid) RETURNS void LANGUAGE plpgsql AS $$
 BEGIN PERFORM set_config('request.jwt.claim.sub',uid::text,false); EXECUTE 'SET ROLE authenticated'; END $$;
 CREATE FUNCTION pg_temp.reset() RETURNS void LANGUAGE plpgsql AS $$
