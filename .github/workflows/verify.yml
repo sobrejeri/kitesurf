@@ -184,6 +184,8 @@ jobs:
           npm ci --prefix scripts/push-dispatcher --ignore-scripts --no-audit --no-fund
           node scripts/test-push-dispatcher.mjs
       - run: pnpm build
+      - name: Verify Pagar.me test checkout contract without network
+        run: node scripts/test-pagarme-test-checkout.mjs
       - name: Run isolated database migrations and SQL assertions
         # Avoid Ubuntu apt mirrors: their DNS can fail on hosted runners.
         # The official PostgreSQL image has all required server/client tools.
