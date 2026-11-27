@@ -99,7 +99,9 @@ jobs:
       - name: Test instructor offer poller effect lifecycle
         run: node scripts/test-instructor-offer-poller-lifecycle.mjs
       - name: Test instructor agenda rules (shifts, breaks, time off, calendar views, Fortaleza day mapping)
-        run: node --experimental-strip-types scripts/test-instructor-agenda.mjs
+        run: |
+          node --experimental-strip-types scripts/test-instructor-agenda.mjs
+          node scripts/test-instructor-agenda-page.mjs
       - name: Test real admin agenda date ranges
         run: node --experimental-strip-types scripts/test-admin-agenda-range.mjs
       - name: Test per-level quote selection and exact money inputs

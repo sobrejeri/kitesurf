@@ -129,7 +129,7 @@ export function AgendaCalendar({ view, date, entries, off, shifts, extras, today
           );
         })}
       </div>
-      <p className="mt-2 text-[11px] text-muted">Número laranja = aulas no dia. Fundo amarelo = folga, férias ou bloqueio. Fundo cinza = sem turno. Toque no dia para abrir.</p>
+      <p className="mt-2 text-[11px] text-muted">Número = aulas no dia. Fundo amarelo = folga, férias ou bloqueio. Fundo cinza = sem turno. Toque no dia para abrir.</p>
     </section>
   );
 }
