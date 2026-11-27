@@ -32,6 +32,9 @@ for testfile in "$ROOT"/supabase/tests/[2-9]*.test.sql; do
   "${PSQL[@]}" -f "$testfile"
 done
 
+# Pagar.me bookkeeping races in this disposable cluster, before lesson races.
+PG_TEST_SOCKET="$DATA" PG_TEST_PORT="$PORT" bash "$ROOT/scripts/test-pagarme-attempt-concurrency.sh"
+
 # Run the 4h/two-day input matrix before the stateful concurrency suites below
 # consume the shared instructor's finite scheduling horizon. Its SQL transaction
 # rolls all fixture changes back, so later tests see the same seed state.
