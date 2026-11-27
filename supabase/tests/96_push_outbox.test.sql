@@ -46,7 +46,7 @@ begin
  ('00000000-0000-0000-0000-0000000000b1','message','legacy','/aluno/avisos',now()-interval '1 day');
  assert(select count(*) from public.push_outbox)=0,'no historic backfill';
  insert into public.app_notifications(recipient_id,category,title,body,href)values
- ('00000000-0000-0000-0000-0000000000b1','message','PRIVATE NAME','PRIVATE CHAT','https://attacker.invalid')
+ ('00000000-0000-0000-0000-0000000000b1','message','PRIVATE NAME','PRIVATE CHAT','/aluno/reserva/private')
  returning id into notice;
  assert(select count(*) from public.push_outbox)=1,'only consented owner enqueued';
  begin
@@ -138,7 +138,7 @@ begin
  assert(select count(*) from public.push_outbox where status='pending')=1,'limited job preserved';
 end $$;
 
-do $
+do $$
 declare sub uuid; notice uuid;j jsonb;target jsonb;cutoff timestamptz:=now()-interval '1 second';i integer;result text;
 begin
  select id into strict sub from public.push_subscriptions where endpoint='https://fcm.googleapis.com/fcm/send/outbox-synthetic';
@@ -185,7 +185,7 @@ begin
  execute 'set local role vento_push_dispatcher';
  assert public.prepare_push_dispatch((j->>'id')::uuid,(j->>'leaseToken')::uuid,cutoff) is null,'revoked subscription cannot prepare';
  execute 'reset role';
-end $;
+end $$;
 
 rollback;
 select 'PASS: push outbox OFF/owner/dedup/fencing/replay/retry/410/ambiguity/rate limits in disposable PostgreSQL' as result;
