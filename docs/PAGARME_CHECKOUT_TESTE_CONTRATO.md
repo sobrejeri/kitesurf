@@ -12,4 +12,6 @@ Pix: o contrato prepara prazo de 30 minutos; o simulador oficial informa que nã
 
 Faltam persistência isolada de tentativas, idempotência e concorrência, tratamento de resposta incerta, conciliação com o provedor, autenticação de eventos, estornos e testes autenticados. A conciliação offline incluída na PR não é webhook nem prova de pagamento.
 
+A proposta de tabela `pagarme_test_attempts` não expõe escrita a usuários e não altera reservas. O índice impede novas tentativas para reservas com resultado pendente, desconhecido, aprovado ou reembolsado. Antes de ligar qualquer escrita ou transporte é necessário isolar o banco de testes ou provar que as reservas e recebedores são exclusivamente de teste; este esquema sozinho não distingue uma reserva real de uma fictícia. O estado de teste não é prova de transação no Pagar.me.
+
 Referências: https://docs.pagar.me/reference/criar-pedido-2 ; https://docs.pagar.me/reference/pix-2 ; https://docs.pagar.me/reference/split-1 ; https://docs.pagar.me/docs/simulador-pix ; https://docs.pagar.me/reference/autentica%C3%A7%C3%A3o-2
