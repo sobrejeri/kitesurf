@@ -30,3 +30,9 @@ assert.equal(friendlyError({ message: 'Only one meeting per local calendar day i
   'Escolha apenas um encontro por dia. Distribua as horas em datas diferentes.');
 assert.match(friendlyError({ message: 'Overlapping meetings', code: '22023' }), /mesmo horário/);
 console.log('PASS: duplicate civil-day rejection translated without exposing SQLSTATE');
+
+// Real instructor agenda RPC reports this exact message with SQLSTATE 55000.
+assert.equal(friendlyError({ message: 'A confirmed class overlaps this block', code: '55000' }),
+  'Você já tem uma aula confirmada nesse período. Escolha outro horário para o bloqueio.');
+assert.match(friendlyError({ message: 'Outro erro', code: '55000' }), /código 55000/);
+console.log('PASS: confirmed class block conflict translated; unrelated 55000 remains generic');

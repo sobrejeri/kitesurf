@@ -31,6 +31,8 @@ const KNOWN: readonly [RegExp, string][] = [
     'A nova data não pode ultrapassar ou anteceder os outros encontros desta reserva.'],
   [/Instructor unavailable for proposed meeting|Proposed time is no longer available/i,
     'A nova data não está disponível na agenda do instrutor. Escolha outro horário.'],
+  [/^A confirmed class overlaps this block$/i,
+    'Você já tem uma aula confirmada nesse período. Escolha outro horário para o bloqueio.'],
   [/Meeting change already decided|Meeting change response deadline expired/i,
     'Esta solicitação já foi respondida ou o prazo de resposta expirou.'],
   [/Only scheduled confirmed meetings may be changed|Meeting no longer eligible for change/i,
