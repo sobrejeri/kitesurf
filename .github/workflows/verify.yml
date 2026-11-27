@@ -186,6 +186,8 @@ jobs:
       - run: pnpm build
       - name: Verify Pagar.me test checkout contract without network
         run: node scripts/test-pagarme-test-checkout.mjs
+      - name: Verify test checkout reconciliation without network
+        run: node scripts/test-pagarme-test-reconciliation.mjs
       - name: Run isolated database migrations and SQL assertions
         # Avoid Ubuntu apt mirrors: their DNS can fail on hosted runners.
         # The official PostgreSQL image has all required server/client tools.
