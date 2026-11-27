@@ -6,4 +6,6 @@ CORE e PAYMENTS continuam desligados por padrão. A consulta verifica a sessão 
 
 A lista retorna referência, valor, forma, data e situação. Não consulta perfil ou dados pessoais do instrutor sem autorização adicional. Downloads dependem também da flag de comprovantes e usam a sessão da área atual; a rota privada confere a permissão novamente. O link pode não ter arquivo enquanto a escola não enviá-lo.
 
+A supervisão Admin AAL2 permite consultar os registros, mas não concede acesso global a arquivos privados. O link de download só aparece se a conta também tiver permissão financeira na empresa, conforme a política atual do Storage.
+
 Não há gravação de pagamentos, RPC nova, upload no workspace ou ativação. Antes de liberar, homologar as dependências e o Storage em ambiente apropriado, conferir permissões reais por perfil, concluir a identificação/autorização dos instrutores e o procedimento para corrigir comprovantes enviados por engano. Testes locais são simulados e não comprovam que o banco remoto está pronto.

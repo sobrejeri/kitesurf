@@ -57,8 +57,8 @@ try {
   permissionError = { message: 'private schema details' }; assert.equal((await read(companyId)).kind, 'unavailable'); permissionError = null;
   rows = [{ ...row, company_id: foreignId }]; result = await read(companyId); assert.equal(result.kind, 'unavailable'); assert.ok(!JSON.stringify(result).includes('REF-TESTE'));
   rows = Array.from({ length: 101 }, () => row); result = await read(companyId); assert.equal(result.hasMore, true); assert.equal(result.payments.length, 100);
-  rows = [row]; viewer = { id: 'admin', role: 'admin', secondFactor: true }; const beforeAdmin = calls.length;
-  assert.equal((await read(companyId)).kind, 'ready'); assert.equal(calls.length, beforeAdmin, 'AAL2 admin uses RLS admin access');
+  rows = [row]; viewer = { id: 'admin', role: 'admin', secondFactor: true }; permission = false;
+  result = await read(companyId); assert.equal(result.kind, 'ready'); assert.equal(result.canDownloadReceipts, false, 'AAL2 admin may supervise records, not private receipts without company permission');
   dbError = { message: 'private details' }; assert.equal((await read(companyId)).kind, 'unavailable'); dbError = null;
 
   const React = requireNode('react');
@@ -73,6 +73,8 @@ try {
     '@/lib/business/payment-receipt-feature': { businessReceiptsEnabled() { return receipts; } },
     '@/lib/format': { formatMoney: cents => String(cents) },
   }).CompanyPaymentList;
+  receipts = true; let adminHtml = render(await Panel({ companyId, area: 'admin' })); assert.match(adminHtml, /REF-TESTE/); assert.doesNotMatch(adminHtml, /payment-receipt/);
+  viewer = { id: 'owner', role: 'student', secondFactor: false }; permission = true; receipts = false;
   let html = render(await Panel({ companyId, area: 'aluno' })); assert.match(html, /REF-TESTE/); assert.doesNotMatch(html, /payment-receipt/);
   receipts = true; html = render(await Panel({ companyId, area: 'aluno' }));
   assert.match(html, new RegExp(`area=aluno&amp;paymentId=${paymentId}`));

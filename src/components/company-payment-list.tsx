@@ -16,7 +16,7 @@ export async function CompanyPaymentList({ companyId, area }: { companyId: strin
     {!result.payments.length ? <Note>Nenhum pagamento registrado.</Note> : result.payments.map(payment => <Card key={payment.id}>
       <div className="flex flex-wrap justify-between gap-2"><strong>{formatMoney(payment.cents)}</strong><span>{statuses[payment.status]}</span></div>
       <p className="mt-2 break-words text-sm">{payment.reference} · {payment.paidOn.split('-').reverse().join('/')} · {methods[payment.method] ?? 'Outro'}</p>
-      {businessReceiptsEnabled() ? <div className="mt-2"><PaymentReceiptDownload paymentId={payment.id} area={area} /><p className="text-xs text-muted">Disponível após o envio do arquivo pela escola.</p></div> : null}
+      {result.canDownloadReceipts && businessReceiptsEnabled() ? <div className="mt-2"><PaymentReceiptDownload paymentId={payment.id} area={area} /><p className="text-xs text-muted">Disponível após o envio do arquivo pela escola.</p></div> : null}
     </Card>)}
     {result.hasMore ? <Note>Exibindo os 100 pagamentos mais recentes.</Note> : null}
   </div>;
