@@ -1,0 +1,24 @@
+name: VentoKite - request guard regression
+on:
+  push:
+    branches: [fix/90-request-validation-20261126]
+permissions:
+  contents: read
+jobs:
+  isolated-sql:
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - name: Install PostgreSQL
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y postgresql postgresql-client
+      - name: Run isolated SQL suite and proposal
+        shell: bash
+        run: |
+          set -euo pipefail
+          PG_BIN="$(dirname "$(find /usr/lib/postgresql -name pg_ctl | sort -V | tail -1)")"
+          env PG_BIN="$PG_BIN" VENTO_TEST_REQUEST_GUARD=1 bash scripts/test-db.sh
