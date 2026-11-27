@@ -151,5 +151,5 @@ jobs:
         run: |
           docker run --rm --user postgres \
             -v "$PWD:/workspace:ro" -w /workspace \
-            -e LC_ALL=C.UTF-8 postgres:16 \
+            -e LC_ALL=C.UTF-8 -e VENTO_TEST_REQUEST_GUARD=1 postgres:16 \
             bash scripts/test-db.sh
