@@ -1,4 +1,5 @@
 import type { Metadata } from 'next';
+import Link from 'next/link';
 
 import { AdminTitle, BarChart, Metric, Panel } from '@/components/admin/kit';
 import { BOOKING_STATUS } from '@/components/admin/labels';
@@ -60,6 +61,7 @@ export default async function InstructorFinancePage() {
         )}
       </Panel>
       <Note className="mt-4">Repasses reais dependem da integração de pagamento.</Note>
+      <Link className="mt-4 inline-block text-brand underline" href="/instrutor/financeiro/recebimentos">Ver recebimentos de escolas</Link>
     </>
   );
 }
