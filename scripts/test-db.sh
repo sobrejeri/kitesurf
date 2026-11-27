@@ -83,3 +83,12 @@ bash "$ROOT/scripts/test-rehearse-chain.sh"
 
 # #90: test the migration already loaded by the standard disposable migration loop.
 "${PSQL[@]}" -f "$ROOT/supabase/reconciliation/90_request_distinct_civil_days.test.sql"
+
+# Opt-in only: proposed #90 reconciliation, in the disposable cluster above.
+if [ "${VENTO_TEST_REQUEST_GUARD:-0}" = 1 ]; then
+  for proposal in 90_rpc_input_validation 90_rpc_input_integration 90_request_input_guard; do
+    "${PSQL[@]}" -f "$ROOT/supabase/reconciliation/$proposal.proposed.sql"
+  done
+  "${PSQL[@]}" -f "$ROOT/supabase/reconciliation/90_request_input_guard.regression.sql"
+  echo "PASS: proposed request guard regression"
+fi
