@@ -6,12 +6,37 @@ import { isArea } from '@/lib/app-areas';
 export const runtime = 'nodejs';
 const LIMIT = 5 * 1024 * 1024;
 const BUCKET = 'vento-business-payment-receipts';
+const BODY_LIMIT = LIMIT + 64 * 1024;
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/;
 function signature(bytes: Uint8Array, type: string): boolean {
   if (type === 'application/pdf') return [37, 80, 68, 70, 45].every((n, i) => bytes[i] === n);
   if (type === 'image/png') return [137, 80, 78, 71, 13, 10, 26, 10].every((n, i) => bytes[i] === n);
   if (type === 'image/jpeg') return [255, 216, 255].every((n, i) => bytes[i] === n);
   return false;
+}
+
+/** Bound actual bytes before parsing multipart; HTTP/2 uploads may omit length. */
+async function receiptForm(request: Request): Promise<FormData> {
+  if (!request.body) throw new Error('Missing body');
+  const reader = request.body.getReader();
+  const chunks: Uint8Array[] = [];
+  let size = 0;
+  try {
+    while (true) {
+      const chunk = await reader.read();
+      if (chunk.done) break;
+      size += chunk.value.byteLength;
+      if (size > BODY_LIMIT) {
+        await reader.cancel().catch(() => {});
+        throw new RangeError('Body too large');
+      }
+      chunks.push(chunk.value);
+    }
+  } finally { reader.releaseLock(); }
+  const bytes = new Uint8Array(size);
+  let offset = 0;
+  for (const chunk of chunks) { bytes.set(chunk, offset); offset += chunk.byteLength; }
+  return new Response(bytes.buffer, { headers: { 'Content-Type': request.headers.get('content-type') ?? '' } }).formData();
 }
 
 /** The Storage policy repeats payment ownership and company permissions. */
@@ -23,15 +48,20 @@ export async function POST(request: Request) {
     if (!origin || !host || new URL(origin).host !== host) return NextResponse.json({ error: 'Origem inválida.' }, { status: 403 });
   } catch { return NextResponse.json({ error: 'Origem inválida.' }, { status: 403 }); }
   const header = request.headers.get('content-length');
-  const length = header && /^\d+$/.test(header) ? Number(header) : NaN;
-  if (!Number.isSafeInteger(length) || length < 1 || length > LIMIT + 64 * 1024) return NextResponse.json({ error: 'Confira o tamanho do arquivo (até 5 MB).' }, { status: 413 });
+  if (header !== null) {
+    const length = /^\d+$/.test(header) ? Number(header) : NaN;
+    if (!Number.isSafeInteger(length) || length < 1 || length > BODY_LIMIT) return NextResponse.json({ error: 'Confira o tamanho do arquivo (até 5 MB).' }, { status: 413 });
+  }
   const area = new URL(request.url).searchParams.get('area');
   if (!area || !isArea(area)) return NextResponse.json({ error: 'Área inválida.' }, { status: 400 });
   const db = await createSupabaseServerClient(area);
   const claims = await db.auth.getClaims();
   if (claims.error || !claims.data?.claims?.sub) return NextResponse.json({ error: 'Entre novamente para enviar o comprovante.' }, { status: 401 });
   let form: FormData;
-  try { form = await request.formData(); } catch { return NextResponse.json({ error: 'Não foi possível ler o arquivo.' }, { status: 400 }); }
+  try { form = await receiptForm(request); } catch (error) {
+    if (error instanceof RangeError) return NextResponse.json({ error: 'Confira o tamanho do arquivo (até 5 MB).' }, { status: 413 });
+    return NextResponse.json({ error: 'Não foi possível ler o arquivo.' }, { status: 400 });
+  }
   const paymentId = form.get('paymentId'); const file = form.get('file');
   if (typeof paymentId !== 'string' || !UUID.test(paymentId) || !(file instanceof File) || file.size < 1 || file.size > LIMIT) {
     return NextResponse.json({ error: 'Selecione um PDF, JPG ou PNG de até 5 MB.' }, { status: 400 });
