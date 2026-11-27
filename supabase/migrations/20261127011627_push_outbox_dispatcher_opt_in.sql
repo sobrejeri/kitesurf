@@ -265,6 +265,9 @@ grant execute on function public.preview_push_dispatch(timestamptz),
 do $$ begin
   if exists(select 1 from pg_roles where rolname='service_role') then
     revoke all on public.push_outbox,public.push_dispatch_settings,public.push_dispatch_recipient_rates from service_role;
+    -- Override managed default privileges too: internal helpers are not RPCs.
+    revoke all on function public.push_dispatch_target(uuid),public.enqueue_push_notice(),
+      public.bump_push_subscription_version() from service_role;
     grant execute on function public.preview_push_dispatch(timestamptz),
       public.claim_push_dispatch(timestamptz),public.prepare_push_dispatch(uuid,uuid,timestamptz),
       public.settle_push_dispatch(uuid,uuid,text,integer,integer) to service_role;
