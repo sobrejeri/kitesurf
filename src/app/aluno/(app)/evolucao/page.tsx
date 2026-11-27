@@ -377,7 +377,7 @@ export default async function ProgressPage({
                 <div className="mt-4 rounded-[16px] border border-line bg-brand-tint p-3">
                   <p className="text-[13px] font-bold text-ink">
                     Avaliação final do instrutor: {KITE_LEVEL_BADGES[assessment.assessed_level].label}
-                    {' · '}{KITE_LEVEL_BADGES[assessment.assessed_level].metal}
+                    {KITE_LEVEL_BADGES[assessment.assessed_level].metal ? ` · ${KITE_LEVEL_BADGES[assessment.assessed_level].metal}` : ''}
                   </p>
                   <p className="mt-1 text-[12px] text-muted">
                     Registrada após a conclusão da reserva. Não é uma certificação externa.

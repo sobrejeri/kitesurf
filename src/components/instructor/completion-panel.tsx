@@ -39,7 +39,7 @@ function CheckRow({item,audience}:{item:ProfileField;audience:'admin'|'instructo
           if(parent)parent.open=true;
           target?.scrollIntoView({behavior:'smooth',block:'center'});
         }}
-        className="text-[12px] font-semibold text-brand underline">Editar</a>
+        className="inline-flex min-h-11 min-w-11 items-center justify-center px-1 text-[12px] font-semibold text-brand underline">Editar</a>
     ):null}
   </li>;
 }

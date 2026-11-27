@@ -45,7 +45,7 @@ export function KiteLevelEditor({ reported, assessed, ready }: {
               <label className="text-[12px] text-label">
                 Nível informado por você
                 <select name="kiteLevel" defaultValue={reported} required className={'mt-1 '+inputClass}>
-                  <option value="first_time">Iniciante · Bronze</option>
+                  <option value="first_time">Iniciante</option>
                   <option value="returning">Intermediário · Prata</option>
                   <option value="improving">Avançado · Ouro</option>
                 </select>
