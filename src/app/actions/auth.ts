@@ -107,6 +107,12 @@ export async function signUp(_prev: ActionState, form: FormData): Promise<Action
 export async function signOut(): Promise<void> {
   const area = await currentArea();
   const supabase = await createSupabaseServerClient(area);
+  // Revoke this account's push endpoints in this session before ending it.
+  // A missing migration must never prevent signing out of the app.
+  if (process.env.NEXT_PUBLIC_VENTO_PUSH_SUBSCRIPTIONS_ENABLED === 'true') {
+    try { await supabase.rpc('revoke_my_push_session_subscriptions'); }
+    catch { /* Sign-out remains available if the database is unreachable. */ }
+  }
   await supabase.auth.signOut({ scope: 'local' });
   redirect(`/${area}/entrar`);
 }

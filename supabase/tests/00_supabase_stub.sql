@@ -18,6 +18,12 @@ create table auth.users (
   raw_user_meta_data jsonb not null default '{}'
 );
 
+-- Minimal live-session structure used by owner-bound push subscriptions.
+create table auth.sessions (
+  id uuid primary key,
+  user_id uuid not null references auth.users(id) on delete cascade
+);
+
 create function auth.uid() returns uuid language sql stable as $$
   select nullif(current_setting('request.jwt.claim.sub', true), '')::uuid;
 $$;
