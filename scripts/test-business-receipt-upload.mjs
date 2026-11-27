@@ -27,8 +27,10 @@ vm.runInNewContext(code, { module, exports: module.exports, require(id) { if (!(
 const paymentId = '11111111-1111-4111-8111-111111111111';
 const pdf = new File(['%PDF-1.7'], 'receipt.pdf', { type: 'application/pdf' });
 function request({ origin = 'https://vento.example', host = 'vento.example', length = '200', id = paymentId, file = pdf } = {}) {
-  const headers = new Headers({ origin, host, 'content-length': length });
-  return { headers, url: 'https://vento.example/api/business/payment-receipt?area=aluno', async formData() { const data = new FormData(); data.set('paymentId', id); data.set('file', file); return data; } };
+  const headers = new Headers({ origin, host });
+  if (length !== null) headers.set('content-length', length);
+  const data = new FormData(); data.set('paymentId', id); data.set('file', file);
+  return new Request('https://vento.example/api/business/payment-receipt?area=aluno', { method: 'POST', headers, body: data });
 }
 const post = module.exports.POST;
 env.NEXT_PUBLIC_VENTO_BUSINESS_RECEIPTS_ENABLED = 'false'; assert.equal((await post(request())).status, 503);
@@ -45,6 +47,18 @@ assert.equal(lastWrite, true);
 assert.equal(selectedArea, 'aluno');
 assert.equal(uploads[0].path, `${paymentId}/comprovante`); assert.equal(uploads[0].options.upsert, false);
 uploadError = { message: 'duplicate' }; assert.equal((await post(request())).status, 409);
+uploadError = null;
+assert.equal((await post(request({ length: null }))).status, 200, 'legal multipart without Content-Length is accepted');
+for (const declaredLength of [null, '1']) {
+  let cancelled = false;
+  const headers = new Headers({ origin: 'https://vento.example', host: 'vento.example', 'content-type': 'multipart/form-data; boundary=test' });
+  if (declaredLength !== null) headers.set('content-length', declaredLength);
+  const tooLarge = new Request('https://vento.example/api/business/payment-receipt?area=aluno', { method: 'POST', headers,
+    body: new ReadableStream({ start(controller) { controller.enqueue(new Uint8Array(5 * 1024 * 1024 + 64 * 1024 + 1)); }, cancel() { cancelled = true; } }), duplex: 'half' });
+  const previousUploads = uploads.length;
+  assert.equal((await post(tooLarge)).status, 413, 'actual body limit applies even without an accurate header');
+  assert.equal(uploads.length, previousUploads); assert.equal(cancelled, true);
+}
 const get = module.exports.GET;
 const getRequest = { url: `https://vento.example/api/business/payment-receipt?area=instrutor&paymentId=${paymentId}` };
 env.NEXT_PUBLIC_VENTO_BUSINESS_RECEIPTS_ENABLED = 'false'; assert.equal((await get(getRequest)).status, 503);
