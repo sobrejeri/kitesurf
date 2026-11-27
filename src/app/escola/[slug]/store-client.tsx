@@ -1,7 +1,7 @@
 'use client';
 
 import { useRouter } from 'next/navigation';
-import { useEffect, useMemo, useState, useTransition } from 'react';
+import { useEffect, useMemo, useRef, useState, useTransition } from 'react';
 
 import { loadFreeSlots, placePublicOrder } from '@/app/actions/public-store';
 import { MAX_CART_ITEMS, MAX_QTY, RENTAL_HOUR_OPTIONS, brl, minutesLabel, rentalName, sanitizeCart, setLineQty, type CartLine, type StoreCatalog, type StoreService } from '@/lib/public-store';
@@ -17,6 +17,7 @@ export function StoreClient({ catalog }: { catalog: StoreCatalog }) {
   const [checkout, setCheckout] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [pending, start] = useTransition();
+  const submissionLocked = useRef(false);
   const [customer, setCustomer] = useState('');
   const [phone, setPhone] = useState('');
   const [coupon, setCoupon] = useState('');
@@ -37,17 +38,25 @@ export function StoreClient({ catalog }: { catalog: StoreCatalog }) {
   const changeQty = (key: string, qty: number) => setCart((c) => setLineQty(c, key, qty));
 
   function submit() {
+    if (submissionLocked.current) return;
+    submissionLocked.current = true;
     setError(null);
     start(async () => {
-      const items = cart.map((l) => l.kind === 'lesson'
-        ? { kind: 'lesson' as const, unit_id: l.unit_id, service_id: l.service_id, instructor_id: l.instructor_id, starts_at: l.starts_at }
-        : l.kind === 'product'
-          ? { kind: 'product' as const, unit_id: l.unit_id, product_id: l.product_id, qty: l.qty }
-          : { kind: 'rental' as const, unit_id: l.unit_id, type: l.type, hours: l.hours, qty: l.qty });
-      const res = await placePublicOrder({ slug, customer, phone, items, coupon: coupon || undefined });
-      if (!res.ok) { setError(res.error); return; }
-      try { sessionStorage.removeItem(storageKey); } catch { /* ok */ }
-      router.push(`/escola/pedido/${encodeURIComponent(res.number)}?t=${encodeURIComponent(res.token)}`);
+      try {
+        const items = cart.map((l) => l.kind === 'lesson'
+          ? { kind: 'lesson' as const, unit_id: l.unit_id, service_id: l.service_id, instructor_id: l.instructor_id, starts_at: l.starts_at }
+          : l.kind === 'product'
+            ? { kind: 'product' as const, unit_id: l.unit_id, product_id: l.product_id, qty: l.qty }
+            : { kind: 'rental' as const, unit_id: l.unit_id, type: l.type, hours: l.hours, qty: l.qty });
+        const res = await placePublicOrder({ slug, customer, phone, items, coupon: coupon || undefined });
+        if (!res.ok) { submissionLocked.current = false; setError(res.error); return; }
+        try { sessionStorage.removeItem(storageKey); } catch { /* ok */ }
+        router.push(`/escola/pedido/${encodeURIComponent(res.number)}?t=${encodeURIComponent(res.token)}`);
+      } catch {
+        // The order may have been saved even if the response was lost. Keep
+        // this submission blocked until its outcome is checked with the school.
+        setError('Não foi possível confirmar o pedido. Fale com a escola antes de tentar novamente.');
+      }
     });
   }
 
@@ -110,7 +119,7 @@ export function StoreClient({ catalog }: { catalog: StoreCatalog }) {
           {error && <p className="err" role="alert">{error}</p>}
           <div className="row" style={{ marginTop: 14 }}>
             <button className="btn ghost" type="button" onClick={() => setCheckout(false)}>Voltar</button>
-            <button className="btn" type="button" disabled={pending || cart.length === 0} onClick={submit}>{pending ? 'Enviando…' : 'Enviar pedido'}</button>
+            <button className="btn" type="button" disabled={pending || submissionLocked.current || cart.length === 0} onClick={submit}>{pending ? 'Enviando…' : 'Enviar pedido'}</button>
           </div>
         </section>
       )}
