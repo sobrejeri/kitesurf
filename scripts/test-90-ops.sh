@@ -31,6 +31,7 @@ insert into supabase_migrations.schema_migrations values ('20261115100000','x');
 SQL
 state() { "${S[@]}" -c "select p.oid::regprocedure||'|'||md5(p.prosrc)||'|'||p.pronargdefaults||'|'||p.prosecdef||'|'||coalesce(p.proconfig::text,'')||'|'||pg_get_userbyid(p.proowner)||'|'||(select string_agg(x::text, ',' order by x::text) from unnest(coalesce(p.proacl, acldefault('f', p.proowner))) x)||'|'||pg_get_function_arguments(p.oid)||'|'||coalesce(obj_description(p.oid,'pg_proc'),'') from pg_proc p where p.proname='create_booking' and p.pronamespace='public'::regnamespace order by 1"; }
 BEFORE="$(state)"; echo "estado original de create_booking:"; echo "$BEFORE" | cut -c1-150
+BOOKINGS_BEFORE="$("${S[@]}" -f "$ROOT/scripts/ops/90-booking-fingerprint.sql")"
 
 echo "== A. exportação do backup lógico =="
 export PGHOST="$A" PGPORT="$PA" PGUSER=postgres PGDATABASE=postgres
@@ -68,8 +69,10 @@ echo "PASS: rollback devolveu assinaturas, defaults, corpo, definer, search_path
 [ "$("${S[@]}" -c "select count(*) from pg_trigger where tgname='request_00_distinct_civil_days'")" = "0" ] && [ "$("${S[@]}" -c "select to_regprocedure('public.guard_request_distinct_civil_days()') is null")" = "t" ]
 [ "$("${S[@]}" -c "select string_agg(version, ',' order by version) from supabase_migrations.schema_migrations")" = "20261115100000" ] || { echo "FAIL: ledger"; exit 1; }
 echo "PASS: gatilho e função do guard removidos; ledger voltou a só o registro anterior"
-# o rollback preserva as reservas
-"${S[@]}" -c "select count(*) from public.bookings" | grep -qx "$("${S[@]}" -c 'select count(*) from public.bookings')"
+# Compara o conteúdo completo capturado ANTES da aplicação, não uma contagem consigo mesma.
+BOOKINGS_AFTER="$("${S[@]}" -f "$ROOT/scripts/ops/90-booking-fingerprint.sql")"
+[ "$BOOKINGS_AFTER" = "$BOOKINGS_BEFORE" ] || { echo "FAIL: reservas ou encontros mudaram durante o ensaio rollback" >&2; exit 1; }
+echo "PASS: reservas e encontros preservados (conteúdo completo e contagem)"
 echo "== E. reaplicação depois do rollback =="
 for f in 20261116160000_create_booking_legacy_safe_delegate 20261116170000_create_booking_six_args_no_defaults 20261124080301_guard_request_distinct_civil_days; do "${Q[@]}" -1 -f "$M/$f.sql" >/dev/null 2>&1; done
 [ "$(state)" = "$AFTER_APPLY" ] || { echo "FAIL: reaplicação difere da primeira"; exit 1; }

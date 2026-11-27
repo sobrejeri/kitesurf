@@ -146,6 +146,12 @@ jobs:
       - name: Verify Kitesurf backup source guard without database access
         run: bash scripts/test-90-source-guard.sh
       - run: pnpm build
+      - name: Verify rollback booking fingerprints in disposable PostgreSQL
+        run: |
+          docker run --rm --user postgres \
+            -v "$PWD:/workspace:ro" -w /workspace \
+            -e LC_ALL=C.UTF-8 postgres:16 \
+            bash scripts/test-90-booking-preservation.sh
       - name: Run isolated database migrations and SQL assertions
         # Avoid Ubuntu apt mirrors: their DNS can fail on hosted runners.
         # The official PostgreSQL image has all required server/client tools.
