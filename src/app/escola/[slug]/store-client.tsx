@@ -49,7 +49,12 @@ export function StoreClient({ catalog }: { catalog: StoreCatalog }) {
             ? { kind: 'product' as const, unit_id: l.unit_id, product_id: l.product_id, qty: l.qty }
             : { kind: 'rental' as const, unit_id: l.unit_id, type: l.type, hours: l.hours, qty: l.qty });
         const res = await placePublicOrder({ slug, customer, phone, items, coupon: coupon || undefined });
-        if (!res.ok) { submissionLocked.current = false; setError(res.error); return; }
+        if (!res.ok) {
+          // Only a rejection proven to precede any write permits retry.
+          // An older/unknown response without this field remains locked.
+          if (res.retryable === true) submissionLocked.current = false;
+          setError(res.error); return;
+        }
         try { sessionStorage.removeItem(storageKey); } catch { /* ok */ }
         router.push(`/escola/pedido/${encodeURIComponent(res.number)}?t=${encodeURIComponent(res.token)}`);
       } catch {

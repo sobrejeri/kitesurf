@@ -40,9 +40,16 @@ success.click(); await Promise.resolve(); assert.equal(calls, 1, 'success stays 
 assert.equal(success.navigations.length, 1);
 
 calls = 0;
-const rejected = render(async () => { calls++; return { ok: false, error: 'Dados inválidos' }; });
+const rejected = render(async () => { calls++; return { ok: false, error: 'Dados inválidos', retryable: true }; });
 rejected.click(); await Promise.all(rejected.transitions); rejected.click(); await Promise.all(rejected.transitions);
 assert.equal(calls, 2, 'an explicit rejection permits a corrected submission');
+
+for (const response of [{ ok: false, error: 'Resultado incerto', retryable: false }, { ok: false, error: 'Resposta antiga' }]) {
+  calls = 0;
+  const unknown = render(async () => { calls++; return response; });
+  unknown.click(); await Promise.all(unknown.transitions); unknown.click(); await Promise.resolve();
+  assert.equal(calls, 1, 'uncertain RPC result or older action response stays locked');
+}
 
 calls = 0;
 const uncertain = render(async () => { calls++; throw Error('Network response lost'); });
