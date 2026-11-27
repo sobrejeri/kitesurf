@@ -64,7 +64,9 @@ self.addEventListener('notificationclick', (event) => {
   // Validate again: notification data is not an authorization boundary.
   const href = pushDestination(event.notification.data?.href);
   event.waitUntil((async () => {
-    const windows = await self.clients.matchAll({ type: 'window', includeUncontrolled: true });
+    let windows = [];
+    try { windows = await self.clients.matchAll({ type: 'window', includeUncontrolled: true }); }
+    catch { /* Window enumeration can fail; still open the validated destination. */ }
     for (const client of windows) {
       if (client.url === href && typeof client.focus === 'function') {
         try { await client.focus(); return; } catch { /* Try another window or open the destination. */ }

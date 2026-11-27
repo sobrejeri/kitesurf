@@ -7,6 +7,7 @@ const handlers = {};
 const notices = [];
 const opened = [];
 let windows = [];
+let matchFailure = false;
 let showFailure = null;
 let completeShow;
 let delayedShow = false;
@@ -27,6 +28,7 @@ vm.runInNewContext(readFileSync(new URL('../public/sw.js', import.meta.url), 'ut
       async matchAll(options) {
         assert.equal(options.type, 'window');
         assert.equal(options.includeUncontrolled, true);
+        if (matchFailure) throw new Error('window enumeration unavailable');
         return windows;
       },
       async openWindow(href) { opened.push(href); },
@@ -101,6 +103,10 @@ assert.equal(opened.at(-1), origin + '/aluno/avisos');
 windows = [{ url: origin + '/aluno/avisos', async focus() { throw new Error('closed window'); } }];
 await click('/aluno/avisos');
 assert.equal(opened.at(-1), origin + '/aluno/avisos', 'failed focus falls back to opening destination');
+matchFailure = true;
+await click('/instrutor/avisos');
+assert.equal(opened.at(-1), origin + '/instrutor/avisos', 'window enumeration failure still opens a validated destination');
+matchFailure = false;
 delayedShow = true;
 let settled = false;
 const pending = push({}).then(() => { settled = true; });
