@@ -277,6 +277,9 @@ BEGIN
               EXECUTE 'reset role';
               SELECT id,instructor_id INTO STRICT offer_id,assigned
                 FROM public.instructor_offers WHERE request_id=returned_id AND status='offered';
+              IF strpos(rpc,'with_preference')>0 AND assigned IS DISTINCT FROM instructor THEN
+                RAISE EXCEPTION 'Eligible preferred instructor was not selected';
+              END IF;
               PERFORM set_config('request.jwt.claim.sub',assigned::text,true);
               EXECUTE 'set local role authenticated';
               booking_id := public.accept_instructor_offer(offer_id);
