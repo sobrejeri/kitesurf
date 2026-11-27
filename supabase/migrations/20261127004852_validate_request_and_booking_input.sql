@@ -8,7 +8,7 @@ SET LOCAL statement_timeout = '30s';
 CREATE TEMP TABLE _vento90_rpc_before ON COMMIT DROP AS
 SELECT expected.sig,expected.defaults,expected.definer,expected.hashes,
   p.oid,p.prosrc,p.proowner,p.proacl,p.prosecdef,p.pronargdefaults,
-  p.proargdefaults::text AS argument_defaults,p.proconfig,p.prolang,p.prorettype,
+  pg_get_expr(p.proargdefaults,0) AS argument_defaults,p.proconfig,p.prolang,p.prorettype,
   p.proargtypes,p.proargnames
 FROM (VALUES
   ('public.create_booking(uuid,public.lesson_level,text,jsonb,text,boolean)',0,true,
@@ -39,6 +39,8 @@ BEGIN
       OR r.proowner<>'postgres'::regrole
       OR r.prosecdef IS DISTINCT FROM r.definer
       OR r.pronargdefaults IS DISTINCT FROM r.defaults
+      OR r.argument_defaults IS DISTINCT FROM (CASE r.defaults
+        WHEN 0 THEN NULL WHEN 1 THEN 'NULL::text' WHEN 2 THEN 'NULL::text, false' END)
       OR r.proconfig IS DISTINCT FROM ARRAY['search_path=""']::text[]
       OR NOT has_function_privilege('authenticated',r.oid,'EXECUTE')
       OR has_function_privilege('anon',r.oid,'EXECUTE')
@@ -115,7 +117,7 @@ BEGIN
     IF NOT EXISTS(SELECT 1 FROM pg_proc p WHERE p.oid=r.oid AND p.prosrc=r.prosrc
       AND p.proowner=r.proowner AND p.proacl IS NOT DISTINCT FROM r.proacl
       AND p.prosecdef=r.prosecdef AND p.pronargdefaults=r.pronargdefaults
-      AND p.proargdefaults::text IS NOT DISTINCT FROM r.argument_defaults
+      AND pg_get_expr(p.proargdefaults,0) IS NOT DISTINCT FROM r.argument_defaults
       AND p.proconfig IS NOT DISTINCT FROM r.proconfig) THEN
       RAISE EXCEPTION 'RPC drift after preflight: %',r.sig;
     END IF;
@@ -157,7 +159,7 @@ CREATE TRIGGER request_00_input_guard BEFORE INSERT ON public.instructor_request
 FOR EACH ROW EXECUTE FUNCTION public.guard_request_input();
 
 DO $postflight$
-DECLARE r record; expected_body text;
+DECLARE r record; expected_body text; differences jsonb;
   anchor constant text := E'begin\n  if price.id is null then';
   replacement constant text := E'begin\n  perform public.validate_booking_input(uid,p_level,p_language,p_meetings);\n  if price.id is null then';
 BEGIN
@@ -166,11 +168,20 @@ BEGIN
     IF NOT EXISTS(SELECT 1 FROM pg_proc p WHERE p.oid=r.oid AND p.prosrc=expected_body
       AND p.proowner=r.proowner AND p.proacl IS NOT DISTINCT FROM r.proacl
       AND p.prosecdef=r.prosecdef AND p.pronargdefaults=r.pronargdefaults
-      AND p.proargdefaults::text IS NOT DISTINCT FROM r.argument_defaults
+      AND pg_get_expr(p.proargdefaults,0) IS NOT DISTINCT FROM r.argument_defaults
       AND p.proconfig IS NOT DISTINCT FROM r.proconfig AND p.prolang=r.prolang
       AND p.prorettype=r.prorettype AND p.proargtypes=r.proargtypes
       AND p.proargnames IS NOT DISTINCT FROM r.proargnames) THEN
-      RAISE EXCEPTION 'RPC metadata/body changed unexpectedly: %',r.sig;
+      SELECT jsonb_build_object(
+        'body',p.prosrc IS NOT DISTINCT FROM expected_body,
+        'owner',p.proowner=r.proowner,'acl',p.proacl IS NOT DISTINCT FROM r.proacl,
+        'security',p.prosecdef=r.prosecdef,'defaults_count',p.pronargdefaults=r.pronargdefaults,
+        'defaults',pg_get_expr(p.proargdefaults,0) IS NOT DISTINCT FROM r.argument_defaults,
+        'settings',p.proconfig IS NOT DISTINCT FROM r.proconfig,'language',p.prolang=r.prolang,
+        'result',p.prorettype=r.prorettype,'types',p.proargtypes=r.proargtypes,
+        'names',p.proargnames IS NOT DISTINCT FROM r.proargnames)
+      INTO differences FROM pg_proc p WHERE p.oid=r.oid;
+      RAISE EXCEPTION 'RPC metadata/body changed unexpectedly: %; invariant matches %',r.sig,differences;
     END IF;
   END LOOP;
   IF has_function_privilege('anon','public.validate_booking_input(uuid,public.lesson_level,text,jsonb)','EXECUTE')
@@ -182,4 +193,3 @@ BEGIN
 END $postflight$;
 NOTIFY pgrst,'reload schema';
 COMMIT;
-

@@ -70,3 +70,5 @@ antiga no ensaio do baseline histórico.
 Isso não substitui teste de login, RLS HTTP, dispositivo físico ou restauração
 de backup hospedado.
 
+
+Defaults são comparados por pg_get_expr e quantidade, incluindo os valores esperados NULL/false; a representação interna pg_node_tree pode conter posições de origem que mudam no PostgreSQL 16 ao recriar a mesma função. O postflight mantém os valores efetivos e informa quais invariantes divergem em caso de falha.

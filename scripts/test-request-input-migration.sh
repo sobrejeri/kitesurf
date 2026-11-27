@@ -49,7 +49,7 @@ SQL
 metadata_snapshot() {
   sql "$1" <<'SQL'
 SELECT md5(jsonb_agg(jsonb_build_array(p.oid,p.proowner,p.proacl,p.prosecdef,
- p.pronargdefaults,p.proargdefaults::text,p.proconfig,p.prolang,p.prorettype,p.proargtypes::text,p.proargnames)
+ p.pronargdefaults,pg_get_expr(p.proargdefaults,0),p.proconfig,p.prolang,p.prorettype,p.proargtypes::text,p.proargnames)
  ORDER BY p.oid)::text)
 FROM pg_proc p JOIN pg_namespace n ON n.oid=p.pronamespace
 WHERE n.nspname='public' AND p.proname IN
@@ -115,4 +115,3 @@ SQL
   [ "$before_catalog" = "$(catalog_snapshot "$db")" ] || { echo "FAIL DDL leaked after rejection $mutation"; exit 1; }
   echo "PASS: request input migration rejects $mutation drift atomically"
 done
-
