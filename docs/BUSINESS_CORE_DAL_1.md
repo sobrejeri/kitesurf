@@ -10,6 +10,8 @@ Este bloco é filho da PR #297, HEAD-base `80352e8137a25c51f970ab5fda84022dc32e9
 
 O DAL usa o cliente Supabase autenticado/RLS da área atual; não usa service_role ou metadados editáveis do usuário. Proprietário é derivado exclusivamente de `companies.owner_id`. Membro depende de `company_members.user_id` e status ativo; unidades e cargos vêm dos vínculos desse membro na mesma empresa. O DTO não retorna CNPJ, contatos ou IDs de outras contas. Não cria cargo `owner` no enum; esse rótulo é derivado da propriedade.
 
+As consultas de empresas aplicam owner ou IDs dos vínculos antes do limite; a RLS atual não libera tabelas de empresas públicas pela vitrine. Consultas de vínculos/unidades usam lotes de 100 IDs. Qualquer lote saturado (1.000 vínculos ou unidades), 201 empresas próprias/Admin ou mais de 200 empresas visíveis mantém o aviso de lista parcial, inclusive quando a filtragem defensiva elimina todas as linhas. Não há paginação completa nesta etapa.
+
 Sem a flag, não há leitura adicional nem ação de cadastro. Com schema ausente ou leitura recusada, o fluxo fica indisponível, sem cair em dados demonstrativos e sem instrução técnica de instalar migrations na tela.
 
 ## Cadastro: o que é persistido

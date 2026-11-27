@@ -4,6 +4,7 @@ import {createRequire} from 'node:module';
 import vm from 'node:vm';
 import ts from 'typescript';
 const requireNode=createRequire(import.meta.url);
+const plain=value=>JSON.parse(JSON.stringify(value));
 const ids=Array.from({length:20},(_,i)=>'00000000-0000-4000-8000-'+String(i+1).padStart(12,'0'));
 const [user,otherUser,admin,c1,c2,c3,c4,m1,m2,m3,u1,u2,u3,u4]=ids;
 let viewer={id:user,role:'student',secondFactor:false},clients=0,viewerReads=0,queries=[];
@@ -48,14 +49,17 @@ try{
   viewer={id:user,role:'student',secondFactor:false};
   let result=await read();
   assert.equal(result.kind,'ready');assert.equal(result.canCreate,true);
-  assert.deepEqual(result.companies.map(x=>x.id),[c1,c2]);
-  assert.deepEqual(result.companies.map(x=>x.access),['owner','member']);
-  assert.deepEqual(result.companies.flatMap(x=>x.units.map(unit=>unit.id)),[u1,u2]);
+  assert.deepEqual(plain(result.companies.map(x=>x.id)),[c1,c2]);
+  assert.deepEqual(plain(result.companies.map(x=>x.access)),['owner','member']);
+  assert.deepEqual(plain(result.companies.flatMap(x=>x.units.map(unit=>unit.id))),[u1,u2]);
   assert.equal(result.companies[1].units[0].role,'attendant');
   assert.ok(!JSON.stringify(result).includes(otherUser),'minimal DTO removes owner/account IDs');
   assert.deepEqual(queries.find(q=>q.table==='company_members').filters,[['eq','user_id',user],['eq','status','active']]);
-  assert.deepEqual(queries.find(q=>q.table==='company_member_units').filters,[['in','member_id',[m1]]]);
-  assert.deepEqual(queries.find(q=>q.table==='company_units').filters,[['in','company_id',[c1,c2]]]);
+  assert.deepEqual(plain(queries.find(q=>q.table==='company_member_units').filters),[['in','member_id',[m1]]]);
+  assert.deepEqual(plain(queries.find(q=>q.table==='company_units').filters),[['in','company_id',[c1,c2]]]);
+  assert.deepEqual(plain(queries.filter(q=>q.table==='companies').map(q=>q.filters)),[
+    [['eq','owner_id',user]],[['in','id',[c2]]],
+  ],'owner and membership predicates scope database queries before limits');
   assert.ok(!queries.some(q=>q.columns==='*'));
   for(const role of ['instructor','partner']){viewer={id:user,role,secondFactor:false};assert.equal((await read()).companies[0].access,'owner');}
   viewer={id:admin,role:'admin',secondFactor:true};result=await read();
@@ -66,6 +70,21 @@ try{
   fixtures.companies=Array.from({length:201},(_,i)=>({id:'company-'+i,owner_id:user,trade_name:'Name',status:'active'}));
   result=await read();assert.equal(result.companies.length,200);assert.equal(result.hasMore,true);
   fixtures=structuredClone(savedFixtures);
+
+  // Saturated batches must report truncation even when deduplication or
+  // defensive filtering removes every returned record.
+  fixtures.company_members=Array.from({length:1000},()=>({id:m3,company_id:c3,user_id:otherUser,status:'active'}));
+  fixtures.companies=[];
+  result=await read();assert.equal(result.hasMore,true);assert.equal(result.companies.length,0);
+  fixtures=structuredClone(savedFixtures);
+  for(const table of ['company_units','company_member_units']){
+    fixtures[table]=Array.from({length:1000},()=>table==='company_units'
+      ?{id:u4,company_id:c3,name:'Foreign',city:'',active:true}
+      :{member_id:m3,unit_id:u4,role:'manager'});
+    result=await read();assert.equal(result.hasMore,true,table+' saturation cannot be hidden by filtering');
+    assert.equal(result.companies.flatMap(company=>company.units).length,table==='company_units'?0:1);
+    fixtures=structuredClone(savedFixtures);
+  }
 
   // Execute the real action; unsupported fields are rejected, not silently saved.
   const tax=load('../src/lib/tax-id.ts',{});let rpcCalls=[],revalidations=[],rpcError=null,persistedOverride;
