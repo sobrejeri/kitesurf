@@ -16,6 +16,7 @@
  */
 import { requireUniqueTarget, requireUuid } from './unique-target.mjs';
 import { offerForRequest, meetingForBooking } from './booking-targets.mjs';
+import { acceptOfferOnce, bookingForRequest, presenceCodeForConfirmedBooking } from './accept-offer-once.mjs';
 
 const MONTHS_PT = (year, month) => new Intl.DateTimeFormat('pt-BR', { month: 'long', year: 'numeric' }).format(new Date(year, month - 1, 1));
 const pad = (n) => String(n).padStart(2, '0');
@@ -118,38 +119,36 @@ export async function runPriorityScenario({ sessions, browser, BASE, WRITE, env,
   });
 
   await step('P2', async () => {
-    const card = await until(async () => {
-      await instructor.goto(`${BASE}/instrutor/solicitacao`, { waitUntil: 'networkidle' });
-      return offerForRequest(instructor, state.requestId, { allowAbsent: true });
-    }, { timeout: 100_000, every: 5000 });
-    if (!card) throw new Error('nenhuma oferta aceitável apareceu para o instrutor em 100 s (ver elegibilidade, agenda, fila e expiração)');
-    const button = await requireUniqueTarget(card.getByRole('button', { name: 'Aceitar aula' }), 'botão de aceite');
-    // Uma resposta ausente não prova que a gravação falhou: nunca clicar novamente.
-    await button.click();
-    await instructor.getByText(/Oferta aceita/).first().waitFor({ timeout: 20000 });
+    const accepted = await acceptOfferOnce({
+      findOffer: async () => {
+        await instructor.goto(`${BASE}/instrutor/solicitacao`, { waitUntil: 'networkidle' });
+        return offerForRequest(instructor, state.requestId, { allowAbsent: true });
+      },
+      readAcceptedBooking: async () => {
+        await student.goto(state.requestUrl, { waitUntil: 'networkidle' });
+        return bookingForRequest(student, BASE, state.requestId);
+      },
+    });
+    state.bookingId = accepted.bookingId;
+    state.bookingUrl = accepted.bookingUrl;
     await shot(instructor, 'P2-aceite');
   });
 
   await step('P3', async () => {
     await student.goto(state.requestUrl, { waitUntil: 'networkidle' });
-    const link = await until(async () => {
-      await student.reload({ waitUntil: 'networkidle' });
-      return (await student.getByRole('link', { name: 'Ver minha reserva' }).count()) ? student.getByRole('link', { name: 'Ver minha reserva' }) : null;
-    }, { timeout: 60_000, every: 4000 });
-    if (!link) throw new Error('o botão "Ver minha reserva" não apareceu depois do aceite');
-    await link.click(); await student.waitForURL(/\/aluno\/reserva\//, { timeout: 30000 });
-    state.bookingUrl = student.url();
-    state.bookingId = requireUuid(new URL(state.bookingUrl).pathname.split('/').filter(Boolean).at(-1), 'reserva');
-    const confirm = student.getByRole('button', { name: /Confirmar aula sem cobrança|Confirmar pagamento de teste/ }).first();
-    if (await confirm.count()) {
-      await confirm.click();
-      await student.getByText(/Nenhuma cobrança realizada|Pagamento de teste|confirmad/i).first().waitFor({ timeout: 20000 });
-    }
+    const accepted = await bookingForRequest(student, BASE, state.requestId);
+    if (!accepted || accepted.bookingId !== state.bookingId) throw new Error('reserva alterada depois do aceite');
     await student.goto(state.bookingUrl, { waitUntil: 'networkidle' });
-    state.code = (await student.locator('.vento-voucher-code').first().innerText({ timeout: 20000 })).trim();
-    if (!/^\d{4}$/.test(state.code)) throw new Error('código de presença com formato inesperado');
+    const confirm = student.getByRole('button', { name: /^(Confirmar aula sem cobrança|Confirmar pagamento de teste)$/ });
+    if (await confirm.count()) {
+      await (await requireUniqueTarget(confirm, 'confirmar reserva sem cobrança')).click();
+    }
+    // Never infer success from toast text or absence of a confirmation button.
+    // Reload the bound booking and require its exact persisted status instead.
+    await student.goto(state.bookingUrl, { waitUntil: 'networkidle' });
+    state.code = await presenceCodeForConfirmedBooking(student);
     await shot(student, 'P3-reserva');
-    return 'código lido (4 dígitos)';
+    return 'reserva confirmada e código consistente lido (4 dígitos)';
   });
 
   await step('P4', async () => {
