@@ -190,6 +190,8 @@ jobs:
         run: node scripts/test-pagarme-test-reconciliation.mjs
       - name: Verify test payment transport with mock network
         run: node scripts/test-pagarme-test-transport.mjs
+      - name: Verify immutable test order envelope without network
+        run: node scripts/test-pagarme-test-request-envelope.mjs
       - name: Run isolated database migrations and SQL assertions
         # Avoid Ubuntu apt mirrors: their DNS can fail on hosted runners.
         # The official PostgreSQL image has all required server/client tools.
