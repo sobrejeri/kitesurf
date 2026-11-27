@@ -20,6 +20,13 @@ export async function secureContext(browser, base, options) {
   // Routing does not intercept a service worker's requests. Disable workers in
   // this harness so every navigation, including redirects/popups, is checked.
   const context = await browser.newContext({ ...options, serviceWorkers: 'block' });
+  // WebSockets do not pass through HTTP route(). This preparation harness
+  // does not require them and must not forward tokens to another origin.
+  if (typeof context.routeWebSocket !== 'function') {
+    await context.close();
+    throw new Error('Playwright sem proteção de WebSocket; contexto E2E recusado.');
+  }
+  await context.routeWebSocket('**/*', (socket) => socket.close());
   context.on('page', (page) => page.on('framenavigated', (frame) => {
     // Non-HTTP navigations may not pass through routing. Check their origin
     // too; about:blank is only the initial empty page and
@@ -31,11 +38,10 @@ export async function secureContext(browser, base, options) {
   }));
   await context.route('**/*', async (route) => {
     const request = route.request();
-    // Server Actions submit credentials with fetch POST, not a document
-    // navigation. Guard these requests and their redirects as well. External
-    // GET/HEAD resources remain usable; external writes fail closed.
-    const method = request.method();
-    if (request.isNavigationRequest() || !['GET', 'HEAD', 'OPTIONS'].includes(method)) {
+    // Any method can carry Authorization/cookies or secrets in its query. No
+    // external HTTP request is allowed, including images and token refresh.
+    // Inspect redirects for resources as well as document/action requests.
+    {
       let origin;
       try { origin = new URL(request.url()).origin; } catch { /* fail closed */ }
       if (origin !== base) return route.abort('blockedbyclient');
@@ -49,7 +55,6 @@ export async function secureContext(browser, base, options) {
         return route.fulfill({ response });
       } catch { return route.abort('blockedbyclient').catch(() => {}); }
     }
-    return route.continue();
   });
   return context;
 }

@@ -9,10 +9,14 @@ for (const raw of ['http://synthetic.invalid', base+'/path', base+'?token=synthe
 assert.throws(() => assertPageOrigin({ url: ()=>'https://other.invalid/admin/verificacao' }, base));
 assertPageOrigin({url:()=>base+'/admin/verificacao'}, base);
 
-let handler; let contextOptions; let pageHandler;
-const context = {on:(event,fn)=>{assert.equal(event,'page');pageHandler=fn;},route:async(pattern, fn)=>{assert.equal(pattern, '**/*');handler=fn;}};
+let handler; let contextOptions; let pageHandler;let websocketHandler;
+const context = {on:(event,fn)=>{assert.equal(event,'page');pageHandler=fn;},routeWebSocket:async(pattern,fn)=>{assert.equal(pattern,'**/*');websocketHandler=fn;},route:async(pattern, fn)=>{assert.equal(pattern, '**/*');handler=fn;}};
 await secureContext({newContext:async(options)=>{contextOptions=options;return context;}}, base, {serviceWorkers:'allow'});
 assert.equal(contextOptions.serviceWorkers, 'block');
+let socketClosed=false;websocketHandler({close:()=>{socketClosed=true;}});assert(socketClosed);
+let unsupportedClosed=false;
+await assert.rejects(secureContext({newContext:async()=>({close:async()=>{unsupportedClosed=true;}})},base,{}));
+assert(unsupportedClosed,'unsupported browser must fail closed');
 let frameHandler;let closedPages=0;
 pageHandler({on:(event,fn)=>{assert.equal(event,'framenavigated');frameHandler=fn;},close:async()=>{closedPages++;}});
 frameHandler({url:()=>base+'/aluno/aulas'});assert.equal(closedPages,0);
@@ -35,7 +39,14 @@ await handler(redirect);assert.deepEqual(redirect.events,[['fetch',{maxRedirects
 const localRedirect=mockRoute(base+'/login',{location:'/admin/verificacao',status:303});
 await handler(localRedirect);assert.equal(localRedirect.events.at(-1),'fulfill');
 const externalResource=mockRoute('https://synthetic.supabase.co/storage/v1/object/private',{navigation:false});
-await handler(externalResource);assert.deepEqual(externalResource.events,['continue']);
+await handler(externalResource);assert.deepEqual(externalResource.events,['abort']);
+for(const method of ['GET','HEAD','OPTIONS','POST']){
+ const exfil=mockRoute('https://outside.invalid/collect?access_token=synthetic',{navigation:false,method});
+ exfil.request=()=>({isNavigationRequest:()=>false,method:()=>method,url:()=>'https://outside.invalid/collect?access_token=synthetic',headers:()=>({Authorization:'Bearer synthetic'})});
+ await handler(exfil);assert.deepEqual(exfil.events,['abort']);
+}
+const resourceRedirect=mockRoute(base+'/image',{navigation:false,location:'https://outside.invalid/collect?access_token=synthetic',status:302});
+await handler(resourceRedirect);assert.deepEqual(resourceRedirect.events,[['fetch',{maxRedirects:0,timeout:30_000}],'abort']);
 const externalPost=mockRoute('https://other.invalid/collect',{navigation:false,method:'POST'});
 await handler(externalPost);assert.deepEqual(externalPost.events,['abort']);
 const actionRedirect=mockRoute(base+'/admin/entrar',{navigation:false,method:'POST',location:'https://other.invalid/collect',status:307});
