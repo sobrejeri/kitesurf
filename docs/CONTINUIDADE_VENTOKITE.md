@@ -1,5 +1,13 @@
 # VentoKite — comando mestre de continuidade entre conversas
 
+## Handoff 21/11/2026 08h19 BRT — #93/#103, PR #319
+
+- PR #318 **integrada** (merge `261aec8850dcb6b943cc1d82e3e3d496924815ed`) e **LIVE** no Render (deploy `dep-dc0nr1u0tbcc73b6c3kg`, finalizado 11:18:23 UTC). Migration `meeting_skill_progress_admin_read` aplicada no Supabase Kitesurf como versão `20261121111421`. Política Admin SELECT coexiste com política SELECT de Aluno/Instrutor. Sem writes nem pagamentos.
+- VNT-1008: duas habilidades persistidas no banco (passos 1 e 2, ambas `practiced`), 110+115=225 de 240 min; 15 min pendentes. **Não há confirmação E2E autenticada pós-deploy** de que Admin/Aluno/Instrutor exibam a evolução; não declarar #93 ou #103 homologada.
+- PR #319 `test/93-meeting-skills-rls-20261121` adiciona regressão SQL de contrato RLS para Admin e participantes. **CI do HEAD deve ser conferido antes de merge**; Claude QA independente permanece SKIPPED/desativado, sem revisão independente.
+- Próxima execução: conferir CI #319 e merge somente se verde; confirmar novo SHA LIVE; homologar no navegador autenticado a VNT-1008 e a reposição de 15 minutos (sem cobrança). Depois fila A→B→C, conflitos e reagendamento. Manter Protege 3B fechado, checkout real desligado e 0/16 frentes homologadas até evidências completas.
+
+
 ## Continuidade em 21/11 — solicitação aceita e agenda do instrutor
 
 O pedido aceito abre a reserva pelo botão “Ver minha reserva”. A própria reserva exibe a confirmação quando aplicável. O destaque de próxima aula ignora encontros passados ainda sem registro. As listas do instrutor usam o instante de início para ordenar encontros com fusos diferentes. No painel do Kitesurf foram verificados oito backups físicos concluídos, o mais recente de 21/11 às 02h05 de Fortaleza. O ensaio de recuperação de uma cópia real em destino isolado segue pendente.
