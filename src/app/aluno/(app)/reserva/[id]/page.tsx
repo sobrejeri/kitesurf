@@ -23,6 +23,8 @@ import { MeetingChangePanel } from '@/components/meeting-change-panel';
 import { bookingBalanceMinutes } from '@/lib/booking-cycle';
 import { listBalanceRequests } from '@/lib/balance-requests';
 import { BalanceMeetingPanel } from '@/components/balance-meeting-panel';
+import { InterruptionNotice } from '@/components/student/interruption-notice';
+import { interruptionFlowEnabled, isAwaitingResume } from '@/lib/meeting-interruption';
 import { lessonNeedsInstructorRecord } from '@/lib/student-lesson-links';
 
 export const metadata: Metadata = { title: 'Sua reserva' };
@@ -61,7 +63,9 @@ export default async function BookingPage({ params }: { params: Promise<{ id: st
   const awaiting = booking.status === 'awaiting_payment';
   const balance = learningBalance([{ ...booking, status: awaiting ? 'confirmed' : booking.status }]);
   // Paid-but-unrecorded minutes the student may reschedule as a make-up lesson.
-  const balanceMinutes = booking.status === 'confirmed' && booking.instructor_id !== null
+  // #93: com a interrupção ligada não há pedido de reposição nem "saldo de horas": a continuidade é combinada pelo chat.
+  const interruptionFlow = interruptionFlowEnabled();
+  const balanceMinutes = !interruptionFlow && booking.status === 'confirmed' && booking.instructor_id !== null
     ? bookingBalanceMinutes(booking) : 0;
   const balanceRequests = balanceMinutes > 0
     ? await listBalanceRequests(booking.id)
@@ -78,8 +82,8 @@ export default async function BookingPage({ params }: { params: Promise<{ id: st
   const instructorName = booking.instructor?.full_name ?? 'Instrutor a confirmar';
   const now = Date.now();
   const hasOverdueUnrecordedMeeting = booking.status === 'confirmed'
-    && booking.booking_meetings.some(m => lessonNeedsInstructorRecord(m.status, m.starts_at, m.minutes, now));
-  const pendingMeetings=booking.booking_meetings.filter(m=>m.status==='scheduled');
+    && booking.booking_meetings.some(m => !isAwaitingResume(m) && lessonNeedsInstructorRecord(m.status, m.starts_at, m.minutes, now));
+  const pendingMeetings=booking.booking_meetings.filter(m=>m.status==='scheduled' && !isAwaitingResume(m));
   const nextMeeting=pendingMeetings[0];
   const avatarUrl = booking.instructor_id
     ? await getStudentBookingInstructorAvatar(booking.id)
@@ -234,13 +238,22 @@ export default async function BookingPage({ params }: { params: Promise<{ id: st
                       <span className="text-muted">{formatMinutes(meeting.minutes)}{meeting.status === 'done' ? ` · ${formatMinutes(meeting.done_minutes)} realizados` : ''}</span>
                     </span>
                     <Badge tone={meeting.status === 'done' ? 'quiet'
+                      : isAwaitingResume(meeting) ? 'warning'
                       : booking.status === 'confirmed' && lessonNeedsInstructorRecord(meeting.status, meeting.starts_at, meeting.minutes, now)
                         ? 'warning' : 'brand'}>
-                      {booking.status === 'confirmed' && lessonNeedsInstructorRecord(meeting.status, meeting.starts_at, meeting.minutes, now)
+                      {isAwaitingResume(meeting) ? 'Interrompida'
+                        : booking.status === 'confirmed' && lessonNeedsInstructorRecord(meeting.status, meeting.starts_at, meeting.minutes, now)
                         ? 'Aguardando registro' : MEETING_STATUS_LABELS[meeting.status]}
                     </Badge>
                   </div>
-                  {booking.status==='confirmed' && booking.instructor_id!==null && meeting.status==='scheduled' ? (
+                  {interruptionFlow && meeting.interruption_state ? (
+                    <InterruptionNotice
+                      state={meeting.interruption_state} plannedMinutes={meeting.planned_minutes}
+                      previousDone={meeting.previous_done_minutes} remaining={meeting.remaining_minutes}
+                      startsAt={meeting.starts_at} chatHref={`/aluno/atendimento/${booking.id}`}
+                    />
+                  ) : null}
+                  {booking.status==='confirmed' && booking.instructor_id!==null && meeting.status==='scheduled' && !isAwaitingResume(meeting) ? (
                     <MeetingChangePanel
                       bookingId={booking.id} meeting={meeting}
                       viewerId={viewer.id}
@@ -437,13 +450,15 @@ export default async function BookingPage({ params }: { params: Promise<{ id: st
             </Link>
           </Card>
 
-          <BalanceMeetingPanel
-            bookingId={booking.id}
-            balanceMinutes={balanceMinutes}
-            requests={balanceRequests}
-            minStart={balanceMinStart}
-            maxStart={balanceMaxStart}
-          />
+          {interruptionFlow ? null : (
+            <BalanceMeetingPanel
+              bookingId={booking.id}
+              balanceMinutes={balanceMinutes}
+              requests={balanceRequests}
+              minStart={balanceMinStart}
+              maxStart={balanceMaxStart}
+            />
+          )}
         </div>
       </div>
     </div>

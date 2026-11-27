@@ -74,6 +74,7 @@ PG_TEST_SOCKET="$DATA" PG_TEST_PORT="$PORT" bash "$ROOT/scripts/test-single-inst
 
 # P2-1: pagar uma reserva e criar outra com o mesmo instrutor (mesmo aluno) ao mesmo tempo não pode dar deadlock.
 PG_TEST_SOCKET="$DATA" PG_TEST_PORT="$PORT" bash "$ROOT/scripts/test-payment-lock-order.sh"
+PG_TEST_SOCKET="$DATA" PG_TEST_PORT="$PORT" bash "$ROOT/scripts/test-meeting-resume-concurrency.sh"
 
 # #88: caminho de atualização por cima de um ambiente com a migration original já aplicada + backup/restauração (clusters próprios).
 bash "$ROOT/scripts/test-migration-upgrade-path.sh"
@@ -90,3 +91,4 @@ bash "$ROOT/scripts/test-rehearse-chain.sh"
 # #90: the official migration is installed by the migration loop above.
 "${PSQL[@]}" -f "$ROOT/supabase/reconciliation/90_request_input_guard.regression.sql"
 bash "$ROOT/scripts/test-request-input-migration.sh"
+bash "$ROOT/scripts/test-meeting-interruption-upgrade.sh"
