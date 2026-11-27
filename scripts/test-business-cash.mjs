@@ -6,7 +6,7 @@ import { CASH_MOVEMENTS, CASH_SESSIONS, PRINT_PURPOSES } from '../src/lib/busine
 import { closingSummary, expectedCashCents, reconcile, sessionTotals, thermalColumns, thermalReceipt, thermalRow, thermalWrap, validateClosing, validateMovement, validateOpening, movementsOf } from '../src/lib/business/caixa.ts';
 import { buildPdf, buildXlsx, centsToDecimal, crc32 } from '../src/lib/business/files.ts';
 import { closingPdfLines, closingSheetRows } from '../src/lib/business/report.ts';
-import { sampleReceipt } from '../src/lib/business/receipts.ts';
+import { sampleThermalReceipt } from '../src/lib/business/receipts.ts';
 import { BUSINESS_NAV } from '../src/components/business/nav.ts';
 
 // Business block 6: cash register and closing. Demonstration data, integer cents, no payment processing.
@@ -51,9 +51,9 @@ assert.deepEqual(thermalWrap('x'.repeat(20), 8), ['xxxxxxxx', 'xxxxxxxx', 'xxxx'
 assert.equal(thermalRow('Total', 'R$ 10,00', 20).length, 20);
 assert.ok(thermalRow('Um nome de item muito comprido', 'R$ 1,00', 20).length <= 20 && thermalRow('Um nome de item muito comprido', 'R$ 1,00', 20).endsWith('R$ 1,00'), 'the amount always survives');
 for (const p of PRINT_PURPOSES) for (const w of [58, 80]) {
-  const r = sampleReceipt(p.id, 'cs-2');
-  const lines = thermalReceipt(r.title, r.rows, r.note, w).split('\n');
+  const lines = sampleThermalReceipt(p.id, 'cs-2', w).split('\n');
   assert.ok(lines.every((l) => l.length <= thermalColumns(w)), `${p.id} ${w}mm fits`);
+  assert.ok(lines.some((l) => /DEMONSTRAÇÃO/.test(l)), `${p.id} ${w}mm is marked as demonstration on paper`);
   assert.ok(lines.some((l) => /sem valor fiscal/i.test(l)), 'receipts are not fiscal documents');
 }
 
