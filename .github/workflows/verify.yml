@@ -24,6 +24,10 @@ jobs:
       - run: pnpm typecheck
       - run: pnpm lint
       - run: node scripts/test-pwa-offline.mjs
+      - name: Test passive push receiver privacy and navigation
+        run: node scripts/test-pwa-push.mjs
+      - name: Test read-only Storage probe safeguards
+        run: node --test scripts/e2e/storage-readonly.test.mjs
       - name: Verify student level is asked only at signup
         run: node scripts/test-auth-kite-level.mjs
       - name: Verify e-mail confirmation and password links return to the public site

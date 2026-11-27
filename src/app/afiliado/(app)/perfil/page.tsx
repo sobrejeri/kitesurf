@@ -114,7 +114,7 @@ export default async function AffiliateProfilePage(){
               {progress.ready ? 'Dados essenciais completos' : `${progress.requiredDone} de ${progress.requiredTotal} dados essenciais`}
             </p>
             <p className="mt-0.5 text-[12.5px] text-muted">
-              {progress.ready ? 'A aprovação depende da análise da equipe.' : 'Complete para a equipe liberar seu link.'}
+              {isApproved ? 'Cadastro aprovado. Seu link de indicação está liberado.' : progress.ready ? 'A aprovação depende da análise da equipe.' : 'Complete para a equipe liberar seu link.'}
             </p>
           </div>
           <strong className="tabular shrink-0 text-[26px] font-bold leading-none text-brand">{progress.percentage===null?'—':`${progress.percentage}%`}</strong>
