@@ -66,7 +66,8 @@ assert.ok(shell.includes('pointer-events-none pt-safe absolute') &&
 assert.ok(sheet.includes('aria-label="Fechar menu"') &&
   sheet.includes('onClick={onClose}') &&
   sheet.includes("event.key === 'Escape'") &&
-  mobile.includes('current === pathname ? null : pathname'),
+  mobile.includes('onClick={toggleSheet}') &&
+  mobile.includes('togglePageSheet(current, pathname)'),
   'Mobile menu must close via a visible button, backdrop, Escape and trigger toggle');
 assert.ok(sheet.includes('href={link.href}') &&
   sheet.includes('onClick={onClose}'),

@@ -9,7 +9,7 @@ import { Icon, type IconName } from './icon';
 import { StudentProfileAvatar } from './student/profile-avatar';
 import { isActive } from '@/lib/navigation-state';
 import { modalFocusDestination } from '@/lib/modal-focus';
-import { sheetForPage } from '@/lib/page-sheet-state';
+import { sheetForPage, togglePageSheet } from '@/lib/page-sheet-state';
 export { isActive } from '@/lib/navigation-state';
 
 /**
@@ -46,7 +46,7 @@ function usePageSheet(pathname: string) {
   if (pageState !== state) setState(pageState);
   const open = state.pathname === pathname && state.open;
   const closeSheet = useCallback(() => setState(current => ({ ...current, open: false })), []);
-  const toggleSheet = () => setState(current => ({ pathname, open: current.pathname === pathname && !current.open }));
+  const toggleSheet = () => setState(current => togglePageSheet(current, pathname));
   return { open, closeSheet, toggleSheet };
 }
 
