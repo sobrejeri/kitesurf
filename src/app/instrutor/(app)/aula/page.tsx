@@ -10,7 +10,7 @@ import { InstructorStudentPhoto } from '@/components/instructor/student-photo';
 import { requireRole } from '@/lib/auth';
 import { LEVEL_LABELS, MEETING_STATUS_LABELS, listBookingsForInstructor } from '@/lib/data';
 import { getBookingProgress } from '@/lib/booking-progress';
-import { formatDateLong, formatMinutes, formatTime } from '@/lib/format';
+import { formatDateLong, formatMinutes, formatTime, fortalezaDateKey } from '@/lib/format';
 import { getInstructorStudentAvatarUrls } from '@/lib/instructor-student-photos';
 import { KITE_CURRICULA, KITE_LEVEL_BADGES } from '@/lib/kite-steps';
 import { findCompletedInstructorMeeting, listCompletedInstructorMeetings } from '@/lib/instructor-completed-meetings';
@@ -28,7 +28,7 @@ export const metadata: Metadata = { title: 'Aulas do instrutor' };
 
 const WEEKDAY = new Intl.DateTimeFormat('pt-BR', { weekday: 'long', timeZone: 'America/Fortaleza' });
 const DAY_MONTH = new Intl.DateTimeFormat('pt-BR', { day: 'numeric', month: 'short', timeZone: 'America/Fortaleza' });
-const cearaKey = (ms: number) => new Date(ms).toLocaleDateString('en-CA', { timeZone: 'America/Fortaleza' });
+const cearaKey = fortalezaDateKey;
 
 /** "Hoje · 4 de nov.", "Amanhã · 5 de nov.", "Quarta-feira · 12 de nov.", in Ceará time. */
 function lessonDayLabel(iso: string): string {
@@ -66,9 +66,8 @@ export default async function RunLessonPage({
     getMeetingKiteSkills(selectedHistory ? [selectedHistory.meeting.id] : []),
     getBookingLevelAssessments(bookings.map((booking) => booking.id)),
   ]);
-  const todayInCeara = new Date().toLocaleDateString('en-CA', { timeZone: 'America/Fortaleza' });
-  const cearaDay = (iso: string) =>
-    new Date(iso).toLocaleDateString('en-CA', { timeZone: 'America/Fortaleza' });
+  const todayInCeara = fortalezaDateKey(Date.now());
+  const cearaDay = (iso: string) => fortalezaDateKey(new Date(iso));
   const completed = bookings
     .filter((booking) => booking.status === 'completed' && !reviews.assessments.has(booking.id))
     .flatMap((booking) => {
