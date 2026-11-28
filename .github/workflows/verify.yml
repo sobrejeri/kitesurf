@@ -64,6 +64,8 @@ jobs:
         run: node scripts/test-affiliate-avatar-owner-preflight.mjs
       - name: Verify the Afiliado app (formerly Pousada), its redirects, sessions and PWA
         run: node --experimental-strip-types scripts/test-affiliate-area.mjs
+      - name: Verify Admin performance indicators
+        run: node --experimental-strip-types scripts/test-admin-indicators.mjs
       - name: Verify workspace phone header fits the logo and area label
         run: node scripts/test-workspace-mobile-header-fit.mjs
       - name: Verify accessible shared fields and bounded progress meters
