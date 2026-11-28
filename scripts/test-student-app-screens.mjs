@@ -1,7 +1,27 @@
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 
-import { formatLessonWhen, formatRelativeStamp } from '../src/lib/format.ts';
+// Browsers may format en-CA dates in different orders. Simulate an engine
+// returning MM/DD/YYYY from format(), while preserving Intl's date parts.
+const NativeDateTimeFormat = Intl.DateTimeFormat;
+Intl.DateTimeFormat = new Proxy(NativeDateTimeFormat, {
+  construct(target, args) {
+    const formatter = Reflect.construct(target, args);
+    if (args[0] !== 'en-CA') return formatter;
+    return new Proxy(formatter, {
+      get(instance, property) {
+        if (property === 'format') return (value) => {
+          const parts = Object.fromEntries(instance.formatToParts(value).map(({type, value}) => [type, value]));
+          return `${parts.month}/${parts.day}/${parts.year}`;
+        };
+        const value = Reflect.get(instance, property, instance);
+        return typeof value === 'function' ? value.bind(instance) : value;
+      },
+    });
+  },
+});
+const { formatLessonWhen, formatRelativeStamp } = await import('../src/lib/format.ts');
+Intl.DateTimeFormat = NativeDateTimeFormat;
 
 // Student screens "com cara de app" (2026-11-11): compact titles instead of
 // web-page heroes, inbox/messenger rows instead of underlined links, readable

@@ -37,7 +37,16 @@ export const formatMonthTag = (iso: string) => MONTH.format(new Date(iso)).toUpp
 const WEEKDAY_DATE = new Intl.DateTimeFormat('pt-BR', { weekday: 'long', day: 'numeric', month: 'long', timeZone: LESSON_TIME_ZONE });
 const HOUR = new Intl.DateTimeFormat('en-GB', { hour: '2-digit', hourCycle: 'h23', timeZone: LESSON_TIME_ZONE });
 
-const DAY_KEY = new Intl.DateTimeFormat('en-CA', { timeZone: LESSON_TIME_ZONE });
+const DAY_KEY = new Intl.DateTimeFormat('en-CA', {
+  timeZone: LESSON_TIME_ZONE, year: 'numeric', month: '2-digit', day: '2-digit',
+});
+// Intl.format() ordering varies between browser/ICU versions. Assemble the
+// key from typed parts so comparisons and the year check remain stable.
+function dayKey(at: number): string {
+  const parts = DAY_KEY.formatToParts(at);
+  const get = (type: Intl.DateTimeFormatPartTypes) => parts.find((part) => part.type === type)?.value ?? '';
+  return `${get('year')}-${get('month')}-${get('day')}`;
+}
 const SHORT_DAY = new Intl.DateTimeFormat('pt-BR', { day: 'numeric', month: 'short', timeZone: LESSON_TIME_ZONE });
 const SHORT_DAY_YEAR = new Intl.DateTimeFormat('pt-BR', { day: 'numeric', month: 'short', year: 'numeric', timeZone: LESSON_TIME_ZONE });
 
@@ -52,10 +61,10 @@ export function formatRelativeStamp(iso: string, now = Date.now()): string {
   const minutes = Math.floor((now - at) / 60_000);
   if (minutes >= 0 && minutes < 1) return 'Agora';
   if (minutes >= 1 && minutes < 60) return `Há ${minutes} min`;
-  const day = DAY_KEY.format(at);
-  if (day === DAY_KEY.format(now)) return `Hoje, ${TIME.format(at)}`;
-  if (day === DAY_KEY.format(now - 86_400_000)) return `Ontem, ${TIME.format(at)}`;
-  return day.slice(0, 4) === DAY_KEY.format(now).slice(0, 4) ? SHORT_DAY.format(at) : SHORT_DAY_YEAR.format(at);
+  const day = dayKey(at);
+  if (day === dayKey(now)) return `Hoje, ${TIME.format(at)}`;
+  if (day === dayKey(now - 86_400_000)) return `Ontem, ${TIME.format(at)}`;
+  return day.slice(0, 4) === dayKey(now).slice(0, 4) ? SHORT_DAY.format(at) : SHORT_DAY_YEAR.format(at);
 }
 
 const WEEKDAY_SHORT = new Intl.DateTimeFormat('pt-BR', { weekday: 'short', day: 'numeric', month: 'short', timeZone: LESSON_TIME_ZONE });
@@ -63,9 +72,9 @@ const WEEKDAY_SHORT = new Intl.DateTimeFormat('pt-BR', { weekday: 'short', day: 
 /** When a lesson starts, said the short way: "hoje às 09:00", "amanhã às 15:30", "qua., 12 de nov. às 09:00". */
 export function formatLessonWhen(iso: string, now = Date.now()): string {
   const at = Date.parse(iso);
-  const day = DAY_KEY.format(at);
-  const label = day === DAY_KEY.format(now) ? 'hoje'
-    : day === DAY_KEY.format(now + 86_400_000) ? 'amanhã'
+  const day = dayKey(at);
+  const label = day === dayKey(now) ? 'hoje'
+    : day === dayKey(now + 86_400_000) ? 'amanhã'
       : WEEKDAY_SHORT.format(at);
   return `${label} às ${TIME.format(at)}`;
 }
