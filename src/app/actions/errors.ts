@@ -107,6 +107,12 @@ export function friendlyError(
   if (error?.code === 'PGRST202' || error?.code === 'PGRST203' || error?.code === '42883') {
     return 'A função necessária no Supabase não está disponível ou está desatualizada. Avise a administração para verificar as migrações.';
   }
+  // PostgreSQL aborts one transaction to break a deadlock. The failed action
+  // has been rolled back; ask the user to retry instead of leaking SQLSTATE.
+  // Do not retry writes automatically: the caller must initiate a fresh action.
+  if (error?.code === '40P01') {
+    return 'Outra operação está acontecendo ao mesmo tempo. Aguarde um instante e tente novamente.';
+  }
   if (error?.code === '42501') return 'Você não tem permissão para esta operação. Entre novamente ou contate a administração.';
   // Concorrência: o banco desfaz uma das duas operações (deadlock 40P01 ou "tente de novo" 40001); nada é perdido, basta repetir.
   if (error?.code === '40P01' || error?.code === '40001' || /Booking changed, try again|deadlock detected/i.test(message)) {
