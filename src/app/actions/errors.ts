@@ -47,6 +47,17 @@ const KNOWN: readonly [RegExp, string][] = [
 
   [/Instructor has a class or block at (?:the|a) selected time/i,
     'Um ou mais encontros estão fora da disponibilidade do instrutor, bloqueados ou com conflito de outra reserva. Confira todas as datas e horários na agenda; nenhuma reserva foi criada.'],
+  [/A confirmed class overlaps this block/i,
+    'Há uma aula confirmada nesse período. Reagende ou cancele a aula pela página da aula antes de bloquear o horário.'],
+  [/A pending reservation (?:overlaps this block|conflicts with the updated schedule)/i,
+    'Há uma reserva aguardando confirmação nesse horário. Sua disponibilidade não foi alterada e a reserva foi preservada.'],
+  [/Invalid break/i, 'Confira as pausas: elas precisam ficar dentro do turno, em ordem e sem se sobrepor.'],
+  [/Invalid schedule/i, 'Confira os dias, os horários do turno e o intervalo entre aulas.'],
+  [/Invalid block/i, 'Confira as datas: o período precisa ser futuro e caber nos limites (bloqueio até 30 dias, folga até 14, férias até 180).'],
+  [/Invalid extra hours/i, 'Confira a data (de hoje até 180 dias) e o horário inicial antes do final.'],
+  [/Configure your weekly schedule first/i, 'Salve seus turnos semanais antes de abrir um horário extra.'],
+  [/Instructor already has a meeting in this time slot/i,
+    'O instrutor já tem outro encontro nesse horário. Escolha outro horário.'],
   [/Demo meetings cannot overlap each other/i,
     'Os encontros desta reserva de teste não podem acontecer em horários sobrepostos. Ajuste as datas ou a duração. Nenhuma reserva foi criada.'],
   [/A started test must be completed before cleanup/i,
@@ -114,6 +125,9 @@ export function friendlyError(
   }
   if (error?.hint === 'STUDENT_MEETING_CONFLICT') {
     return 'Você já tem outro encontro nesse horário. Escolha um horário que não se sobreponha às suas aulas.';
+  }
+  if (error?.hint === 'INSTRUCTOR_MEETING_CONFLICT') {
+    return 'O instrutor já tem outro encontro nesse horário. Escolha outro horário.';
   }
   if (error?.hint === 'NO_INSTRUCTOR') {
     return 'Nenhum instrutor disponível para essa praia e horário. Escolha outro horário ou tente outra praia.';

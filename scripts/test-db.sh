@@ -76,6 +76,14 @@ PG_TEST_SOCKET="$DATA" PG_TEST_PORT="$PORT" bash "$ROOT/scripts/test-p0-booking-
 
 # #92: um instrutor só com a linha travada na hora da solicitação (oferta nasce depois, sem esperar, sem duplicar).
 PG_TEST_SOCKET="$DATA" PG_TEST_PORT="$PORT" bash "$ROOT/scripts/test-single-instructor-request-lock.sh"
+# #91: agenda do instrutor x reserva do aluno, duas conexões reais (bloqueio, reserva e redução de turno).
+PG_TEST_SOCKET="$DATA" PG_TEST_PORT="$PORT" bash "$ROOT/scripts/test-schedule-concurrency.sh"
+PG_TEST_SOCKET="$DATA" PG_TEST_PORT="$PORT" bash "$ROOT/scripts/test-schedule-concurrency-mutation.sh"
+
+# #91: rollback exato da migration da agenda v2 (funções substituídas, ACL, gatilhos novos).
+bash "$ROOT/scripts/test-91-rollback.sh"
+# Apply agenda after the complete current baseline, preserving guard90 and revoked starter.
+bash "$ROOT/scripts/test-schedule-upgrade.sh"
 
 # P2-1: pagar uma reserva e criar outra com o mesmo instrutor (mesmo aluno) ao mesmo tempo não pode dar deadlock.
 PG_TEST_SOCKET="$DATA" PG_TEST_PORT="$PORT" bash "$ROOT/scripts/test-payment-lock-order.sh"
