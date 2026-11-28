@@ -2,6 +2,20 @@ import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 import { isActive } from '../src/lib/navigation-state.ts';
 import { modalFocusDestination } from '../src/lib/modal-focus.ts';
+import { sheetForPage, togglePageSheet } from '../src/lib/page-sheet-state.ts';
+
+const openOnA = { pathname: '/aluno/inicio', open: true };
+assert.deepEqual(togglePageSheet({ pathname: '/aluno/inicio', open: false }, '/aluno/inicio'), openOnA,
+  'Clicking the trigger opens the menu');
+assert.deepEqual(togglePageSheet(openOnA, '/aluno/inicio'), { pathname: '/aluno/inicio', open: false },
+  'Clicking the trigger again closes the menu');
+assert.equal(sheetForPage(openOnA, '/aluno/inicio'), openOnA,
+  'Remaining on the page preserves its open menu');
+const afterB = sheetForPage(openOnA, '/aluno/aulas');
+assert.deepEqual(afterB, { pathname: '/aluno/aulas', open: false },
+  'Leaving A discards its open menu');
+assert.deepEqual(sheetForPage(afterB, '/aluno/inicio'), { pathname: '/aluno/inicio', open: false },
+  'Returning to A does not reopen the discarded menu');
 
 const lessons = { href: '/aluno/aulas', match: ['/aluno/reserva'] };
 assert.equal(isActive('/aluno/aulas', lessons), true);
