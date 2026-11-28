@@ -68,7 +68,14 @@ const walk = (d) => readdirSync(d).flatMap((n) => { const p = join(d, n); return
 const files = [...walk('src/app/admin/business'), ...walk('src/components/business'), ...walk('src/lib/business')].filter((f) => /\.tsx?$/.test(f));
 for (const f of files) {
   const s = read(f);
-  assert.doesNotMatch(s, /createSupabaseServerClient|supabase\.|\.rpc\(|'use server'/, `${f}: demo screens never touch the database`);
+  // This isolated DAL is the first gated real-data block; all demo files
+  // retain the no-database assertion and cannot import the live path.
+  if (f !== 'src/lib/business/core-data.ts') {
+    assert.doesNotMatch(s, /createSupabaseServerClient|supabase\.|\.rpc\(|'use server'/, `${f}: demo screens never touch the database`);
+  }
+  if (f !== 'src/lib/business/core-data.ts' && f !== 'src/components/business/company-workspace.tsx') {
+    assert.doesNotMatch(s, /(?:from\s*|import\s*\()["'][^"']*(?:core-data|company-workspace|actions\/business-company)["']/, `${f}: demo files cannot import the live Business workspace`);
+  }
   // Code only: screens may say "sem repasse" in their copy, which is the point.
   assert.doesNotMatch(s.replace(/\/\*[\s\S]*?\*\/|\/\/.*$/gm, ''), /\bcheckout\w*\(|createPayment|\bgateway\b|stripe|mercadopago|pagar\.?me|fetch\(/i, `${f}: no payment processing or outside calls`);
 }

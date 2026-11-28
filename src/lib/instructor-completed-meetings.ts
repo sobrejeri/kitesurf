@@ -13,7 +13,7 @@ export function listCompletedInstructorMeetings(
     booking.booking_meetings
       .filter((meeting) => meeting.status === 'done')
       .map((meeting) => ({ booking, meeting })),
-  ).sort((a, b) => b.meeting.starts_at.localeCompare(a.meeting.starts_at));
+  ).sort((a, b) => Date.parse(b.meeting.starts_at) - Date.parse(a.meeting.starts_at));
 }
 
 /** A deep link cannot open an encounter outside the instructor-scoped list. */

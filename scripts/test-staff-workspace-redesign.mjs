@@ -43,6 +43,11 @@ for (const [area, nav, hub] of [
   const contextual = new Set(['/instrutor/perfil', '/instrutor/checkin', '/instrutor/chat-live']);
   for (const href of pageDirs(area)) {
     if (contextual.has(href)) continue;
+    if (process.env.NEXT_PUBLIC_VENTO_BUSINESS_CORE_ENABLED !== 'true'
+      && ['/instrutor/empresa', '/admin/empresas'].includes(href)) {
+      assert.ok(!hrefs.includes(href), 'Business navigation stays hidden while its flag is off');
+      continue;
+    }
     assert.ok(hrefs.includes(href) || hubSource.includes(`href: '${href}'`), `${area}: ${href} is not reachable from the menu or the hub`);
   }
 }

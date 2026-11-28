@@ -1,6 +1,36 @@
 # VentoKite — comando mestre de continuidade entre conversas
 
+## Continuidade em 21/11 — solicitação aceita e agenda do instrutor
+
+O pedido aceito abre a reserva pelo botão “Ver minha reserva”. A própria reserva exibe a confirmação quando aplicável. O destaque de próxima aula ignora encontros passados ainda sem registro. As listas do instrutor usam o instante de início para ordenar encontros com fusos diferentes. No painel do Kitesurf foram verificados oito backups físicos concluídos, o mais recente de 21/11 às 02h05 de Fortaleza. O ensaio de recuperação de uma cópia real em destino isolado segue pendente.
+
+## Continuidade em 21/11 — fila offline (#92)
+
+O diagnóstico de ofertas abertas contava um estado inexistente. A consulta agrega ofertas enviadas e sugestões de data, incluindo vencidas. A regressão executa a consulta sobre dados fictícios e verifica o instante exato do vencimento. A solicitação expirada agora informa o encerramento no título de celular e PC. Retomar a homologação A→B→C com três instrutores fictícios aprovados e recuperação do banco Kitesurf comprovada.
+
+## Continuidade em 21/11 — ordenação em Minhas aulas
+
+A #310 entrou na principal em `9188fbd2`. A tela `/aluno/aulas` montava os cards de cada encontro com uma ordenação independente. A correção da tela usa o instante de início e preserva próximas aulas em ordem crescente e histórico em ordem decrescente. A regressão verifica horários com fusos distintos e horários equivalentes. Nenhuma alteração de banco.
+
+## Handoff 21/11/2026 06h17 BRT — PR #310 (#90/#103)
+
+- PR #310 (commits `358c3cc`, `381ef39`) corrige a ordenação das próximas reservas do Aluno por instante UTC real, inclusive quando encontros usam offsets diferentes. Regressões acrescentadas em `scripts/test-booking-cycle.mjs` para duas reservas e para dois encontros na mesma reserva. **CI do HEAD ainda não confirmado ao registrar**; Claude QA precisa ser consultado antes do merge. Não declarar publicado ou homologado.
+- Último Render LIVE consultado: `abd56997c83e1878308cec7333a6b521467de737` (deploy `dep-dc0l8vtg1s2s73e65hb0`), PR #309. #300/#303/#304 já integradas. #305 segue aberta: não publicar a UI 24h antes da RPC real reconciliada e backup restaurável do Kitesurf.
+- #105 registra VNT-1008 com Aluno/Instrutor e 110+115=225/240 minutos, saldo 15; VNT-1012 adiamento bilateral e VNT-1013 recontratação. Admin requer sessão AAL2; Pousada autenticada mas aprovação/comissão ainda não concluídas. 0/16 frentes integralmente homologadas. Supabase não alterado nesta rodada; Protege 3B e checkout real permanecem fechados.
+- Próximo passo: verificar CI #310 no SHA final, corrigir se falhar; merge somente com revisão adequada, confirmar SHA LIVE e reexecutar a ordenação no Aluno. Paralelamente, resolver recuperação do banco antes da #305, autenticação Admin AAL2, fila offline e Storage HTTP. O skill Supabase não apareceu na listagem desta execução; nenhuma operação Supabase foi tentada.
+
+
 Este documento é a memória operacional do projeto em GitHub. **Não permite iniciar novas conversas sozinho ou executar trabalho fora de uma sessão ativa.** Serve para que, ao abrir uma nova conversa e enviar o comando abaixo, o desenvolvimento seja retomado sem reconstruir todo o histórico.
+
+## Execução de 21/11/2026
+
+- VNT-1008 (Aluno e Instrutor, navegador): primeiro encontro já registrado com 110 min; segundo iniciado com o código do voucher, registrado com 115 min e Pilotagem em terra. A evolução e a reserva do aluno exibiram 225 min realizados e 15 min disponíveis.
+- VNT-1012 (Aluno e Instrutor, navegador): busca geral para Jericoacoara, Iniciante, 26 e 27/11 às 09h, 2h por encontro. Aceite pelo instrutor e confirmação pelo aluno sem cobrança. Após o aceite e a confirmação, os dois horários ficaram indisponíveis.
+- #300, #304 e #303 integradas. Render e /api/version confirmaram 20fc8fe5. #305 aguarda a janela de 24h no banco. D7 da fila corresponde à migration 14; restauração do banco real ainda sem evidência. Aluno e Instrutor têm cenários parciais. A sessão Pousada teste abriu o painel e as indicações, com cadastro em análise e zero reservas. O Admin redirecionou à configuração do autenticador. Retomar Admin com AAL2, comissão simulada de pousada aprovada, dispositivos físicos e aplicação do banco após backup validado.
+- PWA: a recuperação de navegação sem rede está sendo integrada. O service worker apresenta uma página genérica para reconectar, sem armazenar respostas de sessão ou enfileirar operações.
+
+- Complemento do mesmo lote: na VNT-1012 o aluno adiou o segundo encontro de 27/11 para 04/12, o instrutor aprovou e a reserva conservou 240 minutos. O horário anterior voltou a ficar livre. Na VNT-1008, o [registro anterior de aceite e presença](https://github.com/sobrejeri/kitesurf/issues/103#issuecomment-7007850788) e o registro do segundo encontro referem-se à mesma reserva.
+- O D7 passou a conferir a presença das dez assinaturas e o corpo anterior da RPC de presença. Em recontratação pelo histórico, as horas da aula anterior são uma sugestão editável. Validar a jornada preferencial em conjunto com a disponibilidade do instrutor (D7 do banco real ainda na migration 14).
 
 ## Comando para copiar em outro chat
 
@@ -584,3 +614,99 @@ O projeto possui um **avaliador independente preparado, não necessariamente con
 - **Business fase 4 do banco (16/11/2026):** migration `20261115150000_business_cash.sql` (caixa por unidade, venda só com origem do banco, só dinheiro na gaveta, fechamento com motivo de diferença, arquivos do fechamento em bucket privado imutável) + teste + `scripts/test-business-cash-race.sh` (aberturas simultâneas e movimentos disputando o fechamento) + reversão + verificação, em PR draft, **não aplicada**. Não altera função anterior. 10 mutações no teste de banco e 2 na corrida detectadas. Depende das fases 1 a 3.
 - **Business fase 5 do banco (16/11/2026):** migration `20261115160000_business_shop_affiliates.sql` (configuração da loja, cupons, pedidos com preço congelado e itens por unidade, afiliados da empresa com percentuais em versões e comissão nunca paga) + teste + `scripts/test-business-coupon-race.sh` + reversão + verificação, em PR draft, **não aplicada**. Pedido criado só pela equipe (sem vitrine pública). Depende das fases 1 a 4.
 - **Business fase 6 do banco (16/11/2026):** migration `20261115170000_business_finance.sql` (lançamentos append-only com estorno, contas a receber e a pagar, pagamentos externos aos instrutores só como registro e confirmados pelo instrutor, resumo por unidade) + teste + `scripts/test-business-finance-race.sh` + reversão + verificação, em PR draft, **não aplicada**. Última fase do plano do banco; tabela geral das 6 fases no fim de `docs/proposals/business-multiempresa/PROPOSTA_esquema_multiempresa.md`.
+
+
+### Handoff P0 — 15/11/2026 19h BRT, PR #285
+- PR #285 (`test/p0-instructor-rpc-failclosed-20261115`): testes isolados de falha fechada por permissão negada nas ações de presença, registro legado e evolução, e role affiliate sem permissão. HEAD inicial `c4f3cb0f`; verificar HEAD final, CI e Claude QA antes do merge.
+- Render LIVE antes da PR: SHA `6126a0e980601ec196885f02a04f142846193dfe`, deploy `dep-dbt23qu417fc7383rc50` (PR #282).
+- CI inicial #285: `43768377586` e Claude QA `43768377630` estavam em andamento. O Claude QA permanece documentado como desativado; job skipped não equivale a revisão.
+- E2E autenticado de 4h/2 encontros **não executado**: faltam sessões de teste isoladas de Aluno e Instrutor, reserva autorizada e navegador de homologação. 0/18 frentes homologadas.
+- Retomada: conferir CI do HEAD atualizado, corrigir falhas; integrar somente se aprovado, confirmar SHA Render LIVE e prosseguir com testes de conflitos/fila/reagendamento sem mutar reservas reais. Não alterar Supabase ou Protege 3B nem ativar checkout real.
+
+
+## Handoff P0 — 16/11/2026, PR #288
+
+- **Feito em código/testes:** PR #288 adiciona corte obrigatório `QUEUE_WORKER_ACTIVATED_AT` ao endpoint `queue-maintenance` e testes para configuração ausente, inválida ou futura e filtro `created_at` nas duas consultas. Não ativa o worker.
+- **Estado ao registrar:** commit `864f55affb942c7b25e846263ce3cc07ec92491d`; CI `43853015438` em execução; Claude QA `43853015445` SKIPPED (sem revisão). PR aberta, sem merge/deploy.
+- **Produção comprovada:** Render LIVE `99e431b06d00fc8f1596cef5c3ec5057a190696a`; Supabase kitesurf `qadkqjfmmnxvovyyhqxw` lista migrations 39–42. Nenhuma migration ou dado real alterado nesta rodada.
+- **Retomar exatamente:** verificar CI #288, corrigir falhas antes de merge, verificar Claude QA novamente; depois homologar executor offline em dados descartáveis e scheduler sem custo; revisar PR #283 (draft) e corrida de agenda; E2E autenticado Aluno 4h/2 encontros → Instrutor → Aluno permanece obrigatório e não executado. Não habilitar worker nem Protege 3B até homologação.
+
+
+## Handoff P0 — 16/11/2026, fluxo de reserva e Business
+
+- [PR #283](https://github.com/sobrejeri/kitesurf/pull/283) integrada como `f2a11344d87b58badeb4d0d4ddca180cc1bb8fba`. CI [#43764801011](https://github.com/sobrejeri/kitesurf/actions/runs/43764801011) aprovado e Claude QA, já com a PR pronta, [#43920658523](https://github.com/sobrejeri/kitesurf/actions/runs/43920658523) pulado. A consulta somente leitura de sobreposições no Supabase kitesurf retornou 0. A migration #283 segue sem aplicação e existe uma sobrecarga legada de cinco argumentos de `create_booking` na produção que precisa de conciliação antes da publicação SQL. Não reaplicar migrations antigas.
+- Regressão em PostgreSQL descartável 17.11 agora percorre uma única solicitação real das RPCs de 4h em 2 encontros, aceite, validação sem checkout, PIN, registro de 110 e 115 minutos e competências por encontro, leitura pelo aluno e reposição de 15 minutos. Também passaram a corrida em 12 rodadas, fila A→B→C e reagendamento com expiração. Sessões SQL simuladas. E2E autenticado no navegador segue pendente e 0/18 frentes integralmente homologadas.
+- Retomar E2E com URL de homologação ligada a um projeto Supabase isolado, contas de teste autorizadas Aluno e Instrutor aprovado, horários livres e confirmação de e-mail. Para fila real, preparar três instrutores e um disparo offline isolado. Reexecutar #94 com reservas fictícias. Supabase live mantém migrations 39–42 e Protege 3B fechado.
+- Business: confirmação de e-mail verificada no Auth do projeto kitesurf. O conector lista apenas kitesurf e Turiva, e kitesurf não tem branch de teste. Em um Supabase isolado, confirmar e-mail e os pré-requisitos 47/48 e aplicar a versão corrigida das seis fases na ordem do roteiro. As correções de confirmação em convites e rateio do cupom precisam entrar na pilha antes dessa aplicação. Revisar também o encerramento de reserva presencial antes do fim do horário e seu efeito na agenda. Após o roteiro, CI combinado e aprovação das pilhas, conectar Unidades atrás de flag.
+
+### Verificação posterior do mesmo dia
+
+- Render publicou #283 em `dep-dbtk0dp7lnhs73a2p4e0`, SHA `f2a1134`, e [#292](https://github.com/sobrejeri/kitesurf/pull/292) em `dep-dbtk2eqjnfac73ef8ej0`, SHA `7cc8095`, confirmado por `/api/version`. CI #292 [43921454389](https://github.com/sobrejeri/kitesurf/actions/runs/43921454389) aprovado, Claude QA pulado. As quatro RPCs mutantes do Protege 3B permanecem sem EXECUTE para `anon` e `authenticated`.
+- [#294](https://github.com/sobrejeri/kitesurf/pull/294) testa cancelamento pelo dono uma vez na janela de escolha, histórico/preço preservados, uma auditoria, negativa para outro aluno, prazo vencido e encontro iniciado. Os cancelados ficam no histórico e foram excluídos das contagens de conflitos ativos no teste. Suite completa local passou com 12 rodadas de corrida. Conferir CI e SHA live em #105.
+- [#293](https://github.com/sobrejeri/kitesurf/pull/293) reúne as correções Business: convites só para e-mail confirmado, reserva presencial concluída somente a partir do fim contratado com buffer preservado e rateio do cupom limitado ao valor de cada item. CI [43922063333](https://github.com/sobrejeri/kitesurf/actions/runs/43922063333) aprovado, Claude QA pulado. Seis fases revisadas, roteiro e quatro corridas conferidos em PostgreSQL descartável. Pilhas Business seguem em draft. No teste gerenciado, seguir o roteiro do #293 fase a fase, após confirmar Auth e pré-requisitos. Retomar Unidades atrás de flag após validação e integração das pilhas. Não usar Supabase kitesurf de produção nem Turiva para instalar Business.
+- Próxima ação no fluxo principal: rodar a jornada #292 em homologação no navegador, com Aluno e Instrutor aprovado autorizados e horários livres. Depois rodar conflitos, fila offline com três instrutores e reagendamento/cancelamento. Antes da aplicação separada da migration #283, reconciliar a sobrecarga de cinco argumentos de `create_booking` existente em produção. Não ativar worker em produção nem aplicar o SQL rascunho do [#253](https://github.com/sobrejeri/kitesurf/pull/253) antes de conciliar chamadas legadas e testar os grants.
+
+### Continuação da fila — 16/11/2026
+
+- #294 integrada em `44bcc03` após [CI aprovado](https://github.com/sobrejeri/kitesurf/actions/runs/43922526862) e [Claude QA pulado](https://github.com/sobrejeri/kitesurf/actions/runs/43922526907). Ver deploy `dep-dbtk5m0jo6nc7381ate0` no Render e evidência final em #105.
+- O endpoint alternativo `/api/internal/expire-offers` passa a exigir o mesmo corte de ativação e filtra pela criação da solicitação, inclusive ao selecionar uma oferta recente vinculada a uma solicitação antiga. A regressão cobre recusa antes de consultar o banco quando o corte não é válido, preview sem RPC, aplicação sem legado e seleção incompleta. Sem ativação do worker ou alteração de ofertas reais.
+- Retomar pelo CI e deploy da PR desta mudança. Homologar o filtro PostgREST e a progressão A→B→C com chamadas do agendador em instância de teste isolada. O cenário principal de 4h/2 encontros segue pendente de navegador autenticado, como descrito acima.
+
+
+## Handoff P0 — 17/11/2026, PR #298 (concorrência)
+
+- No CI `44206640905` da PR #298, o teste de corrida falhou na rodada 5: os dois alunos de fixture receberam `STUDENT_MEETING_CONFLICT` e `NO_INSTRUCTOR`. A seleção de slots considerava apenas o instrutor A1 e não as reservas ativas anteriores dos alunos b1/b2 com outros instrutores.
+- Commit `dddf0630` atualiza `scripts/test-concurrent-instructor-booking.sh` para exigir horário livre também para ambos os alunos, independentemente do instrutor, respeitando encontros não cancelados e reservas confirmadas ou pendentes recentes. Trata-se de correção de teste, **não** de homologação real.
+- CI `44214701001` iniciado; Claude QA `44214700246` SKIPPED (não revisou). **Não integrar** a PR #298 enquanto draft e sem validação de concorrência, deadlocks, #296 e E2E autenticado.
+- Render LIVE `4007b8fb`; Supabase kitesurf mantém somente migrations 39–42. Protege 3B fechado, checkout real desligado, sem alterações de dados.
+- **Retomada exata:** conferir CI `44214701001`; se falhar, examinar o passo SQL e corrigir a causa. Validar PRs #296/#298 juntas em PostgreSQL isolado, concorrência e chamadas PostgREST autenticadas; depois executar Aluno 4h/2 encontros → aceite Instrutor → presença/minutos/evolução → leitura Aluno, usando ambiente isolado e sessões autorizadas. Não confundir teste SQL simulado com E2E real. 0/18 homologados.
+
+
+## Handoff P0 — 18/11/2026 14h BRT, #90/#91
+
+- PR #298 recebeu commit `c39582712b8deac394c48341c655bebdee1dc479`: o teste `89a_student_overlap_behavior.test.sql` agora tenta criar **segunda reserva do mesmo aluno** no horário já confirmado, via RPC autenticada simulada, exigindo `23P01` e ausência de dados residuais. Complementa os casos anteriores dentro da mesma reserva. É teste SQL em fixture isolada, **não E2E HTTP autenticado**.
+- CI do novo HEAD ainda não confirmado no momento da escrita; não fazer merge antes de verificar sucesso, impacto da regressão conjunta #296/#298 e deadlocks. Claude QA configurado como não ativo no documento; verificar job efetivo antes de qualquer merge.
+- Render último live verificado `4007b8fb` (deploy `dep-dbtk7ep7lnhs73a391dg`); Supabase kitesurf migrations somente 39–42, nenhuma alteração nesta rodada. Protege 3B fechado; dinheiro real desligado.
+- Próximo: verificar CI do commit `c395827`, corrigir falhas; executar #296 e #298 juntas em PostgreSQL descartável; testar concorrência e transições de cancelamento/reagendamento; obter sessão autorizada de Aluno e Instrutor para E2E real 4h/2 encontros, presença/minutos/evolução e leitura pelo Aluno. 0/18 frentes homologadas.
+
+### Handoff P0 — 19/11/2026, PR #299: caminho preferencial da UI
+
+- CI do HEAD anterior `be57f789` aprovado (run `44470597093`). A PR #299 agora executa o fluxo genérico e a variante de sete argumentos `create_instructor_request_with_preference` usada pela interface, com instrutor preferido A1, no mesmo script e em transações isoladas com `ROLLBACK`.
+- Commits de implementação/teste: `31ea2467` e `20963bcb`. CI inicial do novo HEAD `44478067083` em execução ao registrar; Claude QA `44478067095` SKIPPED, **não revisou**. Este commit documental dispara nova checagem: validar o CI do HEAD final, não somente o anterior.
+- Sem merge ou deploy. Render live `4007b8fb` (`dep-dbtk7ep7lnhs73a391dg`), Supabase Kitesurf migrations 39–42, Protege 3B fechado. PRs #296/#298 continuam em draft.
+- **Retomada:** verificar CI da PR #299 no HEAD final; se falhar, investigar a RPC de preferência e fixtures, corrigir sem enfraquecer testes de RLS. Depois preparar ambiente isolado e sessões autorizadas Aluno/Instrutor, rodar E2E de 4h/2 encontros com aceite, presença, 110+115 minutos, evolução e leitura do aluno. SQL simulado não equivale a E2E. 0/18 tópicos homologados.
+
+
+### Retomada 20/11/2026 — teste de precisão do início de aula (#93/#103)
+- Na PR #303, `144a6ceb` acrescenta regressão: exatamente 24h permite iniciar; 24h + 1 microssegundo recusa com `55000` e preserva `scheduled`. Ainda não foi validado CI desse HEAD. Não há E2E autenticado.
+- HEAD anterior `7179c608`: CI `Vento - build and database rules` `44666647268` success; Claude QA `44666647186` skipped (não revisou).
+- PRs #300 e #303 seguem abertas e sem reviews. Render live `61bab72664fa4053d64b60853d45f44ad2e191c5`; Supabase Kitesurf somente migrations 39–42; 0/16 frentes homologadas. Não houve merge, deploy nem execução de migrations nesta rodada.
+- **Próximo ponto exato:** conferir CI de `144a6ceb`; revisar e integrar #300 somente com critérios satisfeitos; reapontar e revisar #303; confirmar backup e ensaiar migrations em banco isolado; E2E VNT-1008 Aluno→Instrutor→225/15→Aluno. Não ativar pg_cron no projeto atual e não abrir Protege 3B.
+
+## Handoff 21/11/2026 14h BRT — P0 start_meeting (#93)
+
+- No Supabase Kitesurf `qadkqjfmmnxvovyyhqxw`, leitura confirmou `authenticated` com EXECUTE tanto em `start_meeting(uuid,text)` quanto em `start_ordered_meeting(uuid,text)`. A primeira não valida ordem/dia e pode ser chamada diretamente com PIN; **P0 aberto no banco ativo**. Não houve exploração ou alteração de dados.
+- PR draft **#324**, branch `fix/93-start-meeting-rpc-p0-20261121`, SHA `bdf56873`, introduz migration `20261121143000_revoke_direct_start_meeting.sql` e regressão `89m_revoke_direct_start_meeting.test.sql`. Remove EXECUTE direto de PUBLIC/anon/authenticated, preservando chamada interna pelo `start_ordered_meeting` SECURITY DEFINER. Nenhum merge/DDL/deploy realizado.
+- CI `Vento - build and database rules` run **44929166158** estava `in_progress` na consulta; Claude QA run **44929166192** foi `skipped`, portanto **sem revisão independente Claude**. Antes do merge: confirmar CI verde, testar início ordenado com PIN em PostgreSQL isolado, revisar permissões e compatibilidade com RPCs do app.
+- PR draft **#323** possui `GRANT EXECUTE ... TO authenticated` na função legada: ao integrar #323, remover essa reabertura da falha ou garantir migration posterior e regressão obrigatória. Não publicar #323 antes da correção P0, da revisão das transições e do E2E.
+- Render último LIVE confirmado: `d69f4552`; migration de interrupção #323 não aplicada. #300 integrada. VNT-1008: 225/240 min; E2E completo de 4h em dois encontros continua sem homologação. **0/16 frentes homologadas**. Próximo: CI #324 → revisão → merge e deploy sequencial se aprovado → migration após conciliação/backup → checar grants reais → fluxo autenticado; continuar #323 em paralelo sem ativar.
+
+
+## Handoff — execução por módulo #90, reserva de aulas
+- PR #334 corrigiu bloqueio de encontros no mesmo dia na interface, reutilizando a validação da Server Action; commit `43013df`. Commit `7bc180d0594a93aabb37a27ee2a18683530470db` ampliou regressão da ação real com mocks: 1/2/4/6/8h, validação real de nível, praia/idioma, perfil indisponível e campos financeiros forjados não repassados à RPC. CI do novo SHA 45320432866 ainda queued na última consulta; Claude QA anterior skipped, verificar novo HEAD.
+- Supabase Kitesurf somente leitura: VNT-1008 e VNT-1012 possuem 4h/2 encontros, 240 minutos contratados, taxa histórica 30000 centavos/h, total e soma das parcelas 120000 centavos. Não prova novo E2E, congelamento após mudança de preço ou pagamento. Ledger 8 migrations intacto; Render live `e7a5b9b9`. Nenhuma operação financeira/DDL.
+- Próximo: CI/QA do HEAD incluindo este registro, merge se aprovado, conferir Render live e executar reserva autenticada de um encontro e de 4h em dois dias, revisão mobile/PC e preço congelado. Sessões reais de teste não disponíveis neste ambiente; não declarar homologação. Manter foco #90, demais frentes só dependências indispensáveis. PR #323 fora do trabalho corrente. 0/16 integralmente homologadas.
+
+
+## Handoff #90 — 24/11/2026: guarda civil em ensaio de atualização/restauração
+- PR #334 integrada e LIVE em 4c3b628, deploy dep-dc2gco49v7es73b2olmg. PR #335 HEAD 49f54e0 com CI 45351838675/45351833069 success; logs confirmam rejeição nas quatro RPCs e rollback. QA 45351838907 skipped.
+- Revisão detectou delegado 5 args DEFINER na proposta apesar de 20261116160000 exigir INVOKER. Ajustado para INVOKER com testes de ACL/defaults. Proposta agora ensaiada no upgrade histórico após conciliação dos overloads, comparando snapshots e repetindo regressão no cluster restaurado. Aguardar CI do novo HEAD. Não aplicar SQL de reconciliation diretamente ao remoto.
+- Kitesurf real: guard ausente, defaults antigos de 6 args presentes, oito migrations no ledger. D7 anterior reconheceu 10/10 funções; uma reserva histórica concluída com dia repetido deve ser preservada. CLI Supabase, PostgreSQL e Docker ausentes no executor atual. Falta gerar migration oficial em ambiente com CLI, restaurar backup real em isolamento (fixture CI não equivale), conciliar 20261116160000/170000, testar e executar E2E autenticado. Sem DDL ou cobrança. #90 90% estimados, 0/16 homologadas.
+
+
+## Handoff #90 — 24/11/2026: conciliação aplicada no Kitesurf de TESTE
+- Decisão explícita do responsável: adiar download do backup e restore externo para a fase de operação comercial, sem projeto/infraestrutura paga; manter backup físico de 24/11 05:06:44 UTC. Não alegar backup lógico ou restauração real comprovados.
+- Supabase Kitesurf qadkqjfmmnxvovyyhqxw: migration remota única `20261124114433_vento_90_reconcile_booking_overloads_and_civil_days` aplicada com sucesso. Equivale, nesta ordem e em UMA transação, às migrations do repo `20261116160000`, `20261116170000`, `20261124080301` do HEAD f328336, retirados BEGIN/COMMIT internos, com locks curtos, preflight fail-closed dos hashes/ACL/defaults/dependências, preservação explícita do EXECUTE service_role e comparação dos fingerprints antes de commit. NÃO reaplicar estes arquivos ao remoto nem usar db push sobre ledger divergente; mapear a equivalência em futuras conciliações.
+- Preflight: 5 args corpo md5 29468723ab3d56acfb886f412c9c8259, 6 args a94c4eecf4c98885713d2a3a917b50c9; dono postgres, ACL postgres/authenticated/service_role EXECUTE, sem PUBLIC/anon; 1/2 defaults. Pós: 5 args INVOKER/1 default, 6 args DEFINER/0 defaults e revalidação pós-lock, ACL preservada, trigger request_00_distinct_civil_days ativo; função guard sem EXECUTE anon/authenticated.
+- Preservação: 13 reservas/18 encontros/17 pedidos/17 ofertas/2 versões de preço, hashes agregados iguais antes/depois (incluindo preços dentro da transação). Regressão `90_request_distinct_civil_days.test.sql` adaptada ao aluno fictício do Kitesurf, com SET LOCAL ROLE authenticated e claims transacionais: PASS nas 4 RPCs e fronteira UTC/Fortaleza, ROLLBACK, nenhuma linha persistida. Não equivale a login real pelo navegador. Ledger 9 migrations. Advisor security executado: aviso genérico de RPCs DEFINER autenticadas deve ser avaliado na frente de segurança, manter require_role e titularidade; não revogar RPC pública necessária sem análise.
+- #336 integrada e Render LIVE 1468e82 dep-dc2nct95efls73bus7hg. Atualizar esta PR com main e rodar CI do HEAD novo antes de merge. #90 98% estimados, ainda pendente homologação autenticada mobile/PC com reserva válida e confirmação sem cobrança, além de reconciliação documental de ledger. Backup real/restauração ficam pendência pré-lançamento, não repetir como bloqueio atual por decisão do responsável. Sem cobrança nem exclusão. 0/16 integral.

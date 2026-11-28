@@ -189,6 +189,11 @@ export function HomeDashboard({
         </>
       ) : null}
 
+      <p className={styles.footnote}>
+        <span>Escolas parceiras: aulas, produtos e aluguel.</span>
+        <Link href="/escola">Ver escolas <Icon name="arrow" /></Link>{' '}
+        <Link href="/aluno/pedidos">Meus pedidos <Icon name="arrow" /></Link>
+      </p>
     </section>
   );
 }

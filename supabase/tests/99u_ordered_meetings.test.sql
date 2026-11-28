@@ -28,11 +28,11 @@ BEGIN
     PERFORM public.start_ordered_meeting(lesson.id,reservation.presence_code);
     RAISE EXCEPTION 'Future encounter started ahead of date';
   EXCEPTION WHEN sqlstate '55000' THEN
-    ASSERT SQLERRM='Meeting day has not arrived', 'Wrong future-day error';
+    ASSERT SQLERRM='Meeting start window has not opened', 'Wrong future-day error';
   END;
 
   EXECUTE 'RESET ROLE';
-  UPDATE public.booking_meetings SET starts_at=now()-interval '30 minutes'
+  UPDATE public.booking_meetings SET starts_at=now()-make_interval(mins => lesson.minutes + 30)
     WHERE id=lesson.id;
   PERFORM set_config('request.jwt.claim.sub',reservation.instructor_id::text,true);
   EXECUTE 'SET LOCAL ROLE authenticated';

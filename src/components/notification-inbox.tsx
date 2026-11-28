@@ -7,6 +7,8 @@ import { StudentPageTitle } from '@/components/student/page-title';
 import { Note, PageHeader } from '@/components/ui';
 import { requireRole } from '@/lib/auth';
 import { formatRelativeStamp } from '@/lib/format';
+import { notificationBody } from '@/lib/notification-copy';
+import { VALIDATION_WITHOUT_CHECKOUT } from '@/lib/booking-mode';
 import { createSupabaseServerClient } from '@/lib/supabase/server';
 
 type Area='aluno'|'instrutor'|'admin';
@@ -61,7 +63,7 @@ export async function NotificationInbox({area}:{area:Area}) {
                   </Link>
                   <time dateTime={n.created_at} className="shrink-0 text-[11.5px] text-muted">{formatRelativeStamp(n.created_at,now)}</time>
                 </div>
-                <p className="mt-0.5 line-clamp-2 text-[13px] leading-snug text-muted">{n.body}</p>
+                <p className="mt-0.5 line-clamp-2 text-[13px] leading-snug text-muted">{notificationBody(n, area === 'aluno' && VALIDATION_WITHOUT_CHECKOUT)}</p>
                 {!n.read_at?(
                   <ActionForm action={markNotificationRead} submitLabel="Marcar como lida" submitVariant="ghost"
                     className="relative z-10 mt-2" submitClassName="!min-h-8 !px-3 !text-[12px]">

@@ -20,7 +20,7 @@ BEGIN
    PERFORM pg_temp.reset();
  END LOOP;
  t:=(((now() AT TIME ZONE 'America/Fortaleza')::date+90)::timestamp+interval '10 hours') AT TIME ZONE 'America/Fortaleza';
- plan:=jsonb_build_array(jsonb_build_object('starts_at',t,'hours',1),jsonb_build_object('starts_at',t+interval '1 day','hours',1));
+ plan:=jsonb_build_array(jsonb_build_object('starts_at',t,'hours',2),jsonb_build_object('starts_at',t+interval '1 day','hours',2));
  PERFORM pg_temp.act_as('00000000-0000-0000-0000-0000000000c1');
  SELECT * INTO before_summary FROM public.partner_summary();
  PERFORM pg_temp.reset();
@@ -32,8 +32,14 @@ BEGIN
  PERFORM pg_temp.act_as(tid);
  bid:=public.accept_instructor_offer(oid);
  PERFORM pg_temp.reset();
+ ASSERT EXISTS(SELECT 1 FROM public.instructor_requests
+   WHERE id=req AND status='accepted' AND booking_id=bid);
  SELECT * INTO frozen FROM public.bookings WHERE id=bid;
  ASSERT frozen.status='awaiting_payment';
+ ASSERT frozen.total_hours=4 AND frozen.instructor_id=tid AND frozen.student_id=sid;
+ ASSERT (SELECT count(*) FROM public.booking_meetings
+   WHERE booking_id=bid AND minutes=120 AND
+         ((position=1 AND starts_at=t) OR (position=2 AND starts_at=t+interval '1 day')))=2;
  PERFORM pg_temp.act_as(sid);
  PERFORM public.confirm_validation_lesson(bid);
  PERFORM public.confirm_validation_lesson(bid);
@@ -46,26 +52,35 @@ BEGIN
  SELECT id INTO last_id FROM public.booking_meetings WHERE booking_id=bid ORDER BY position DESC LIMIT 1;
  SELECT presence_code INTO pin FROM public.bookings WHERE id=bid;
  -- Advance fixture dates only inside the rollback transaction to exercise lesson completion.
- UPDATE public.booking_meetings SET starts_at=now()-interval '2 hours'+make_interval(hours=>position-1) WHERE booking_id=bid;
+ UPDATE public.booking_meetings SET starts_at=now()-interval '5 hours'+make_interval(hours=>2*(position-1)) WHERE booking_id=bid;
  PERFORM pg_temp.act_as(tid);
  PERFORM public.mark_my_booking_chat_read(bid,message_id);
  BEGIN PERFORM public.start_ordered_meeting(last_id,pin); RAISE EXCEPTION 'Out-of-order start allowed';
  EXCEPTION WHEN object_not_in_prerequisite_state THEN NULL; END;
  PERFORM public.start_ordered_meeting(first_id,pin);
- PERFORM public.record_meeting_with_skills(first_id,45,ARRAY[1],ARRAY[2]);
+ PERFORM public.record_meeting_with_skills(first_id,110,ARRAY[1],ARRAY[2]);
  ASSERT (SELECT status FROM public.bookings WHERE id=bid)='confirmed','First encounter must not finish a multi-day booking';
  PERFORM public.start_ordered_meeting(last_id,pin);
- PERFORM public.record_meeting_with_skills(last_id,60,ARRAY[3],ARRAY[4]);
+ PERFORM public.record_meeting_with_skills(last_id,115,ARRAY[3],ARRAY[4]);
  PERFORM public.assess_student_kite_level(last_id,'returning');
  PERFORM pg_temp.reset();
- -- Item 9: only 105 of the 120 paid minutes were recorded, so the booking keeps
+ -- Only 225 of the 240 contracted minutes were recorded, so the booking keeps
  -- a 15-minute balance instead of completing. The student schedules a make-up
  -- with the same instructor and the paid snapshot never changes.
  ASSERT (SELECT status FROM public.bookings WHERE id=bid)='confirmed','Under-recorded booking keeps its balance';
  PERFORM pg_temp.act_as(sid);
  ASSERT public.booking_balance_minutes(bid)=15,'Balance equals the unrecorded paid minutes';
+ ASSERT (SELECT count(*) FROM public.booking_meetings
+   WHERE booking_id=bid AND status='done' AND started_at IS NOT NULL
+     AND ((id=first_id AND done_minutes=110) OR (id=last_id AND done_minutes=115)))=2,
+   'Student sees the presence and recorded minutes of each encounter';
+ ASSERT (SELECT count(*) FROM public.meeting_skill_progress WHERE
+   (meeting_id,step_number,result) IN (
+     (first_id,1,'practiced'),(first_id,2,'mastered'),
+     (last_id,3,'practiced'),(last_id,4,'mastered')
+   ))=4,'Student sees the skills recorded for each encounter';
  PERFORM pg_temp.reset();
- ASSERT (SELECT sum(done_minutes) FROM public.booking_meetings WHERE booking_id=bid)=105;
+ ASSERT (SELECT sum(done_minutes) FROM public.booking_meetings WHERE booking_id=bid)=225;
  ASSERT EXISTS(SELECT 1 FROM public.booking_level_assessments WHERE booking_id=bid AND assessed_level='returning');
  PERFORM pg_temp.act_as(sid);
  makeup_req:=public.request_balance_meeting(bid,t+interval '5 days',15);
@@ -85,7 +100,7 @@ BEGIN
  PERFORM public.record_meeting_with_skills(makeup_mid,15,ARRAY[5],ARRAY[6]);
  PERFORM pg_temp.reset();
  ASSERT (SELECT status FROM public.bookings WHERE id=bid)='completed','Booking completes once all paid minutes are delivered';
- ASSERT (SELECT sum(done_minutes) FROM public.booking_meetings WHERE booking_id=bid)=120;
+ ASSERT (SELECT sum(done_minutes) FROM public.booking_meetings WHERE booking_id=bid)=240;
  PERFORM pg_temp.act_as(sid);
  ASSERT public.booking_balance_minutes(bid)=0,'No balance remains after full delivery';
  PERFORM pg_temp.reset();
@@ -102,5 +117,6 @@ BEGIN
    IS NOT DISTINCT FROM (after_summary.bookings,after_summary.pending_cents,after_summary.released_cents),
    'No checkout journey must not generate partner revenue';
  PERFORM pg_temp.reset();
+ RAISE NOTICE 'PASS: 4h request accepted; student sees presence, 225/240 minutes and skills per encounter; 15-minute make-up completed without checkout';
 END $$;
 ROLLBACK;

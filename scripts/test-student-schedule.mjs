@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import { hasBookingLeadTime, hasExactMeetingAllocation, hasRepeatedMeetingDay, hasScheduleConflict, slotsOverlap } from '../src/lib/student-schedule.ts';
-import { lessonHasEvolution, lessonEvolutionHref, lessonIsPast, lessonNeedsInstructorRecord } from '../src/lib/student-lesson-links.ts';
+import { compareStudentLessons, lessonHasEvolution, lessonEvolutionHref, lessonIsPast, lessonNeedsInstructorRecord } from '../src/lib/student-lesson-links.ts';
 
 const slot = (startsAt, minutes = 120) => ({ startsAt, minutes });
 const reserved = slot('2026-11-11T11:00:00-03:00');
@@ -146,3 +146,24 @@ await import('./test-meeting-change-actions.mjs');
 await import('./test-student-occupied-slots.mjs');
 
 await import('./test-queue-maintenance-route.mjs');
+
+const utc = '2026-11-26T13:00:00Z';
+const later = '2026-11-26T10:30:00-03:00';
+const cards = [
+  { startsAt: utc, past: true }, { startsAt: later, past: false },
+  { startsAt: later, past: true }, { startsAt: utc, past: false },
+];
+assert.deepEqual([...cards].sort(compareStudentLessons), [cards[3], cards[1], cards[2], cards[0]]);
+assert.equal(compareStudentLessons(cards[3], { startsAt: '2026-11-26T10:00:00-03:00', past: false }), 0);
+console.log('PASS: lesson cards sort upcoming and past encounters by absolute time');
+
+// The builder must enforce the same civil-day rule as the server, before review/submit.
+const builder = readFileSync(new URL('../src/components/student/lesson-builder.tsx', import.meta.url), 'utf8');
+assert.match(builder, /const repeatedMeetingDay = hasRepeatedMeetingDay\(meetings\.map\(\(meeting\) => meeting\.date\)\)/);
+assert.match(builder, /const valid = [^;]*!repeatedMeetingDay/);
+assert.match(builder, /Escolha apenas um encontro por dia/);
+assert.match(builder, /disabled=\{!valid\}/);
+assert.match(builder, /disabled=\{pending \|\| !valid\}/);
+assert.equal(hasRepeatedMeetingDay(['2026-11-20', '2026-11-20']), true);
+assert.equal(hasRepeatedMeetingDay(['2026-11-20', '2026-11-22']), false);
+console.log('PASS: booking builder blocks same-day allocation before review and submission');

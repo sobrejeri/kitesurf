@@ -30,12 +30,21 @@ export async function POST(request: NextRequest) {
   const secret = process.env.SUPABASE_SECRET_KEY;
   if (!url || !secret) return NextResponse.json({ error: 'Not configured' }, { status: 503 });
 
+  // Never sweep pre-activation requests: historical offers require manual triage.
+  // The timestamp must be explicitly configured before enabling this worker.
+  // eslint-disable-next-line no-restricted-syntax -- server-only activation cutoff, never browser bundled
+  const activatedAt = process.env.QUEUE_WORKER_ACTIVATED_AT ?? '';
+  const activationMs = Date.parse(activatedAt);
+  const nowMs = Date.now();
+  if (!activatedAt || !Number.isFinite(activationMs) || activationMs > nowMs) {
+    return NextResponse.json({ error: 'Worker activation not configured' }, { status: 503 });
+  }
   const db = createClient(url, secret, { auth: { persistSession: false, autoRefreshToken: false } });
-  const now = new Date().toISOString();
+  const now = new Date(nowMs).toISOString();
   // Bounded batch: retrying is safe because the RPC locks the request and checks its status.
   const { data: expired, error: expiredError } = await db
     .from('instructor_requests').select('id').eq('status', 'searching')
-    .lte('expires_at', now).order('expires_at', { ascending: true }).limit(20);
+    .gte('created_at', activatedAt).lte('expires_at', now).order('expires_at', { ascending: true }).limit(20);
   if (expiredError || !Array.isArray(expired)) {
     console.error('[queue-maintenance] expired selection failed', expiredError?.code ?? 'NULL_RESULT');
     return NextResponse.json({ error: 'Queue selection failed' }, { status: 500 });
@@ -44,7 +53,7 @@ export async function POST(request: NextRequest) {
   // advances only when no valid offer exists. This is deliberately bounded.
   const { data: active, error: activeError } = await db
     .from('instructor_requests').select('id').eq('status', 'searching')
-    .gt('expires_at', now).order('created_at', { ascending: true }).limit(20);
+    .gte('created_at', activatedAt).gt('expires_at', now).order('created_at', { ascending: true }).limit(20);
   if (activeError || !Array.isArray(active)) {
     console.error('[queue-maintenance] active selection failed', activeError?.code ?? 'NULL_RESULT');
     return NextResponse.json({ error: 'Queue selection failed' }, { status: 500 });

@@ -20,7 +20,7 @@ import { releaseMyBooking } from '@/app/actions/meeting-change';
 import { MeetingChangePanel } from '@/components/meeting-change-panel';
 import { listPendingBalanceRequestsForInstructor } from '@/lib/balance-requests';
 import { InstructorBalanceRequests, type PendingBalanceItem } from '@/components/instructor/balance-requests';
-import { groupInstructorLessons, resolveInstructorLessonTab, selectInstructorLesson, mayStartInstructorLesson } from '@/lib/instructor-lesson-tabs';
+import { groupInstructorLessons, nextScheduledInstructorLesson, resolveInstructorLessonTab, selectInstructorLesson, mayStartInstructorLesson } from '@/lib/instructor-lesson-tabs';
 import { getBookingLevelAssessments } from '@/lib/booking-level-assessments';
 
 
@@ -74,10 +74,10 @@ export default async function RunLessonPage({
     .flatMap((booking) => {
       const meeting = [...booking.booking_meetings]
         .filter((m) => m.status === 'done')
-        .sort((a, b) => b.starts_at.localeCompare(a.starts_at))[0];
+        .sort((a, b) => Date.parse(b.starts_at) - Date.parse(a.starts_at))[0];
       return meeting ? [{ booking, meeting }] : [];
     })
-    .sort((a, b) => b.meeting.starts_at.localeCompare(a.meeting.starts_at));
+    .sort((a, b) => Date.parse(b.meeting.starts_at) - Date.parse(a.meeting.starts_at));
 
   const tabs = [
     { id: 'proximas' as const, title: 'Próximas', count: groups.proximas.length },
@@ -93,12 +93,12 @@ export default async function RunLessonPage({
     if (day !== previousDay) dayHeadings.set(meeting.id, lessonDayLabel(meeting.starts_at));
     previousDay = day;
   }
-  const nextLesson = groups.proximas[0];
+  const nextLesson = nextScheduledInstructorLesson(groups, Date.now());
   const summary = groups.andamento.length
     ? `${groups.andamento.length} ${groups.andamento.length === 1 ? 'aula em andamento' : 'aulas em andamento'}`
     : nextLesson
-      ? `Próxima: ${(lessonDayLabel(nextLesson.meeting.starts_at).split(' · ')[0] ?? '').toLowerCase()} às ${formatTime(nextLesson.meeting.starts_at)}`
-      : 'Nenhuma aula marcada';
+      ? `Próxima: ${lessonDayLabel(nextLesson.meeting.starts_at).toLowerCase()} às ${formatTime(nextLesson.meeting.starts_at)}`
+      : 'Nenhuma aula futura marcada';
 
   // Pending make-up requests the students proposed for their paid balance.
   const balancePending = await listPendingBalanceRequestsForInstructor(viewer.id);

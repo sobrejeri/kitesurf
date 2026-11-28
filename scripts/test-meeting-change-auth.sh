@@ -8,7 +8,7 @@ do $$
 declare
  v_beach uuid; v_old timestamptz; v_new timestamptz;
  v_booking uuid; v_meeting uuid; v_change uuid;
- v_choice timestamptz; v_visible integer;
+ v_choice timestamptz; v_visible integer; v_frozen public.bookings;
 
 begin
  select id into strict v_beach from public.beaches where slug='jeri';
@@ -166,8 +166,57 @@ begin
  execute 'set local role authenticated';
  select count(*) into v_visible from public.meeting_change_requests where id=v_change;
  if v_visible<>0 then raise exception 'IDOR: other student can read expired choice'; end if;
+ begin
+   perform public.resolve_student_change(v_change,'cancel');
+   raise exception 'Unrelated student cancelled the reservation';
+ exception when insufficient_privilege then null; end;
  execute 'reset role';
+ select * into strict v_frozen from public.bookings where id=v_booking;
+ -- A started encounter needs review. The rejected cancellation must leave the
+ -- meeting and the decision intact so the booking can still be reviewed.
+ update public.booking_meetings set status='in_progress' where id=v_meeting;
+ perform set_config('request.jwt.claim.sub','00000000-0000-0000-0000-0000000000b2',true);
+ execute 'set local role authenticated';
+ begin
+   perform public.resolve_student_change(v_change,'cancel');
+   raise exception 'Student cancelled a partly performed reservation';
+ exception when object_not_in_prerequisite_state then null; end;
+ execute 'reset role';
+ if (select status from public.bookings where id=v_booking)<>'confirmed'
+   or (select resolution from public.meeting_change_requests where id=v_change) is not null then
+   raise exception 'Rejected cancellation changed the booking or choice'; end if;
+ update public.booking_meetings set status='scheduled' where id=v_meeting;
+ -- A late cancellation may not overwrite the scheduler's next decision.
+ update public.meeting_change_requests set choice_expires_at=now()-interval '1 minute' where id=v_change;
+ execute 'set local role authenticated';
+ begin
+   perform public.resolve_student_change(v_change,'cancel');
+   raise exception 'Student cancelled after the choice deadline';
+ exception when object_not_in_prerequisite_state then null; end;
+ execute 'reset role';
+ update public.meeting_change_requests set choice_expires_at=v_choice where id=v_change;
+ execute 'set local role authenticated';
+ perform public.resolve_student_change(v_change,'cancel');
+ begin
+   perform public.resolve_student_change(v_change,'cancel');
+   raise exception 'Cancellation accepted twice';
+ exception when object_not_in_prerequisite_state then null; end;
+ execute 'reset role';
+ if not exists(select 1 from public.bookings where id=v_booking and status='cancelled'
+   and cancelled_at is not null and instructor_id=v_frozen.instructor_id
+   and total_hours=v_frozen.total_hours and total_cents=v_frozen.total_cents
+   and price_version_id=v_frozen.price_version_id) then
+   raise exception 'Cancellation did not preserve the reservation snapshot'; end if;
+ if not exists(select 1 from public.booking_meetings where id=v_meeting
+   and status='cancelled' and starts_at=v_new and minutes=120)
+   or (select resolution from public.meeting_change_requests where id=v_change)
+      is distinct from 'cancelled' then
+   raise exception 'Cancellation did not persist the meeting and choice status'; end if;
+ if (select count(*) from public.audit_logs where action='booking.student_cancelled'
+   and entity_id=v_booking::text)<>1 then
+   raise exception 'Expected one audit event for cancellation'; end if;
  raise notice 'PASS: authorized postponement and 12h expiry choice window preserve confirmed booking';
+ raise notice 'PASS: owner can cancel once within the choice window; partial lesson, unrelated student and expired choice denied';
 end $$;
 -- Independently verify the core 4-hour purchase shape: two distinct 2-hour
 -- meetings, one confirmed booking, and no accidental duplication of minutes.

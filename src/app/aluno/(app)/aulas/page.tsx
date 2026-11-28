@@ -7,7 +7,7 @@ import { requireRole } from '@/lib/auth';
 import { BOOKING_STATUS_LABELS, MEETING_STATUS_LABELS, listBookingsForStudent } from '@/lib/data';
 import { formatDateShort, formatDay, formatLessonWhen, formatMinutes, formatMonthTag, formatTime } from '@/lib/format';
 import { initials } from '@/lib/people';
-import { lessonHasEvolution, lessonEvolutionHref, lessonIsPast, lessonNeedsInstructorRecord } from '@/lib/student-lesson-links';
+import { compareStudentLessons, lessonHasEvolution, lessonEvolutionHref, lessonIsPast, lessonNeedsInstructorRecord } from '@/lib/student-lesson-links';
 import { getStudentBookingInstructorAvatar } from '@/lib/student-booking-avatar';
 import { VALIDATION_WITHOUT_CHECKOUT } from '@/lib/booking-mode';
 
@@ -55,9 +55,7 @@ export default async function MyLessonsPage({searchParams}:{searchParams:Promise
           past,
         } satisfies LessonCard;
       }),
-    ).sort((a, b) => a.past === b.past
-      ? (a.past ? b.startsAt.localeCompare(a.startsAt) : a.startsAt.localeCompare(b.startsAt))
-      : a.past ? 1 : -1);
+    ).sort(compareStudentLessons);
 
   // Lessons are sorted upcoming-first, so the first one not yet past is the next.
   const nextLesson = lessons.find((lesson) => !lesson.past);

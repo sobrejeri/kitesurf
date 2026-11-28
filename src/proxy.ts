@@ -13,7 +13,7 @@ import { supabaseConfig } from '@/lib/env';
  * the server (requireRole) and the database enforces RLS on every row.
  */
 
-const PUBLIC_PATHS = ['/', '/entrar', '/cadastro', '/auth', '/api/version', '/aluno/inicio', '/laboratorio-kite.html', '/aluno/politicas', '/configuracao'];
+const PUBLIC_PATHS = ['/', '/entrar', '/cadastro', '/auth', '/api/version', '/aluno/inicio', '/laboratorio-kite.html', '/aluno/politicas', '/configuracao', '/escola'];
 const REFERRAL_COOKIE = 'vento_ref';
 const REFERRAL_PATTERN = /^[A-Z0-9-]{3,32}$/;
 
@@ -77,6 +77,6 @@ export async function proxy(request: NextRequest) {
 
 export const config = {
   matcher: [
-    '/((?!_next/static|_next/image|favicon.ico|icon.svg|manifest.webmanifest|apps/|images/|version.json|.*\\.(?:svg|png|jpg|jpeg|gif|webp|webmanifest)$).*)',
+    '/((?!_next/static|_next/image|favicon.ico|sw\\.js$|icon.svg|manifest.webmanifest|apps/|images/|version.json|.*\\.(?:svg|png|jpg|jpeg|gif|webp|webmanifest)$).*)',
   ],
 };

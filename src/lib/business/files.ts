@@ -39,8 +39,19 @@ export function zipStore(files: readonly { name: string; data: Uint8Array }[]): 
 }
 
 export type Cell = string | { cents: number } | { bold: string };
-const esc = (s: string) => s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
-const col = (i: number) => String.fromCharCode(65 + i);
+// XML 1.0 disallows most control characters, even when escaped. Remove them
+// before writing user-supplied names and notes to a workbook.
+const esc = (s: string) => [...s].filter(char => {
+  const code = char.codePointAt(0) ?? 0;
+  return code === 9 || code === 10 || code === 13 || (code >= 32 && code <= 0xd7ff) ||
+    (code >= 0xe000 && code <= 0xfffd) || (code >= 0x10000 && code <= 0x10ffff);
+}).join('').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+const col = (i: number) => {
+  let n = i + 1;
+  let result = '';
+  while (n > 0) { n -= 1; result = String.fromCharCode(65 + n % 26) + result; n = Math.floor(n / 26); }
+  return result;
+};
 export const centsToDecimal = (c: number): string => `${c < 0 ? '-' : ''}${Math.trunc(Math.abs(c) / 100)}.${String(Math.abs(c) % 100).padStart(2, '0')}`;
 
 export function buildXlsx(sheetName: string, rows: readonly (readonly Cell[])[]): Uint8Array {

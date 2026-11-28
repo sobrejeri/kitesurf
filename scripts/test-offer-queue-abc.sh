@@ -99,6 +99,34 @@ begin
   perform public.advance_instructor_offer(v_req);
   if (select count(*) from public.instructor_offers where request_id=v_req)<>3 then
     raise exception 'Non-idempotent advancement after acceptance'; end if;
+  -- Acceptance is terminal: a retry of queue advancement cannot create
+  -- another booking or another offer, and the winning instructor owns the
+  -- resulting meetings. A request status alone would not catch duplicates.
+  if (select count(distinct b.id) from public.bookings b
+      join public.booking_meetings m on m.booking_id=b.id
+      where b.student_id='00000000-0000-0000-0000-0000000000b2'
+        and b.instructor_id=v_c and m.starts_at=v_st)<>1 then
+    raise exception 'Queue acceptance created duplicate bookings';
+  end if;
+  if (select count(*) from public.booking_meetings where booking_id=v_booking)<>1 then
+    raise exception 'Queue acceptance created an unexpected number of meetings';
+  end if;
+  perform set_config('request.jwt.claim.sub',v_c::text,true);
+  execute 'set local role authenticated';
+  select count(*) into v_count from public.booking_meetings where booking_id=v_booking;
+  if v_count<>1 then raise exception 'Winning instructor cannot read assigned meeting'; end if;
+  execute 'reset role';
+  perform set_config('request.jwt.claim.sub',v_a::text,true);
+  execute 'set local role authenticated';
+  select count(*) into v_count from public.booking_meetings where booking_id=v_booking;
+  if v_count<>0 then raise exception 'IDOR: declined instructor sees accepted booking meeting'; end if;
+  execute 'reset role';
+  perform set_config('request.jwt.claim.sub',v_b::text,true);
+  execute 'set local role authenticated';
+  select count(*) into v_count from public.booking_meetings where booking_id=v_booking;
+  if v_count<>0 then raise exception 'IDOR: expired instructor sees accepted booking meeting'; end if;
+  execute 'reset role';
+  raise notice 'PASS: accepted booking has one meeting, visible only to winning instructor';
   raise notice 'PASS: A declined, B expired, C accepted; exactly 3 offers and 1 booking';
 end $$;
 SQL

@@ -91,6 +91,9 @@ export async function closeBookingBalance(_previous: ActionState, form: FormData
   await requireRole(['student']);
   const id = UUID.safeParse(form.get('bookingId'));
   if (!id.success) return { error: 'Reserva inválida.' };
+  if (form.get('confirmForfeit') !== 'yes') {
+    return { error: 'Confirme que deseja encerrar a reserva e abrir mão do saldo restante.' };
+  }
 
   const db = await createSupabaseServerClient();
   const { error } = await db.rpc('close_booking_balance', { p_booking_id: id.data });

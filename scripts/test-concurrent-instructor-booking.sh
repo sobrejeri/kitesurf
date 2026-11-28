@@ -16,13 +16,30 @@ slots="$("${PSQL[@]}" -c "
 with slots as (
   select (date_trunc('day', now() at time zone 'America/Fortaleza')
     + make_interval(days=>d, hours=>h)) at time zone 'America/Fortaleza' as st
-  from generate_series(2, 20) d cross join generate_series(8, 16) h
+  from generate_series(2, ${RACE_DAYS:-90}) d cross join generate_series(8, 16) h
 ), eligible as (
   select st, (st at time zone 'America/Fortaleza')::date as local_day
   from slots
   where public.instructor_can_attend(
     '00000000-0000-0000-0000-0000000000a1'::uuid,
     jsonb_build_array(jsonb_build_object('starts_at',st,'hours',2)))
+  -- Each round reuses two student fixtures. Exclude slots already held by
+  -- either student with ANY instructor, not only the instructor under race.
+  -- Otherwise a legitimate STUDENT_MEETING_CONFLICT makes both calls fail.
+  and not exists (
+    select 1 from public.booking_meetings m
+    join public.bookings b on b.id=m.booking_id
+    where b.student_id in (
+      '00000000-0000-0000-0000-0000000000b1'::uuid,
+      '00000000-0000-0000-0000-0000000000b2'::uuid)
+      and m.status::text <> 'cancelled'
+      and (b.status::text='confirmed'
+        or (b.status::text='awaiting_payment'
+          and b.created_at >= now()-interval '10 minutes'))
+      and tstzrange(m.starts_at,
+          m.starts_at+make_interval(mins=>m.minutes),'[)')
+          && tstzrange(st,st+interval '2 hours','[)')
+  )
 )
 select a.st::text || '|' || b.st::text
 from eligible a join eligible b on b.local_day>a.local_day
@@ -67,6 +84,8 @@ select count(*) from public.booking_meetings m
 join public.bookings b on b.id=m.booking_id
 where b.beach_id='$beach'::uuid
   and b.instructor_id='00000000-0000-0000-0000-0000000000a1'::uuid
+  and b.status in ('awaiting_payment', 'confirmed')
+  and m.status <> 'cancelled'
   and m.starts_at in ('$slot'::timestamptz, '$slot2'::timestamptz)
   and m.minutes=120;")"
 if [[ "$count" != "2" ]]; then
@@ -85,6 +104,8 @@ from public.bookings b
 join public.booking_meetings m on m.booking_id=b.id
 where b.beach_id='$beach'::uuid
   and b.instructor_id='00000000-0000-0000-0000-0000000000a1'::uuid
+  and b.status in ('awaiting_payment', 'confirmed')
+  and m.status <> 'cancelled'
   and b.student_id='00000000-0000-0000-0000-0000000000$winning_student'::uuid
   and m.starts_at in ('$slot'::timestamptz, '$slot2'::timestamptz);")"
 # sum(total_hours) counts one booking per meeting (4+4=8).
@@ -100,6 +121,8 @@ join public.booking_meetings m on m.booking_id=b.id
 where b.student_id='00000000-0000-0000-0000-0000000000$losing_student'::uuid
   and b.beach_id='$beach'::uuid
   and b.instructor_id='00000000-0000-0000-0000-0000000000a1'::uuid
+  and b.status in ('awaiting_payment', 'confirmed')
+  and m.status <> 'cancelled'
   and m.starts_at in ('$slot'::timestamptz, '$slot2'::timestamptz);")"
 if [[ "$loser_bookings" != '0' ]]; then
   echo "Concurrency regression: losing student retained $loser_bookings bookings" >&2
