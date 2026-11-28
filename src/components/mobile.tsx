@@ -9,6 +9,7 @@ import { Icon, type IconName } from './icon';
 import { StudentProfileAvatar } from './student/profile-avatar';
 import { isActive } from '@/lib/navigation-state';
 import { modalFocusDestination } from '@/lib/modal-focus';
+import { sheetForPage } from '@/lib/page-sheet-state';
 export { isActive } from '@/lib/navigation-state';
 
 /**
@@ -36,6 +37,17 @@ export interface SheetLink {
 export interface SheetGroup {
   title: string;
   links: readonly SheetLink[];
+}
+
+/** Discard a sheet when leaving its page, including when navigating back later. */
+function usePageSheet(pathname: string) {
+  const [state, setState] = useState({ pathname, open: false });
+  const pageState = sheetForPage(state, pathname);
+  if (pageState !== state) setState(pageState);
+  const open = state.pathname === pathname && state.open;
+  const closeSheet = useCallback(() => setState(current => ({ ...current, open: false })), []);
+  const toggleSheet = () => setState(current => ({ pathname, open: current.pathname === pathname && !current.open }));
+  return { open, closeSheet, toggleSheet };
 }
 
 export function MobileHeader({
@@ -84,10 +96,7 @@ export function TabBar({
   variant?: 'pill' | 'underline';
 }) {
   const pathname = usePathname();
-  // The sheet belongs to the page it was opened on: navigating closes it.
-  const [openAt, setOpenAt] = useState<string | null>(null);
-  const open = openAt === pathname;
-  const closeSheet = useCallback(() => setOpenAt(null), []);
+  const { open, closeSheet, toggleSheet } = usePageSheet(pathname);
   const mid = Math.ceil(items.length / 2);
   const centerActive = Boolean(center && isActive(pathname, center));
   const moreActive = Boolean(more) && !centerActive && !items.some(item => isActive(pathname, item));
@@ -143,7 +152,7 @@ export function TabBar({
             <li className="flex-1">
               <button
                 type="button"
-                onClick={() => setOpenAt((current) => current === pathname ? null : pathname)}
+                onClick={toggleSheet}
                 aria-haspopup="dialog"
                 aria-expanded={open}
                 className={`press flex w-full flex-col items-center gap-0.5 py-1 ${variant === 'underline' ? 'text-[11px]' : 'text-[11px]'} ${moreActive ? `font-[600] ${variant === 'underline' ? 'text-sunrise' : 'text-brand'}` : 'text-tabbar-ink'}`}
@@ -186,14 +195,12 @@ export function MenuButton({
   className?: string;
 }) {
   const pathname = usePathname();
-  const [openAt, setOpenAt] = useState<string | null>(null);
-  const open = openAt === pathname;
-  const closeSheet = useCallback(() => setOpenAt(null), []);
+  const { open, closeSheet, toggleSheet } = usePageSheet(pathname);
   return (
     <>
       <button
         type="button"
-        onClick={() => setOpenAt((current) => current === pathname ? null : pathname)}
+        onClick={toggleSheet}
         aria-haspopup="dialog"
         aria-expanded={open}
         aria-label={label}
