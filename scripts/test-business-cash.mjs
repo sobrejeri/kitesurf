@@ -68,6 +68,9 @@ const names = []; { let at = 0; while (view.getUint32(at, true) === 0x04034b50) 
 assert.deepEqual(names, ['[Content_Types].xml', '_rels/.rels', 'xl/workbook.xml', 'xl/_rels/workbook.xml.rels', 'xl/styles.xml', 'xl/worksheets/sheet1.xml']);
 const sheetXml = (() => { const z = buildXlsx('S', [['a<&>"b', { cents: 12345 }]]); return dec.decode(z); })();
 assert.ok(sheetXml.includes('a&lt;&amp;&gt;&quot;b') && sheetXml.includes('<v>123.45</v>'), 'XML escaped, money from cents');
+const wideSheet = dec.decode(buildXlsx('Teste', [[...Array.from({ length: 26 }, (_, i) => `c${i}`), 'limpo\u0001 fim', 'último']]));
+assert.ok(wideSheet.includes('r="Z1"') && wideSheet.includes('r="AA1"') && wideSheet.includes('r="AB1"'), 'columns beyond Z use Excel references');
+assert.ok(wideSheet.includes('limpo fim') && !wideSheet.includes('limpo\u0001 fim'), 'invalid XML control characters are removed from workbook strings');
 assert.ok(closingSheetRows(c2).some((r) => r[0] === 'Diferença' && r[1].cents === -500), 'sheet carries the difference');
 
 const pdfBytes = buildPdf('T', closingPdfLines(c2)); const pdf = Buffer.from(pdfBytes).toString('latin1');
