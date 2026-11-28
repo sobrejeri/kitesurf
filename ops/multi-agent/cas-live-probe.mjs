@@ -1,0 +1,18 @@
+import assert from 'node:assert/strict';
+import {randomUUID} from 'node:crypto';
+const token=process.env.GITHUB_TOKEN;
+if(!token || process.env.GITHUB_REPOSITORY!=='sobrejeri/kitesurf') throw Error('trusted test runtime required');
+const branch='test/multi-agent-cas-20261126';
+const url='https://api.github.com/repos/sobrejeri/kitesurf/contents/ops/multi-agent/cas-probe.json';
+const headers={Authorization:'Bearer '+token,Accept:'application/vnd.github+json','Content-Type':'application/json'};
+const read=async()=>{const r=await fetch(url+'?ref='+branch,{headers,redirect:'error'});if(!r.ok)throw Error('read '+r.status);return r.json()};
+const before=await read();
+const id=randomUUID();
+const candidates=['a','b'].map(winner=>({id,winner}));
+const results=await Promise.all(candidates.map(async d=>{const r=await fetch(url,{method:'PUT',headers,redirect:'error',body:JSON.stringify({branch,sha:before.sha,message:'test: concurrent disposable probe',content:Buffer.from(JSON.stringify(d)+'\n').toString('base64')})});return r.status}));
+console.log('HTTP statuses:',results);
+assert.equal(results.filter(s=>s===200).length,1);
+assert.equal(results.filter(s=>s===409||s===422).length,1);
+const after=await read();
+assert.deepEqual(JSON.parse(Buffer.from(after.content,'base64').toString()),candidates[results.indexOf(200)]);
+console.log('PASS: exactly one write persisted');

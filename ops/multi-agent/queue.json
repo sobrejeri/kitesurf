@@ -1,0 +1,44 @@
+{
+  "version": 1,
+  "activation": "disabled",
+  "tasks": [
+    {
+      "id": "VK-BUSINESS-001",
+      "issue": 105,
+      "owner": "CLAUDE",
+      "reviewer": "WORK",
+      "status": "READY",
+      "priority": "P2",
+      "dependencies": [],
+      "scope": "Business student store; inspect existing branch before editing",
+      "acceptance": [
+        "CI on current SHA",
+        "isolated tenant tests",
+        "commit and PR evidence"
+      ],
+      "lease": null
+    },
+    {
+      "id": "VK-RESERVATION-001",
+      "issue": 90,
+      "owner": "WORK",
+      "reviewer": "CLAUDE",
+      "status": "READY",
+      "priority": "P1",
+      "dependencies": [],
+      "scope": "Authenticated reservation E2E with fictitious accounts; no real payments",
+      "acceptance": [
+        "4h in two meetings",
+        "instructor acceptance and progress",
+        "student history",
+        "evidence on current SHA"
+      ],
+      "lease": null
+    }
+  ],
+  "policy": {
+    "remote_operations_owner": "WORK",
+    "real_payments": false,
+    "claim_requires_atomic_compare_and_swap": true
+  }
+}
