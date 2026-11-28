@@ -1,5 +1,7 @@
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
+import vm from 'node:vm';
+import ts from 'typescript';
 
 // Browsers may format en-CA dates in different orders. Simulate an engine
 // returning MM/DD/YYYY from format(), while preserving Intl's date parts.
@@ -20,7 +22,7 @@ Intl.DateTimeFormat = new Proxy(NativeDateTimeFormat, {
     });
   },
 });
-const { formatLessonWhen, formatRelativeStamp } = await import('../src/lib/format.ts');
+const { formatLessonWhen, formatRelativeStamp, fortalezaDateKey } = await import('../src/lib/format.ts');
 Intl.DateTimeFormat = NativeDateTimeFormat;
 
 // Student screens "com cara de app" (2026-11-11): compact titles instead of
@@ -97,6 +99,29 @@ assert.ok(!desktopHeader.includes('<img') && desktopHeader.includes('vento-pc-se
   'Desktop secondary pages use a compact header with a back button');
 
 // 8. Time labels in Ceará time.
+// ISO date keys must remain sortable across year and month boundaries even
+// when Intl.format produces MM/DD/YYYY; booking and lesson gates depend on this.
+assert.equal(fortalezaDateKey(new Date('2027-01-01T02:30:00Z')), '2026-12-31');
+assert.equal(fortalezaDateKey(new Date('2027-01-01T03:00:00Z')), '2027-01-01');
+assert.ok(fortalezaDateKey(new Date('2026-12-31T15:00:00Z')) < fortalezaDateKey(new Date('2027-01-01T15:00:00Z')));
+// Exercise the actual shared helpers under the alternate Intl formatter.
+const fixedNow = Date.parse('2027-01-01T02:30:00Z'); // still 31 Dec in Fortaleza
+class FixedDate extends Date { static now() { return fixedNow; } }
+const datesModule = { exports: {} };
+const datesSource = ts.transpileModule(read('src/lib/dates.ts'), {
+  compilerOptions: { module: ts.ModuleKind.CommonJS, target: ts.ScriptTarget.ES2022 },
+}).outputText;
+vm.runInNewContext(datesSource, {
+  module: datesModule, exports: datesModule.exports, Date: FixedDate, Intl,
+  require: (name) => {
+    if (name !== './format') throw new Error(`Unexpected import: ${name}`);
+    return { fortalezaDateKey, LESSON_TIME_ZONE: 'America/Fortaleza' };
+  },
+});
+assert.equal(datesModule.exports.lessonDate(), '2026-12-31');
+assert.equal(datesModule.exports.lessonDate(1), '2027-01-01');
+assert.equal(datesModule.exports.dayKey('2027-01-01T02:30:00Z'), '2026-12-31');
+assert.deepEqual(Array.from(datesModule.exports.lastDays(2), (d) => d.key), ['2026-12-30', '2026-12-31']);
 const now = Date.parse('2026-11-11T15:00:00Z'); // 12:00 in Fortaleza
 assert.equal(formatRelativeStamp('2026-11-11T14:59:40Z', now), 'Agora');
 assert.equal(formatRelativeStamp('2026-11-11T14:48:00Z', now), 'Há 12 min');

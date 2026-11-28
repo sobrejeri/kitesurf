@@ -14,7 +14,7 @@ import {
 import { getStudentKiteLevel } from '@/lib/student-kite-level';
 import { getBookingLevelAssessments } from '@/lib/booking-level-assessments';
 import { getMeetingKiteSkills } from '@/lib/meeting-skills';
-import { formatDateLong, formatMinutes, formatTime } from '@/lib/format';
+import { formatDateLong, formatMinutes, formatTime, fortalezaDateKey } from '@/lib/format';
 import { KITE_CURRICULA, KITE_LEVEL_BADGES, kiteStageStatus } from '@/lib/kite-steps';
 import { VALIDATION_WITHOUT_CHECKOUT } from '@/lib/booking-mode';
 
@@ -143,9 +143,7 @@ export default async function ProgressPage({
   const balance = Math.max(0, contracted - doneMinutes - scheduledMinutes);
   const percentHours = contracted
     ? Math.min(100, Math.round((doneMinutes / contracted) * 100)) : 0;
-  const todayCeara = new Date().toLocaleDateString('en-CA', {
-    timeZone: 'America/Fortaleza',
-  });
+  const todayCeara = fortalezaDateKey(Date.now());
 
   const levelLabel = kiteLevel.assessed
     ? KITE_LEVEL_BADGES[kiteLevel.assessed].label
@@ -402,9 +400,7 @@ export default async function ProgressPage({
                         (entry) => entry.meeting_id === meeting.id);
                       const priorComplete = selected.booking_meetings.every(
                         (prior) => prior.position >= meeting.position || prior.status === 'done');
-                      const meetingDay = new Date(meeting.starts_at).toLocaleDateString('en-CA', {
-                        timeZone: 'America/Fortaleza',
-                      });
+                      const meetingDay = fortalezaDateKey(new Date(meeting.starts_at));
                       const canStart = selected.status === 'confirmed'
                         && meeting.status === 'scheduled'
                         && priorComplete && meetingDay <= todayCeara;
